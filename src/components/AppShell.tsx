@@ -15,7 +15,7 @@ const NAV = [
 
 function SyncChip() {
   const [online, setOnline] = useState(true);
-  const pending = useLiveQuery(() => getDb().orders.where("synced").equals(0 as never).count().catch(() => 0), [], 0);
+  const pending = useLiveQuery(() => getDb().orders.filter((o) => !o.synced).count().catch(() => 0), [], 0);
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
     update();
