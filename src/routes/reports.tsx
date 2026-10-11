@@ -35,7 +35,7 @@ function ReportsPage() {
   for (const o of settled) {
     for (const l of o.lines) itemMap.set(l.name, (itemMap.get(l.name) ?? 0) + l.qty);
     for (const p of o.payments) payMap.set(p.mode.toUpperCase(), (payMap.get(p.mode.toUpperCase()) ?? 0) + p.amount);
-    hours[new Date(o.createdAt).getHours()].v += o.total;
+    hours[new Date(o.createdAt).getHours()]!.v += o.total;
   }
   const top = [...itemMap].sort((a, b) => b[1] - a[1]).slice(0, 6);
   const pays = [...payMap].map(([name, value]) => ({ name, value }));

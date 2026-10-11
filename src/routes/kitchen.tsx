@@ -54,10 +54,10 @@ function KitchenPage() {
                           <li key={i}><span className="font-bold">{l.qty}×</span> {l.name}{l.note && <span className="block text-xs text-warning">↳ {l.note}</span>}</li>
                         ))}
                       </ul>
-                      {c.next && (
-                        <button onClick={() => getDb().kots.update(k.id!, { status: c.next })}
+                      {c.next ? (
+                        <button onClick={() => getDb().kots.update(k.id!, { status: c.next! })}
                           className="mt-3 w-full rounded-lg bg-primary py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover">{c.action}</button>
-                      )}
+                      ) : null}
                     </div>
                   ))}
                 </div>
