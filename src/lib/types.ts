@@ -52,7 +52,7 @@ export interface RestaurantTable {
   seats: number;
   status: TableStatus;
   runningTotal: number;
-  since?: number;
+  since?: number | undefined;
 }
 
 export interface Kot {

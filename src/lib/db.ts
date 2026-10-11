@@ -5,7 +5,7 @@ import { SEED_MENU, SEED_TABLES } from "./seed";
 class RestroDB extends Dexie {
   menu!: Table<MenuItem, string>;
   orders!: Table<Order, number>;
-  tables!: Table<RestaurantTable, string>;
+  restTables!: Table<RestaurantTable, string>;
   kots!: Table<Kot, number>;
   meta!: Table<{ key: string; value: number }, string>;
 
@@ -14,7 +14,7 @@ class RestroDB extends Dexie {
     this.version(1).stores({
       menu: "id, category, name",
       orders: "++id, billNo, status, createdAt, tableId",
-      tables: "id, section, status",
+      restTables: "id, section, status",
       kots: "++id, orderId, status, createdAt",
       meta: "key",
     });
@@ -30,7 +30,7 @@ export function getDb(): RestroDB {
 export async function ensureSeed() {
   const db = getDb();
   if ((await db.menu.count()) === 0) await db.menu.bulkPut(SEED_MENU);
-  if ((await db.tables.count()) === 0) await db.tables.bulkPut(SEED_TABLES);
+  if ((await db.restTables.count()) === 0) await db.restTables.bulkPut(SEED_TABLES);
 }
 
 export async function nextSeq(): Promise<number> {
