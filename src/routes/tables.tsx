@@ -28,11 +28,11 @@ const ORDER: TableStatus[] = ["free", "occupied", "billed", "reserved"];
 
 function TablesPage() {
   useEffect(() => { void ensureSeed(); }, []);
-  const tables = useLiveQuery(() => getDb().tables.toArray(), [], []);
+  const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const navigate = useNavigate();
   const cycle = (id: string, s: TableStatus) => {
     const next = ORDER[(ORDER.indexOf(s) + 1) % ORDER.length];
-    void getDb().tables.update(id, { status: next, since: next === "free" ? undefined : Date.now() });
+    void getDb().restTables.update(id, { status: next, since: next === "free" ? undefined : Date.now() });
   };
 
   return (

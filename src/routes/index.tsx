@@ -35,7 +35,7 @@ const ORDER_TYPES: { v: OrderType; l: string }[] = [
 function PosPage() {
   useEffect(() => { void ensureSeed(); }, []);
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
-  const tables = useLiveQuery(() => getDb().tables.toArray(), [], []);
+  const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const cart = useCart();
   const [cat, setCat] = useState<string>("Popular");
   const [q, setQ] = useState("");

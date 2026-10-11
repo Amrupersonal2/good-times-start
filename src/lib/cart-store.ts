@@ -80,7 +80,7 @@ export function useCart() {
           createdAt: Date.now(),
         });
       }
-      if (tableId) await db.tables.update(tableId, { status: "free", runningTotal: 0, since: undefined });
+      if (tableId) await db.restTables.update(tableId, { status: "free", runningTotal: 0, since: undefined });
       clear();
       toast.success(`Bill ${order.billNo} settled`);
       return order;
