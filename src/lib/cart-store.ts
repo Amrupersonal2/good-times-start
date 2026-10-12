@@ -15,7 +15,7 @@ export function useCart() {
       const i = prev.findIndex((l) => l.itemId === item.id);
       if (i >= 0) {
         const next = [...prev];
-        next[i] = { ...next[i], qty: next[i].qty + 1 };
+        next[i] = { ...next[i]!, qty: next[i]!.qty + 1 };
         return next;
       }
       return [...prev, { itemId: item.id, name: item.name, price: item.price, qty: 1, veg: item.veg, gstRate: item.gstRate, station: item.station }];

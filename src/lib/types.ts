@@ -30,7 +30,7 @@ export interface Order {
   id?: number;
   billNo: string;
   orderType: OrderType;
-  tableId?: string;
+  tableId?: string | undefined;
   lines: CartLine[];
   subtotal: number;
   discountPct: number;
@@ -60,7 +60,7 @@ export interface Kot {
   orderId: number;
   billNo: string;
   station: string;
-  lines: { name: string; qty: number; note?: string }[];
+  lines: { name: string; qty: number; note?: string | undefined }[];
   status: KotStatus;
   createdAt: number;
 }

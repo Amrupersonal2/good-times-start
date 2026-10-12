@@ -31,7 +31,7 @@ function TablesPage() {
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const navigate = useNavigate();
   const cycle = (id: string, s: TableStatus) => {
-    const next = ORDER[(ORDER.indexOf(s) + 1) % ORDER.length];
+    const next = ORDER[(ORDER.indexOf(s) + 1) % ORDER.length]!;
     void getDb().restTables.update(id, { status: next, since: next === "free" ? undefined : Date.now() });
   };
 
