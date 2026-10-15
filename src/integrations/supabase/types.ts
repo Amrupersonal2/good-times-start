@@ -42,6 +42,7 @@ export type Database = {
         Row: {
           id: string
           low_stock_threshold: number
+          menu_item_id: string | null
           name: string
           quantity: number
           unit: string
@@ -51,6 +52,7 @@ export type Database = {
         Insert: {
           id?: string
           low_stock_threshold?: number
+          menu_item_id?: string | null
           name: string
           quantity?: number
           unit?: string
@@ -60,6 +62,7 @@ export type Database = {
         Update: {
           id?: string
           low_stock_threshold?: number
+          menu_item_id?: string | null
           name?: string
           quantity?: number
           unit?: string

@@ -1,0 +1,2 @@
+ALTER TABLE public.inventory_items ADD COLUMN menu_item_id text;
+CREATE UNIQUE INDEX inventory_items_user_menu_item_unique ON public.inventory_items (user_id, menu_item_id) WHERE menu_item_id IS NOT NULL;
