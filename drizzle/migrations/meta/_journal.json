@@ -8,6 +8,13 @@
       "when": 1791872009901,
       "tag": "0000_restaurant_cloud_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792050797821,
+      "tag": "0001_link_inventory_to_menu",
+      "breakpoints": true
     }
   ]
 }
