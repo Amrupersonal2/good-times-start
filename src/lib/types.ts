@@ -13,6 +13,7 @@ export interface MenuItem {
   station: "Tandoor" | "Chinese" | "South Indian" | "Beverages" | "Main Course" | "Desserts";
   available: boolean;
   popular?: boolean;
+  stockTracked?: boolean;
 }
 
 export interface CartLine {
@@ -42,6 +43,17 @@ export interface Order {
   payments: { mode: PaymentMode; amount: number }[];
   status: "held" | "settled" | "void";
   createdAt: number;
+  synced: boolean;
+}
+
+export interface InventoryItem {
+  id: string;
+  menuItemId: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  lowStockThreshold: number;
+  tracked: boolean;
   synced: boolean;
 }
 
