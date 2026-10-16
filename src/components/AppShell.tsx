@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
+import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ const NAV = [
   { to: "/kitchen", label: "Kitchen", icon: ChefHat },
   { to: "/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/stock", label: "Stock", icon: Package },
+  { to: "/customers", label: "Guests", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;

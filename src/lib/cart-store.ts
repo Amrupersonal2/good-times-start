@@ -11,6 +11,7 @@ import { buildLine, priceFor } from "./menu-logic";
 import { latestHeldOrder } from "./table-actions";
 import { settledPayments, type Payment } from "./payment-logic";
 import { splitLines } from "./bill-splitting";
+import { rememberCustomer } from "./customer-actions";
 
 function kotGroups(lines: CartLine[]) {
   const groups = new Map<string, CartLine[]>();
@@ -271,6 +272,7 @@ export function useCart(initialTableId?: string) {
     const id = order.id ? await db.orders.put(order) : Number(await db.orders.add(order));
     order.id = id;
     await applyLocalStockSale(lines, { orderUid: order.uid ?? "", billNo: order.billNo, by: closedBy });
+    await rememberCustomer(order.customer);
     await finishTable([["order", order.uid ?? ""]]);
     toast.success(`Bill ${order.billNo} settled`);
     return order;
@@ -319,6 +321,7 @@ export function useCart(initialTableId?: string) {
     }
     await markDirty(...changes);
     await applyLocalStockSale(split, { orderUid: part.uid ?? "", billNo: part.billNo, by: closedBy });
+    await rememberCustomer(part.customer);
     setLines(remaining);
     toast.success(`Bill ${part.billNo} settled; the rest stays on the table`);
     return part;

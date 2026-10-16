@@ -50,7 +50,7 @@ syncs to Lovable and the live app) only after review in Lovable.
 - [x] Raw materials, recipes, auto-deduction, purchases, suppliers, wastage
 
 ### Phase 6 — Customers
-- [ ] Customer directory, visit history, loyalty points, feedback
+- [x] Customer directory, visit history, loyalty points (spend as payment), dues collection, feedback
 
 ### Phase 7 — Reports
 - [ ] Day-end and shift close, cash drawer, GST report, item/category/staff

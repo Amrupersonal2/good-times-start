@@ -26,8 +26,20 @@ export function UpiPay({ vpa, payee, amount, billNo, onPaid }: { vpa: string; pa
   );
 }
 
-function PaymentRows({ total, entries, setEntries }: { total: number; entries: Payment[]; setEntries: (next: Payment[]) => void }) {
+/** Extra rules on top of the totals: points can't exceed the balance, and dues need a known guest. */
+function paymentRuleError(entries: Payment[], pointsAvailable: number, hasCustomer: boolean): string {
+  const points = entries.filter((e) => e.mode === "points").reduce((s, e) => s + Math.max(0, e.amount), 0);
+  if (points > pointsAvailable) return `The guest has ${pointsAvailable} points to spend.`;
+  if (!hasCustomer && entries.some((e) => e.mode === "credit" && e.amount > 0)) return "Add the guest's phone number on the bill to record a due.";
+  return "";
+}
+
+function PaymentRows({ total, entries, setEntries, pointsAvailable, hasCustomer }: {
+  total: number; entries: Payment[]; setEntries: (next: Payment[]) => void; pointsAvailable: number; hasCustomer: boolean;
+}) {
   const summary = paymentSummary(entries, total);
+  const ruleError = paymentRuleError(entries, pointsAvailable, hasCustomer);
+  const modes = PAYMENT_MODES.filter((m) => m.v !== "points" || pointsAvailable > 0 || entries.some((e) => e.mode === "points"));
   const update = (index: number, change: Partial<Payment>) => setEntries(entries.map((p, i) => (i === index ? { ...p, ...change } : p)));
   return (
     <div>
@@ -35,7 +47,7 @@ function PaymentRows({ total, entries, setEntries }: { total: number; entries: P
         {entries.map((p, index) => (
           <div key={index} className="flex gap-2">
             <select aria-label="Payment mode" value={p.mode} onChange={(e) => update(index, { mode: e.target.value as PaymentMode })} className="rounded-lg border border-input bg-card px-2 py-2 text-sm">
-              {PAYMENT_MODES.map((m) => <option key={m.v} value={m.v}>{m.l}</option>)}
+              {modes.map((m) => <option key={m.v} value={m.v}>{m.v === "points" ? `${m.l} (${pointsAvailable})` : m.l}</option>)}
             </select>
             <input aria-label="Amount" inputMode="decimal" value={Number.isFinite(p.amount) && p.amount !== 0 ? String(p.amount) : ""}
               onChange={(e) => update(index, { amount: Number(e.target.value) || 0 })} placeholder="0"
@@ -54,7 +66,7 @@ function PaymentRows({ total, entries, setEntries }: { total: number; entries: P
         <div className="flex justify-between"><span>Received</span><span>{formatINR(summary.tendered)}</span></div>
         {summary.remaining > 0 ? <div className="flex justify-between font-semibold text-destructive"><span>Still due</span><span>{formatINR(summary.remaining)}</span></div> : null}
         {summary.change > 0 ? <div className="flex justify-between text-base font-bold"><span>Change to return</span><span>{formatINR(summary.change)}</span></div> : null}
-        {summary.error ? <p role="alert" className="text-destructive">{summary.error}</p> : null}
+        {summary.error || ruleError ? <p role="alert" className="text-destructive">{summary.error || ruleError}</p> : null}
       </div>
     </div>
   );
@@ -64,11 +76,13 @@ function PaymentRows({ total, entries, setEntries }: { total: number; entries: P
  * Settle with several payment modes (cash and UPI, say), or split the bill so
  * some guests pay for their items now and the rest stays on the table.
  */
-export function PaymentPanel({ lines, discountPct, serviceChargePct, canSplitBill, onSettle, onSettlePart }: {
+export function PaymentPanel({ lines, discountPct, serviceChargePct, canSplitBill, pointsAvailable = 0, hasCustomer = false, onSettle, onSettlePart }: {
   lines: CartLine[];
   discountPct: number;
   serviceChargePct: number;
   canSplitBill: boolean;
+  pointsAvailable?: number;
+  hasCustomer?: boolean;
   onSettle: (payments: Payment[]) => void;
   onSettlePart: (quantities: Record<string, number>, payments: Payment[]) => void;
 }) {
@@ -118,14 +132,13 @@ export function PaymentPanel({ lines, discountPct, serviceChargePct, canSplitBil
       <div className="mt-4">
         {tab === "split" && splitTotal.count === 0
           ? <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">Pick items above to see this guest's share.</p>
-          : <PaymentRows total={total} entries={entries} setEntries={setEntries} />}
+          : <PaymentRows total={total} entries={entries} setEntries={setEntries} pointsAvailable={pointsAvailable} hasCustomer={hasCustomer} />}
       </div>
 
-      <Button className="mt-4 w-full" disabled={!summary.complete || (tab === "split" && splitTotal.count === 0)}
+      <Button className="mt-4 w-full" disabled={!summary.complete || !!paymentRuleError(entries, pointsAvailable, hasCustomer) || (tab === "split" && splitTotal.count === 0)}
         onClick={() => (tab === "pay" ? onSettle(entries) : onSettlePart(quantities, entries))}>
         {tab === "pay" ? `Settle ${formatINR(total, 0)}` : `Settle ${splitTotal.count} item${splitTotal.count === 1 ? "" : "s"}, ${formatINR(total, 0)}`}
       </Button>
-      {entries.some((e) => e.mode === "credit") ? <p className="mt-2 text-xs text-muted-foreground">Add the guest's phone number on the bill for amounts paid later.</p> : null}
     </div>
   );
 }

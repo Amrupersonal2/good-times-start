@@ -90,6 +90,7 @@ function RestaurantDetails() {
       billFooter: form.billFooter?.trim() ?? "",
       serviceChargePct: Math.min(20, Math.max(0, Number(form.serviceChargePct) || 0)),
       staffDiscountLimit: Math.min(100, Math.max(0, Number(form.staffDiscountLimit ?? 10) || 0)),
+      loyaltyPct: Math.min(25, Math.max(0, Number(form.loyaltyPct) || 0)),
     };
     await saveSettings(clean, !!user?.restaurantId);
     if (user?.restaurantId && clean.name !== user.restaurantName) {
@@ -114,6 +115,10 @@ function RestaurantDetails() {
         <Field label="Service charge %" hint="Offered on dine-in bills, off unless the cashier ticks it. Guests can decline it. Leave 0 to hide.">
           <input inputMode="decimal" disabled={!canEdit} value={form.serviceChargePct ?? 0}
             onChange={(e) => setForm((prev) => ({ ...prev, serviceChargePct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 }))} className={inputClass} />
+        </Field>
+        <Field label="Loyalty points (% of each bill)" hint="Guests with a phone number on the bill earn this back as points; 1 point = ₹1. Leave 0 to turn loyalty off.">
+          <input inputMode="decimal" disabled={!canEdit} value={form.loyaltyPct ?? 0}
+            onChange={(e) => setForm((prev) => ({ ...prev, loyaltyPct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 }))} className={inputClass} />
         </Field>
         <Field label="Highest discount for cashiers and captains (%)" hint="Owners and managers can give any discount.">
           <input inputMode="numeric" disabled={!canEdit} value={form.staffDiscountLimit ?? 10}

@@ -1,5 +1,6 @@
 export type OrderType = "dine-in" | "takeaway" | "delivery" | "swiggy" | "zomato";
-export type PaymentMode = "cash" | "upi" | "card" | "wallet" | "credit";
+/** "credit" is an amount the guest pays later (a due); "points" is loyalty points spent. */
+export type PaymentMode = "cash" | "upi" | "card" | "wallet" | "credit" | "points";
 export type TableStatus = "free" | "occupied" | "billed" | "reserved";
 /** "served" hides a ticket from the kitchen screen once it has left the pass. */
 export type KotStatus = "new" | "preparing" | "ready" | "served";
@@ -76,6 +77,7 @@ export interface Order {
   customer?: { name?: string; phone?: string };
   /** Who settled or voided the bill, for the staff report. */
   closedBy?: string;
+  feedback?: { rating: 1 | 2 | 3 | 4 | 5; comment?: string; at: number };
   createdAt: number;
   synced: boolean;
   cloudUserId?: string;
@@ -142,6 +144,8 @@ export interface RestaurantSettings {
   serviceChargePct?: number;
   /** Highest discount % cashiers and captains can give. */
   staffDiscountLimit?: number;
+  /** Loyalty: % of each bill earned back as points (1 point = ₹1). 0 turns loyalty off. */
+  loyaltyPct?: number;
   updatedAt?: number;
 }
 
@@ -190,6 +194,8 @@ export interface Customer {
   name?: string;
   /** Loyalty points balance comes from bills; this holds manual adjustments only. */
   pointsAdjustment?: number;
+  /** Payments received against amounts the guest owed (bills paid as "Due"). */
+  duesPaid?: { id: string; amount: number; mode: PaymentMode; at: number; by?: string }[];
   note?: string;
   createdAt: number;
 }

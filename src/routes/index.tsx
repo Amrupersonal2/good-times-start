@@ -6,6 +6,8 @@ import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { PaymentPanel, ReasonPrompt, UpiPay } from "@/components/PaymentDialogs";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { maxDiscountFor, type Payment } from "@/lib/payment-logic";
+import { customerStats, normalisePhone } from "@/lib/customer-logic";
+import { saveFeedback } from "@/lib/customer-actions";
 import { VegMark } from "@/components/VegMark";
 import { Receipt } from "@/components/Receipt";
 import { getDb } from "@/lib/db";
@@ -98,6 +100,18 @@ function PosPage() {
   const maxDiscount = maxDiscountFor(user?.role ?? "unknown", settings.staffDiscountLimit ?? 10);
   const discountChoices = [0, 5, 10, 15, 20, 25, 30, 50, 100].filter((d) => d <= maxDiscount || d === cart.discountPct);
   const canCancel = !user || isAdmin(user);
+  const guestId = normalisePhone(cart.customer.phone);
+  const guest = useLiveQuery(async () => {
+    if (!guestId) return null;
+    const known = await getDb().customers.get(guestId);
+    if (!known) return null;
+    return { customer: known, stats: customerStats(known, await getDb().orders.toArray(), settings.loyaltyPct ?? 0) };
+  }, [guestId, settings.loyaltyPct], null);
+  const guestName = guest?.customer.name;
+  useEffect(() => {
+    if (guestName && !cart.customer.name) cart.setCustomer({ ...cart.customer, name: guestName });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fill the name once when a known guest is recognised
+  }, [guestName]);
   /** Captains take orders and send KOTs; a cashier or manager settles. */
   const canSettle = user?.role !== "captain";
 
@@ -256,6 +270,13 @@ function PosPage() {
             <input aria-label="Guest phone" placeholder="Phone" inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
           </div>
         ) : null}
+        {guest ? (
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Returning guest: {guest.stats.visits} visit{guest.stats.visits === 1 ? "" : "s"}
+            {(settings.loyaltyPct ?? 0) > 0 ? `, ${guest.stats.points} points` : ""}
+            {guest.stats.due > 0 ? <span className="font-semibold text-destructive">, {formatINR(guest.stats.due, 0)} due</span> : null}
+          </p>
+        ) : null}
         {!canSettle ? <p className="mt-3 rounded-lg bg-secondary p-3 text-center text-xs text-muted-foreground">Send the KOT here. The cashier settles the bill from the counter.</p> : null}
         <div className={`mt-3 grid grid-cols-4 gap-2 ${canSettle ? "" : "hidden"}`}>
           {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).map(([m, l, Icon]) => (
@@ -377,6 +398,7 @@ function PosPage() {
         <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto">
           {payOpen ? <PaymentPanel lines={cart.lines} discountPct={cart.discountPct} serviceChargePct={cart.serviceChargePct}
             canSplitBill={!!cart.activeOrder && cart.lines.reduce((s, l) => s + l.qty, 0) > 1}
+            pointsAvailable={(settings.loyaltyPct ?? 0) > 0 ? guest?.stats.points ?? 0 : 0} hasCustomer={!!guestId}
             onSettle={(p) => void payWith(p)} onSettlePart={(q, p) => void payPart(q, p)} /> : null}
         </DialogContent>
       </Dialog>
@@ -404,6 +426,7 @@ function PosPage() {
           <button onClick={() => window.print()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
             <Printer className="size-4" /> Print receipt
           </button>
+          {receipt ? <FeedbackPrompt key={receipt.uid ?? receipt.billNo} order={receipt} /> : null}
         </DialogContent>
       </Dialog>
       {kitchenTickets.length > 0 ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
@@ -455,6 +478,30 @@ function ItemOptions({ item, orderType, onAdd }: { item: MenuItem; orderType: Or
         </fieldset>
       ) : null}
       <Button className="mt-5 w-full" onClick={() => onAdd(variantId, addonIds)}>Add to bill, {formatINR(line.price, 0)}</Button>
+    </div>
+  );
+}
+
+/** Quick guest rating after settling; shows up against the guest and in reports. */
+function FeedbackPrompt({ order }: { order: Order }) {
+  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [comment, setComment] = useState("");
+  const [saved, setSaved] = useState(false);
+  if (saved) return <p className="text-center text-sm text-muted-foreground">Thanks, feedback saved.</p>;
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="text-sm font-semibold">How did the guest rate their visit?</p>
+      <div className="mt-2 flex gap-1" role="radiogroup" aria-label="Rating">
+        {([1, 2, 3, 4, 5] as const).map((n) => (
+          <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} of 5`} onClick={() => setRating(n)}>
+            <Star className={`size-7 ${rating !== null && n <= rating ? "fill-gold text-gold" : "text-muted-foreground"}`} />
+          </button>
+        ))}
+      </div>
+      {rating !== null ? <>
+        <input value={comment} maxLength={200} onChange={(e) => setComment(e.target.value)} placeholder="What did they say? (optional)" className="mt-2 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm" />
+        <Button size="sm" className="mt-2" onClick={() => { void saveFeedback(order, rating, comment).then(() => setSaved(true)); }}>Save feedback</Button>
+      </> : null}
     </div>
   );
 }

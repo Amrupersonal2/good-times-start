@@ -6,6 +6,7 @@ export const PAYMENT_MODES: { v: PaymentMode; l: string }[] = [
   { v: "card", l: "Card" },
   { v: "wallet", l: "Wallet" },
   { v: "credit", l: "Due (pay later)" },
+  { v: "points", l: "Loyalty points" },
 ];
 
 export interface Payment { mode: PaymentMode; amount: number }
