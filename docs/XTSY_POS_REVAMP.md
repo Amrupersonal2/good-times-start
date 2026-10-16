@@ -33,9 +33,9 @@ syncs to Lovable and the live app) only after review in Lovable.
 - [x] Design refresh: XTSY POS design tokens, app shell, settings
 
 ### Phase 2 — Menu & floor
-- [ ] Menu builder: add/edit/delete items and categories, kitchen stations
-- [ ] Variants (half/full), add-ons, order-type pricing
-- [ ] Floor builder: sections and tables; move and merge tables
+- [x] Menu builder: add/edit/delete items and categories, kitchen stations
+- [x] Variants (half/full), add-ons, order-type pricing, stock per dish
+- [x] Floor builder: sections and tables; move and merge tables
 
 ### Phase 3 — Billing
 - [ ] Split payments and split bills, UPI QR on screen

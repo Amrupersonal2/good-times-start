@@ -9,7 +9,9 @@ import { getDb } from "@/lib/db";
 import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
 import { useCart } from "@/lib/cart-store";
-import type { Kot, Order, OrderType, PaymentMode } from "@/lib/types";
+import type { Kot, MenuItem, Order, OrderType, PaymentMode } from "@/lib/types";
+import { buildLine, needsOptions, priceFor, stockLeft } from "@/lib/menu-logic";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -65,6 +67,23 @@ function PosPage() {
       return cat === "Popular" ? i.popular : i.category === cat;
     });
   }, [menu, q, cat]);
+
+  const inventory = useLiveQuery(() => getDb().inventory.toArray(), [], []);
+  const [choosing, setChoosing] = useState<MenuItem | null>(null);
+  /** Portions of a dish already on this bill, across all its portion and add-on lines. */
+  const qtyInCart = (menuItemId: string) =>
+    cart.lines.filter((l) => (l.menuItemId ?? l.itemId) === menuItemId).reduce((sum, l) => sum + l.qty, 0);
+  const hasStockFor = (item: MenuItem) => {
+    const left = stockLeft(item.id, inventory);
+    if (left === null || qtyInCart(item.id) < left) return true;
+    toast.error(left === 0 ? `${item.name} is sold out` : `Only ${left} ${item.name} left`);
+    return false;
+  };
+  const pick = (item: MenuItem) => {
+    if (!hasStockFor(item)) return;
+    if (needsOptions(item)) setChoosing(item);
+    else cart.addItem(item);
+  };
 
   const pay = async (mode: PaymentMode) => {
     const o = await cart.settle(mode);
@@ -127,7 +146,7 @@ function PosPage() {
           <select aria-label="Select table" value={cart.tableId ?? ""} onChange={(e) => cart.setTableId(e.target.value || undefined)}
             className="mt-3 w-full rounded-xl border border-input bg-card px-3 py-2 text-sm">
             <option value="">Select table</option>
-            {tables.map((t) => <option key={t.id} value={t.id}>{t.label} · {t.section}</option>)}
+            {tables.map((t) => <option key={t.id} value={t.id}>{t.label} ({t.section})</option>)}
           </select>
         )}
       </div>
@@ -232,16 +251,26 @@ function PosPage() {
           </div>
           <div className="grid flex-1 auto-rows-min grid-cols-2 gap-3 overflow-y-auto px-4 pb-4 sm:grid-cols-3 xl:grid-cols-4">
             {items.map((i) => {
-              const inCart = cart.lines.find((l) => l.itemId === i.id)?.qty;
+              const inCart = qtyInCart(i.id);
+              const left = stockLeft(i.id, inventory);
+              const remaining = left === null ? null : left - inCart;
+              const soldOut = remaining !== null && remaining <= 0;
+              const stock = inventory.find((s) => s.menuItemId === i.id);
+              const low = remaining !== null && !!stock && remaining <= stock.lowStockThreshold;
               return (
-                <button key={i.id} onClick={() => cart.addItem(i)}
-                  className="card-elevated relative flex min-h-24 flex-col justify-between p-3 text-left transition-transform active:scale-[0.97] hover:border-primary/40">
+                <button key={i.id} onClick={() => pick(i)} disabled={soldOut}
+                  className="card-elevated relative flex min-h-24 flex-col justify-between p-3 text-left transition-transform hover:border-primary/40 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
                   {inCart ? <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{inCart}</span> : null}
                   <div className="flex items-start gap-2 pr-6">
                     <span className="mt-0.5"><VegMark veg={i.veg} /></span>
                     <span className="text-sm font-semibold leading-snug">{i.name}</span>
                   </div>
-                  <span className="mt-2 text-sm font-bold text-primary">{formatINR(i.price, 0)}</span>
+                  <span className="mt-2 flex items-end justify-between gap-2">
+                    <span className="text-sm font-bold text-primary">{i.variants?.length ? `from ${formatINR(i.price, 0)}` : formatINR(priceFor(i, cart.orderType), 0)}</span>
+                    {soldOut ? <span className="text-[11px] font-semibold text-destructive">Sold out</span>
+                      : low ? <span className="rounded bg-gold/25 px-1.5 text-[11px] font-semibold text-gold-foreground">{remaining} left</span>
+                      : needsOptions(i) ? <span className="text-[11px] text-muted-foreground">Options</span> : null}
+                  </span>
                 </button>
               );
             })}
@@ -280,6 +309,13 @@ function PosPage() {
         </div>
       )}
 
+      <Dialog open={!!choosing} onOpenChange={(o) => { if (!o) setChoosing(null); }}>
+        <DialogContent className="max-w-sm">
+          {choosing ? <ItemOptions key={choosing.id} item={choosing} orderType={cart.orderType}
+            onAdd={(variantId, addonIds) => { if (hasStockFor(choosing)) cart.addItem(choosing, variantId, addonIds); setChoosing(null); }} /> : null}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!receipt} onOpenChange={(o) => !o && setReceipt(null)}>
         <DialogContent className="max-h-[90vh] max-w-sm overflow-y-auto">
           <DialogTitle>Bill settled</DialogTitle>
@@ -291,10 +327,53 @@ function PosPage() {
       </Dialog>
       {kitchenTickets.length > 0 ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
         {kitchenTickets.map((kot, index) => <Receipt key={`${kot.billNo}-${kot.station}-${index}`} order={{
-          billNo: kot.billNo, orderType: kot.orderType ?? cart.orderType, tableId: kot.tableId, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, ...(line.note ? { note: line.note } : {}) })),
+          billNo: kot.billNo, orderType: kot.orderType ?? cart.orderType, tableId: kot.tableId, tableLabel: kot.tableLabel, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, ...(line.note ? { note: line.note } : {}) })),
           subtotal: 0, discountPct: 0, discountAmt: 0, cgst: 0, sgst: 0, roundOff: 0, total: 0, payments: [], status: "held", createdAt: kot.createdAt, synced: false,
         }} mode="kot" kot={kot} />)}
       </div> : null}
     </AppShell>
+  );
+}
+
+/** Pick a portion (required when the dish has portions) and any add-ons. */
+function ItemOptions({ item, orderType, onAdd }: { item: MenuItem; orderType: OrderType; onAdd: (variantId: string | undefined, addonIds: string[]) => void }) {
+  const [variantId, setVariantId] = useState<string | undefined>(item.variants?.[0]?.id);
+  const [addonIds, setAddonIds] = useState<string[]>([]);
+  const line = buildLine(item, orderType, variantId, addonIds);
+  const toggle = (id: string) => setAddonIds((prev) => (prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]));
+
+  return (
+    <div>
+      <DialogTitle className="flex items-center gap-2"><VegMark veg={item.veg} />{item.name}</DialogTitle>
+      {item.variants?.length ? (
+        <fieldset className="mt-4">
+          <legend className="text-sm font-semibold">Portion</legend>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {item.variants.map((v) => (
+              <button key={v.id} type="button" role="radio" aria-checked={variantId === v.id} onClick={() => setVariantId(v.id)}
+                className={`rounded-lg border px-3 py-3 text-left ${variantId === v.id ? "border-primary bg-primary-tint" : "border-border"}`}>
+                <span className="block text-sm font-semibold">{v.name}</span>
+                <span className="text-sm text-muted-foreground">{formatINR(v.price, 0)}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+      {item.addons?.length ? (
+        <fieldset className="mt-4">
+          <legend className="text-sm font-semibold">Add-ons</legend>
+          <div className="mt-2 space-y-1.5">
+            {item.addons.map((a) => (
+              <label key={a.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-sm">
+                <input type="checkbox" checked={addonIds.includes(a.id)} onChange={() => toggle(a.id)} className="size-4" />
+                <span className="flex-1">{a.name}</span>
+                <span className="text-muted-foreground">{a.price ? `+${formatINR(a.price, 0)}` : "Free"}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+      <Button className="mt-5 w-full" onClick={() => onAdd(variantId, addonIds)}>Add to bill, {formatINR(line.price, 0)}</Button>
+    </div>
   );
 }

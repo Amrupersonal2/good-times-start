@@ -48,7 +48,7 @@ function KitchenPage() {
                         <span className="rounded-md bg-primary-tint px-2 py-0.5 font-semibold text-primary">{k.station}</span>
                         <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3" />{Math.max(0, Math.round((Date.now() - k.createdAt) / 60000))}m</span>
                       </div>
-                      <div className="mt-1 text-sm font-bold">{k.tableId ? `Table ${k.tableId}` : k.orderType ?? ""}<span className="ml-2 text-[11px] font-normal text-muted-foreground">{k.billNo}</span></div>
+                      <div className="mt-1 text-sm font-bold">{k.tableId ? `Table ${k.tableLabel ?? k.tableId}` : k.orderType ?? ""}<span className="ml-2 text-[11px] font-normal text-muted-foreground">{k.billNo}</span></div>
                       <ul className="mt-2 space-y-1 text-sm">
                         {k.lines.map((l, i) => (
                           <li key={i}><span className="font-bold">{l.qty}×</span> {l.name}{l.note && <span className="block text-xs text-warning">↳ {l.note}</span>}</li>

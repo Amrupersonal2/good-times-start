@@ -30,7 +30,7 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
   }, [order.total, order.billNo, showQr, settings.upiVpa, settings.name]);
 
   const priceOf = (itemId: string | undefined) => order.lines.find((line) => line.itemId === itemId)?.price ?? 0;
-  const table = kot?.tableId ?? order.tableId;
+  const table = kot?.tableLabel ?? kot?.tableId ?? order.tableLabel ?? order.tableId;
 
   if (mode === "kot") {
     return (
@@ -65,11 +65,12 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
         {settings.gstin ? <div>GSTIN {settings.gstin}</div> : null}
         {settings.fssai ? <div>FSSAI Lic. {settings.fssai}</div> : null}
         <div className="mt-1 font-bold">{order.status === "void" ? "Void bill" : settings.gstin ? "Tax invoice" : "Bill"}</div>
+        {order.status === "void" && order.voidReason ? <div>{order.voidReason}</div> : null}
       </div>
       <Rule />
       <div className="flex justify-between"><span>Bill {order.billNo}</span><span>{new Date(order.createdAt).toLocaleDateString("en-IN")}</span></div>
       <div className="flex justify-between">
-        <span>{ORDER_TYPE_LABEL[order.orderType]}{order.tableId ? `, table ${order.tableId}` : ""}</span>
+        <span>{ORDER_TYPE_LABEL[order.orderType]}{table ? `, table ${table}` : ""}</span>
         <span>{new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
       </div>
       <Rule />

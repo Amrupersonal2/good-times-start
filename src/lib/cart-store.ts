@@ -7,6 +7,8 @@ import { getDb, getDeviceCode, markDirty, nextSeq } from "./db";
 import { accumulateSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
+import { buildLine, priceFor } from "./menu-logic";
+import { latestHeldOrder } from "./table-actions";
 
 function kotGroups(lines: CartLine[]) {
   const groups = new Map<string, CartLine[]>();
@@ -14,10 +16,9 @@ function kotGroups(lines: CartLine[]) {
   return groups;
 }
 
-/** The running (held) order for a table — the newest one if two devices raced. */
-async function latestHeldOrder(tableId: string): Promise<Order | null> {
-  const held = await getDb().orders.where("tableId").equals(tableId).filter((o) => o.status === "held").toArray();
-  return held.sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
+async function tableLabelOf(tableId: string | undefined): Promise<string | undefined> {
+  if (!tableId) return undefined;
+  return (await getDb().restTables.get(tableId))?.label ?? tableId;
 }
 
 async function orderByUid(uid: string): Promise<Order | null> {
@@ -94,18 +95,33 @@ export function useCart(initialTableId?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- react only to changes in the shared order
   }, [liveOrder, draftReady]);
 
-  const addItem = useCallback((item: MenuItem) => {
+  /** Add one of a dish, with an optional portion and add-ons, priced for the current order type. */
+  const addItem = useCallback((item: MenuItem, variantId?: string, addonIds: string[] = []) => {
+    const line = buildLine(item, orderType, variantId, addonIds);
     setLines((prev) => {
-      const index = prev.findIndex((line) => line.itemId === item.id);
+      const index = prev.findIndex((existing) => existing.itemId === line.itemId);
       if (index >= 0) {
         const next = [...prev];
         const current = next[index];
         if (current) next[index] = { ...current, qty: current.qty + 1 };
         return next;
       }
-      return [...prev, { itemId: item.id, name: item.name, price: item.price, qty: 1, veg: item.veg, gstRate: item.gstRate, station: item.station }];
+      return [...prev, line];
     });
-  }, []);
+  }, [orderType]);
+
+  /** Switching to takeaway, delivery or an aggregator reprices plain dishes not yet sent to the kitchen. */
+  const changeOrderType = useCallback((next: OrderType) => {
+    setOrderType(next);
+    if (activeOrder) return;
+    void getDb().menu.toArray().then((menu) => {
+      const byId = new Map(menu.map((item) => [item.id, item]));
+      setLines((prev) => prev.map((line) => {
+        const item = line.menuItemId ? undefined : byId.get(line.itemId);
+        return item ? { ...line, price: priceFor(item, next) } : line;
+      }));
+    });
+  }, [activeOrder]);
 
   const setQty = useCallback((itemId: string, qty: number) => {
     setLines((prev) => (qty <= 0 ? prev.filter((line) => line.itemId !== itemId) : prev.map((line) => (line.itemId === itemId ? { ...line, qty } : line))));
@@ -149,10 +165,11 @@ export function useCart(initialTableId?: string) {
     const base = latest && latest.status === "held" ? latest : null;
     const merged = base ? mergeSentLines(base.lines, pendingKitchenLines) : lines;
     const t = computeTotals(merged, discountPct);
+    const tableLabel = await tableLabelOf(tableId);
     const order: Order = base
       ? { ...base, lines: merged, ...t, discountPct, status: "held" }
       : {
-          uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, lines: merged,
+          uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false,
         };
@@ -167,7 +184,7 @@ export function useCart(initialTableId?: string) {
       saved.id = id;
       await db.orders.put(saved);
       kots = Array.from(kotGroups(pendingKitchenLines), ([station, stationLines]): Kot => ({
-        uid: newUid(), orderId: id, orderUid, billNo: saved.billNo, station, tableId, orderType,
+        uid: newUid(), orderId: id, orderUid, billNo: saved.billNo, station, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
         lines: stationLines.map((line) => ({ itemId: line.itemId, name: line.name, qty: line.qty, note: line.note })),
         status: "new", createdAt: now,
       }));
@@ -196,7 +213,7 @@ export function useCart(initialTableId?: string) {
       ...(latest ?? ({} as Order)),
       uid: latest?.uid ?? newUid(),
       billNo: latest?.billNo ?? await newBillNumber(new Date()),
-      orderType, tableId, lines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
+      orderType, tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
       payments: [{ mode, amount: t.total }], status: "settled", createdAt: latest?.createdAt ?? Date.now(), synced: false,
     };
@@ -219,5 +236,5 @@ export function useCart(initialTableId?: string) {
     return order;
   }, [activeOrder, discountPct, lines, orderType, tableId]);
 
-  return { lines, orderType, setOrderType, tableId, setTableId, discountPct, setDiscountPct, addItem, setQty, setNote, clear, totals, settle, sendKitchen, pendingKitchenLines, activeOrder };
+  return { lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct, addItem, setQty, setNote, clear, totals, settle, sendKitchen, pendingKitchenLines, activeOrder };
 }

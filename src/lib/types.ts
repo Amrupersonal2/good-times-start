@@ -3,21 +3,42 @@ export type PaymentMode = "cash" | "upi" | "card" | "wallet" | "credit";
 export type TableStatus = "free" | "occupied" | "billed" | "reserved";
 export type KotStatus = "new" | "preparing" | "ready";
 
+export type GstRate = 0 | 5 | 12 | 18 | 28;
+
+/** A priced choice such as Half / Full, or an add-on such as Extra cheese. */
+export interface MenuOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
   category: string;
+  /** Base price, or the price of the first portion when portions exist. */
   price: number;
   veg: boolean;
-  gstRate: 0 | 5 | 12 | 18 | 28;
-  station: "Tandoor" | "Chinese" | "South Indian" | "Beverages" | "Main Course" | "Desserts";
+  gstRate: GstRate;
+  /** Kitchen station that receives this dish's KOT. */
+  station: string;
   available: boolean;
   popular?: boolean;
   stockTracked?: boolean;
+  /** Portions; when present the cashier must pick one. */
+  variants?: MenuOption[];
+  addons?: MenuOption[];
+  /** Price overrides by order type, e.g. a higher Swiggy price. Ignored for dishes with portions. */
+  prices?: Partial<Record<OrderType, number>>;
 }
 
 export interface CartLine {
+  /** Identifies the line: the menu item id, plus portion and add-ons when chosen. */
   itemId: string;
+  /** Menu item this line came from (for stock); absent on plain lines where it equals itemId. */
+  menuItemId?: string;
+  variant?: string;
+  addons?: { name: string; price: number }[];
   name: string;
   price: number;
   qty: number;
@@ -34,6 +55,8 @@ export interface Order {
   billNo: string;
   orderType: OrderType;
   tableId?: string | undefined;
+  /** Table name as printed, e.g. "T4"; kept with the bill in case the table is renamed later. */
+  tableLabel?: string | undefined;
   lines: CartLine[];
   subtotal: number;
   discountPct: number;
@@ -44,6 +67,7 @@ export interface Order {
   total: number;
   payments: { mode: PaymentMode; amount: number }[];
   status: "held" | "settled" | "void";
+  voidReason?: string;
   createdAt: number;
   synced: boolean;
   cloudUserId?: string;
@@ -72,7 +96,7 @@ export interface InventoryItem {
 export interface RestaurantTable {
   id: string;
   label: string;
-  section: "AC" | "Non-AC" | "Rooftop";
+  section: string;
   seats: number;
   status: TableStatus;
   runningTotal: number;
@@ -86,6 +110,7 @@ export interface Kot {
   orderId: number;
   orderUid?: string;
   tableId?: string | undefined;
+  tableLabel?: string | undefined;
   orderType?: OrderType;
   billNo: string;
   station: string;
