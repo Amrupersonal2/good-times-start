@@ -101,10 +101,38 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/customers' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/stock' | '/tables'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/customers'
+    | '/kitchen'
+    | '/menu'
+    | '/reports'
+    | '/settings'
+    | '/stock'
+    | '/tables'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/customers' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/stock' | '/tables'
-  id: '__root__' | '/' | '/auth' | '/customers' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/stock' | '/tables'
+  to:
+    | '/'
+    | '/auth'
+    | '/customers'
+    | '/kitchen'
+    | '/menu'
+    | '/reports'
+    | '/settings'
+    | '/stock'
+    | '/tables'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/customers'
+    | '/kitchen'
+    | '/menu'
+    | '/reports'
+    | '/settings'
+    | '/stock'
+    | '/tables'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {

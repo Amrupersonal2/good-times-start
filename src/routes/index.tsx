@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) => ({ table: typeof search["table"] === "string" ? search["table"] : undefined }),
+  validateSearch: (search: Record<string, unknown>): { table?: string } => (typeof search["table"] === "string" ? { table: search["table"] } : {}),
   head: () => ({
     meta: [
       { title: "Billing — XTSY POS" },
