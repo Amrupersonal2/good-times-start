@@ -87,6 +87,8 @@ export interface Order {
 export interface CartDraft {
   id: string;
   tableId?: string | undefined;
+  /** The running bill this draft builds on; a draft for a bill that has since closed is discarded. */
+  orderUid?: string | undefined;
   lines: CartLine[];
   discountPct: number;
   updatedAt: number;

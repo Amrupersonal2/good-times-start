@@ -109,8 +109,9 @@ async function push(restaurantId: string): Promise<void> {
 
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
-  const pending = new Set((await db.outbox.toCollection().primaryKeys()).map(String));
-  await db.transaction("rw", [db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses], async () => {
+  // The outbox is read inside the same transaction, so a local edit can't slip in between the check and the write.
+  await db.transaction("rw", [db.outbox, db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses], async () => {
+    const pending = new Set((await db.outbox.toCollection().primaryKeys()).map(String));
     for (const row of rows) {
       if (!isKind(row.kind)) continue;
       // Local edits that haven't been pushed yet win; they'll overwrite the cloud copy next push.

@@ -45,8 +45,12 @@ export function useCart(initialTableId?: string) {
   const restoreDraft = useCallback(async (id: string | undefined) => {
     setDraftReady(false);
     setActiveOrder(null);
-    const draft = await getDb().drafts.get(id ?? "walkin");
+    const stored = await getDb().drafts.get(id ?? "walkin");
     const openOrder = id ? await latestHeldOrder(id) : null;
+    // A draft built on a bill that has since been settled, cancelled or replaced elsewhere is stale:
+    // its "sent" items would look unsent and could reach the kitchen twice.
+    const draft = stored && (!stored.orderUid || stored.orderUid === openOrder?.uid) ? stored : undefined;
+    if (stored && !draft) void getDb().drafts.delete(stored.id);
     // A table opened on this device for the first time shows what other devices already sent.
     setLines(draft?.lines.length ? draft.lines : openOrder?.lines ?? []);
     setDiscountPct(draft?.discountPct ?? openOrder?.discountPct ?? 0);
@@ -62,7 +66,7 @@ export function useCart(initialTableId?: string) {
   useEffect(() => {
     if (!draftReady) return;
     const timeout = window.setTimeout(() => {
-      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, lines, discountPct, updatedAt: Date.now() });
+      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, lines, discountPct, updatedAt: Date.now() });
       if (tableId && lines.length) {
         const total = computeTotals(lines, discountPct, serviceChargePct).total;
         void getDb().restTables.get(tableId).then(async (table) => {
@@ -73,7 +77,7 @@ export function useCart(initialTableId?: string) {
       }
     }, 150);
     return () => window.clearTimeout(timeout);
-  }, [draftReady, tableId, lines, discountPct, serviceChargePct]);
+  }, [draftReady, tableId, lines, discountPct, serviceChargePct, activeOrder?.uid]);
 
   // Follow the shared copy of the running order: another device may add items or settle it.
   const activeUid = activeOrder?.uid;
