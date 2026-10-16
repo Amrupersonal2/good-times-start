@@ -53,6 +53,14 @@ describe("menu logic", () => {
     expect("errors" in result && result.errors).toEqual(["Enter the dish name.", "Choose or type a category.", "Enter a price."]);
   });
 
+  it("keeps recipes and merges repeated materials", () => {
+    const draft = { ...draftFromItem(tikka), recipe: [{ materialId: "paneer", qty: "0.15" }, { materialId: "paneer", qty: "0.05" }, { materialId: "", qty: "" }] };
+    const result = itemFromDraft("i1", draft);
+    expect("item" in result && result.item.recipe).toEqual([{ materialId: "paneer", qty: 0.2 }]);
+    const bad = itemFromDraft("i1", { ...draft, recipe: [{ materialId: "paneer", qty: "0" }] });
+    expect("errors" in bad).toBe(true);
+  });
+
   it("takes the first portion's price as the base price", () => {
     const draft = { ...draftFromItem(), name: "Biryani", category: "Rice", price: "", variants: [{ id: "a", name: "Half", price: "200" }, { id: "b", name: "Full", price: "350" }] };
     const result = itemFromDraft("x", draft);

@@ -270,7 +270,7 @@ export function useCart(initialTableId?: string) {
     const db = getDb();
     const id = order.id ? await db.orders.put(order) : Number(await db.orders.add(order));
     order.id = id;
-    await applyLocalStockSale(lines);
+    await applyLocalStockSale(lines, { orderUid: order.uid ?? "", billNo: order.billNo, by: closedBy });
     await finishTable([["order", order.uid ?? ""]]);
     toast.success(`Bill ${order.billNo} settled`);
     return order;
@@ -318,7 +318,7 @@ export function useCart(initialTableId?: string) {
       changes.push(["table", tableId]);
     }
     await markDirty(...changes);
-    await applyLocalStockSale(split);
+    await applyLocalStockSale(split, { orderUid: part.uid ?? "", billNo: part.billNo, by: closedBy });
     setLines(remaining);
     toast.success(`Bill ${part.billNo} settled; the rest stays on the table`);
     return part;

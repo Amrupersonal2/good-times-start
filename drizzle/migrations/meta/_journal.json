@@ -22,6 +22,13 @@
       "when": 1792173050308,
       "tag": "0002_restaurant_accounts_and_live_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792174533538,
+      "tag": "0003_stock_and_customer_records",
+      "breakpoints": true
     }
   ]
 }

@@ -47,7 +47,7 @@ syncs to Lovable and the live app) only after review in Lovable.
 - [x] Captain (waiter) mobile ordering; role-based screens for captains and kitchen staff
 
 ### Phase 5 — Inventory & purchase
-- [ ] Raw materials, recipes, auto-deduction, purchases, suppliers, wastage
+- [x] Raw materials, recipes, auto-deduction, purchases, suppliers, wastage
 
 ### Phase 6 — Customers
 - [ ] Customer directory, visit history, loyalty points, feedback
@@ -75,5 +75,9 @@ syncs to Lovable and the live app) only after review in Lovable.
   latest local copy; pull applies newer server rows unless the record still has
   unpushed local changes (local edits win until pushed).
 - Orders and KOTs carry a global `uid`; numeric IndexedDB ids stay local.
+- Raw-material stock is an append-only ledger (`stock_entry` records:
+  purchases, recipe consumption per bill, wastage, counts, returns). Levels
+  are the sum of entries, so concurrent sales on two devices can't overwrite
+  each other. Sale entries are keyed by bill, so a bill can't deduct twice.
 - Realtime notifications on `restaurant_records` trigger a pull so other devices
   see new KOTs and table changes within seconds.

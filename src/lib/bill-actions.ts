@@ -1,5 +1,6 @@
 import { getDb, markDirty } from "./db";
 import { restockInventory } from "./inventory";
+import { reverseSaleConsumption } from "./stock-actions";
 import type { RecordKind } from "./sync-core";
 import type { Order } from "./types";
 
@@ -20,4 +21,5 @@ export async function voidSettledBill(order: Order, reason: string, by?: string)
     changes.push(...restocked.map((item): [RecordKind, string] => ["inventory", item.id]));
   }
   await markDirty(...changes);
+  if (latest.uid) await reverseSaleConsumption(latest.lines, { orderUid: latest.uid, billNo: latest.billNo, by });
 }

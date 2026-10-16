@@ -2,8 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
 import { deductInventory } from "@/lib/inventory";
+import { recordSaleConsumption } from "@/lib/stock-actions";
 import {
   RECORD_KINDS,
+  isCustomerPayload,
+  isMaterialPayload,
+  isStockEntryPayload,
+  isSupplierPayload,
   isInventoryPayload,
   isKotPayload,
   isMenuPayload,
@@ -52,6 +57,10 @@ async function readLocal(kind: RecordKind, recordId: string): Promise<unknown> {
     case "inventory": return db.inventory.get(recordId);
     case "order": return db.orders.where("uid").equals(recordId).first();
     case "kot": return db.kots.where("uid").equals(recordId).first();
+    case "material": return db.materials.get(recordId);
+    case "supplier": return db.suppliers.get(recordId);
+    case "stock_entry": return db.stockEntries.get(recordId);
+    case "customer": return db.customers.get(recordId);
   }
 }
 
@@ -99,7 +108,7 @@ async function push(restaurantId: string): Promise<void> {
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
   const pending = new Set((await db.outbox.toCollection().primaryKeys()).map(String));
-  await db.transaction("rw", [db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta], async () => {
+  await db.transaction("rw", [db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers], async () => {
     for (const row of rows) {
       if (!isKind(row.kind)) continue;
       // Local edits that haven't been pushed yet win; they'll overwrite the cloud copy next push.
@@ -155,6 +164,22 @@ async function applyRemote(rows: RemoteRow[]): Promise<void> {
           await db.kots.put(kot);
           break;
         }
+        case "material":
+          if (row.deleted) await db.materials.delete(id);
+          else if (isMaterialPayload(payload)) await db.materials.put({ ...payload, id });
+          break;
+        case "supplier":
+          if (row.deleted) await db.suppliers.delete(id);
+          else if (isSupplierPayload(payload)) await db.suppliers.put({ ...payload, id });
+          break;
+        case "stock_entry":
+          if (row.deleted) await db.stockEntries.delete(id);
+          else if (isStockEntryPayload(payload)) await db.stockEntries.put({ ...payload, id });
+          break;
+        case "customer":
+          if (row.deleted) await db.customers.delete(id);
+          else if (isCustomerPayload(payload)) await db.customers.put({ ...payload, id });
+          break;
       }
     }
   });
@@ -272,14 +297,19 @@ export function startLiveSync(restaurantId: string): () => void {
   };
 }
 
-/** Deduct tracked stock for a settled bill and queue the new levels for sync. */
-export async function applyLocalStockSale(soldLines: Order["lines"]): Promise<void> {
+/**
+ * Deduct stock for a settled bill: portions of dishes counted directly, and
+ * raw materials from each dish's recipe (as a ledger entry tied to the bill).
+ */
+export async function applyLocalStockSale(soldLines: Order["lines"], ref?: { orderUid: string; billNo: string; by?: string | undefined }): Promise<void> {
   const db = getDb();
   const items = await db.inventory.toArray();
   const changed = deductInventory(soldLines, items).filter((item) => item.synced === false);
-  if (!changed.length) return;
-  await db.inventory.bulkPut(changed);
-  await markDirty(...changed.map((item): [RecordKind, string] => ["inventory", item.id]));
+  if (changed.length) {
+    await db.inventory.bulkPut(changed);
+    await markDirty(...changed.map((item): [RecordKind, string] => ["inventory", item.id]));
+  }
+  if (ref) await recordSaleConsumption(soldLines, ref);
 }
 
 export async function getSyncSnapshot() {

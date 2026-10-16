@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { CartDraft, InventoryItem, Kot, MenuItem, Order, RestaurantSettings, RestaurantTable } from "./types";
+import type { CartDraft, Customer, InventoryItem, Kot, Material, MenuItem, Order, RestaurantSettings, RestaurantTable, StockEntry, Supplier } from "./types";
 import { SEED_MENU, SEED_TABLES } from "./seed";
 import {
   SETTINGS_RECORD_ID,
@@ -27,6 +27,10 @@ class RestroDB extends Dexie {
   inventory!: Table<InventoryItem, string>;
   drafts!: Table<CartDraft, string>;
   outbox!: Table<OutboxEntry, string>;
+  materials!: Table<Material, string>;
+  suppliers!: Table<Supplier, string>;
+  stockEntries!: Table<StockEntry, string>;
+  customers!: Table<Customer, string>;
 
   constructor() {
     super("restro-pos");
@@ -96,6 +100,21 @@ class RestroDB extends Dexie {
       const recent = at - 2 * 24 * 60 * 60 * 1000;
       for (const kot of await kots.where("createdAt").aboveOrEqual(recent).toArray()) if (kot.uid) queue("kot", kot.uid);
       await tx.table<OutboxEntry, string>("outbox").bulkPut(entries);
+    });
+    // XTSY POS: stock ledger and customer directory.
+    this.version(5).stores({
+      menu: "id, category, name",
+      orders: "++id, billNo, status, createdAt, tableId, uid",
+      restTables: "id, section, status",
+      kots: "++id, orderId, status, createdAt, uid",
+      meta: "key",
+      inventory: "id, menuItemId, tracked, synced",
+      drafts: "id, tableId, updatedAt",
+      outbox: "key, kind, at",
+      materials: "id, name",
+      suppliers: "id, name",
+      stockEntries: "id, type, at",
+      customers: "id, phone, name",
     });
   }
 }
@@ -210,8 +229,9 @@ export async function loadSampleData(): Promise<void> {
  */
 export async function resetDevice(): Promise<void> {
   const db = getDb();
-  await db.transaction("rw", [db.menu, db.orders, db.restTables, db.kots, db.inventory, db.drafts, db.outbox, db.meta], async () => {
-    await Promise.all([db.menu.clear(), db.orders.clear(), db.restTables.clear(), db.kots.clear(), db.inventory.clear(), db.drafts.clear(), db.outbox.clear()]);
+  await db.transaction("rw", [db.menu, db.orders, db.restTables, db.kots, db.inventory, db.drafts, db.outbox, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers], async () => {
+    await Promise.all([db.menu.clear(), db.orders.clear(), db.restTables.clear(), db.kots.clear(), db.inventory.clear(), db.drafts.clear(), db.outbox.clear(),
+      db.materials.clear(), db.suppliers.clear(), db.stockEntries.clear(), db.customers.clear()]);
     for (const key of ["restaurantId", "pullCursor", "restaurantSettings", "lastSyncAt", "syncError"]) await db.meta.delete(key);
   });
 }

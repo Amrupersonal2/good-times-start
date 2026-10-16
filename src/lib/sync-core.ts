@@ -1,9 +1,9 @@
-import type { CartLine, InventoryItem, Kot, MenuItem, Order, RestaurantSettings, RestaurantTable } from "./types";
+import type { CartLine, Customer, InventoryItem, Kot, Material, MenuItem, Order, RestaurantSettings, RestaurantTable, StockEntry, Supplier } from "./types";
 
 /** Kinds of records shared between a restaurant's devices (mirrors restaurant_records.kind). */
-export type RecordKind = "settings" | "menu" | "table" | "order" | "kot" | "inventory";
+export type RecordKind = "settings" | "menu" | "table" | "order" | "kot" | "inventory" | "material" | "supplier" | "stock_entry" | "customer";
 
-export const RECORD_KINDS: readonly RecordKind[] = ["settings", "menu", "table", "order", "kot", "inventory"];
+export const RECORD_KINDS: readonly RecordKind[] = ["settings", "menu", "table", "order", "kot", "inventory", "material", "supplier", "stock_entry", "customer"];
 
 /** The single settings record per restaurant. */
 export const SETTINGS_RECORD_ID = "restaurant";
@@ -91,6 +91,23 @@ export function isTablePayload(value: unknown): value is RestaurantTable {
 
 export function isInventoryPayload(value: unknown): value is InventoryItem {
   return isRecord(value) && isString(value["id"]) && isString(value["menuItemId"]) && isNumber(value["quantity"]);
+}
+
+export function isMaterialPayload(value: unknown): value is Material {
+  return isRecord(value) && isString(value["id"]) && isString(value["name"]) && isString(value["unit"]) && isNumber(value["lowStockLevel"]);
+}
+
+export function isSupplierPayload(value: unknown): value is Supplier {
+  return isRecord(value) && isString(value["id"]) && isString(value["name"]);
+}
+
+export function isStockEntryPayload(value: unknown): value is StockEntry {
+  return isRecord(value) && isString(value["id"]) && isString(value["type"]) && isNumber(value["at"]) && Array.isArray(value["items"]) &&
+    value["items"].every((item) => isRecord(item) && isString(item["materialId"]) && isNumber(item["qty"]));
+}
+
+export function isCustomerPayload(value: unknown): value is Customer {
+  return isRecord(value) && isString(value["id"]) && isString(value["phone"]) && isNumber(value["createdAt"]);
 }
 
 export function isSettingsPayload(value: unknown): value is RestaurantSettings {

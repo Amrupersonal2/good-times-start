@@ -73,6 +73,7 @@ export interface MenuDraft {
   variants: { id: string; name: string; price: string }[];
   addons: { id: string; name: string; price: string }[];
   prices: Partial<Record<OrderType, string>>;
+  recipe: { materialId: string; qty: string }[];
 }
 
 export function draftFromItem(item?: MenuItem): MenuDraft {
@@ -88,6 +89,7 @@ export function draftFromItem(item?: MenuItem): MenuDraft {
     variants: (item?.variants ?? []).map((v) => ({ id: v.id, name: v.name, price: String(v.price) })),
     addons: (item?.addons ?? []).map((a) => ({ id: a.id, name: a.name, price: String(a.price) })),
     prices: Object.fromEntries(Object.entries(item?.prices ?? {}).map(([k, v]) => [k, String(v)])) as Partial<Record<OrderType, string>>,
+    recipe: (item?.recipe ?? []).map((r) => ({ materialId: r.materialId, qty: String(r.qty) })),
   };
 }
 
@@ -130,6 +132,16 @@ export function itemFromDraft(id: string, draft: MenuDraft): { item: MenuItem } 
     else prices[v] = price;
   }
 
+  const recipe: { materialId: string; qty: number }[] = [];
+  for (const r of draft.recipe) {
+    if (!r.materialId && !r.qty.trim()) continue;
+    const qty = Number(r.qty.trim());
+    if (!r.materialId || !r.qty.trim() || !Number.isFinite(qty) || qty <= 0) { errors.push("Each recipe line needs a material and an amount above 0."); break; }
+    const existing = recipe.find((x) => x.materialId === r.materialId);
+    if (existing) existing.qty = Math.round((existing.qty + qty) * 1000) / 1000;
+    else recipe.push({ materialId: r.materialId, qty });
+  }
+
   if (errors.length || base === null) return { errors };
   const item: MenuItem = {
     id,
@@ -144,6 +156,7 @@ export function itemFromDraft(id: string, draft: MenuDraft): { item: MenuItem } 
     ...(variants.length ? { variants } : {}),
     ...(addons.length ? { addons } : {}),
     ...(Object.keys(prices).length && !variants.length ? { prices } : {}),
+    ...(recipe.length ? { recipe } : {}),
   };
   return { item };
 }

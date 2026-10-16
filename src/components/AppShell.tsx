@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
+import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,14 @@ import { getSyncSnapshot, saveSyncError, syncCloudData } from "@/lib/cloud-sync"
 import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
 import { EMPTY_SETTINGS, getDb, getSettings } from "@/lib/db";
+import { isLow, stockLevels } from "@/lib/stock-logic";
 
 const NAV = [
   { to: "/", label: "Billing", icon: ClipboardList },
   { to: "/tables", label: "Tables", icon: LayoutGrid },
   { to: "/kitchen", label: "Kitchen", icon: ChefHat },
   { to: "/menu", label: "Menu", icon: UtensilsCrossed },
+  { to: "/stock", label: "Stock", icon: Package },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
@@ -26,7 +28,7 @@ type NavPath = (typeof NAV)[number]["to"];
 
 /** Screens each role works with. Signed-out devices (single-user mode) see everything. */
 const ROLE_SCREENS: Record<string, NavPath[]> = {
-  kitchen: ["/kitchen", "/settings"],
+  kitchen: ["/kitchen", "/stock", "/settings"],
   captain: ["/", "/tables", "/kitchen", "/menu", "/settings"],
 };
 
@@ -205,6 +207,11 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
   const settings = useRestaurantSettings();
   const restaurantName = settings.name || user?.restaurantName || "";
   const needsRestaurant = !!user && !user.restaurantId && pathname !== "/settings";
+  const lowStock = useLiveQuery(async () => {
+    const [materials, entries] = await Promise.all([getDb().materials.toArray(), getDb().stockEntries.toArray()]);
+    const levels = stockLevels(entries);
+    return materials.filter((m) => !m.archived && isLow(m, levels.get(m.id) ?? 0)).length;
+  }, [], 0);
   const allowed = screensFor(user?.role);
   const nav = NAV.filter((n) => allowed.includes(n.to));
   const current = NAV.find((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
@@ -225,6 +232,7 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
                 {active ? <span className="absolute inset-y-2 left-0 w-1 rounded-r bg-gold" aria-hidden="true" /> : null}
                 <Icon className="size-5" />
                 {label}
+                {to === "/stock" && lowStock > 0 ? <span className="absolute right-2 top-1.5 min-w-5 rounded-full bg-gold px-1 text-[10px] font-bold text-gold-foreground" aria-label={`${lowStock} running low`}>{lowStock}</span> : null}
               </Link>
             );
           })}

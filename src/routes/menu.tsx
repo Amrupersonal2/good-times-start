@@ -14,7 +14,7 @@ import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
 import { newUid } from "@/lib/sync-core";
 import { DEFAULT_STATIONS, GST_RATES, PRICED_ORDER_TYPES, draftFromItem, itemFromDraft, type MenuDraft } from "@/lib/menu-logic";
-import type { GstRate, InventoryItem, MenuItem } from "@/lib/types";
+import type { GstRate, InventoryItem, Material, MenuItem } from "@/lib/types";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({
@@ -62,11 +62,12 @@ function OptionRows({ label, hint, rows, onChange, pricePlaceholder }: {
   );
 }
 
-function ItemEditor({ item, stock, categories, stations, onClose }: {
+function ItemEditor({ item, stock, categories, stations, materials, onClose }: {
   item: MenuItem | null;
   stock: InventoryItem | undefined;
   categories: string[];
   stations: string[];
+  materials: Material[];
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<MenuDraft>(() => draftFromItem(item ?? undefined));
@@ -172,7 +173,32 @@ function ItemEditor({ item, stock, categories, stations, onClose }: {
       ) : null}
 
       <fieldset className="rounded-lg border border-border p-3">
-        <legend className="px-1 text-sm font-semibold">Stock</legend>
+        <legend className="px-1 text-sm font-semibold">Recipe, per portion</legend>
+        {materials.length ? <>
+          <p className="text-xs text-muted-foreground">Ingredients used up each time this dish is billed. Leave empty if you don't track ingredients.</p>
+          <div className="mt-2 space-y-2">
+            {draft.recipe.map((row, index) => {
+              const unit = materials.find((m) => m.id === row.materialId)?.unit ?? "";
+              const update = (change: Partial<typeof row>) => set("recipe", draft.recipe.map((r, i) => (i === index ? { ...r, ...change } : r)));
+              return (
+                <div key={index} className="flex gap-2">
+                  <select aria-label="Ingredient" value={row.materialId} onChange={(e) => update({ materialId: e.target.value })} className="min-w-0 flex-1 rounded-lg border border-input bg-card px-2 py-2 text-sm">
+                    <option value="">Choose ingredient</option>
+                    {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                  <input aria-label="Amount per portion" inputMode="decimal" value={row.qty} onChange={(e) => update({ qty: e.target.value })} placeholder={unit || "Amount"} className="w-24 rounded-lg border border-input bg-card px-2 py-2 text-right text-sm" />
+                  <span className="w-10 self-center text-xs text-muted-foreground">{unit}</span>
+                  <Button type="button" size="icon" variant="ghost" aria-label="Remove ingredient" onClick={() => set("recipe", draft.recipe.filter((_, i) => i !== index))}><X /></Button>
+                </div>
+              );
+            })}
+          </div>
+          <Button type="button" size="sm" variant="ghost" className="mt-1" onClick={() => set("recipe", [...draft.recipe, { materialId: "", qty: "" }])}><Plus />Add ingredient</Button>
+        </> : <p className="text-xs text-muted-foreground">Add raw materials in Stock first to give this dish a recipe.</p>}
+      </fieldset>
+
+      <fieldset className="rounded-lg border border-border p-3">
+        <legend className="px-1 text-sm font-semibold">Portions in stock</legend>
         <label className="flex items-center gap-2 text-sm"><Switch checked={stockDraft.tracked} onCheckedChange={(v) => setStockDraft((s) => ({ ...s, tracked: v }))} />Count portions and stop selling at zero</label>
         {stockDraft.tracked ? (
           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -199,6 +225,7 @@ function ItemEditor({ item, stock, categories, stations, onClose }: {
 function MenuPage() {
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
   const inventory = useLiveQuery(() => getDb().inventory.toArray(), [], []);
+  const materials = useLiveQuery(async () => (await getDb().materials.toArray()).filter((m) => !m.archived).sort((a, b) => a.name.localeCompare(b.name)), [], []);
   const { user } = useStaff();
   const canEdit = !user || isAdmin(user);
   const [q, setQ] = useState("");
@@ -285,6 +312,7 @@ function MenuPage() {
               stock={editing === "new" ? undefined : stockFor(editing.id)}
               categories={categories}
               stations={stations}
+              materials={materials}
               onClose={() => setEditing(null)}
             />
           ) : null}

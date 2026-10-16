@@ -31,6 +31,8 @@ export interface MenuItem {
   addons?: MenuOption[];
   /** Price overrides by order type, e.g. a higher Swiggy price. Ignored for dishes with portions. */
   prices?: Partial<Record<OrderType, number>>;
+  /** Raw materials used per portion; deducted from stock when the bill settles. */
+  recipe?: { materialId: string; qty: number }[];
 }
 
 export interface CartLine {
@@ -141,4 +143,53 @@ export interface RestaurantSettings {
   /** Highest discount % cashiers and captains can give. */
   staffDiscountLimit?: number;
   updatedAt?: number;
+}
+
+export type StockUnit = "kg" | "g" | "l" | "ml" | "pcs" | "dozen" | "packet";
+
+/** A raw material such as Paneer or Basmati rice. Stock comes from the ledger, not a stored number. */
+export interface Material {
+  id: string;
+  name: string;
+  unit: StockUnit;
+  /** Warn when stock falls to or below this. */
+  lowStockLevel: number;
+  /** Last known cost per unit, for valuing stock. */
+  costPerUnit?: number;
+  archived?: boolean;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone?: string;
+  gstin?: string;
+  note?: string;
+}
+
+/**
+ * One append-only stock movement. Quantities are signed: purchases add, sales
+ * and wastage subtract, and counts add the difference to what was on the books.
+ */
+export interface StockEntry {
+  id: string;
+  type: "purchase" | "sale" | "wastage" | "count" | "return";
+  at: number;
+  items: { materialId: string; qty: number; unitCost?: number }[];
+  supplierId?: string;
+  /** Supplier invoice number, or the bill number for sales. */
+  reference?: string;
+  note?: string;
+  by?: string;
+}
+
+export interface Customer {
+  /** Phone number with country code stripped to digits, e.g. "9876543210". */
+  id: string;
+  phone: string;
+  name?: string;
+  /** Loyalty points balance comes from bills; this holds manual adjustments only. */
+  pointsAdjustment?: number;
+  note?: string;
+  createdAt: number;
 }
