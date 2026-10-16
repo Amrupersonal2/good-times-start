@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star } from "lucide-react";
+import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { VegMark } from "@/components/VegMark";
 import { Receipt } from "@/components/Receipt";
@@ -9,7 +9,7 @@ import { ensureSeed, getDb } from "@/lib/db";
 import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
 import { useCart } from "@/lib/cart-store";
-import type { Order, OrderType, PaymentMode } from "@/lib/types";
+import type { Kot, Order, OrderType, PaymentMode } from "@/lib/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/")({
@@ -43,6 +43,7 @@ function PosPage() {
   const [q, setQ] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [receipt, setReceipt] = useState<Order | null>(null);
+  const [kitchenTickets, setKitchenTickets] = useState<Kot[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const items = useMemo(() => {
@@ -57,6 +58,13 @@ function PosPage() {
   const pay = async (mode: PaymentMode) => {
     const o = await cart.settle(mode);
     if (o) { setReceipt(o); setCartOpen(false); }
+  };
+
+  const sendToKitchen = async () => {
+    const tickets = await cart.sendKitchen();
+    if (!tickets.length) return;
+    setKitchenTickets(tickets);
+    window.setTimeout(() => window.print(), 100);
   };
 
   useEffect(() => {
@@ -126,6 +134,17 @@ function PosPage() {
       </div>
 
       <div className="border-t border-border bg-card p-4">
+        {cart.lines.length > 0 ? <div className="mb-3 space-y-2 border-b border-border pb-3">
+          {cart.tableId ? <p className="text-sm font-semibold">{tables.find((t) => t.id === cart.tableId)?.label ?? cart.tableId}</p> : null}
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className={cart.pendingKitchenLines.length ? "text-warning" : "text-success"}>
+              {cart.pendingKitchenLines.length ? `${cart.pendingKitchenLines.reduce((sum, line) => sum + line.qty, 0)} item(s) not sent to kitchen` : "Kitchen ticket sent"}
+            </span>
+            <button disabled={!cart.pendingKitchenLines.length} onClick={() => void sendToKitchen()} className="inline-flex min-h-9 items-center gap-2 rounded-md bg-secondary px-3 font-semibold text-secondary-foreground disabled:opacity-50">
+              <ChefHat className="size-4" />Send & print KOT
+            </button>
+          </div>
+        </div> : null}
         <div className="space-y-1 text-sm">
           <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatINR(cart.totals.subtotal)}</span></div>
           <div className="flex items-center justify-between text-muted-foreground">
@@ -142,7 +161,7 @@ function PosPage() {
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2">
           {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).map(([m, l, Icon]) => (
-            <button key={m} disabled={!cart.lines.length} onClick={() => pay(m)}
+            <button key={m} disabled={!cart.lines.length || cart.pendingKitchenLines.length > 0} onClick={() => pay(m)}
               className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-40">
               <Icon className="size-4" />{l}
             </button>
@@ -231,6 +250,9 @@ function PosPage() {
           </button>
         </DialogContent>
       </Dialog>
+      {kitchenTickets.length > 0 && cart.activeOrder ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
+        {kitchenTickets.map((kot, index) => <Receipt key={`${kot.billNo}-${kot.station}-${index}`} order={{ ...cart.activeOrder!, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, note: line.note })) }} mode="kot" kot={kot} />)}
+      </div> : null}
     </AppShell>
   );
 }

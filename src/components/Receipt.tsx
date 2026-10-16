@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import type { Order } from "@/lib/types";
+import type { Kot, Order } from "@/lib/types";
 import { formatINR, upiLink } from "@/lib/billing";
 import { RESTAURANT } from "@/lib/seed";
 import logo from "@/assets/logo.png";
 
-export function Receipt({ order, mode = "bill" }: { order: Order; mode?: "kot" | "bill" }) {
+export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "kot" | "bill"; kot?: Kot }) {
   const [qr, setQr] = useState("");
   useEffect(() => {
     if (mode === "kot") return;
@@ -22,6 +22,7 @@ export function Receipt({ order, mode = "bill" }: { order: Order; mode?: "kot" |
         <div className="text-sm font-bold uppercase">{RESTAURANT.name}</div>
         <div>{mode === "kot" ? "KITCHEN ORDER TICKET" : RESTAURANT.address}</div>
         {mode === "kot" ? <div className="mt-1 text-sm font-bold">{order.tableId ? `TABLE ${order.tableId}` : order.orderType.toUpperCase()} · {order.billNo}</div> : null}
+        {mode === "kot" && kot ? <div className="mt-1 text-sm font-bold">{kot.station}</div> : null}
         <div>Ph: {RESTAURANT.phone}</div>
         <div>GSTIN: {RESTAURANT.gstin} · FSSAI: {RESTAURANT.fssai}</div>
       </div>
@@ -40,11 +41,11 @@ export function Receipt({ order, mode = "bill" }: { order: Order; mode?: "kot" |
           </tr>
         </thead>
         <tbody>
-          {order.lines.map((l, i) => (
+          {(mode === "kot" && kot ? kot.lines : order.lines).map((l, i) => (
             <tr key={i}>
               <td className="pr-1">{l.name}{l.note ? ` (${l.note})` : ""}</td>
               <td className="text-right">{l.qty}</td>
-              <td className="text-right">{formatINR(l.price * l.qty, 0)}</td>
+              {mode === "bill" ? <td className="text-right">{formatINR(order.lines[i]?.price ? order.lines[i].price * l.qty : 0, 0)}</td> : null}
             </tr>
           ))}
         </tbody>
