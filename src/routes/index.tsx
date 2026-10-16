@@ -64,8 +64,18 @@ function PosPage() {
     const tickets = await cart.sendKitchen();
     if (!tickets.length) return;
     setKitchenTickets(tickets);
-    window.setTimeout(() => window.print(), 100);
   };
+
+  useEffect(() => {
+    if (!kitchenTickets.length) return;
+    const timer = window.setTimeout(() => window.print(), 300);
+    const clear = () => setKitchenTickets([]);
+    window.addEventListener("afterprint", clear, { once: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("afterprint", clear);
+    };
+  }, [kitchenTickets]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -250,8 +260,11 @@ function PosPage() {
           </button>
         </DialogContent>
       </Dialog>
-      {kitchenTickets.length > 0 && cart.activeOrder ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
-        {kitchenTickets.map((kot, index) => <Receipt key={`${kot.billNo}-${kot.station}-${index}`} order={{ ...cart.activeOrder!, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, note: line.note })) }} mode="kot" kot={kot} />)}
+      {kitchenTickets.length > 0 ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
+        {kitchenTickets.map((kot, index) => <Receipt key={`${kot.billNo}-${kot.station}-${index}`} order={{
+          billNo: kot.billNo, orderType: cart.orderType, tableId: cart.tableId, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, note: line.note })),
+          subtotal: 0, discountPct: 0, discountAmt: 0, cgst: 0, sgst: 0, roundOff: 0, total: 0, payments: [], status: "held", createdAt: kot.createdAt, synced: false,
+        }} mode="kot" kot={kot} />)}
       </div> : null}
     </AppShell>
   );

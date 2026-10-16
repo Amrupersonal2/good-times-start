@@ -37,7 +37,7 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
       <table className="w-full">
         <thead>
           <tr className="text-left">
-            <th>Item</th><th className="text-right">Qty</th><th className="text-right">Amt</th>
+            <th>Item</th><th className="text-right">Qty</th>{mode === "bill" ? <th className="text-right">Amt</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -45,7 +45,7 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
             <tr key={i}>
               <td className="pr-1">{l.name}{l.note ? ` (${l.note})` : ""}</td>
               <td className="text-right">{l.qty}</td>
-              {mode === "bill" ? <td className="text-right">{formatINR(order.lines[i]?.price ? order.lines[i].price * l.qty : 0, 0)}</td> : null}
+              {mode === "bill" ? <td className="text-right">{formatINR(order.lines.find((line) => line.itemId === l.itemId)?.price ? (order.lines.find((line) => line.itemId === l.itemId)?.price ?? 0) * l.qty : 0, 0)}</td> : null}
             </tr>
           ))}
         </tbody>
