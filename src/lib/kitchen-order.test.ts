@@ -20,6 +20,8 @@ describe("kitchen ticket quantities", () => {
   });
 
   it("adds newly sent quantities to the stored totals", () => {
-    expect(accumulateSubmittedQuantities({ naan: 2 }, [lines[0]])).toEqual({ naan: 5 });
+    const naan = lines[0];
+    expect(naan).toBeDefined();
+    expect(accumulateSubmittedQuantities({ naan: 2 }, naan ? [naan] : [])).toEqual({ naan: 5 });
   });
 });

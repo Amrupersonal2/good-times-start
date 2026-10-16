@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) => ({ table: typeof search.table === "string" ? search.table : undefined }),
+  validateSearch: (search: Record<string, unknown>) => ({ table: typeof search["table"] === "string" ? search["table"] : undefined }),
   head: () => ({
     meta: [
       { title: "Billing — Restro POS by XTSY" },
@@ -261,7 +261,7 @@ function PosPage() {
       </Dialog>
       {kitchenTickets.length > 0 ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
         {kitchenTickets.map((kot, index) => <Receipt key={`${kot.billNo}-${kot.station}-${index}`} order={{
-          billNo: kot.billNo, orderType: cart.orderType, tableId: cart.tableId, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, note: line.note })),
+          billNo: kot.billNo, orderType: cart.orderType, tableId: cart.tableId, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, ...(line.note ? { note: line.note } : {}) })),
           subtotal: 0, discountPct: 0, discountAmt: 0, cgst: 0, sgst: 0, roundOff: 0, total: 0, payments: [], status: "held", createdAt: kot.createdAt, synced: false,
         }} mode="kot" kot={kot} />)}
       </div> : null}

@@ -35,6 +35,7 @@ function SyncChip() {
     const current = await getSyncSnapshot();
     await getDb().orders.count();
     await getDb().inventory.count();
+    await getDb().meta.toArray();
     return current;
   }, [], { pendingOrders: 0, lastSyncAt: null, error: "", pendingStock: 0 });
   const pending = snapshot.pendingOrders + snapshot.pendingStock;

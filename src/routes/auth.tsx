@@ -40,7 +40,7 @@ function AuthPage() {
       setMessage("Check your email to confirm your account before signing in.");
       return;
     }
-    await navigate({ to: "/" });
+    await navigate({ to: "/", search: {} });
   };
 
   const google = async () => {
@@ -69,7 +69,7 @@ function AuthPage() {
         <Button variant="link" className="mt-3 w-full" onClick={() => { setSignup(!signup); setMessage(""); }}>
           {signup ? "Already have an account? Sign in" : "New restaurant? Create an account"}
         </Button>
-        <Button variant="ghost" className="mt-2 w-full" onClick={() => void navigate({ to: "/" })}>Continue offline</Button>
+        <Button variant="ghost" className="mt-2 w-full" onClick={() => void navigate({ to: "/", search: {} })}>Continue offline</Button>
       </section>
     </main>
   );

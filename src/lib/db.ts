@@ -68,7 +68,8 @@ export async function ensureSeed() {
 export async function nextSeq(): Promise<number> {
   const db = getDb();
   return db.transaction("rw", db.meta, async () => {
-    const cur = (await db.meta.get("billSeq"))?.value ?? 0;
+    const stored = (await db.meta.get("billSeq"))?.value;
+    const cur = typeof stored === "number" ? stored : 0;
     await db.meta.put({ key: "billSeq", value: cur + 1 });
     return cur + 1;
   });
