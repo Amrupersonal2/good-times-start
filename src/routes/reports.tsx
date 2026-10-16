@@ -8,9 +8,9 @@ import { formatINR } from "@/lib/billing";
 export const Route = createFileRoute("/reports")({
   head: () => ({
     meta: [
-      { title: "Reports — Restro POS by XTSY" },
+      { title: "Reports — XTSY POS" },
       { name: "description", content: "Today's sales, bills, average order value, top items and payment split." },
-      { property: "og:title", content: "Sales Reports — Restro POS" },
+      { property: "og:title", content: "Reports — XTSY POS" },
       { property: "og:description", content: "Daily sales dashboard for your restaurant." },
     ],
   }),
@@ -50,7 +50,8 @@ function ReportsPage() {
   return (
     <AppShell>
       <div className="p-4 lg:p-6">
-        <h1 className="mb-5 text-2xl font-bold">Today</h1>
+        <h1 className="mb-1 text-2xl font-bold">Today</h1>
+        <p className="mb-5 text-sm text-muted-foreground">Settled bills from every device in the restaurant that has synced.</p>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {stats.map((s) => (
             <div key={s.l} className="card-elevated p-4">

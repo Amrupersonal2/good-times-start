@@ -23,14 +23,14 @@ syncs to Lovable and the live app) only after review in Lovable.
 ## Phases
 
 ### Phase 1 — Foundation
-- [ ] Restaurant profile: name, address, phone, GSTIN, FSSAI, UPI ID, bill footer
-- [ ] No demo restaurant details on bills; XTSY POS branding
-- [ ] Restaurant-scoped cloud data with roles: owner, manager, cashier, captain, kitchen
-- [ ] Staff invites by email; new sign-ups create their own restaurant
-- [ ] Live sync of menu, tables, open orders, KOTs, stock and settings across devices
-- [ ] Per-device bill series code
-- [ ] Opening a table on any device shows its running order
-- [ ] Design refresh: XTSY POS design tokens, app shell, settings
+- [x] Restaurant profile: name, address, phone, GSTIN, FSSAI, UPI ID, bill footer
+- [x] No demo restaurant details on bills; XTSY POS branding
+- [x] Restaurant-scoped cloud data with roles: owner, manager, cashier, captain, kitchen
+- [x] Staff invites by email; new sign-ups create their own restaurant
+- [x] Live sync of menu, tables, open orders, KOTs, stock and settings across devices
+- [x] Per-device bill series code
+- [x] Opening a table on any device shows its running order
+- [x] Design refresh: XTSY POS design tokens, app shell, settings
 
 ### Phase 2 — Menu & floor
 - [ ] Menu builder: add/edit/delete items and categories, kitchen stations

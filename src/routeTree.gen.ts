@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as KitchenRouteImport } from './routes/kitchen'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TablesRouteImport } from './routes/tables'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TablesRoute = TablesRouteImport.update({
   id: '/tables',
   path: '/tables',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/tables': typeof TablesRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/tables': typeof TablesRoute
 }
 export interface FileRoutesById {
@@ -70,14 +78,15 @@ export interface FileRoutesById {
   '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
   '/tables': typeof TablesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/tables'
+  fullPaths: '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/tables'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/tables'
-  id: '__root__' | '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/tables'
+  to: '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/tables'
+  id: '__root__' | '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/tables'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -86,6 +95,7 @@ export interface RootRouteChildren {
   KitchenRoute: typeof KitchenRoute
   MenuRoute: typeof MenuRoute
   ReportsRoute: typeof ReportsRoute
+  SettingsRoute: typeof SettingsRoute
   TablesRoute: typeof TablesRoute
 }
 
@@ -126,6 +136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tables': {
       id: '/tables'
       path: '/tables'
@@ -142,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   KitchenRoute: KitchenRoute,
   MenuRoute: MenuRoute,
   ReportsRoute: ReportsRoute,
+  SettingsRoute: SettingsRoute,
   TablesRoute: TablesRoute,
 }
 export const routeTree = rootRouteImport

@@ -13,13 +13,14 @@ export const diagnoseCloudSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: ownerRole, error } = await context.supabase
-      .from("user_roles")
+    const { data: adminRole, error } = await context.supabase
+      .from("restaurant_members")
       .select("role")
       .eq("user_id", context.userId)
-      .eq("role", "owner")
+      .in("role", ["owner", "manager"])
+      .limit(1)
       .maybeSingle();
-    if (error || !ownerRole) throw new Error("Only restaurant owners can request sync diagnoses.");
+    if (error || !adminRole) throw new Error("Only restaurant owners and managers can request sync diagnoses.");
 
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI troubleshooting is temporarily unavailable.");

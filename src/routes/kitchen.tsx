@@ -2,15 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChefHat, Clock } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { getDb } from "@/lib/db";
+import { getDb, markDirty } from "@/lib/db";
 import type { KotStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/kitchen")({
   head: () => ({
     meta: [
-      { title: "Kitchen Display — Restro POS by XTSY" },
+      { title: "Kitchen display — XTSY POS" },
       { name: "description", content: "Kitchen display with KOTs split by station: New, Preparing and Ready." },
-      { property: "og:title", content: "Kitchen Display — Restro POS" },
+      { property: "og:title", content: "Kitchen display — XTSY POS" },
       { property: "og:description", content: "Station-wise KOTs with live timers for your kitchen." },
     ],
   }),
@@ -26,7 +26,7 @@ const COLS: { s: KotStatus; label: string; next?: KotStatus; action?: string }[]
 function KitchenPage() {
   const kots = useLiveQuery(() => getDb().kots.orderBy("createdAt").reverse().limit(60).toArray(), [], []);
   return (
-    <AppShell>
+    <AppShell tone="dark">
       <div className="p-4 lg:p-6">
         <h1 className="mb-5 text-2xl font-bold">Kitchen display</h1>
         <div className="grid gap-4 md:grid-cols-3">
@@ -48,14 +48,14 @@ function KitchenPage() {
                         <span className="rounded-md bg-primary-tint px-2 py-0.5 font-semibold text-primary">{k.station}</span>
                         <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3" />{Math.max(0, Math.round((Date.now() - k.createdAt) / 60000))}m</span>
                       </div>
-                      <div className="mt-1 text-[11px] text-muted-foreground">{k.billNo}</div>
+                      <div className="mt-1 text-sm font-bold">{k.tableId ? `Table ${k.tableId}` : k.orderType ?? ""}<span className="ml-2 text-[11px] font-normal text-muted-foreground">{k.billNo}</span></div>
                       <ul className="mt-2 space-y-1 text-sm">
                         {k.lines.map((l, i) => (
                           <li key={i}><span className="font-bold">{l.qty}×</span> {l.name}{l.note && <span className="block text-xs text-warning">↳ {l.note}</span>}</li>
                         ))}
                       </ul>
                       {c.next ? (
-                        <button onClick={() => getDb().kots.update(k.id!, { status: c.next! })}
+                        <button onClick={() => { if (k.id === undefined || !c.next) return; const status = c.next; void getDb().kots.update(k.id, { status }).then(() => (k.uid ? markDirty(["kot", k.uid]) : undefined)); }}
                           className="mt-3 w-full rounded-lg bg-primary py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover">{c.action}</button>
                       ) : null}
                     </div>

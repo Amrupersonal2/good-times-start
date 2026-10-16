@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { VegMark } from "@/components/VegMark";
 import { Receipt } from "@/components/Receipt";
-import { ensureSeed, getDb } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
 import { useCart } from "@/lib/cart-store";
@@ -17,10 +17,10 @@ export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>) => ({ table: typeof search["table"] === "string" ? search["table"] : undefined }),
   head: () => ({
     meta: [
-      { title: "Billing — Restro POS by XTSY" },
+      { title: "Billing — XTSY POS" },
       { name: "description", content: "Fast offline-first restaurant billing with GST invoices, UPI QR and KOT." },
-      { property: "og:title", content: "Restro POS by XTSY — Restaurant Billing" },
-      { property: "og:description", content: "India's fastest offline-first restaurant POS with GST and UPI." },
+      { property: "og:title", content: "XTSY POS — Restaurant Billing" },
+      { property: "og:description", content: "Restaurant billing with GST, UPI and kitchen tickets that keeps working offline." },
     ],
   }),
   component: PosPage,
@@ -36,7 +36,6 @@ const ORDER_TYPES: { v: OrderType; l: string }[] = [
 
 function PosPage() {
   const search = Route.useSearch();
-  useEffect(() => { void ensureSeed(); }, []);
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const cart = useCart(search.table);
@@ -46,6 +45,17 @@ function PosPage() {
   const [receipt, setReceipt] = useState<Order | null>(null);
   const [kitchenTickets, setKitchenTickets] = useState<Kot[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Sample categories keep their usual order; any others follow alphabetically.
+  const categories = useMemo(() => {
+    const used = new Set(menu.map((i) => i.category));
+    return [...CATEGORIES.filter((c) => used.has(c)), ...[...used].filter((c) => !CATEGORIES.includes(c)).sort()];
+  }, [menu]);
+  const hasPopular = menu.some((i) => i.popular && i.available);
+  const rail = hasPopular ? ["Popular", ...categories] : categories;
+  useEffect(() => {
+    if (rail.length && !rail.includes(cat)) setCat(rail[0] ?? "Popular");
+  }, [rail.join("|"), cat]);
 
   const items = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -93,6 +103,18 @@ function PosPage() {
   const billPanel = (
     <div className="flex h-full flex-col">
       <div className="border-b border-border p-4">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-muted-foreground">{cart.activeOrder ? `Running bill ${cart.activeOrder.billNo}` : "New bill"}</div>
+            <div className="truncate text-3xl font-extrabold leading-none tracking-tight">
+              {cart.orderType === "dine-in" ? (tables.find((t) => t.id === cart.tableId)?.label ?? "No table") : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs font-medium text-muted-foreground">{count} item{count === 1 ? "" : "s"}</div>
+            <div className="text-2xl font-extrabold leading-none">{formatINR(cart.totals.total, 0)}</div>
+          </div>
+        </div>
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
           {ORDER_TYPES.map((o) => (
             <button key={o.v} onClick={() => cart.setOrderType(o.v)}
@@ -146,9 +168,8 @@ function PosPage() {
 
       <div className="border-t border-border bg-card p-4">
         {cart.lines.length > 0 ? <div className="mb-3 space-y-2 border-b border-border pb-3">
-          {cart.tableId ? <p className="text-sm font-semibold">{tables.find((t) => t.id === cart.tableId)?.label ?? cart.tableId}</p> : null}
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span className={cart.pendingKitchenLines.length ? "text-warning" : "text-success"}>
+            <span className={cart.pendingKitchenLines.length ? "rounded-md bg-gold/25 px-2 py-1 font-semibold text-gold-foreground" : "text-success"}>
               {cart.pendingKitchenLines.length ? `${cart.pendingKitchenLines.reduce((sum, line) => sum + line.qty, 0)} item(s) not sent to kitchen` : "Kitchen ticket sent"}
             </span>
             <Button variant="secondary" disabled={!cart.pendingKitchenLines.length} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />Send & print KOT</Button>
@@ -186,7 +207,7 @@ function PosPage() {
       <div className="flex h-[calc(100vh-57px-5rem)] lg:h-[calc(100vh-57px)]">
         {/* Category rail (desktop) */}
         <div className="hidden w-44 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border p-3 lg:flex">
-          {["Popular", ...CATEGORIES].map((c) => (
+          {rail.map((c) => (
             <button key={c} onClick={() => { setCat(c); setQ(""); }}
               className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${cat === c && !q ? "bg-primary-tint text-primary" : "text-muted-foreground hover:bg-secondary"}`}>
               {c === "Popular" && <Star className="size-3.5 fill-gold text-gold" />}{c}
@@ -203,7 +224,7 @@ function PosPage() {
                 className="w-full rounded-xl border border-input bg-card py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring/30" />
             </div>
             <div className="no-scrollbar flex gap-2 overflow-x-auto lg:hidden">
-              {["Popular", ...CATEGORIES].map((c) => (
+              {rail.map((c) => (
                 <button key={c} onClick={() => { setCat(c); setQ(""); }}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${cat === c && !q ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{c}</button>
               ))}
@@ -224,7 +245,16 @@ function PosPage() {
                 </button>
               );
             })}
-            {items.length === 0 && <p className="col-span-full py-10 text-center text-sm text-muted-foreground">No dishes found</p>}
+            {items.length === 0 && (menu.length === 0 ? (
+              <div className="col-span-full rounded-xl border border-dashed border-border p-8 text-center">
+                <p className="font-semibold">No dishes yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">Add your dishes in Menu, or start from the sample menu in Settings.</p>
+                <div className="mt-4 flex justify-center gap-2">
+                  <Link to="/menu" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Open Menu</Link>
+                  <Link to="/settings" className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">Settings</Link>
+                </div>
+              </div>
+            ) : <p className="col-span-full py-10 text-center text-sm text-muted-foreground">{q ? `No dishes match "${q}"` : "Nothing available in this category"}</p>)}
           </div>
         </div>
 
@@ -261,7 +291,7 @@ function PosPage() {
       </Dialog>
       {kitchenTickets.length > 0 ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
         {kitchenTickets.map((kot, index) => <Receipt key={`${kot.billNo}-${kot.station}-${index}`} order={{
-          billNo: kot.billNo, orderType: cart.orderType, tableId: cart.tableId, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, ...(line.note ? { note: line.note } : {}) })),
+          billNo: kot.billNo, orderType: kot.orderType ?? cart.orderType, tableId: kot.tableId, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, ...(line.note ? { note: line.note } : {}) })),
           subtotal: 0, discountPct: 0, discountAmt: 0, cgst: 0, sgst: 0, roundOff: 0, total: 0, payments: [], status: "held", createdAt: kot.createdAt, synced: false,
         }} mode="kot" kot={kot} />)}
       </div> : null}

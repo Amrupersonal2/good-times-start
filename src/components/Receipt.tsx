@@ -2,80 +2,114 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import type { Kot, Order } from "@/lib/types";
 import { formatINR, upiLink } from "@/lib/billing";
-import { RESTAURANT } from "@/lib/seed";
-import logo from "@/assets/logo.png";
+import { useRestaurantSettings } from "@/components/AppShell";
+
+const ORDER_TYPE_LABEL: Record<Order["orderType"], string> = {
+  "dine-in": "Dine-in",
+  takeaway: "Takeaway",
+  delivery: "Delivery",
+  swiggy: "Swiggy",
+  zomato: "Zomato",
+};
+
+function Rule() {
+  return <div className="my-2 border-t border-dashed border-foreground/40" />;
+}
 
 export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "kot" | "bill"; kot?: Kot }) {
+  const settings = useRestaurantSettings();
   const [qr, setQr] = useState("");
+  const showQr = mode === "bill" && !!settings.upiVpa && order.status !== "void";
+
   useEffect(() => {
-    if (mode === "kot") return;
+    if (!showQr || !settings.upiVpa) { setQr(""); return; }
     QRCode.toDataURL(
-      upiLink({ vpa: RESTAURANT.upiVpa, name: RESTAURANT.name, amount: order.total, billNo: order.billNo }),
+      upiLink({ vpa: settings.upiVpa, name: settings.name || "Restaurant", amount: order.total, billNo: order.billNo }),
       { width: 160, margin: 0 },
-    ).then(setQr).catch(() => {});
-  }, [order, mode]);
+    ).then(setQr).catch(() => setQr(""));
+  }, [order.total, order.billNo, showQr, settings.upiVpa, settings.name]);
+
+  const priceOf = (itemId: string | undefined) => order.lines.find((line) => line.itemId === itemId)?.price ?? 0;
+  const table = kot?.tableId ?? order.tableId;
+
+  if (mode === "kot") {
+    return (
+      <div id="kot-print" className="mx-auto w-full max-w-xs bg-white p-4 font-sans text-sm text-black">
+        <div className="text-center">
+          <div className="text-xs">Kitchen order ticket</div>
+          <div className="text-2xl font-extrabold">{table ? `Table ${table}` : ORDER_TYPE_LABEL[kot?.orderType ?? order.orderType]}</div>
+          {kot ? <div className="text-base font-bold">{kot.station}</div> : null}
+        </div>
+        <Rule />
+        <div className="flex justify-between text-xs"><span>{order.billNo}</span><span>{new Date(kot?.createdAt ?? order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span></div>
+        <Rule />
+        <ul className="space-y-1">
+          {(kot ? kot.lines : order.lines).map((l, i) => (
+            <li key={i}>
+              <span className="text-base font-bold">{l.qty} × {l.name}</span>
+              {l.note ? <span className="block pl-5 text-xs">Note: {l.note}</span> : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   return (
-    <div id={mode === "kot" ? "kot-print" : "receipt-print"} className="mx-auto w-full max-w-xs bg-card p-4 font-mono text-xs text-foreground">
+    <div id="receipt-print" className="mx-auto w-full max-w-xs bg-white p-4 font-sans text-xs text-black">
       <div className="text-center">
-        <img src={logo} alt="Restro POS logo" width={40} height={40} className="mx-auto mb-1" />
-        <div className="text-sm font-bold uppercase">{RESTAURANT.name}</div>
-        <div>{mode === "kot" ? "KITCHEN ORDER TICKET" : RESTAURANT.address}</div>
-        {mode === "kot" ? <div className="mt-1 text-sm font-bold">{order.tableId ? `TABLE ${order.tableId}` : order.orderType.toUpperCase()} · {order.billNo}</div> : null}
-        {mode === "kot" && kot ? <div className="mt-1 text-sm font-bold">{kot.station}</div> : null}
-        <div>Ph: {RESTAURANT.phone}</div>
-        <div>GSTIN: {RESTAURANT.gstin} · FSSAI: {RESTAURANT.fssai}</div>
+        <div className="text-base font-extrabold">{settings.name || "Restaurant"}</div>
+        {settings.legalName && settings.legalName !== settings.name ? <div>{settings.legalName}</div> : null}
+        {settings.address ? <div className="whitespace-pre-line">{settings.address}</div> : null}
+        {settings.phone ? <div>Phone {settings.phone}</div> : null}
+        {settings.gstin ? <div>GSTIN {settings.gstin}</div> : null}
+        {settings.fssai ? <div>FSSAI Lic. {settings.fssai}</div> : null}
+        <div className="mt-1 font-bold">{order.status === "void" ? "Void bill" : settings.gstin ? "Tax invoice" : "Bill"}</div>
       </div>
-      {mode === "bill" ? <div className="my-2 border-t border-dashed border-border" /> : null}
-      {mode === "kot" ? <div className="my-2 border-t border-dashed border-border" /> : null}
+      <Rule />
+      <div className="flex justify-between"><span>Bill {order.billNo}</span><span>{new Date(order.createdAt).toLocaleDateString("en-IN")}</span></div>
       <div className="flex justify-between">
-        <span>{order.billNo}</span>
-        <span>{new Date(order.createdAt).toLocaleString("en-IN")}</span>
+        <span>{ORDER_TYPE_LABEL[order.orderType]}{order.tableId ? `, table ${order.tableId}` : ""}</span>
+        <span>{new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
       </div>
-      <div className="capitalize">Type: {order.orderType}{order.tableId ? ` · Table ${order.tableId}` : ""}</div>
-      {mode === "bill" ? <div className="my-2 border-t border-dashed border-border" /> : null}
+      <Rule />
       <table className="w-full">
         <thead>
-          <tr className="text-left">
-            <th>Item</th><th className="text-right">Qty</th>{mode === "bill" ? <th className="text-right">Amt</th> : null}
-          </tr>
+          <tr className="text-left"><th className="font-semibold">Item</th><th className="text-right font-semibold">Qty</th><th className="text-right font-semibold">Amount</th></tr>
         </thead>
         <tbody>
-          {(mode === "kot" && kot ? kot.lines : order.lines).map((l, i) => (
-            <tr key={i}>
+          {order.lines.map((l, i) => (
+            <tr key={i} className="align-top">
               <td className="pr-1">{l.name}{l.note ? ` (${l.note})` : ""}</td>
               <td className="text-right">{l.qty}</td>
-              {mode === "bill" ? <td className="text-right">{formatINR(order.lines.find((line) => line.itemId === l.itemId)?.price ? (order.lines.find((line) => line.itemId === l.itemId)?.price ?? 0) * l.qty : 0, 0)}</td> : null}
+              <td className="text-right">{formatINR(priceOf(l.itemId) * l.qty)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      {mode === "bill" ? <div className="my-2 border-t border-dashed border-border" /> : null}
-      {mode === "bill" ? <div className="space-y-0.5">
+      <Rule />
+      <div className="space-y-0.5">
         <div className="flex justify-between"><span>Subtotal</span><span>{formatINR(order.subtotal)}</span></div>
-        {order.discountAmt > 0 && (
-          <div className="flex justify-between"><span>Discount ({order.discountPct}%)</span><span>-{formatINR(order.discountAmt)}</span></div>
-        )}
+        {order.discountAmt > 0 ? <div className="flex justify-between"><span>Discount ({order.discountPct}%)</span><span>-{formatINR(order.discountAmt)}</span></div> : null}
         <div className="flex justify-between"><span>CGST</span><span>{formatINR(order.cgst)}</span></div>
         <div className="flex justify-between"><span>SGST</span><span>{formatINR(order.sgst)}</span></div>
         <div className="flex justify-between"><span>Round off</span><span>{formatINR(order.roundOff)}</span></div>
-        <div className="flex justify-between text-sm font-bold"><span>TOTAL</span><span>{formatINR(order.total, 0)}</span></div>
-      </div> : null}
-      <div className="my-2 border-t border-dashed border-border" />
-      <div className="flex justify-between">
-        <span>Paid via</span>
-        <span className="uppercase">{order.payments.map((p) => p.mode).join(" + ")}</span>
+        <div className="flex justify-between pt-1 text-sm font-extrabold"><span>Total</span><span>{formatINR(order.total, 0)}</span></div>
       </div>
-      {mode === "bill" && qr && (
+      {order.payments.length ? <>
+        <Rule />
+        <div className="flex justify-between"><span>Paid by</span><span>{order.payments.map((p) => p.mode.toUpperCase()).join(" + ")}</span></div>
+      </> : null}
+      {showQr && qr ? (
         <div className="mt-3 text-center">
           <img src={qr} alt={`UPI QR to pay ${formatINR(order.total, 0)}`} width={120} height={120} className="mx-auto" />
-          <div className="mt-1">Scan to pay {formatINR(order.total, 0)} via UPI</div>
+          <div className="mt-1">Scan to pay {formatINR(order.total, 0)} by UPI</div>
         </div>
-      )}
-      {mode === "bill" ? <div className="mt-3 text-center">
-        <div>Thank you! Visit again.</div>
-        <div className="mt-1 text-[10px] text-muted-foreground">Powered by Restro POS by XTSY</div>
-      </div> : null}
+      ) : null}
+      <div className="mt-3 text-center">
+        <div>{settings.billFooter || "Thank you! Visit again."}</div>
+        <div className="mt-1 text-[10px] text-black/60">Billed with XTSY POS</div>
+      </div>
     </div>
   );
 }

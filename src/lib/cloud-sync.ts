@@ -1,139 +1,308 @@
 import { supabase } from "@/integrations/supabase/client";
-import { getDb } from "@/lib/db";
-import type { InventoryItem, Kot, Order } from "@/lib/types";
+import type { Json } from "@/integrations/supabase/types";
+import { getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
 import { deductInventory } from "@/lib/inventory";
+import {
+  RECORD_KINDS,
+  isInventoryPayload,
+  isKotPayload,
+  isMenuPayload,
+  isOrderPayload,
+  isSettingsPayload,
+  isTablePayload,
+  outboxKey,
+  pullStartFrom,
+  toSharedPayload,
+  type RecordKind,
+} from "@/lib/sync-core";
+import type { InventoryItem, Kot, Order } from "@/lib/types";
 
-function isOrder(value: unknown): value is Order {
-  if (!value || typeof value !== "object") return false;
-  const order = value as Partial<Order>;
-  return typeof order.billNo === "string" && Array.isArray(order.lines) &&
-    typeof order.total === "number" && (order.status === "settled" || order.status === "held" || order.status === "void");
+/**
+ * Live sync for a restaurant's devices.
+ *
+ * IndexedDB stays the source of truth for the screen, so billing and the kitchen
+ * board keep working offline. Local edits go into the outbox (see markDirty);
+ * a sync pushes them to restaurant_records, then pulls everything newer than
+ * the last cursor. A realtime ping from Postgres triggers a pull, so a KOT sent
+ * from the counter shows on the kitchen screen within seconds.
+ */
+
+const PUSH_BATCH = 200;
+const PULL_PAGE = 500;
+
+interface RemoteRow {
+  kind: string;
+  record_id: string;
+  payload: Json;
+  deleted: boolean;
+  updated_at: string;
 }
 
-function kotsForOrder(order: Order): Omit<Kot, "id">[] {
-  const byStation = new Map<string, Order["lines"]>();
-  for (const line of order.lines) {
-    const stationLines = byStation.get(line.station) ?? [];
-    stationLines.push(line);
-    byStation.set(line.station, stationLines);
-  }
-  return Array.from(byStation, ([station, lines]) => ({
-    orderId: order.id ?? 0,
-    billNo: order.billNo,
-    station,
-    lines: lines.map(({ name, qty, note }) => ({ name, qty, note })),
-    status: "new" as const,
-    createdAt: order.createdAt,
-  }));
-}
+const isKind = (kind: string): kind is RecordKind => (RECORD_KINDS as readonly string[]).includes(kind);
 
-export async function syncCloudData(userId: string): Promise<void> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) throw new Error("No internet connection. Orders remain safely stored on this device.");
-  const { data: verified } = await supabase.auth.getUser();
-  if (verified.user?.id !== userId) return;
-
+async function readLocal(kind: RecordKind, recordId: string): Promise<unknown> {
   const db = getDb();
-  await db.meta.put({ key: "syncError", value: "" });
-  const localOrders = await db.orders.toArray();
-  const pendingOrders = localOrders
-    .filter((order) => !order.cloudUserId && order.status === "settled" && !order.synced)
-    .map((order) => ({ ...order, cloudUserId: userId }));
-  if (pendingOrders.length) await db.orders.bulkPut(pendingOrders);
-  const ownedPendingOrders = localOrders
-    .filter((order) => order.cloudUserId === userId && order.status === "settled" && !order.synced)
-    .concat(pendingOrders);
-  if (ownedPendingOrders.length) {
-    const { error } = await supabase.from("cloud_orders").upsert(
-      ownedPendingOrders.map((order) => ({
-        user_id: userId,
-        bill_no: order.billNo,
-        payload: JSON.parse(JSON.stringify(order)),
-      })),
-      { onConflict: "user_id,bill_no" },
-    );
+  switch (kind) {
+    case "settings": {
+      const settings = await getSettings();
+      return settings.name ? settings : undefined;
+    }
+    case "menu": return db.menu.get(recordId);
+    case "table": return db.restTables.get(recordId);
+    case "inventory": return db.inventory.get(recordId);
+    case "order": return db.orders.where("uid").equals(recordId).first();
+    case "kot": return db.kots.where("uid").equals(recordId).first();
+  }
+}
+
+async function upsert(rows: { restaurant_id: string; kind: string; record_id: string; payload: Json; deleted: boolean }[]) {
+  if (!rows.length) return null;
+  const { error } = await supabase.from("restaurant_records").upsert(rows, { onConflict: "restaurant_id,kind,record_id" });
+  return error;
+}
+
+async function push(restaurantId: string): Promise<void> {
+  const db = getDb();
+  for (;;) {
+    const entries: OutboxEntry[] = await db.outbox.orderBy("at").limit(PUSH_BATCH).toArray();
+    if (!entries.length) return;
+
+    const rows: { restaurant_id: string; kind: string; record_id: string; payload: Json; deleted: boolean }[] = [];
+    for (const entry of entries) {
+      const local = await readLocal(entry.kind, entry.recordId);
+      if (entry.kind === "settings" && local === undefined) continue;
+      rows.push({
+        restaurant_id: restaurantId,
+        kind: entry.kind,
+        record_id: entry.recordId,
+        payload: (local === undefined ? {} : toSharedPayload(entry.kind, local)) as Json,
+        deleted: local === undefined,
+      });
+    }
+
+    const error = await upsert(rows.filter((row) => row.kind !== "settings"));
     if (error) throw error;
-    await db.orders.bulkPut(ownedPendingOrders.map((order) => ({ ...order, synced: true })));
-  }
+    // Only owners and managers may change restaurant details; drop a refused change instead of retrying forever.
+    const settingsError = await upsert(rows.filter((row) => row.kind === "settings"));
 
-  const { data: remoteOrders, error: orderError } = await supabase
-    .from("cloud_orders").select("bill_no,payload").eq("user_id", userId);
-  if (orderError) throw orderError;
-  for (const row of remoteOrders ?? []) {
-    const payload: unknown = row.payload;
-    if (!isOrder(payload) || payload.status !== "settled") continue;
-    const existing = await db.orders.where("billNo").equals(row.bill_no).first();
-    if (existing) continue;
-    const order: Order = { ...payload, synced: true, cloudUserId: userId };
-    const id = await db.orders.add(order);
-    await db.kots.bulkAdd(kotsForOrder({ ...order, id }));
-  }
-
-  const { data: remoteInventory, error: inventoryError } = await supabase
-    .from("inventory_items").select("id,menu_item_id,name,unit,quantity,low_stock_threshold").eq("user_id", userId);
-  if (inventoryError) throw inventoryError;
-  const localInventory = await db.inventory.toArray();
-  for (const row of remoteInventory ?? []) {
-    if (!row.menu_item_id) continue;
-    const existing = localInventory.find((item) => item.menuItemId === row.menu_item_id);
-    if (existing && !existing.synced) continue;
-    await db.inventory.put({
-      id: row.menu_item_id,
-      menuItemId: row.menu_item_id,
-      name: row.name,
-      unit: row.unit,
-      quantity: Number(row.quantity),
-      lowStockThreshold: Number(row.low_stock_threshold),
-      tracked: true,
-      synced: true,
+    await db.transaction("rw", db.outbox, async () => {
+      for (const entry of entries) {
+        const current = await db.outbox.get(entry.key);
+        if (current && current.at === entry.at) await db.outbox.delete(entry.key);
+      }
     });
+    if (settingsError) throw new Error("Only the owner or a manager can change restaurant details. Your change stays on this device only.");
+    if (entries.length < PUSH_BATCH) return;
   }
+}
 
-  const latestInventory = await db.inventory.toArray();
-  for (const item of latestInventory.filter((stock) => !stock.synced)) {
-    const { data: existing } = await supabase.from("inventory_items")
-      .select("id").eq("user_id", userId).eq("menu_item_id", item.menuItemId).maybeSingle();
-    const values = {
-      name: item.name,
-      unit: item.unit,
-      quantity: item.quantity,
-      low_stock_threshold: item.lowStockThreshold,
-      updated_at: new Date().toISOString(),
-    };
-    const result = existing
-      ? await supabase.from("inventory_items").update(values).eq("id", existing.id).eq("user_id", userId)
-      : await supabase.from("inventory_items").insert({ ...values, user_id: userId, menu_item_id: item.menuItemId });
-    if (result.error) throw result.error;
-    await db.inventory.update(item.id, { synced: true });
+async function applyRemote(rows: RemoteRow[]): Promise<void> {
+  const db = getDb();
+  const pending = new Set((await db.outbox.toCollection().primaryKeys()).map(String));
+  await db.transaction("rw", [db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta], async () => {
+    for (const row of rows) {
+      if (!isKind(row.kind)) continue;
+      // Local edits that haven't been pushed yet win; they'll overwrite the cloud copy next push.
+      if (pending.has(outboxKey(row.kind, row.record_id))) continue;
+      const payload: unknown = row.payload;
+      const id = row.record_id;
+
+      switch (row.kind) {
+        case "settings":
+          if (!row.deleted && isSettingsPayload(payload)) await db.meta.put({ key: "restaurantSettings", value: JSON.stringify(payload) });
+          break;
+        case "menu":
+          if (row.deleted) await db.menu.delete(id);
+          else if (isMenuPayload(payload)) await db.menu.put({ ...payload, id });
+          break;
+        case "table":
+          if (row.deleted) await db.restTables.delete(id);
+          else if (isTablePayload(payload)) await db.restTables.put({ ...payload, id });
+          break;
+        case "inventory":
+          if (row.deleted) await db.inventory.delete(id);
+          else if (isInventoryPayload(payload)) {
+            const item: InventoryItem = { ...payload, id, synced: true };
+            await db.inventory.put(item);
+          }
+          break;
+        case "order": {
+          const existing = await db.orders.where("uid").equals(id).first();
+          if (row.deleted) {
+            if (existing?.id !== undefined) await db.orders.delete(existing.id);
+            break;
+          }
+          if (!isOrderPayload(payload)) break;
+          const { id: _ignored, ...rest } = payload;
+          const order: Order = existing?.id !== undefined
+            ? { ...rest, id: existing.id, uid: id, synced: true }
+            : { ...rest, uid: id, synced: true };
+          await db.orders.put(order);
+          break;
+        }
+        case "kot": {
+          const existing = await db.kots.where("uid").equals(id).first();
+          if (row.deleted) {
+            if (existing?.id !== undefined) await db.kots.delete(existing.id);
+            break;
+          }
+          if (!isKotPayload(payload)) break;
+          const parent = payload.orderUid ? await db.orders.where("uid").equals(payload.orderUid).first() : undefined;
+          const { id: _ignored, ...rest } = payload;
+          const kot: Kot = existing?.id !== undefined
+            ? { ...rest, id: existing.id, uid: id, orderId: parent?.id ?? existing.orderId }
+            : { ...rest, uid: id, orderId: parent?.id ?? 0 };
+          await db.kots.put(kot);
+          break;
+        }
+      }
+    }
+  });
+}
+
+async function pull(restaurantId: string): Promise<void> {
+  const db = getDb();
+  const stored = (await db.meta.get("pullCursor"))?.value;
+  const cursor = typeof stored === "string" && stored ? stored : null;
+  let newest = cursor;
+  let from = pullStartFrom(cursor);
+  let firstPage = true;
+
+  for (;;) {
+    let query = supabase
+      .from("restaurant_records")
+      .select("kind,record_id,payload,deleted,updated_at")
+      .eq("restaurant_id", restaurantId)
+      .order("updated_at", { ascending: true })
+      .limit(PULL_PAGE);
+    if (from) query = firstPage ? query.gte("updated_at", from) : query.gt("updated_at", from);
+    const { data, error } = await query;
+    if (error) throw error;
+    const rows = (data ?? []) as RemoteRow[];
+    if (rows.length) {
+      await applyRemote(rows);
+      const last = rows[rows.length - 1]!.updated_at;
+      if (!newest || last > newest) newest = last;
+      from = last;
+    }
+    firstPage = false;
+    if (rows.length < PULL_PAGE) break;
   }
+  if (newest) await db.meta.put({ key: "pullCursor", value: newest });
+}
+
+async function syncOnce(restaurantId: string): Promise<void> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    throw new Error("No internet connection. Orders remain safely stored on this device.");
+  }
+  const db = getDb();
+  const bound = (await db.meta.get("restaurantId"))?.value;
+  if (typeof bound === "string" && bound && bound !== restaurantId) {
+    throw new Error("This device holds another restaurant's data. An owner can reset this device in Settings to switch restaurants.");
+  }
+  if (!bound) await db.meta.put({ key: "restaurantId", value: restaurantId });
+
+  await push(restaurantId);
+  await pull(restaurantId);
   await db.meta.put({ key: "lastSyncAt", value: Date.now() });
   await db.meta.put({ key: "syncError", value: "" });
 }
 
-export async function applyLocalStockSale(userId: string | undefined, soldLines: Order["lines"]): Promise<void> {
+let inFlight: Promise<void> | null = null;
+let queued = false;
+
+/** Push local changes and pull the latest restaurant data. Concurrent calls share one run. */
+export function syncCloudData(restaurantId: string): Promise<void> {
+  if (inFlight) {
+    queued = true;
+    return inFlight;
+  }
+  inFlight = (async () => {
+    try {
+      do {
+        queued = false;
+        await syncOnce(restaurantId);
+      } while (queued);
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
+}
+
+/**
+ * Keeps this device in step with the restaurant: syncs on start, shortly after
+ * local edits, when the connection returns, on realtime notifications, and
+ * every minute as a fallback. Returns a stop function.
+ */
+export function startLiveSync(restaurantId: string): () => void {
+  let stopped = false;
+  let timer: number | undefined;
+
+  const run = () => {
+    if (stopped) return;
+    void syncCloudData(restaurantId).catch((error: unknown) => saveSyncError(error));
+  };
+  const schedule = (delay: number) => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(run, delay);
+  };
+
+  const stopLocal = onLocalChange(() => schedule(800));
+  const onOnline = () => schedule(0);
+  window.addEventListener("online", onOnline);
+  const interval = window.setInterval(() => schedule(0), 60_000);
+  const channel = supabase
+    .channel(`restaurant-records-${restaurantId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "restaurant_records", filter: `restaurant_id=eq.${restaurantId}` },
+      () => schedule(250),
+    )
+    .subscribe();
+
+  schedule(0);
+  return () => {
+    stopped = true;
+    window.clearTimeout(timer);
+    window.clearInterval(interval);
+    window.removeEventListener("online", onOnline);
+    stopLocal();
+    void supabase.removeChannel(channel);
+  };
+}
+
+/** Deduct tracked stock for a settled bill and queue the new levels for sync. */
+export async function applyLocalStockSale(soldLines: Order["lines"]): Promise<void> {
   const db = getDb();
   const items = await db.inventory.toArray();
   const changed = deductInventory(soldLines, items).filter((item) => item.synced === false);
-  if (changed.length) await db.inventory.bulkPut(changed);
-  if (userId) await syncCloudData(userId);
+  if (!changed.length) return;
+  await db.inventory.bulkPut(changed);
+  await markDirty(...changed.map((item): [RecordKind, string] => ["inventory", item.id]));
 }
 
 export async function getSyncSnapshot() {
   const db = getDb();
-  const [orders, lastSync, error, inventory] = await Promise.all([
-    db.orders.toArray(),
+  const [outbox, lastSync, error] = await Promise.all([
+    db.outbox.toArray(),
     db.meta.get("lastSyncAt"),
     db.meta.get("syncError"),
-    db.inventory.toArray(),
   ]);
+  const pendingOrders = outbox.filter((entry) => entry.kind === "order").length;
   return {
-    pendingOrders: orders.filter((order) => order.status === "settled" && !order.synced).length,
+    pendingOrders,
+    pendingStock: outbox.length - pendingOrders,
     lastSyncAt: typeof lastSync?.value === "number" ? lastSync.value : null,
     error: typeof error?.value === "string" ? error.value : "",
-    pendingStock: inventory.filter((item) => !item.synced).length,
   };
 }
 
 export async function saveSyncError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Sync could not be completed.";
+  const message = error instanceof Error
+    ? error.message
+    : typeof error === "object" && error !== null && "message" in error && typeof (error as { message: unknown }).message === "string"
+      ? (error as { message: string }).message
+      : "Sync could not be completed.";
   await getDb().meta.put({ key: "syncError", value: message.slice(0, 500) });
 }

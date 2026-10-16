@@ -29,6 +29,8 @@ export interface CartLine {
 
 export interface Order {
   id?: number;
+  /** Global id shared by every device of the restaurant. Local `id` differs per device. */
+  uid?: string;
   billNo: string;
   orderType: OrderType;
   tableId?: string | undefined;
@@ -79,10 +81,27 @@ export interface RestaurantTable {
 
 export interface Kot {
   id?: number;
+  /** Global id shared by every device of the restaurant. */
+  uid?: string;
   orderId: number;
+  orderUid?: string;
+  tableId?: string | undefined;
+  orderType?: OrderType;
   billNo: string;
   station: string;
   lines: { itemId?: string; name: string; qty: number; note?: string | undefined }[];
   status: KotStatus;
   createdAt: number;
+}
+
+export interface RestaurantSettings {
+  name: string;
+  legalName?: string;
+  address?: string;
+  phone?: string;
+  gstin?: string;
+  fssai?: string;
+  upiVpa?: string;
+  billFooter?: string;
+  updatedAt?: number;
 }
