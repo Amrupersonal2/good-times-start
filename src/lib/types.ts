@@ -44,6 +44,7 @@ export interface Order {
   status: "held" | "settled" | "void";
   createdAt: number;
   synced: boolean;
+  cloudUserId?: string;
 }
 
 export interface InventoryItem {
