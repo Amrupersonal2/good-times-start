@@ -76,7 +76,7 @@ export function isKotPayload(value: unknown): value is Kot {
   if (!isRecord(value)) return false;
   const status = value["status"];
   return isString(value["billNo"]) && isString(value["station"]) && Array.isArray(value["lines"]) &&
-    isNumber(value["createdAt"]) && (status === "new" || status === "preparing" || status === "ready");
+    isNumber(value["createdAt"]) && (status === "new" || status === "preparing" || status === "ready" || status === "served");
 }
 
 export function isMenuPayload(value: unknown): value is MenuItem {

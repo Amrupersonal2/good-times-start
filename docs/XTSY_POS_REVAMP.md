@@ -43,8 +43,8 @@ syncs to Lovable and the live app) only after review in Lovable.
 - [x] Service charge, discount limits by role, customer phone on bill
 
 ### Phase 4 — Kitchen & captain
-- [ ] Kitchen display tuned for wall screens, KOT reprint/cancel
-- [ ] Captain (waiter) mobile ordering
+- [x] Kitchen display tuned for wall screens (stations, ageing, chime), KOT reprint, cancellation tickets
+- [x] Captain (waiter) mobile ordering; role-based screens for captains and kitchen staff
 
 ### Phase 5 — Inventory & purchase
 - [ ] Raw materials, recipes, auto-deduction, purchases, suppliers, wastage

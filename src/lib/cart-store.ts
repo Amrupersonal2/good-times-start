@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
 import { computeTotals, billNumber } from "./billing";
 import { getDb, getDeviceCode, markDirty, nextSeq } from "./db";
-import { accumulateSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
 import { buildLine, priceFor } from "./menu-logic";
@@ -163,48 +163,7 @@ export function useCart(initialTableId?: string) {
   const totals = computeTotals(lines, discountPct, serviceChargePct);
   const submitted = activeOrder?.kotSubmittedQty ?? {};
   const pendingKitchenLines = unsentKitchenLines(lines, submitted);
-
-  const sendKitchen = useCallback(async (): Promise<Kot[]> => {
-    if (!lines.length || !pendingKitchenLines.length) return [];
-    const db = getDb();
-    const now = Date.now();
-    // Re-read the shared order: another device may have sent items for this table meanwhile.
-    const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : tableId ? await latestHeldOrder(tableId) : null;
-    const base = latest && latest.status === "held" ? latest : null;
-    const merged = base ? mergeSentLines(base.lines, pendingKitchenLines) : lines;
-    const t = computeTotals(merged, discountPct, serviceChargePct);
-    const tableLabel = await tableLabelOf(tableId);
-    const extras = { serviceChargePct, ...(customer.name || customer.phone ? { customer } : {}) };
-    const order: Order = base
-      ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" }
-      : {
-          uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
-          subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
-          roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
-        };
-    const orderUid = order.uid ?? newUid();
-    order.uid = orderUid;
-    const nextSubmitted = accumulateSubmittedQuantities(base?.kotSubmittedQty ?? {}, pendingKitchenLines);
-    const saved: Order = { ...order, kotSubmittedQty: nextSubmitted, synced: false };
-
-    let kots: Kot[] = [];
-    await db.transaction("rw", db.orders, db.kots, async () => {
-      const id = saved.id ?? Number(await db.orders.add(saved));
-      saved.id = id;
-      await db.orders.put(saved);
-      kots = Array.from(kotGroups(pendingKitchenLines), ([station, stationLines]): Kot => ({
-        uid: newUid(), orderId: id, orderUid, billNo: saved.billNo, station, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
-        lines: stationLines.map((line) => ({ itemId: line.itemId, name: line.name, qty: line.qty, note: line.note })),
-        status: "new", createdAt: now,
-      }));
-      await db.kots.bulkAdd(kots);
-    });
-    await markDirty(["order", orderUid], ...kots.map((kot): [RecordKind, string] => ["kot", kot.uid ?? ""]));
-    setActiveOrder(saved);
-    setLines(merged);
-    toast.success(`${kots.length} kitchen ticket${kots.length === 1 ? "" : "s"} sent`);
-    return kots;
-  }, [activeOrder, customer, discountPct, lines, orderType, pendingKitchenLines, serviceChargePct, tableId]);
+  const pendingCancelLines = cancelledKitchenLines(lines, submitted, activeOrder?.lines ?? []);
 
   /** Shared bookkeeping once a bill leaves the table: free the table, forget the draft, reset the screen. */
   const finishTable = useCallback(async (changes: [RecordKind, string][]) => {
@@ -223,9 +182,64 @@ export function useCart(initialTableId?: string) {
     setTableIdState(undefined);
   }, [tableId]);
 
+  const sendKitchen = useCallback(async (): Promise<Kot[]> => {
+    if (!pendingKitchenLines.length && !pendingCancelLines.length) return [];
+    const db = getDb();
+    const now = Date.now();
+    // Re-read the shared order: another device may have sent items for this table meanwhile.
+    const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : tableId ? await latestHeldOrder(tableId) : null;
+    const base = latest && latest.status === "held" ? latest : null;
+    const merged = base ? removeCancelled(mergeSentLines(base.lines, pendingKitchenLines), pendingCancelLines) : lines;
+    const t = computeTotals(merged, discountPct, serviceChargePct);
+    const tableLabel = await tableLabelOf(tableId);
+    const extras = { serviceChargePct, ...(customer.name || customer.phone ? { customer } : {}) };
+    const order: Order = base
+      ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" }
+      : {
+          uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
+          subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
+          roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
+        };
+    const orderUid = order.uid ?? newUid();
+    order.uid = orderUid;
+    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base?.kotSubmittedQty ?? {}, pendingKitchenLines), pendingCancelLines);
+    const allCancelled = merged.length === 0;
+    const saved: Order = {
+      ...order, kotSubmittedQty: nextSubmitted, synced: false,
+      ...(allCancelled ? { status: "void" as const, voidReason: "All items cancelled before billing" } : {}),
+    };
+
+    let kots: Kot[] = [];
+    await db.transaction("rw", db.orders, db.kots, async () => {
+      const id = saved.id ?? Number(await db.orders.add(saved));
+      saved.id = id;
+      await db.orders.put(saved);
+      const ticket = (kind: "order" | "cancel") => ([station, stationLines]: [string, CartLine[]]): Kot => ({
+        uid: newUid(), orderId: id, orderUid, billNo: saved.billNo, station, kind, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
+        lines: stationLines.map((line) => ({ itemId: line.itemId, name: line.name, qty: line.qty, note: line.note })),
+        status: "new", createdAt: now,
+      });
+      kots = [
+        ...Array.from(kotGroups(pendingKitchenLines), ticket("order")),
+        ...Array.from(kotGroups(pendingCancelLines), ticket("cancel")),
+      ];
+      await db.kots.bulkAdd(kots);
+    });
+    await markDirty(["order", orderUid], ...kots.map((kot): [RecordKind, string] => ["kot", kot.uid ?? ""]));
+    if (allCancelled) {
+      await finishTable([]);
+      toast.success(`Cancellation sent to the kitchen; bill ${saved.billNo} closed with nothing to pay`);
+      return kots;
+    }
+    setActiveOrder(saved);
+    setLines(merged);
+    toast.success(`${kots.length} kitchen ticket${kots.length === 1 ? "" : "s"} sent`);
+    return kots;
+  }, [activeOrder, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, serviceChargePct, tableId]);
+
   /** Re-read the shared order before closing it, in case another device already did. */
   const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
-    if (unsentKitchenLines(lines, activeOrder?.kotSubmittedQty).length) {
+    if (unsentKitchenLines(lines, activeOrder?.kotSubmittedQty).length || cancelledKitchenLines(lines, activeOrder?.kotSubmittedQty, activeOrder?.lines).length) {
       toast.error("Send the kitchen ticket before settling this bill");
       return false;
     }
@@ -325,6 +339,6 @@ export function useCart(initialTableId?: string) {
   return {
     lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct,
     serviceChargePct, setServiceChargePct, customer, setCustomer, addItem, setQty, setNote, clear, totals,
-    settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, activeOrder,
+    settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, pendingCancelLines, activeOrder,
   };
 }

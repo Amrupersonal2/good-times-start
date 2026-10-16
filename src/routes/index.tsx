@@ -98,6 +98,8 @@ function PosPage() {
   const maxDiscount = maxDiscountFor(user?.role ?? "unknown", settings.staffDiscountLimit ?? 10);
   const discountChoices = [0, 5, 10, 15, 20, 25, 30, 50, 100].filter((d) => d <= maxDiscount || d === cart.discountPct);
   const canCancel = !user || isAdmin(user);
+  /** Captains take orders and send KOTs; a cashier or manager settles. */
+  const canSettle = user?.role !== "captain";
 
   const done = (o: Order | null) => {
     if (!o) return;
@@ -138,13 +140,15 @@ function PosPage() {
     const h = (e: KeyboardEvent) => {
       if (e.key === "F2") { e.preventDefault(); searchRef.current?.focus(); }
       if (e.key === "F1") { e.preventDefault(); cart.clear(); }
-      if (e.key === "F8") { e.preventDefault(); void pay("cash"); }
+      if (e.key === "F8" && canSettle) { e.preventDefault(); void pay("cash"); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   });
 
   const count = cart.lines.reduce((s, l) => s + l.qty, 0);
+  const unsentCount = cart.pendingKitchenLines.reduce((sum, line) => sum + line.qty, 0);
+  const cancelCount = cart.pendingCancelLines.reduce((sum, line) => sum + line.qty, 0);
 
   const billPanel = (
     <div className="flex h-full flex-col">
@@ -213,12 +217,14 @@ function PosPage() {
       </div>
 
       <div className="border-t border-border bg-card p-4">
-        {cart.lines.length > 0 ? <div className="mb-3 space-y-2 border-b border-border pb-3">
+        {cart.lines.length > 0 || cancelCount > 0 ? <div className="mb-3 space-y-2 border-b border-border pb-3">
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span className={cart.pendingKitchenLines.length ? "rounded-md bg-gold/25 px-2 py-1 font-semibold text-gold-foreground" : "text-success"}>
-              {cart.pendingKitchenLines.length ? `${cart.pendingKitchenLines.reduce((sum, line) => sum + line.qty, 0)} item(s) not sent to kitchen` : "Kitchen ticket sent"}
+            <span className={unsentCount || cancelCount ? "rounded-md bg-gold/25 px-2 py-1 font-semibold text-gold-foreground" : "text-success"}>
+              {unsentCount || cancelCount
+                ? [unsentCount ? `${unsentCount} to send` : "", cancelCount ? `${cancelCount} to cancel` : ""].filter(Boolean).join(", ")
+                : "Kitchen has everything"}
             </span>
-            <Button variant="secondary" disabled={!cart.pendingKitchenLines.length} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />Send & print KOT</Button>
+            <Button variant="secondary" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancellation" : "Send & print KOT"}</Button>
           </div>
         </div> : null}
         <div className="space-y-1 text-sm">
@@ -250,14 +256,15 @@ function PosPage() {
             <input aria-label="Guest phone" placeholder="Phone" inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
           </div>
         ) : null}
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        {!canSettle ? <p className="mt-3 rounded-lg bg-secondary p-3 text-center text-xs text-muted-foreground">Send the KOT here. The cashier settles the bill from the counter.</p> : null}
+        <div className={`mt-3 grid grid-cols-4 gap-2 ${canSettle ? "" : "hidden"}`}>
           {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).map(([m, l, Icon]) => (
-            <button key={m} disabled={!cart.lines.length || cart.pendingKitchenLines.length > 0} onClick={() => void pay(m)}
+            <button key={m} disabled={!cart.lines.length || unsentCount > 0 || cancelCount > 0} onClick={() => void pay(m)}
               className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-40">
               <Icon className="size-4" />{l}
             </button>
           ))}
-          <button disabled={!cart.lines.length || cart.pendingKitchenLines.length > 0} onClick={() => setPayOpen(true)}
+          <button disabled={!cart.lines.length || unsentCount > 0 || cancelCount > 0} onClick={() => setPayOpen(true)}
             className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary text-xs font-semibold text-primary transition-colors hover:bg-primary-tint disabled:opacity-40">
             <Wallet className="size-4" />Split
           </button>

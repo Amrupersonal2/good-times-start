@@ -1,7 +1,8 @@
 export type OrderType = "dine-in" | "takeaway" | "delivery" | "swiggy" | "zomato";
 export type PaymentMode = "cash" | "upi" | "card" | "wallet" | "credit";
 export type TableStatus = "free" | "occupied" | "billed" | "reserved";
-export type KotStatus = "new" | "preparing" | "ready";
+/** "served" hides a ticket from the kitchen screen once it has left the pass. */
+export type KotStatus = "new" | "preparing" | "ready" | "served";
 
 export type GstRate = 0 | 5 | 12 | 18 | 28;
 
@@ -119,6 +120,8 @@ export interface Kot {
   orderType?: OrderType;
   billNo: string;
   station: string;
+  /** "cancel" tickets tell the station to stop making these items. */
+  kind?: "order" | "cancel";
   lines: { itemId?: string; name: string; qty: number; note?: string | undefined }[];
   status: KotStatus;
   createdAt: number;

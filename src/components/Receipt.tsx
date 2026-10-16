@@ -36,7 +36,7 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
     return (
       <div id="kot-print" className="mx-auto w-full max-w-xs bg-white p-4 font-sans text-sm text-black">
         <div className="text-center">
-          <div className="text-xs">Kitchen order ticket</div>
+          <div className={kot?.kind === "cancel" ? "text-xl font-extrabold" : "text-xs"}>{kot?.kind === "cancel" ? "CANCEL these items" : "Kitchen order ticket"}</div>
           <div className="text-2xl font-extrabold">{table ? `Table ${table}` : ORDER_TYPE_LABEL[kot?.orderType ?? order.orderType]}</div>
           {kot ? <div className="text-base font-bold">{kot.station}</div> : null}
         </div>

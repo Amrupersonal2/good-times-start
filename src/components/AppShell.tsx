@@ -22,6 +22,18 @@ const NAV = [
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
+type NavPath = (typeof NAV)[number]["to"];
+
+/** Screens each role works with. Signed-out devices (single-user mode) see everything. */
+const ROLE_SCREENS: Record<string, NavPath[]> = {
+  kitchen: ["/kitchen", "/settings"],
+  captain: ["/", "/tables", "/kitchen", "/menu", "/settings"],
+};
+
+export function screensFor(role: string | undefined): readonly NavPath[] {
+  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to);
+}
+
 /** Restaurant details as this device currently knows them (updates live as sync lands). */
 export function useRestaurantSettings() {
   return useLiveQuery(async () => {
@@ -193,6 +205,11 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
   const settings = useRestaurantSettings();
   const restaurantName = settings.name || user?.restaurantName || "";
   const needsRestaurant = !!user && !user.restaurantId && pathname !== "/settings";
+  const allowed = screensFor(user?.role);
+  const nav = NAV.filter((n) => allowed.includes(n.to));
+  const current = NAV.find((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
+  const blocked = !!current && !allowed.includes(current.to);
+  const home = nav[0]?.to ?? "/";
   const needsDetails = isAdmin(user) && !settings.updatedAt && pathname !== "/settings";
 
   return (
@@ -200,7 +217,7 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
       <aside className="sticky top-0 hidden h-screen w-24 shrink-0 flex-col items-center bg-sidebar py-4 text-sidebar-foreground lg:flex">
         <img src={logo} alt="XTSY POS" width={40} height={40} className="rounded-lg" />
         <nav className="mt-6 flex w-full flex-col gap-1 px-2" aria-label="Main">
-          {NAV.map(({ to, label, icon: Icon }) => {
+          {nav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link key={to} to={to} aria-current={active ? "page" : undefined}
@@ -231,11 +248,19 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
             <AlertTriangle className="size-4 shrink-0" />Add your restaurant's name, address and GSTIN so bills carry your details.
           </Link>
         ) : null}
-        <main className="min-w-0 flex-1 pb-20 lg:pb-0">{needsRestaurant ? <RestaurantSetup /> : children}</main>
+        <main className="min-w-0 flex-1 pb-20 lg:pb-0">
+          {needsRestaurant ? <RestaurantSetup /> : blocked ? (
+            <div className="mx-auto max-w-md p-8 text-center">
+              <p className="font-semibold">This screen isn't part of your role</p>
+              <p className="mt-1 text-sm text-muted-foreground">Ask the owner if you need access.</p>
+              <Link to={home} className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Go to {NAV.find((n) => n.to === home)?.label}</Link>
+            </div>
+          ) : children}
+        </main>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground lg:hidden" aria-label="Main">
-        {NAV.map(({ to, label, icon: Icon }) => {
+        {nav.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link key={to} to={to} aria-current={active ? "page" : undefined}
