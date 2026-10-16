@@ -151,10 +151,13 @@
     visibility: hidden;
   }
   #receipt-print,
-  #receipt-print * {
+  #receipt-print *,
+  #kot-print,
+  #kot-print * {
     visibility: visible;
   }
-  #receipt-print {
+  #receipt-print,
+  #kot-print {
     position: absolute;
     inset: 0;
     width: 72mm;
