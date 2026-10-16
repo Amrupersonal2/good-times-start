@@ -36,6 +36,13 @@
       "when": 1792174981192,
       "tag": "0004_day_close_records",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792176457354,
+      "tag": "0005_restaurant_team_sharing",
+      "breakpoints": true
     }
   ]
 }

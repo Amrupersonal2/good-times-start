@@ -92,6 +92,135 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_invites: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          invited_by: string | null
+          restaurant_id: string
+          role: Database["public"]["Enums"]["restaurant_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          invited_by?: string | null
+          restaurant_id: string
+          role: Database["public"]["Enums"]["restaurant_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string | null
+          restaurant_id?: string
+          role?: Database["public"]["Enums"]["restaurant_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_invites_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_members: {
+        Row: {
+          created_at: string
+          display_name: string
+          email: string
+          restaurant_id: string
+          role: Database["public"]["Enums"]["restaurant_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          email?: string
+          restaurant_id: string
+          role: Database["public"]["Enums"]["restaurant_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          email?: string
+          restaurant_id?: string
+          role?: Database["public"]["Enums"]["restaurant_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_members_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_records: {
+        Row: {
+          deleted: boolean
+          kind: string
+          payload: Json
+          record_id: string
+          restaurant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          deleted?: boolean
+          kind: string
+          payload?: Json
+          record_id: string
+          restaurant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          deleted?: boolean
+          kind?: string
+          payload?: Json
+          record_id?: string
+          restaurant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_records_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurants: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -115,10 +244,45 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_restaurant_invites: { Args: never; Returns: undefined }
+      create_restaurant: { Args: { _name: string }; Returns: string }
+      has_restaurant_role: {
+        Args: {
+          _rid: string
+          _roles: Database["public"]["Enums"]["restaurant_role"][]
+          _uid: string
+        }
+        Returns: boolean
+      }
+      is_member: { Args: { _rid: string; _uid: string }; Returns: boolean }
+      is_restaurant_admin: {
+        Args: { _restaurant_id: string }
+        Returns: boolean
+      }
+      is_restaurant_member: {
+        Args: { _restaurant_id: string }
+        Returns: boolean
+      }
+      remove_member: {
+        Args: { _restaurant_id: string; _user_id: string }
+        Returns: undefined
+      }
+      restaurant_role_of: {
+        Args: { _restaurant_id: string }
+        Returns: Database["public"]["Enums"]["restaurant_role"]
+      }
+      set_member_role: {
+        Args: {
+          _restaurant_id: string
+          _role: Database["public"]["Enums"]["restaurant_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "owner" | "staff"
+      restaurant_role: "owner" | "manager" | "cashier" | "captain" | "kitchen"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -247,6 +411,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "staff"],
+      restaurant_role: ["owner", "manager", "cashier", "captain", "kitchen"],
     },
   },
 } as const
