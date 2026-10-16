@@ -27,6 +27,7 @@ export function useCart(initialTableId?: string) {
     setDiscountPct(draft?.discountPct ?? 0);
     const openOrder = id ? await getDb().orders.where("tableId").equals(id).filter((o) => o.status === "held").first() : undefined;
     setActiveOrder(openOrder ?? null);
+    if (id) setOrderType("dine-in");
     setDraftReady(true);
   }, []);
 
