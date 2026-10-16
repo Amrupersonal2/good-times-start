@@ -88,6 +88,8 @@ function RestaurantDetails() {
       fssai: form.fssai?.trim() ?? "",
       upiVpa: form.upiVpa?.trim() ?? "",
       billFooter: form.billFooter?.trim() ?? "",
+      serviceChargePct: Math.min(20, Math.max(0, Number(form.serviceChargePct) || 0)),
+      staffDiscountLimit: Math.min(100, Math.max(0, Number(form.staffDiscountLimit ?? 10) || 0)),
     };
     await saveSettings(clean, !!user?.restaurantId);
     if (user?.restaurantId && clean.name !== user.restaurantName) {
@@ -99,7 +101,7 @@ function RestaurantDetails() {
   };
 
   return (
-    <Section title="Restaurant details" description="Printed on every bill. Your GSTIN and FSSAI number must match your registration.">
+    <Section title="Restaurant details" description="Printed on every bill, plus the billing rules every device follows. Your GSTIN and FSSAI number must match your registration.">
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => void submit(event)}>
         <Field label="Restaurant name"><input required maxLength={120} disabled={!canEdit} value={form.name} onChange={set("name")} className={inputClass} /></Field>
         <Field label="Legal business name" hint="If different, e.g. XTSY Ventures Private Limited"><input maxLength={160} disabled={!canEdit} value={form.legalName ?? ""} onChange={set("legalName")} className={inputClass} /></Field>
@@ -109,6 +111,14 @@ function RestaurantDetails() {
         <Field label="FSSAI licence number" error={errors.fssai}><input inputMode="numeric" maxLength={14} disabled={!canEdit} value={form.fssai ?? ""} onChange={set("fssai")} className={inputClass} /></Field>
         <Field label="UPI ID for the payment QR" error={errors.upiVpa}><input maxLength={120} disabled={!canEdit} value={form.upiVpa ?? ""} onChange={set("upiVpa")} placeholder="restaurant@okaxis" className={inputClass} /></Field>
         <div className="sm:col-span-2"><Field label="Bill footer" hint="Shown at the bottom of every bill"><input maxLength={140} disabled={!canEdit} value={form.billFooter ?? ""} onChange={set("billFooter")} placeholder="Thank you! Visit again." className={inputClass} /></Field></div>
+        <Field label="Service charge %" hint="Offered on dine-in bills, off unless the cashier ticks it. Guests can decline it. Leave 0 to hide.">
+          <input inputMode="decimal" disabled={!canEdit} value={form.serviceChargePct ?? 0}
+            onChange={(e) => setForm((prev) => ({ ...prev, serviceChargePct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 }))} className={inputClass} />
+        </Field>
+        <Field label="Highest discount for cashiers and captains (%)" hint="Owners and managers can give any discount.">
+          <input inputMode="numeric" disabled={!canEdit} value={form.staffDiscountLimit ?? 10}
+            onChange={(e) => setForm((prev) => ({ ...prev, staffDiscountLimit: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 }))} className={inputClass} />
+        </Field>
         {canEdit
           ? <div className="sm:col-span-2"><Button type="submit" disabled={busy || invalid}>{busy ? "Saving…" : "Save details"}</Button></div>
           : <p className="text-sm text-muted-foreground sm:col-span-2">Only the owner or a manager can change these.</p>}

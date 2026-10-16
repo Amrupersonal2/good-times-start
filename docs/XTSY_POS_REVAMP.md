@@ -38,9 +38,9 @@ syncs to Lovable and the live app) only after review in Lovable.
 - [x] Floor builder: sections and tables; move and merge tables
 
 ### Phase 3 — Billing
-- [ ] Split payments and split bills, UPI QR on screen
-- [ ] Void/cancel with reason and manager approval, reprint
-- [ ] Service charge, discount limits by role, customer phone on bill
+- [x] Split payments and split bills, UPI QR on screen
+- [x] Void/cancel with reason (owners and managers only), reprint
+- [x] Service charge, discount limits by role, customer phone on bill
 
 ### Phase 4 — Kitchen & captain
 - [ ] Kitchen display tuned for wall screens, KOT reprint/cancel

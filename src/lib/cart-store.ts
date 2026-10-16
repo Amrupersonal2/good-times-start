@@ -9,6 +9,8 @@ import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core"
 import { applyLocalStockSale } from "./cloud-sync";
 import { buildLine, priceFor } from "./menu-logic";
 import { latestHeldOrder } from "./table-actions";
+import { settledPayments, type Payment } from "./payment-logic";
+import { splitLines } from "./bill-splitting";
 
 function kotGroups(lines: CartLine[]) {
   const groups = new Map<string, CartLine[]>();
@@ -34,6 +36,8 @@ export function useCart(initialTableId?: string) {
   const [orderType, setOrderType] = useState<OrderType>("dine-in");
   const [tableId, setTableIdState] = useState<string | undefined>(initialTableId);
   const [discountPct, setDiscountPct] = useState(0);
+  const [serviceChargePct, setServiceChargePct] = useState(0);
+  const [customer, setCustomer] = useState<{ name?: string; phone?: string }>({});
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [draftReady, setDraftReady] = useState(false);
 
@@ -45,6 +49,8 @@ export function useCart(initialTableId?: string) {
     // A table opened on this device for the first time shows what other devices already sent.
     setLines(draft?.lines.length ? draft.lines : openOrder?.lines ?? []);
     setDiscountPct(draft?.discountPct ?? openOrder?.discountPct ?? 0);
+    setServiceChargePct(openOrder?.serviceChargePct ?? 0);
+    setCustomer(openOrder?.customer ?? {});
     setActiveOrder(openOrder);
     if (id) setOrderType("dine-in");
     setDraftReady(true);
@@ -57,7 +63,7 @@ export function useCart(initialTableId?: string) {
     const timeout = window.setTimeout(() => {
       void getDb().drafts.put({ id: tableId ?? "walkin", tableId, lines, discountPct, updatedAt: Date.now() });
       if (tableId && lines.length) {
-        const total = computeTotals(lines, discountPct).total;
+        const total = computeTotals(lines, discountPct, serviceChargePct).total;
         void getDb().restTables.get(tableId).then(async (table) => {
           if (!table || (table.status === "occupied" && table.runningTotal === total)) return;
           await getDb().restTables.update(tableId, { status: "occupied", runningTotal: total, since: table.since ?? Date.now() });
@@ -66,7 +72,7 @@ export function useCart(initialTableId?: string) {
       }
     }, 150);
     return () => window.clearTimeout(timeout);
-  }, [draftReady, tableId, lines, discountPct]);
+  }, [draftReady, tableId, lines, discountPct, serviceChargePct]);
 
   // Follow the shared copy of the running order: another device may add items or settle it.
   const activeUid = activeOrder?.uid;
@@ -147,12 +153,14 @@ export function useCart(initialTableId?: string) {
     }
     setLines([]);
     setDiscountPct(0);
+    setServiceChargePct(0);
+    setCustomer({});
     setTableIdState(undefined);
     setActiveOrder(null);
     setDraftReady(true);
   }, [activeOrder, tableId]);
 
-  const totals = computeTotals(lines, discountPct);
+  const totals = computeTotals(lines, discountPct, serviceChargePct);
   const submitted = activeOrder?.kotSubmittedQty ?? {};
   const pendingKitchenLines = unsentKitchenLines(lines, submitted);
 
@@ -164,14 +172,15 @@ export function useCart(initialTableId?: string) {
     const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : tableId ? await latestHeldOrder(tableId) : null;
     const base = latest && latest.status === "held" ? latest : null;
     const merged = base ? mergeSentLines(base.lines, pendingKitchenLines) : lines;
-    const t = computeTotals(merged, discountPct);
+    const t = computeTotals(merged, discountPct, serviceChargePct);
     const tableLabel = await tableLabelOf(tableId);
+    const extras = { serviceChargePct, ...(customer.name || customer.phone ? { customer } : {}) };
     const order: Order = base
-      ? { ...base, lines: merged, ...t, discountPct, status: "held" }
+      ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" }
       : {
           uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
-          roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false,
+          roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
         };
     const orderUid = order.uid ?? newUid();
     order.uid = orderUid;
@@ -195,46 +204,127 @@ export function useCart(initialTableId?: string) {
     setLines(merged);
     toast.success(`${kots.length} kitchen ticket${kots.length === 1 ? "" : "s"} sent`);
     return kots;
-  }, [activeOrder, discountPct, lines, orderType, pendingKitchenLines, tableId]);
+  }, [activeOrder, customer, discountPct, lines, orderType, pendingKitchenLines, serviceChargePct, tableId]);
 
-  const settle = useCallback(async (mode: PaymentMode): Promise<Order | null> => {
-    if (!lines.length) return null;
-    if (unsentKitchenLines(lines, activeOrder?.kotSubmittedQty).length) {
-      toast.error("Send the kitchen ticket before settling this bill");
-      return null;
-    }
-    const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : null;
-    if (latest && latest.status !== "held") {
-      toast.error(`Bill ${latest.billNo} was already ${latest.status === "settled" ? "settled" : "voided"} on another device`);
-      return null;
-    }
-    const t = computeTotals(lines, discountPct);
-    const order: Order = {
-      ...(latest ?? ({} as Order)),
-      uid: latest?.uid ?? newUid(),
-      billNo: latest?.billNo ?? await newBillNumber(new Date()),
-      orderType, tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
-      cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
-      payments: [{ mode, amount: t.total }], status: "settled", createdAt: latest?.createdAt ?? Date.now(), synced: false,
-    };
+  /** Shared bookkeeping once a bill leaves the table: free the table, forget the draft, reset the screen. */
+  const finishTable = useCallback(async (changes: [RecordKind, string][]) => {
     const db = getDb();
-    const id = order.id ? await db.orders.put(order) : Number(await db.orders.add(order));
-    order.id = id;
-    const changes: [RecordKind, string][] = [["order", order.uid ?? ""]];
     if (tableId) {
       await db.restTables.update(tableId, { status: "free", runningTotal: 0, since: undefined });
       changes.push(["table", tableId]);
     }
     await db.drafts.delete(tableId ?? "walkin");
     await markDirty(...changes);
-    await applyLocalStockSale(lines);
     setLines([]);
     setDiscountPct(0);
+    setServiceChargePct(0);
+    setCustomer({});
     setActiveOrder(null);
     setTableIdState(undefined);
+  }, [tableId]);
+
+  /** Re-read the shared order before closing it, in case another device already did. */
+  const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
+    if (unsentKitchenLines(lines, activeOrder?.kotSubmittedQty).length) {
+      toast.error("Send the kitchen ticket before settling this bill");
+      return false;
+    }
+    const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : null;
+    if (latest && latest.status !== "held") {
+      toast.error(`Bill ${latest.billNo} was already ${latest.status === "settled" ? "settled" : "voided"} on another device`);
+      return false;
+    }
+    return latest;
+  }, [activeOrder, lines]);
+
+  const settle = useCallback(async (payment: PaymentMode | Payment[], closedBy?: string): Promise<Order | null> => {
+    if (!lines.length) return null;
+    const latest = await checkStillOpen();
+    if (latest === false) return null;
+    const t = computeTotals(lines, discountPct, serviceChargePct);
+    const payments = Array.isArray(payment) ? settledPayments(payment, t.total) : [{ mode: payment, amount: t.total }];
+    const order: Order = {
+      ...(latest ?? ({} as Order)),
+      uid: latest?.uid ?? newUid(),
+      billNo: latest?.billNo ?? await newBillNumber(new Date()),
+      orderType, tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
+      serviceChargePct, serviceCharge: t.serviceCharge, cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
+      payments, status: "settled", createdAt: latest?.createdAt ?? Date.now(), synced: false,
+      ...(customer.name || customer.phone ? { customer } : {}),
+      ...(closedBy ? { closedBy } : {}),
+    };
+    const db = getDb();
+    const id = order.id ? await db.orders.put(order) : Number(await db.orders.add(order));
+    order.id = id;
+    await applyLocalStockSale(lines);
+    await finishTable([["order", order.uid ?? ""]]);
     toast.success(`Bill ${order.billNo} settled`);
     return order;
-  }, [activeOrder, discountPct, lines, orderType, tableId]);
+  }, [checkStillOpen, customer, discountPct, finishTable, lines, orderType, serviceChargePct, tableId]);
 
-  return { lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct, addItem, setQty, setNote, clear, totals, settle, sendKitchen, pendingKitchenLines, activeOrder };
+  /**
+   * Settle part of a running bill now (guests paying separately). The chosen
+   * quantities become their own settled bill; the rest stays on the table.
+   */
+  const settlePart = useCallback(async (quantities: Record<string, number>, payment: Payment[], closedBy?: string): Promise<Order | null> => {
+    const latest = await checkStillOpen();
+    if (latest === false) return null;
+    const { split, remaining } = splitLines(lines, quantities);
+    if (!split.length) { toast.error("Choose at least one item to split off"); return null; }
+    if (!remaining.length) return settle(payment, closedBy);
+
+    const now = Date.now();
+    const t = computeTotals(split, discountPct, serviceChargePct);
+    const label = latest?.tableLabel ?? await tableLabelOf(tableId);
+    const part: Order = {
+      uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel: label, lines: split,
+      subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
+      cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
+      status: "settled", createdAt: now, synced: false,
+      kotSubmittedQty: Object.fromEntries(split.map((l) => [l.itemId, l.qty])),
+      ...(customer.name || customer.phone ? { customer } : {}),
+      ...(closedBy ? { closedBy } : {}),
+    };
+    const db = getDb();
+    part.id = Number(await db.orders.add(part));
+    const changes: [RecordKind, string][] = [["order", part.uid ?? ""]];
+
+    const rest = computeTotals(remaining, discountPct, serviceChargePct);
+    if (latest?.id !== undefined) {
+      const sent: Record<string, number> = { ...(latest.kotSubmittedQty ?? {}) };
+      for (const line of split) sent[line.itemId] = Math.max(0, (sent[line.itemId] ?? 0) - line.qty);
+      const updated: Order = { ...latest, lines: remaining, kotSubmittedQty: sent, subtotal: rest.subtotal, discountAmt: rest.discountAmt,
+        serviceCharge: rest.serviceCharge, cgst: rest.cgst, sgst: rest.sgst, roundOff: rest.roundOff, total: rest.total, synced: false };
+      await db.orders.put(updated);
+      setActiveOrder(updated);
+      if (updated.uid) changes.push(["order", updated.uid]);
+    }
+    if (tableId) {
+      await db.restTables.update(tableId, { runningTotal: rest.total });
+      changes.push(["table", tableId]);
+    }
+    await markDirty(...changes);
+    await applyLocalStockSale(split);
+    setLines(remaining);
+    toast.success(`Bill ${part.billNo} settled; the rest stays on the table`);
+    return part;
+  }, [checkStillOpen, customer, discountPct, lines, orderType, serviceChargePct, settle, tableId]);
+
+  /** Cancel a running order (nothing was paid). Kept as a void bill with the reason. */
+  const cancelOrder = useCallback(async (reason: string, closedBy?: string) => {
+    const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : null;
+    const changes: [RecordKind, string][] = [];
+    if (latest?.id !== undefined && latest.status === "held") {
+      await getDb().orders.update(latest.id, { status: "void", voidReason: reason, synced: false, ...(closedBy ? { closedBy } : {}) });
+      if (latest.uid) changes.push(["order", latest.uid]);
+    }
+    await finishTable(changes);
+    toast.success(latest ? `Bill ${latest.billNo} cancelled` : "Bill cleared");
+  }, [activeOrder, finishTable]);
+
+  return {
+    lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct,
+    serviceChargePct, setServiceChargePct, customer, setCustomer, addItem, setQty, setNote, clear, totals,
+    settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, activeOrder,
+  };
 }

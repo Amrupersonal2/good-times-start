@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat } from "lucide-react";
-import { AppShell } from "@/components/AppShell";
+import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound } from "lucide-react";
+import { AppShell, useRestaurantSettings } from "@/components/AppShell";
+import { PaymentPanel, ReasonPrompt, UpiPay } from "@/components/PaymentDialogs";
+import { isAdmin, useStaff } from "@/lib/auth-context";
+import { maxDiscountFor, type Payment } from "@/lib/payment-logic";
 import { VegMark } from "@/components/VegMark";
 import { Receipt } from "@/components/Receipt";
 import { getDb } from "@/lib/db";
@@ -85,9 +88,33 @@ function PosPage() {
     else cart.addItem(item);
   };
 
+  const { user } = useStaff();
+  const settings = useRestaurantSettings();
+  const closedBy = user?.displayName;
+  const [payOpen, setPayOpen] = useState(false);
+  const [upiOpen, setUpiOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const maxDiscount = maxDiscountFor(user?.role ?? "unknown", settings.staffDiscountLimit ?? 10);
+  const discountChoices = [0, 5, 10, 15, 20, 25, 30, 50, 100].filter((d) => d <= maxDiscount || d === cart.discountPct);
+  const canCancel = !user || isAdmin(user);
+
+  const done = (o: Order | null) => {
+    if (!o) return;
+    setReceipt(o);
+    setCartOpen(false);
+    setPayOpen(false);
+    setUpiOpen(false);
+    setCustomerOpen(false);
+  };
   const pay = async (mode: PaymentMode) => {
-    const o = await cart.settle(mode);
-    if (o) { setReceipt(o); setCartOpen(false); }
+    if (mode === "upi" && settings.upiVpa) { setUpiOpen(true); return; }
+    done(await cart.settle(mode, closedBy));
+  };
+  const payWith = async (payments: Payment[]) => done(await cart.settle(payments, closedBy));
+  const payPart = async (quantities: Record<string, number>, payments: Payment[]) => {
+    const o = await cart.settlePart(quantities, payments, closedBy);
+    if (o) { setReceipt(o); setPayOpen(false); }
   };
 
   const sendToKitchen = async () => {
@@ -199,24 +226,47 @@ function PosPage() {
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="flex items-center gap-2">Discount
               <select aria-label="Discount" value={cart.discountPct} onChange={(e) => cart.setDiscountPct(Number(e.target.value))} className="rounded-md border border-input bg-card px-1 py-0.5 text-xs">
-                {[0, 5, 10, 15, 20].map((d) => <option key={d} value={d}>{d}%</option>)}
+                {discountChoices.map((d) => <option key={d} value={d}>{d}%</option>)}
               </select>
             </span>
             <span>-{formatINR(cart.totals.discountAmt)}</span>
           </div>
+          {(settings.serviceChargePct ?? 0) > 0 && cart.orderType === "dine-in" ? (
+            <div className="flex items-center justify-between text-muted-foreground">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={cart.serviceChargePct > 0} onChange={(e) => cart.setServiceChargePct(e.target.checked ? settings.serviceChargePct ?? 0 : 0)} />
+                Service charge {settings.serviceChargePct}% (guest agreed)
+              </label>
+              <span>{formatINR(cart.totals.serviceCharge)}</span>
+            </div>
+          ) : null}
           <div className="flex justify-between text-muted-foreground"><span>CGST + SGST</span><span>{formatINR(cart.totals.cgst + cart.totals.sgst)}</span></div>
           <div className="flex justify-between text-muted-foreground"><span>Round off</span><span>{formatINR(cart.totals.roundOff)}</span></div>
           <div className="flex justify-between pt-1 text-xl font-bold"><span>Total</span><span className="text-primary">{formatINR(cart.totals.total, 0)}</span></div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        {customerOpen || cart.customer.name || cart.customer.phone ? (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <input aria-label="Guest name" placeholder="Guest name" maxLength={60} value={cart.customer.name ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, name: e.target.value })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
+            <input aria-label="Guest phone" placeholder="Phone" inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
+          </div>
+        ) : null}
+        <div className="mt-3 grid grid-cols-4 gap-2">
           {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).map(([m, l, Icon]) => (
-            <button key={m} disabled={!cart.lines.length || cart.pendingKitchenLines.length > 0} onClick={() => pay(m)}
+            <button key={m} disabled={!cart.lines.length || cart.pendingKitchenLines.length > 0} onClick={() => void pay(m)}
               className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-40">
               <Icon className="size-4" />{l}
             </button>
           ))}
+          <button disabled={!cart.lines.length || cart.pendingKitchenLines.length > 0} onClick={() => setPayOpen(true)}
+            className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary text-xs font-semibold text-primary transition-colors hover:bg-primary-tint disabled:opacity-40">
+            <Wallet className="size-4" />Split
+          </button>
         </div>
-        <p className="mt-2 hidden text-center text-[11px] text-muted-foreground lg:block">F1 new · F2 search · F8 cash settle</p>
+        <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          <button type="button" className="flex items-center gap-1 font-semibold hover:text-foreground" onClick={() => setCustomerOpen(true)}><UserRound className="size-3.5" />{cart.customer.phone || cart.customer.name ? "Guest added" : "Add guest"}</button>
+          <span className="hidden lg:inline">F1 new bill, F2 search, F8 settle in cash</span>
+          {cart.activeOrder && canCancel ? <button type="button" className="font-semibold text-destructive hover:underline" onClick={() => setCancelOpen(true)}>Cancel bill</button> : null}
+        </div>
       </div>
     </div>
   );
@@ -316,9 +366,33 @@ function PosPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto">
+          {payOpen ? <PaymentPanel lines={cart.lines} discountPct={cart.discountPct} serviceChargePct={cart.serviceChargePct}
+            canSplitBill={!!cart.activeOrder && cart.lines.reduce((s, l) => s + l.qty, 0) > 1}
+            onSettle={(p) => void payWith(p)} onSettlePart={(q, p) => void payPart(q, p)} /> : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={upiOpen} onOpenChange={setUpiOpen}>
+        <DialogContent className="max-w-sm">
+          {upiOpen && settings.upiVpa ? <UpiPay vpa={settings.upiVpa} payee={settings.name || "Restaurant"} amount={cart.totals.total}
+            billNo={cart.activeOrder?.billNo ?? "new"} onPaid={() => { void cart.settle("upi", closedBy).then(done); }} /> : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="max-w-md">
+          {cancelOpen ? <ReasonPrompt title={`Cancel bill ${cart.activeOrder?.billNo ?? ""}`}
+            description="The kitchen has already been told about these items. The bill is kept as cancelled, with your reason, for the records."
+            confirmLabel="Cancel this bill" onConfirm={(reason) => { void cart.cancelOrder(reason, closedBy).then(() => setCancelOpen(false)); }} /> : null}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!receipt} onOpenChange={(o) => !o && setReceipt(null)}>
         <DialogContent className="max-h-[90vh] max-w-sm overflow-y-auto">
-          <DialogTitle>Bill settled</DialogTitle>
+          <DialogTitle>Bill {receipt?.billNo} settled</DialogTitle>
+          {receipt && receipt.payments.length > 1 ? <p className="-mt-2 text-sm text-muted-foreground">{receipt.payments.map((p) => `${p.mode.toUpperCase()} ${formatINR(p.amount, 0)}`).join(", ")}</p> : null}
           {receipt && <Receipt order={receipt} />}
           <button onClick={() => window.print()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
             <Printer className="size-4" /> Print receipt

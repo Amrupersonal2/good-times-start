@@ -28,3 +28,13 @@ export function deductInventory(lines: CartLine[], inventory: InventoryItem[]): 
     return sold ? { ...item, quantity: Math.max(0, item.quantity - sold), synced: false } : item;
   });
 }
+
+/** Put stock back for a voided bill. */
+export function restockInventory(lines: CartLine[], inventory: InventoryItem[]): InventoryItem[] {
+  const quantities = soldByMenuItem(lines);
+  return inventory.map((item) => {
+    if (!item.tracked) return item;
+    const returned = quantities.get(item.menuItemId) ?? 0;
+    return returned ? { ...item, quantity: item.quantity + returned, synced: false } : item;
+  });
+}

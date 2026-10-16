@@ -68,6 +68,11 @@ export interface Order {
   payments: { mode: PaymentMode; amount: number }[];
   status: "held" | "settled" | "void";
   voidReason?: string;
+  serviceChargePct?: number;
+  serviceCharge?: number;
+  customer?: { name?: string; phone?: string };
+  /** Who settled or voided the bill, for the staff report. */
+  closedBy?: string;
   createdAt: number;
   synced: boolean;
   cloudUserId?: string;
@@ -128,5 +133,9 @@ export interface RestaurantSettings {
   fssai?: string;
   upiVpa?: string;
   billFooter?: string;
+  /** Optional service charge %, offered per dine-in bill and off by default. */
+  serviceChargePct?: number;
+  /** Highest discount % cashiers and captains can give. */
+  staffDiscountLimit?: number;
   updatedAt?: number;
 }

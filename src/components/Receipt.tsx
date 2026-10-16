@@ -73,6 +73,7 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
         <span>{ORDER_TYPE_LABEL[order.orderType]}{table ? `, table ${table}` : ""}</span>
         <span>{new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
       </div>
+      {order.customer?.name || order.customer?.phone ? <div>Guest: {[order.customer.name, order.customer.phone].filter(Boolean).join(", ")}</div> : null}
       <Rule />
       <table className="w-full">
         <thead>
@@ -92,6 +93,7 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
       <div className="space-y-0.5">
         <div className="flex justify-between"><span>Subtotal</span><span>{formatINR(order.subtotal)}</span></div>
         {order.discountAmt > 0 ? <div className="flex justify-between"><span>Discount ({order.discountPct}%)</span><span>-{formatINR(order.discountAmt)}</span></div> : null}
+        {(order.serviceCharge ?? 0) > 0 ? <div className="flex justify-between"><span>Service charge ({order.serviceChargePct}%)</span><span>{formatINR(order.serviceCharge ?? 0)}</span></div> : null}
         <div className="flex justify-between"><span>CGST</span><span>{formatINR(order.cgst)}</span></div>
         <div className="flex justify-between"><span>SGST</span><span>{formatINR(order.sgst)}</span></div>
         <div className="flex justify-between"><span>Round off</span><span>{formatINR(order.roundOff)}</span></div>
@@ -99,7 +101,9 @@ export function Receipt({ order, mode = "bill", kot }: { order: Order; mode?: "k
       </div>
       {order.payments.length ? <>
         <Rule />
-        <div className="flex justify-between"><span>Paid by</span><span>{order.payments.map((p) => p.mode.toUpperCase()).join(" + ")}</span></div>
+        {order.payments.length === 1
+          ? <div className="flex justify-between"><span>Paid by</span><span>{order.payments[0]?.mode === "credit" ? "DUE" : order.payments[0]?.mode.toUpperCase()}</span></div>
+          : order.payments.map((p, i) => <div key={i} className="flex justify-between"><span>{p.mode === "credit" ? "Due" : `Paid by ${p.mode.toUpperCase()}`}</span><span>{formatINR(p.amount)}</span></div>)}
       </> : null}
       {showQr && qr ? (
         <div className="mt-3 text-center">

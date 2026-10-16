@@ -14,24 +14,32 @@ export interface BillTotals {
   subtotal: number;
   discountAmt: number;
   taxable: number;
+  serviceCharge: number;
   cgst: number;
   sgst: number;
   roundOff: number;
   total: number;
 }
 
-/** GST-exclusive billing: discount applied pro-rata, tax split equally into CGST + SGST, round-off to nearest rupee. */
-export function computeTotals(lines: CartLine[], discountPct = 0): BillTotals {
+/**
+ * GST-exclusive billing: discount applied pro-rata, then an optional service
+ * charge on the discounted amount. Service charge is taxed at the bill's own
+ * effective GST rate (it follows the food it's charged on). Tax splits equally
+ * into CGST + SGST and the total rounds to the nearest rupee.
+ */
+export function computeTotals(lines: CartLine[], discountPct = 0, serviceChargePct = 0): BillTotals {
   const subtotal = r2(lines.reduce((s, l) => s + l.price * l.qty, 0));
   const factor = 1 - Math.min(Math.max(discountPct, 0), 100) / 100;
   const discountAmt = r2(subtotal - subtotal * factor);
+  const taxable = r2(subtotal - discountAmt);
   let tax = 0;
   for (const l of lines) tax += l.price * l.qty * factor * (l.gstRate / 100);
+  const serviceCharge = r2(taxable * Math.min(Math.max(serviceChargePct, 0), 20) / 100);
+  if (serviceCharge > 0 && taxable > 0) tax += serviceCharge * (tax / taxable);
   const half = r2(tax / 2);
-  const taxable = r2(subtotal - discountAmt);
-  const raw = taxable + half * 2;
+  const raw = taxable + serviceCharge + half * 2;
   const total = Math.round(raw);
-  return { subtotal, discountAmt, taxable, cgst: half, sgst: half, roundOff: r2(total - raw), total };
+  return { subtotal, discountAmt, taxable, serviceCharge, cgst: half, sgst: half, roundOff: r2(total - raw), total };
 }
 
 /** Indian financial year label, e.g. Oct 2026 -> "26-27", Feb 2026 -> "25-26". */
