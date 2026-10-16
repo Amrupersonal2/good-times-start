@@ -11,6 +11,7 @@ import { formatINR } from "@/lib/billing";
 import { useCart } from "@/lib/cart-store";
 import type { Kot, Order, OrderType, PaymentMode } from "@/lib/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>) => ({ table: typeof search.table === "string" ? search.table : undefined }),
@@ -150,9 +151,7 @@ function PosPage() {
             <span className={cart.pendingKitchenLines.length ? "text-warning" : "text-success"}>
               {cart.pendingKitchenLines.length ? `${cart.pendingKitchenLines.reduce((sum, line) => sum + line.qty, 0)} item(s) not sent to kitchen` : "Kitchen ticket sent"}
             </span>
-            <button disabled={!cart.pendingKitchenLines.length} onClick={() => void sendToKitchen()} className="inline-flex min-h-9 items-center gap-2 rounded-md bg-secondary px-3 font-semibold text-secondary-foreground disabled:opacity-50">
-              <ChefHat className="size-4" />Send & print KOT
-            </button>
+            <Button variant="secondary" disabled={!cart.pendingKitchenLines.length} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />Send & print KOT</Button>
           </div>
         </div> : null}
         <div className="space-y-1 text-sm">

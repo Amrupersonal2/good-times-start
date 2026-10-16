@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, UserRound } from "lucide-react";
 import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useStaff } from "@/lib/auth-context";
@@ -29,6 +30,7 @@ function SyncChip() {
   const [diagnosing, setDiagnosing] = useState(false);
   const staff = useStaff().user;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const snapshot = useLiveQuery(async () => {
     const current = await getSyncSnapshot();
     await getDb().orders.count();
@@ -73,9 +75,19 @@ function SyncChip() {
     }
   };
   const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
     await supabase.auth.signOut();
-    await navigate({ to: "/" });
+    await navigate({ to: "/auth", replace: true });
   };
+
+  useEffect(() => {
+    if (!staff || !online) return;
+    const run = () => { void syncCloudData(staff.id).catch((error: unknown) => saveSyncError(error)); };
+    run();
+    window.addEventListener("online", run);
+    return () => window.removeEventListener("online", run);
+  }, [staff, online]);
   const cls = online
     ? "bg-success/10 text-success"
     : "bg-warning/10 text-warning";
