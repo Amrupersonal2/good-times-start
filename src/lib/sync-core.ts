@@ -1,9 +1,9 @@
-import type { CartLine, Customer, InventoryItem, Kot, Material, MenuItem, Order, RestaurantSettings, RestaurantTable, StockEntry, Supplier } from "./types";
+import type { CartLine, Customer, DayClose, InventoryItem, Kot, Material, MenuItem, Order, RestaurantSettings, RestaurantTable, StockEntry, Supplier } from "./types";
 
 /** Kinds of records shared between a restaurant's devices (mirrors restaurant_records.kind). */
-export type RecordKind = "settings" | "menu" | "table" | "order" | "kot" | "inventory" | "material" | "supplier" | "stock_entry" | "customer";
+export type RecordKind = "settings" | "menu" | "table" | "order" | "kot" | "inventory" | "material" | "supplier" | "stock_entry" | "customer" | "day_close";
 
-export const RECORD_KINDS: readonly RecordKind[] = ["settings", "menu", "table", "order", "kot", "inventory", "material", "supplier", "stock_entry", "customer"];
+export const RECORD_KINDS: readonly RecordKind[] = ["settings", "menu", "table", "order", "kot", "inventory", "material", "supplier", "stock_entry", "customer", "day_close"];
 
 /** The single settings record per restaurant. */
 export const SETTINGS_RECORD_ID = "restaurant";
@@ -108,6 +108,10 @@ export function isStockEntryPayload(value: unknown): value is StockEntry {
 
 export function isCustomerPayload(value: unknown): value is Customer {
   return isRecord(value) && isString(value["id"]) && isString(value["phone"]) && isNumber(value["createdAt"]);
+}
+
+export function isDayClosePayload(value: unknown): value is DayClose {
+  return isRecord(value) && isString(value["id"]) && isString(value["day"]) && isString(value["series"]) && isNumber(value["countedCash"]);
 }
 
 export function isSettingsPayload(value: unknown): value is RestaurantSettings {

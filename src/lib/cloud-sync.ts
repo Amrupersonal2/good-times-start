@@ -6,6 +6,7 @@ import { recordSaleConsumption } from "@/lib/stock-actions";
 import {
   RECORD_KINDS,
   isCustomerPayload,
+  isDayClosePayload,
   isMaterialPayload,
   isStockEntryPayload,
   isSupplierPayload,
@@ -61,6 +62,7 @@ async function readLocal(kind: RecordKind, recordId: string): Promise<unknown> {
     case "supplier": return db.suppliers.get(recordId);
     case "stock_entry": return db.stockEntries.get(recordId);
     case "customer": return db.customers.get(recordId);
+    case "day_close": return db.dayCloses.get(recordId);
   }
 }
 
@@ -108,7 +110,7 @@ async function push(restaurantId: string): Promise<void> {
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
   const pending = new Set((await db.outbox.toCollection().primaryKeys()).map(String));
-  await db.transaction("rw", [db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers], async () => {
+  await db.transaction("rw", [db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses], async () => {
     for (const row of rows) {
       if (!isKind(row.kind)) continue;
       // Local edits that haven't been pushed yet win; they'll overwrite the cloud copy next push.
@@ -179,6 +181,10 @@ async function applyRemote(rows: RemoteRow[]): Promise<void> {
         case "customer":
           if (row.deleted) await db.customers.delete(id);
           else if (isCustomerPayload(payload)) await db.customers.put({ ...payload, id });
+          break;
+        case "day_close":
+          if (row.deleted) await db.dayCloses.delete(id);
+          else if (isDayClosePayload(payload)) await db.dayCloses.put({ ...payload, id });
           break;
       }
     }

@@ -199,3 +199,18 @@ export interface Customer {
   note?: string;
   createdAt: number;
 }
+
+/** One counter's cash drawer closed at the end of a day. Id is `${YYYY-MM-DD}:${series}`. */
+export interface DayClose {
+  id: string;
+  day: string;
+  series: string;
+  openingCash: number;
+  expectedCash: number;
+  countedCash: number;
+  note?: string;
+  bills: number;
+  net: number;
+  closedBy?: string;
+  at: number;
+}

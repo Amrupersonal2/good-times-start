@@ -53,7 +53,7 @@ syncs to Lovable and the live app) only after review in Lovable.
 - [x] Customer directory, visit history, loyalty points (spend as payment), dues collection, feedback
 
 ### Phase 7 — Reports
-- [ ] Day-end and shift close, cash drawer, GST report, item/category/staff
+- [x] Day-end and shift close, cash drawer, GST report, item/category/staff
       sales, date ranges, export
 
 ### Phase 8 — SaaS
