@@ -1,14 +1,6 @@
 import type { MenuItem, RestaurantTable } from "./types";
 
-export const RESTAURANT = {
-  name: "Spice Route Kitchen",
-  address: "12, MG Road, Koramangala, Bengaluru 560034",
-  gstin: "29ABCDE1234F1Z5",
-  fssai: "11224333000123",
-  phone: "+91 98765 43210",
-  upiVpa: "spiceroute@upi",
-};
-
+/** Sample data offered to a new restaurant from Settings. Never loaded automatically. */
 export const CATEGORIES = ["Starters", "Main Course", "Breads", "Rice & Biryani", "South Indian", "Chinese", "Beverages", "Desserts"];
 
 const m = (id: string, name: string, category: string, price: number, veg: boolean, station: MenuItem["station"], popular = false, gstRate: MenuItem["gstRate"] = 5): MenuItem =>

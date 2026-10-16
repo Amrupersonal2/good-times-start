@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulateSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import type { CartLine } from "./types";
 
 const lines: CartLine[] = [
@@ -23,5 +23,18 @@ describe("kitchen ticket quantities", () => {
     const naan = lines[0];
     expect(naan).toBeDefined();
     expect(accumulateSubmittedQuantities({ naan: 2 }, naan ? [naan] : [])).toEqual({ naan: 5 });
+  });
+});
+describe("cancellation tickets", () => {
+  const l = (itemId: string, qty: number) => ({ itemId, name: itemId, price: 10, qty, veg: true, gstRate: 5, station: "Tandoor" });
+  it("finds reduced and removed items that were already sent", () => {
+    const sent = { naan: 3, dal: 1, roti: 2 };
+    const now = [l("naan", 1), l("roti", 2)];
+    expect(cancelledKitchenLines(now, sent, [l("dal", 1)])).toEqual([l("naan", 2), l("dal", 1)]);
+    expect(cancelledKitchenLines(now, { naan: 1 })).toEqual([]);
+  });
+  it("updates sent counts and order lines after a cancellation", () => {
+    expect(subtractSubmittedQuantities({ naan: 3, dal: 1 }, [l("naan", 2), l("dal", 1)])).toEqual({ naan: 1 });
+    expect(removeCancelled([l("naan", 3), l("dal", 1)], [l("naan", 2), l("dal", 1)])).toEqual([l("naan", 1)]);
   });
 });

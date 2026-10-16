@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as KitchenRouteImport } from './routes/kitchen'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as StockRouteImport } from './routes/stock'
 import { Route as TablesRouteImport } from './routes/tables'
 
 const IndexRoute = IndexRouteImport.update({
@@ -24,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KitchenRoute = KitchenRouteImport.update({
@@ -41,6 +49,16 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StockRoute = StockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TablesRoute = TablesRouteImport.update({
   id: '/tables',
   path: '/tables',
@@ -50,42 +68,54 @@ const TablesRoute = TablesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/customers': typeof CustomersRoute
   '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
+  '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/customers': typeof CustomersRoute
   '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
+  '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/customers': typeof CustomersRoute
   '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
+  '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/tables'
+  fullPaths: '/' | '/auth' | '/customers' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/stock' | '/tables'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/tables'
-  id: '__root__' | '/' | '/auth' | '/kitchen' | '/menu' | '/reports' | '/tables'
+  to: '/' | '/auth' | '/customers' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/stock' | '/tables'
+  id: '__root__' | '/' | '/auth' | '/customers' | '/kitchen' | '/menu' | '/reports' | '/settings' | '/stock' | '/tables'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  CustomersRoute: typeof CustomersRoute
   KitchenRoute: typeof KitchenRoute
   MenuRoute: typeof MenuRoute
   ReportsRoute: typeof ReportsRoute
+  SettingsRoute: typeof SettingsRoute
+  StockRoute: typeof StockRoute
   TablesRoute: typeof TablesRoute
 }
 
@@ -103,6 +133,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kitchen': {
@@ -126,6 +163,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stock': {
+      id: '/stock'
+      path: '/stock'
+      fullPath: '/stock'
+      preLoaderRoute: typeof StockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tables': {
       id: '/tables'
       path: '/tables'
@@ -139,9 +190,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CustomersRoute: CustomersRoute,
   KitchenRoute: KitchenRoute,
   MenuRoute: MenuRoute,
   ReportsRoute: ReportsRoute,
+  SettingsRoute: SettingsRoute,
+  StockRoute: StockRoute,
   TablesRoute: TablesRoute,
 }
 export const routeTree = rootRouteImport

@@ -22,6 +22,18 @@ describe("billing", () => {
     expect(t.cgst).toBe(4.5);
     expect(t.total).toBe(189);
   });
+  it("adds an optional service charge taxed at the food's rate", () => {
+    const t = computeTotals([line(1000, 1, 5)], 0, 5);
+    expect(t.serviceCharge).toBe(50);
+    expect(t.cgst).toBe(26.25);
+    expect(t.total).toBe(1103);
+    expect(computeTotals([line(1000, 1, 5)]).serviceCharge).toBe(0);
+  });
+  it("applies service charge after the discount", () => {
+    const t = computeTotals([line(1000, 1, 5)], 10, 10);
+    expect(t.taxable).toBe(900);
+    expect(t.serviceCharge).toBe(90);
+  });
   it("uses Indian financial year in bill numbers", () => {
     expect(financialYear(new Date(2026, 9, 11))).toBe("26-27");
     expect(financialYear(new Date(2026, 1, 1))).toBe("25-26");

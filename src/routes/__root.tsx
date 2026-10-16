@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
+import { LiveSync } from "@/components/LiveSync";
 
 function NotFoundComponent() {
   return (
@@ -80,18 +81,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#A12445" },
-      { title: "Restro POS by XTSY" },
-      { name: "description", content: "Offline-first restaurant billing & POS for India." },
+      { name: "theme-color", content: "#17352E" },
+      { title: "XTSY POS" },
+      { name: "description", content: "Restaurant billing, KOTs and live multi-device sync for India — works offline." },
       { name: "author", content: "XTSY" },
-      { property: "og:title", content: "Restro POS by XTSY" },
-      { property: "og:description", content: "Offline-first restaurant billing & POS for India." },
+      { property: "og:title", content: "XTSY POS" },
+      { property: "og:description", content: "Restaurant billing, KOTs and live multi-device sync for India — works offline." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;600&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Noto+Sans:wght@400;600&display=swap" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
     ],
@@ -122,6 +123,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <LiveSync />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </AuthProvider>

@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Restro POS by XTSY" },
-      { name: "description", content: "Sign in to sync restaurant orders and stock securely." },
-      { property: "og:title", content: "Sign in — Restro POS by XTSY" },
-      { property: "og:description", content: "Secure access to your restaurant POS and cloud sync." },
+      { title: "Sign in — XTSY POS" },
+      { name: "description", content: "Sign in to XTSY POS to share bills, tables and kitchen tickets across your restaurant's devices." },
+      { property: "og:title", content: "Sign in — XTSY POS" },
+      { property: "og:description", content: "Restaurant billing and KOTs that keep working offline." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -51,26 +51,36 @@ function AuthPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+    <main className="grid min-h-screen bg-background lg:grid-cols-[1fr_minmax(24rem,32rem)]">
+      <aside className="hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex">
+        <div className="text-lg font-extrabold text-white">XTSY POS</div>
+        <div className="max-w-md">
+          <p className="text-4xl font-extrabold leading-tight text-white">Every counter, waiter and kitchen screen on the same bill.</p>
+          <p className="mt-4 text-sidebar-foreground/80">Billing keeps working when the internet drops and catches up the moment it's back.</p>
+        </div>
+        <div className="h-1.5 w-16 rounded bg-gold" aria-hidden="true" />
+      </aside>
+      <div className="flex items-center justify-center p-4">
       <section className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold">{signup ? "Create your account" : "Sign in to Restro POS"}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Cloud sync for your restaurant orders and stock.</p>
+        <h1 className="text-2xl font-bold">{signup ? "Create your account" : "Sign in to XTSY POS"}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{signup ? "Owners create the restaurant next. Staff: sign up with the email your owner invited." : "Use the email your restaurant invited, or the one you set up as owner."}</p>
         <form className="mt-6 space-y-3" onSubmit={(event) => void submit(event)}>
           <label className="block text-sm font-medium">Email
-            <input autoComplete="email" type="email" required maxLength={255} value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-md border border-input bg-card px-3 py-2" />
+            <input autoComplete="email" type="email" required maxLength={255} value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5" />
           </label>
           <label className="block text-sm font-medium">Password
-            <input autoComplete={signup ? "new-password" : "current-password"} type="password" required minLength={8} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-md border border-input bg-card px-3 py-2" />
+            <input autoComplete={signup ? "new-password" : "current-password"} type="password" required minLength={8} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5" />
           </label>
           {message ? <p role="status" className="text-sm text-destructive">{message}</p> : null}
           <Button disabled={busy} className="w-full" type="submit">{busy ? "Please wait…" : signup ? "Create account" : "Sign in"}</Button>
         </form>
         <Button variant="outline" disabled={busy} className="mt-3 w-full" onClick={() => void google()}>Continue with Google</Button>
         <Button variant="link" className="mt-3 w-full" onClick={() => { setSignup(!signup); setMessage(""); }}>
-          {signup ? "Already have an account? Sign in" : "New restaurant? Create an account"}
+          {signup ? "Already have an account? Sign in" : "New here? Create an account"}
         </Button>
-        <Button variant="ghost" className="mt-2 w-full" onClick={() => void navigate({ to: "/", search: {} })}>Continue offline</Button>
+        <Button variant="ghost" className="mt-2 w-full" onClick={() => void navigate({ to: "/", search: {} })}>Continue on this device only</Button>
       </section>
+      </div>
     </main>
   );
 }
