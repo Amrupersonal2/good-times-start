@@ -13,6 +13,7 @@ import type { Order, OrderType, PaymentMode } from "@/lib/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>) => ({ table: typeof search.table === "string" ? search.table : undefined }),
   head: () => ({
     meta: [
       { title: "Billing — Restro POS by XTSY" },
@@ -33,10 +34,11 @@ const ORDER_TYPES: { v: OrderType; l: string }[] = [
 ];
 
 function PosPage() {
+  const search = Route.useSearch();
   useEffect(() => { void ensureSeed(); }, []);
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
-  const cart = useCart();
+  const cart = useCart(search.table);
   const [cat, setCat] = useState<string>("Popular");
   const [q, setQ] = useState("");
   const [cartOpen, setCartOpen] = useState(false);

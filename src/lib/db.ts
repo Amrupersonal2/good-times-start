@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { InventoryItem, Kot, MenuItem, Order, RestaurantTable } from "./types";
+import type { CartDraft, InventoryItem, Kot, MenuItem, Order, RestaurantTable } from "./types";
 import { SEED_MENU, SEED_TABLES } from "./seed";
 
 class RestroDB extends Dexie {
@@ -7,8 +7,9 @@ class RestroDB extends Dexie {
   orders!: Table<Order, number>;
   restTables!: Table<RestaurantTable, string>;
   kots!: Table<Kot, number>;
-  meta!: Table<{ key: string; value: number }, string>;
+  meta!: Table<{ key: string; value: number | string }, string>;
   inventory!: Table<InventoryItem, string>;
+  drafts!: Table<CartDraft, string>;
 
   constructor() {
     super("restro-pos");
@@ -26,6 +27,15 @@ class RestroDB extends Dexie {
       kots: "++id, orderId, status, createdAt",
       meta: "key",
       inventory: "id, menuItemId, tracked, synced",
+    });
+    this.version(3).stores({
+      menu: "id, category, name",
+      orders: "++id, billNo, status, createdAt, tableId",
+      restTables: "id, section, status",
+      kots: "++id, orderId, status, createdAt",
+      meta: "key",
+      inventory: "id, menuItemId, tracked, synced",
+      drafts: "id, tableId, updatedAt",
     });
   }
 }

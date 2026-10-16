@@ -28,16 +28,23 @@ function kotsForOrder(order: Order): Omit<Kot, "id">[] {
 }
 
 export async function syncCloudData(userId: string): Promise<void> {
-  if (!navigator.onLine) return;
+  if (typeof navigator !== "undefined" && !navigator.onLine) throw new Error("No internet connection. Orders remain safely stored on this device.");
   const { data: verified } = await supabase.auth.getUser();
   if (verified.user?.id !== userId) return;
 
   const db = getDb();
+  await db.meta.put({ key: "syncError", value: "" });
   const localOrders = await db.orders.toArray();
-  const pendingOrders = localOrders.filter((order) => order.cloudUserId === userId && order.status === "settled" && !order.synced);
-  if (pendingOrders.length) {
+  const pendingOrders = localOrders
+    .filter((order) => !order.cloudUserId && order.status === "settled" && !order.synced)
+    .map((order) => ({ ...order, cloudUserId: userId }));
+  if (pendingOrders.length) await db.orders.bulkPut(pendingOrders);
+  const ownedPendingOrders = localOrders
+    .filter((order) => order.cloudUserId === userId && order.status === "settled" && !order.synced)
+    .concat(pendingOrders);
+  if (ownedPendingOrders.length) {
     const { error } = await supabase.from("cloud_orders").upsert(
-      pendingOrders.map((order) => ({
+      ownedPendingOrders.map((order) => ({
         user_id: userId,
         bill_no: order.billNo,
         payload: JSON.parse(JSON.stringify(order)),
@@ -45,7 +52,7 @@ export async function syncCloudData(userId: string): Promise<void> {
       { onConflict: "user_id,bill_no" },
     );
     if (error) throw error;
-    await db.orders.bulkPut(pendingOrders.map((order) => ({ ...order, synced: true })));
+    await db.orders.bulkPut(ownedPendingOrders.map((order) => ({ ...order, synced: true })));
   }
 
   const { data: remoteOrders, error: orderError } = await supabase
@@ -98,6 +105,8 @@ export async function syncCloudData(userId: string): Promise<void> {
     if (result.error) throw result.error;
     await db.inventory.update(item.id, { synced: true });
   }
+  await db.meta.put({ key: "lastSyncAt", value: Date.now() });
+  await db.meta.put({ key: "syncError", value: "" });
 }
 
 export async function applyLocalStockSale(userId: string | undefined, soldLines: Order["lines"]): Promise<void> {
@@ -106,4 +115,25 @@ export async function applyLocalStockSale(userId: string | undefined, soldLines:
   const changed = deductInventory(soldLines, items).filter((item) => item.synced === false);
   if (changed.length) await db.inventory.bulkPut(changed);
   if (userId) await syncCloudData(userId);
+}
+
+export async function getSyncSnapshot() {
+  const db = getDb();
+  const [orders, lastSync, error, inventory] = await Promise.all([
+    db.orders.toArray(),
+    db.meta.get("lastSyncAt"),
+    db.meta.get("syncError"),
+    db.inventory.toArray(),
+  ]);
+  return {
+    pendingOrders: orders.filter((order) => order.status === "settled" && !order.synced).length,
+    lastSyncAt: typeof lastSync?.value === "number" ? lastSync.value : null,
+    error: typeof error?.value === "string" ? error.value : "",
+    pendingStock: inventory.filter((item) => !item.synced).length,
+  };
+}
+
+export async function saveSyncError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Sync could not be completed.";
+  await getDb().meta.put({ key: "syncError", value: message.slice(0, 500) });
 }

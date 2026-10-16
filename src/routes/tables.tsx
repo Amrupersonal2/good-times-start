@@ -52,7 +52,7 @@ function TablesPage() {
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
               {tables.filter((t) => t.section === sec).map((t) => (
                 <div key={t.id} className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 p-2 ${STATUS[t.status].cls}`}>
-                  <button onClick={() => navigate({ to: "/" })} className="text-xl font-bold">{t.label}</button>
+                  <button onClick={() => navigate({ to: "/", search: { table: t.id } })} className="text-xl font-bold">{t.label}</button>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
                   <button onClick={() => cycle(t.id, t.status)} className="mt-1 rounded-full bg-card px-2 py-0.5 text-[10px] font-semibold">{STATUS[t.status].label}</button>
                 </div>
