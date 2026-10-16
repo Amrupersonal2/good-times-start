@@ -15,6 +15,13 @@
       "when": 1792050797821,
       "tag": "0001_link_inventory_to_menu",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792173050308,
+      "tag": "0002_restaurant_accounts_and_live_sync",
+      "breakpoints": true
     }
   ]
 }
