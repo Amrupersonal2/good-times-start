@@ -45,6 +45,15 @@ export interface Order {
   createdAt: number;
   synced: boolean;
   cloudUserId?: string;
+  kotSubmittedQty?: Record<string, number>;
+}
+
+export interface CartDraft {
+  id: string;
+  tableId?: string | undefined;
+  lines: CartLine[];
+  discountPct: number;
+  updatedAt: number;
 }
 
 export interface InventoryItem {
@@ -73,7 +82,7 @@ export interface Kot {
   orderId: number;
   billNo: string;
   station: string;
-  lines: { name: string; qty: number; note?: string | undefined }[];
+  lines: { itemId?: string; name: string; qty: number; note?: string | undefined }[];
   status: KotStatus;
   createdAt: number;
 }
