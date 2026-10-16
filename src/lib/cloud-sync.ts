@@ -52,7 +52,7 @@ export async function syncCloudData(userId: string): Promise<void> {
     .from("cloud_orders").select("bill_no,payload").eq("user_id", userId);
   if (orderError) throw orderError;
   for (const row of remoteOrders ?? []) {
-    const payload = row.payload;
+    const payload: unknown = row.payload;
     if (!isOrder(payload) || payload.status !== "settled") continue;
     const existing = await db.orders.where("billNo").equals(row.bill_no).first();
     if (existing) continue;
