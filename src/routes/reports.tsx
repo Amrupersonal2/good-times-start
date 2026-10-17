@@ -172,7 +172,7 @@ function Gst({ orders, file }: { orders: Order[]; file: string }) {
     const { sheets } = gstr1Workbook(orders, settings, period);
     downloadXlsx(`GSTR-1-${file}`, sheets, { title: `GSTR-1 ${period}` });
   };
-  const exportGst = download(`${file}-gst.csv`, toCsv([["GST rate %", "Taxable value", "CGST", "SGST", "Total tax"], ...rows.map((r) => [r.rate, r.taxable, r.cgst, r.sgst, Math.round((r.cgst + r.sgst) * 100) / 100])]));
+  const exportGst = () => download(`${file}-gst.csv`, toCsv([["GST rate %", "Taxable value", "CGST", "SGST", "Total tax"], ...rows.map((r) => [r.rate, r.taxable, r.cgst, r.sgst, Math.round((r.cgst + r.sgst) * 100) / 100])]));
   return (
     <div className="card-elevated p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
