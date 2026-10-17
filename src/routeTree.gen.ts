@@ -318,18 +318,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StockRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/waiter': {
-      id: '/waiter'
-      path: '/waiter'
-      fullPath: '/waiter'
-      preLoaderRoute: typeof WaiterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/tables': {
       id: '/tables'
       path: '/tables'
       fullPath: '/tables'
       preLoaderRoute: typeof TablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/waiter': {
+      id: '/waiter'
+      path: '/waiter'
+      fullPath: '/waiter'
+      preLoaderRoute: typeof WaiterRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
