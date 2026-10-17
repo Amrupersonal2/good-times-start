@@ -291,6 +291,12 @@ export function useCart(initialTableId?: string) {
     }
     const t = computeTotals(billLines, discountPct, serviceChargePct, tax);
     const payments = Array.isArray(payment) ? settledPayments(payment, t.total) : [{ mode: payment, amount: t.total }];
+    const received = payments.reduce((sum, p) => sum + p.amount, 0);
+    if (received + 0.01 < t.total) {
+      // Another device added to this table after payment was entered: never record a short payment.
+      toast.error(`This bill is now ${t.total.toLocaleString("en-IN")}. Take payment again.`);
+      return null;
+    }
     const order: Order = withCustomerId({
       ...(latest ?? ({} as Order)),
       uid: latest?.uid ?? newUid(),
