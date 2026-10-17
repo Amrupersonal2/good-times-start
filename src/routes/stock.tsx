@@ -10,7 +10,7 @@ import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { formatINR } from "@/lib/billing";
 import { newUid } from "@/lib/sync-core";
-import { STOCK_UNITS, countAdjustment, formatQty, isLow, purchaseTotal, stockLevels, stockValue } from "@/lib/stock-logic";
+import { STOCK_UNITS, countAdjustment, formatQty, isLow, purchaseTotal, stockValue } from "@/lib/stock-logic";
 import { deleteSupplier, recordStockEntry, saveMaterial, saveSupplier } from "@/lib/stock-actions";
 import { gstinError } from "@/lib/validation";
 import { downloadXlsx } from "@/lib/xlsx";
@@ -274,19 +274,23 @@ function StockPage() {
   const admin = !user || isAdmin(user);
   const materials = useLiveQuery(() => getDb().materials.toArray(), [], []);
   const suppliers = useLiveQuery(() => getDb().suppliers.toArray(), [], []);
-  const entries = useLiveQuery(() => getDb().stockEntries.toArray(), [], []);
+  // Recent movements only; the ledger grows with every bill, so screens never load all of it.
+  const recent = useLiveQuery(() => getDb().stockEntries.orderBy("at").reverse().limit(100).toArray(), [], []);
+  const purchaseEntries = useLiveQuery(async () => (await getDb().stockEntries.where("type").equals("purchase").toArray()).sort((a, b) => b.at - a.at), [], []);
+  const levelRows = useLiveQuery(() => getDb().materialLevels.toArray(), [], []);
   const [tab, setTab] = useState<Tab>("stock");
   const [sheet, setSheet] = useState<Sheet | null>(null);
 
   const active = materials.filter((m) => !m.archived).sort((a, b) => a.name.localeCompare(b.name));
-  const levels = useMemo(() => stockLevels(entries), [entries]);
+  const levels = useMemo(() => new Map(levelRows.map((l) => [l.materialId, l.qty])), [levelRows]);
   const low = active.filter((m) => isLow(m, levels.get(m.id) ?? 0));
-  const purchases = entries.filter((e) => e.type === "purchase").sort((a, b) => b.at - a.at).slice(0, 60);
-  const history = [...entries].sort((a, b) => b.at - a.at).slice(0, 100);
+  const purchases = purchaseEntries.slice(0, 60);
+  const history = recent;
   const nameOf = (id: string) => materials.find((m) => m.id === id)?.name ?? "Removed material";
   const unitOf = (id: string): StockUnit => materials.find((m) => m.id === id)?.unit ?? "pcs";
   const close = () => setSheet(null);
-  const exportStock = () => {
+  const exportStock = async () => {
+    const entries = await getDb().stockEntries.toArray();
     const supplierName = (id?: string) => suppliers.find((x) => x.id === id)?.name ?? "";
     const levelRows = active.map((m) => {
       const level = levels.get(m.id) ?? 0;
@@ -328,7 +332,7 @@ function StockPage() {
           {admin ? (
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setSheet({ kind: "material", material: null })}><Plus />Material</Button>
-              <Button variant="outline" disabled={!active.length} onClick={() => exportStock()}><Download />Excel</Button>
+              <Button variant="outline" disabled={!active.length} onClick={() => void exportStock()}><Download />Excel</Button>
               <Button variant="outline" disabled={!active.length} onClick={() => setSheet({ kind: "count-all" })}>Count all</Button>
               <Button disabled={!active.length} onClick={() => setSheet({ kind: "purchase" })}><Plus />Purchase</Button>
             </div>

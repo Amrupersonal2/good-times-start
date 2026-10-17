@@ -1,6 +1,8 @@
 import Dexie, { type Table } from "dexie";
 import type { CartDraft, Customer, DayClose, InventoryItem, Kot, Material, MenuItem, Order, RestaurantSettings, RestaurantTable, StockEntry, Supplier } from "./types";
 import { SEED_MENU, SEED_TABLES } from "./seed";
+import { normalisePhone } from "./customer-logic";
+import { stockLevels } from "./stock-logic";
 import {
   SETTINGS_RECORD_ID,
   legacyKotUid,
@@ -32,6 +34,8 @@ class RestroDB extends Dexie {
   stockEntries!: Table<StockEntry, string>;
   customers!: Table<Customer, string>;
   dayCloses!: Table<DayClose, string>;
+  /** Running stock per raw material, kept in step with stockEntries so screens never re-add the whole ledger. */
+  materialLevels!: Table<{ materialId: string; qty: number }, string>;
 
   constructor() {
     super("restro-pos");
@@ -132,7 +136,55 @@ class RestroDB extends Dexie {
       customers: "id, phone, name",
       dayCloses: "id, day",
     });
+    // Speed: running bill per table by index, guest visits by index, cached stock levels.
+    this.version(7).stores({
+      menu: "id, category, name",
+      orders: "++id, billNo, status, createdAt, tableId, uid, customerId, [tableId+status]",
+      restTables: "id, section, status",
+      kots: "++id, orderId, status, createdAt, uid",
+      meta: "key",
+      inventory: "id, menuItemId, tracked, synced",
+      drafts: "id, tableId, updatedAt",
+      outbox: "key, kind, at",
+      materials: "id, name",
+      suppliers: "id, name",
+      stockEntries: "id, type, at",
+      customers: "id, phone, name",
+      dayCloses: "id, day",
+      materialLevels: "materialId",
+    }).upgrade(async (tx) => {
+      await tx.table<Order, number>("orders").toCollection().modify((order) => {
+        const id = normalisePhone(order.customer?.phone);
+        if (id) order.customerId = id;
+      });
+      const levels = stockLevels(await tx.table<StockEntry, string>("stockEntries").toArray());
+      await tx.table<{ materialId: string; qty: number }, string>("materialLevels").bulkPut([...levels].map(([materialId, qty]) => ({ materialId, qty })));
+    });
   }
+}
+
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
+
+/**
+ * Keep cached stock levels in step with one ledger entry being added,
+ * replaced or removed. Call inside a transaction that includes
+ * stockEntries and materialLevels, before writing the entry itself.
+ */
+export async function applyEntryToLevels(db: RestroDB, entryId: string, next: StockEntry | null): Promise<void> {
+  const previous = await db.stockEntries.get(entryId);
+  const deltas = new Map<string, number>();
+  for (const item of previous?.items ?? []) deltas.set(item.materialId, (deltas.get(item.materialId) ?? 0) - item.qty);
+  for (const item of next?.items ?? []) deltas.set(item.materialId, (deltas.get(item.materialId) ?? 0) + item.qty);
+  for (const [materialId, delta] of deltas) {
+    if (!delta) continue;
+    const current = (await db.materialLevels.get(materialId))?.qty ?? 0;
+    await db.materialLevels.put({ materialId, qty: r3(current + delta) });
+  }
+}
+
+/** Current stock of every raw material, from the cache. */
+export async function getMaterialLevels(): Promise<Map<string, number>> {
+  return new Map((await getDb().materialLevels.toArray()).map((l) => [l.materialId, l.qty]));
 }
 
 let _db: RestroDB | null = null;
@@ -245,8 +297,8 @@ export async function loadSampleData(): Promise<void> {
  */
 export async function resetDevice(): Promise<void> {
   const db = getDb();
-  await db.transaction("rw", [db.menu, db.orders, db.restTables, db.kots, db.inventory, db.drafts, db.outbox, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses], async () => {
-    await Promise.all([db.menu.clear(), db.orders.clear(), db.restTables.clear(), db.kots.clear(), db.inventory.clear(), db.drafts.clear(), db.outbox.clear(),
+  await db.transaction("rw", [db.menu, db.orders, db.restTables, db.kots, db.inventory, db.drafts, db.outbox, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses, db.materialLevels], async () => {
+    await Promise.all([db.materialLevels.clear(), db.menu.clear(), db.orders.clear(), db.restTables.clear(), db.kots.clear(), db.inventory.clear(), db.drafts.clear(), db.outbox.clear(),
       db.materials.clear(), db.suppliers.clear(), db.stockEntries.clear(), db.customers.clear(), db.dayCloses.clear()]);
     for (const key of ["restaurantId", "pullCursor", "restaurantSettings", "lastSyncAt", "syncError"]) await db.meta.delete(key);
   });

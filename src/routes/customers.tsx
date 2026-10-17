@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { formatINR } from "@/lib/billing";
-import { customerStats, normalisePhone, type CustomerStats } from "@/lib/customer-logic";
+import { customerStats, normalisePhone, ordersByCustomer, type CustomerStats } from "@/lib/customer-logic";
 import { adjustPoints, recordDuePayment, updateCustomer } from "@/lib/customer-actions";
 import type { Customer, Order, PaymentMode } from "@/lib/types";
 
@@ -123,7 +123,11 @@ function CustomersPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const rows = useMemo(() => customers.map((c) => ({ customer: c, stats: customerStats(c, orders, loyaltyPct) })), [customers, orders, loyaltyPct]);
+  // One pass over bills for every guest (not every guest against every bill).
+  const rows = useMemo(() => {
+    const byGuest = ordersByCustomer(orders);
+    return customers.map((c) => ({ customer: c, stats: customerStats(c, byGuest.get(c.id) ?? [], loyaltyPct) }));
+  }, [customers, orders, loyaltyPct]);
   const term = q.trim().toLowerCase();
   const digits = term.replace(/\D/g, "");
   const shown = rows

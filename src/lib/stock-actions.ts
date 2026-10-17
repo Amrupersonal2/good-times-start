@@ -1,4 +1,4 @@
-import { getDb, markDirty } from "./db";
+import { applyEntryToLevels, getDb, markDirty } from "./db";
 import { saleItems } from "./stock-logic";
 import { newUid } from "./sync-core";
 import type { CartLine, Material, StockEntry, Supplier } from "./types";
@@ -6,7 +6,11 @@ import type { CartLine, Material, StockEntry, Supplier } from "./types";
 /** Add a stock movement to the ledger and share it. */
 export async function recordStockEntry(entry: Omit<StockEntry, "id" | "at"> & { id?: string; at?: number }): Promise<StockEntry> {
   const saved: StockEntry = { ...entry, id: entry.id ?? newUid(), at: entry.at ?? Date.now(), items: entry.items.filter((i) => i.qty !== 0) };
-  await getDb().stockEntries.put(saved);
+  const db = getDb();
+  await db.transaction("rw", db.stockEntries, db.materialLevels, async () => {
+    await applyEntryToLevels(db, saved.id, saved);
+    await db.stockEntries.put(saved);
+  });
   await markDirty(["stock_entry", saved.id]);
   return saved;
 }

@@ -87,6 +87,8 @@ export interface Order {
   /** Tax rules this bill was made under. */
   tax?: { inclusive?: boolean; exempt?: boolean; roundToRupee?: boolean };
   customer?: { name?: string; phone?: string; gstin?: string };
+  /** Guest's phone as the last 10 digits, kept indexed so their visits load quickly. */
+  customerId?: string;
   /** Who settled or voided the bill, for the staff report. */
   closedBy?: string;
   feedback?: { rating: 1 | 2 | 3 | 4 | 5; comment?: string; at: number };

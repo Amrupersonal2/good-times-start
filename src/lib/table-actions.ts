@@ -7,7 +7,8 @@ export { combineOrders, tableIdFor } from "./table-logic";
 
 /** The running (held) order for a table — the newest one if two devices raced. */
 export async function latestHeldOrder(tableId: string): Promise<Order | null> {
-  const held = await getDb().orders.where("tableId").equals(tableId).filter((o) => o.status === "held").toArray();
+  // Indexed on [tableId+status]: stays instant however many bills a table has had.
+  const held = await getDb().orders.where("[tableId+status]").equals([tableId, "held"]).toArray();
   return held.sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
 }
 

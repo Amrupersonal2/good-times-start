@@ -106,7 +106,8 @@ function PosPage() {
     if (!guestId) return null;
     const known = await getDb().customers.get(guestId);
     if (!known) return null;
-    return { customer: known, stats: customerStats(known, await getDb().orders.toArray(), settings.loyaltyPct ?? 0) };
+    const visits = await getDb().orders.where("customerId").equals(guestId).toArray();
+    return { customer: known, stats: customerStats(known, visits, settings.loyaltyPct ?? 0) };
   }, [guestId, settings.loyaltyPct], null);
   const guestName = guest?.customer.name;
   useEffect(() => {

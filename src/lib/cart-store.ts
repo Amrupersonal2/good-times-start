@@ -12,6 +12,7 @@ import { latestHeldOrder } from "./table-actions";
 import { settledPayments, type Payment } from "./payment-logic";
 import { splitLines } from "./bill-splitting";
 import { rememberCustomer } from "./customer-actions";
+import { withCustomerId } from "./customer-logic";
 import { useRestaurantSettings } from "./use-settings";
 import { taxOptionsFor } from "./billing-config";
 import type { TaxOptions } from "./billing";
@@ -207,13 +208,13 @@ export function useCart(initialTableId?: string) {
     const t = computeTotals(merged, discountPct, serviceChargePct, tax);
     const tableLabel = await tableLabelOf(tableId);
     const extras = { serviceChargePct, tax, taxable: t.taxable, ...(customer.name || customer.phone || customer.gstin ? { customer } : {}) };
-    const order: Order = base
-      ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" }
+    const order: Order = withCustomerId(base
+      ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
           uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
-        };
+        });
     const orderUid = order.uid ?? newUid();
     order.uid = orderUid;
     const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base?.kotSubmittedQty ?? {}, pendingKitchenLines), pendingCancelLines);
@@ -290,7 +291,7 @@ export function useCart(initialTableId?: string) {
     }
     const t = computeTotals(billLines, discountPct, serviceChargePct, tax);
     const payments = Array.isArray(payment) ? settledPayments(payment, t.total) : [{ mode: payment, amount: t.total }];
-    const order: Order = {
+    const order: Order = withCustomerId({
       ...(latest ?? ({} as Order)),
       uid: latest?.uid ?? newUid(),
       billNo: latest?.billNo ?? await newBillNumber(new Date()),
@@ -300,7 +301,7 @@ export function useCart(initialTableId?: string) {
       payments, status: "settled", createdAt: latest?.createdAt ?? Date.now(), synced: false,
       ...(customer.name || customer.phone || customer.gstin ? { customer } : {}),
       ...(closedBy ? { closedBy } : {}),
-    };
+    });
     const db = getDb();
     const id = order.id ? await db.orders.put(order) : Number(await db.orders.add(order));
     order.id = id;
@@ -325,7 +326,7 @@ export function useCart(initialTableId?: string) {
     const now = Date.now();
     const t = computeTotals(split, discountPct, serviceChargePct, tax);
     const label = latest?.tableLabel ?? await tableLabelOf(tableId);
-    const part: Order = {
+    const part: Order = withCustomerId({
       uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel: label, lines: split,
       subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
@@ -334,7 +335,7 @@ export function useCart(initialTableId?: string) {
       kotSubmittedQty: Object.fromEntries(split.map((l) => [l.itemId, l.qty])),
       ...(customer.name || customer.phone || customer.gstin ? { customer } : {}),
       ...(closedBy ? { closedBy } : {}),
-    };
+    });
     const db = getDb();
     part.id = Number(await db.orders.add(part));
     const changes: [RecordKind, string][] = [["order", part.uid ?? ""]];

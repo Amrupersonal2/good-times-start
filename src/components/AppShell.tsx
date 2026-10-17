@@ -11,9 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSyncSnapshot, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
 import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
-import { getDb } from "@/lib/db";
+import { getDb, getMaterialLevels } from "@/lib/db";
 import { useRestaurantSettings } from "@/lib/use-settings";
-import { isLow, stockLevels } from "@/lib/stock-logic";
+import { isLow } from "@/lib/stock-logic";
 
 const NAV = [
   { to: "/", label: "Billing", icon: ClipboardList },
@@ -204,8 +204,7 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
   const restaurantName = settings.name || user?.restaurantName || "";
   const needsRestaurant = !!user && !user.restaurantId && pathname !== "/settings";
   const lowStock = useLiveQuery(async () => {
-    const [materials, entries] = await Promise.all([getDb().materials.toArray(), getDb().stockEntries.toArray()]);
-    const levels = stockLevels(entries);
+    const [materials, levels] = await Promise.all([getDb().materials.toArray(), getMaterialLevels()]);
     return materials.filter((m) => !m.archived && isLow(m, levels.get(m.id) ?? 0)).length;
   }, [], 0);
   const allowed = screensFor(user?.role);
