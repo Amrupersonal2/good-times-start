@@ -152,3 +152,10 @@ and outlets appear once it has.
 - [x] Live status: a card per running bill (table or pickup) with guest, dishes and expected total, updating live
 - [x] Dark slate side menu that expands to labels (remembered per device)
 - [x] Logic in `src/lib/dashboard-logic.ts` with tests; nothing shown that the app doesn't record (no expenses or reprint counts yet)
+
+### Counter layout staff already know (round 4, part 4)
+- [x] Top strip: one button per floor section (tap for that section's tables, coloured by status) plus Takeaway, Delivery, Swiggy, Zomato and running pickup bills
+- [x] Category list on the left; dense dish tiles (up to 6 across) with a veg/non-veg edge, short code and price; F4 or F2 to search by name or code, Enter adds a single match
+- [x] Bill grouped like the kitchen sees it: New items (not sent), To cancel, then KOT 1, KOT 2… with how long ago and a reprint button; reduce a sent item from its KOT row
+- [x] Bottom: Tax / Items / Total, KOT and Print bill, then Cash, UPI, Card, Split
+- [x] Toolbar under the dishes: Change table, Discount, Service charge, Guest (name, phone, GSTIN)
