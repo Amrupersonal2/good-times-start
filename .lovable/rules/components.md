@@ -2,6 +2,12 @@
 
 Component catalog for **Good Times Start**. Import all components from `@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d`.
 
+### AppInstall
+
+```ts
+import { AppInstall } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### AppShell
 
 ```ts
@@ -94,16 +100,40 @@ import { DialogTitle } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2
 import { DialogTrigger } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### InstallButton
+
+```ts
+import { InstallButton } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### KotTicket
+
+```ts
+import { KotTicket } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### LiveSync
 
 ```ts
 import { LiveSync } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### MenuExcel
+
+```ts
+import { MenuExcel } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### PaymentPanel
 
 ```ts
 import { PaymentPanel } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PrintHost
+
+```ts
+import { PrintHost } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
 ### ReasonPrompt

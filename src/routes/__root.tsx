@@ -44,6 +44,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    if (isStaleChunkError(error) && reloadOnceForStaleChunk()) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -118,8 +119,35 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+const RELOAD_KEY = "xtsy-stale-chunk-reload";
+
+/** After a deploy, an open tab may request old hashed chunks that no longer exist: reload once to pick up the new build. */
+function reloadOnceForStaleChunk(): boolean {
+  if (typeof window === "undefined") return false;
+  const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
+  if (Date.now() - last < 10_000) return false;
+  sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+  window.location.reload();
+  return true;
+}
+
+function isStaleChunkError(error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error ?? "");
+  return /dynamically imported module|Importing a module script failed|Failed to fetch dynamically|error loading dynamically imported/i.test(msg);
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    const onPreload = (e: Event) => { e.preventDefault(); reloadOnceForStaleChunk(); };
+    const onRejection = (e: PromiseRejectionEvent) => { if (isStaleChunkError(e.reason)) reloadOnceForStaleChunk(); };
+    window.addEventListener("vite:preloadError", onPreload);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("vite:preloadError", onPreload);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
