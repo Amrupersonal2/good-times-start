@@ -147,6 +147,14 @@ export function useCart(initialTableId?: string) {
     setLines((prev) => (qty <= 0 ? prev.filter((line) => line.itemId !== itemId) : prev.map((line) => (line.itemId === itemId ? { ...line, qty } : line))));
   }, []);
 
+  /** Put back items marked for cancellation before the cancel ticket goes out. */
+  const restoreLine = useCallback((line: CartLine) => {
+    setLines((prev) => {
+      const existing = prev.find((l) => l.itemId === line.itemId);
+      return existing ? prev.map((l) => (l.itemId === line.itemId ? { ...l, qty: l.qty + line.qty } : l)) : [...prev, { ...line }];
+    });
+  }, []);
+
   const setNote = useCallback((itemId: string, note: string) => {
     setLines((prev) => prev.map((line) => (line.itemId === itemId ? { ...line, note } : line)));
   }, []);
@@ -396,6 +404,6 @@ export function useCart(initialTableId?: string) {
   return {
     lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct, tax,
     serviceChargePct, setServiceChargePct, customer, setCustomer, addItem, setQty, setNote, clear, totals,
-    settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, pendingCancelLines, activeOrder, openOrder,
+    settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, pendingCancelLines, activeOrder, openOrder, restoreLine,
   };
 }

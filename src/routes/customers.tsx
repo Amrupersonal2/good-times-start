@@ -120,7 +120,8 @@ function CustomersPage() {
   const settings = useRestaurantSettings();
   const loyaltyPct = settings.loyaltyPct ?? 0;
   const customers = useLiveQuery(() => getDb().customers.toArray(), [], []);
-  const orders = useLiveQuery(() => getDb().orders.where("status").equals("settled").toArray(), [], []);
+  // Only bills with a guest attached, straight from the guest index; not the whole year's bills.
+  const orders = useLiveQuery(async () => (await getDb().orders.where("customerId").above("").toArray()).filter((o) => o.status === "settled"), [], []);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);

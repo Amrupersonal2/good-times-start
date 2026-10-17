@@ -21,6 +21,7 @@ import { Route as StockRouteImport } from './routes/stock'
 import { Route as TablesRouteImport } from './routes/tables'
 import { Route as WaiterRouteImport } from './routes/waiter'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as OrderSlugRouteImport } from './routes/order.$slug'
@@ -80,6 +81,11 @@ const WaiterRoute = WaiterRouteImport.update({
   path: '/waiter',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -102,6 +108,7 @@ const OrderSlugRoute = OrderSlugRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/dashboard': typeof DashboardRoute
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesByTo {
+  '/dashboard': typeof DashboardRoute
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
@@ -136,6 +144,7 @@ export interface FileRoutesByTo {
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesById {
+  '/dashboard': typeof DashboardRoute
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/waiter'
     | '/account'
+    | '/dashboard'
     | '/admin'
     | '/setup'
     | '/order/$slug'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/waiter'
     | '/account'
+    | '/dashboard'
     | '/admin'
     | '/setup'
     | '/order/$slug'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/waiter'
     | '/account'
+    | '/dashboard'
     | '/admin'
     | '/setup'
     | '/order/$slug'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   TablesRoute: typeof TablesRoute
   WaiterRoute: typeof WaiterRoute
   AccountRoute: typeof AccountRoute
+  DashboardRoute: typeof DashboardRoute
   AdminRoute: typeof AdminRoute
   SetupRoute: typeof SetupRoute
   OrderSlugRoute: typeof OrderSlugRoute
@@ -227,6 +240,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account': {
       id: '/account'
       path: '/account'
@@ -348,6 +368,7 @@ const rootRouteChildren: RootRouteChildren = {
   TablesRoute: TablesRoute,
   WaiterRoute: WaiterRoute,
   AccountRoute: AccountRoute,
+  DashboardRoute: DashboardRoute,
   AdminRoute: AdminRoute,
   SetupRoute: SetupRoute,
   OrderSlugRoute: OrderSlugRoute,

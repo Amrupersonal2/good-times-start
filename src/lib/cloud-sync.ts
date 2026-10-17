@@ -1,7 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
+import { SyncScheduler } from "./sync-scheduler";
 import type { Json } from "@/integrations/supabase/types";
 import { applyEntryToLevels, getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
 import { deductInventory } from "@/lib/inventory";
+import { withCustomerId } from "@/lib/customer-logic";
 import { recordSaleConsumption } from "@/lib/stock-actions";
 import {
   RECORD_KINDS,
@@ -146,9 +148,10 @@ async function applyRemote(rows: RemoteRow[]): Promise<void> {
           }
           if (!isOrderPayload(payload)) break;
           const { id: _ignored, ...rest } = payload;
-          const order: Order = existing?.id !== undefined
+          // Bills from older app versions may lack the guest index; add it so guest lookups stay indexed.
+          const order: Order = withCustomerId(existing?.id !== undefined
             ? { ...rest, id: existing.id, uid: id, synced: true }
-            : { ...rest, uid: id, synced: true };
+            : { ...rest, uid: id, synced: true });
           await db.orders.put(order);
           break;
         }
@@ -250,6 +253,15 @@ async function syncOnce(restaurantId: string): Promise<void> {
 let inFlight: Promise<void> | null = null;
 let queued = false;
 
+/**
+ * One sync at a time per device. Tabs share this device's database, so a Web
+ * Lock keeps two open tabs from pushing and pulling over each other.
+ */
+function withDeviceLock<T>(restaurantId: string, work: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== "undefined" ? (navigator as Navigator & { locks?: { request: (name: string, cb: () => Promise<T>) => Promise<T> } }).locks : undefined;
+  return locks ? locks.request(`xtsy-sync-${restaurantId}`, work) : work();
+}
+
 /** Push local changes and pull the latest restaurant data. Concurrent calls share one run. */
 export function syncCloudData(restaurantId: string): Promise<void> {
   if (inFlight) {
@@ -260,7 +272,7 @@ export function syncCloudData(restaurantId: string): Promise<void> {
     try {
       do {
         queued = false;
-        await syncOnce(restaurantId);
+        await withDeviceLock(restaurantId, () => syncOnce(restaurantId));
       } while (queued);
     } finally {
       inFlight = null;
@@ -269,45 +281,99 @@ export function syncCloudData(restaurantId: string): Promise<void> {
   return inFlight;
 }
 
+/* ---------- live connection status, for the sync chip ---------- */
+
+export type LiveStatus = "connecting" | "live" | "reconnecting" | "off";
+let liveStatus: LiveStatus = "off";
+const liveListeners = new Set<() => void>();
+function setLiveStatus(next: LiveStatus) {
+  if (next === liveStatus) return;
+  liveStatus = next;
+  for (const l of liveListeners) l();
+}
+export function getLiveStatus(): LiveStatus { return liveStatus; }
+export function onLiveStatus(listener: () => void): () => void {
+  liveListeners.add(listener);
+  return () => { liveListeners.delete(listener); };
+}
+
 /**
- * Keeps this device in step with the restaurant: syncs on start, shortly after
- * local edits, when the connection returns, on realtime notifications, and
- * every minute as a fallback. Returns a stop function.
+ * Keeps this device in step with the restaurant. Syncs on start; within two
+ * seconds of local edits (however busy the counter is); within a quarter
+ * second of a change on another device; when the connection returns or the
+ * app comes back to the screen; after failures with growing retry gaps; and
+ * by polling (every 15 s while the live connection is down, 60 s while up).
+ * The live connection reconnects itself. Returns a stop function.
  */
 export function startLiveSync(restaurantId: string): () => void {
   let stopped = false;
-  let timer: number | undefined;
+  const scheduler = new SyncScheduler(
+    async () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) throw new Error("offline");
+      try {
+        await syncCloudData(restaurantId);
+      } catch (error) {
+        await saveSyncError(error);
+        throw error;
+      }
+    },
+    { now: () => Date.now(), setTimeout: (fn, ms) => window.setTimeout(fn, ms), clearTimeout: (h) => window.clearTimeout(h as number) },
+  );
 
-  const run = () => {
+  const stopLocal = onLocalChange(() => scheduler.request(800));
+  const wake = () => scheduler.request(0);
+  const onVisible = () => { if (document.visibilityState === "visible") wake(); };
+  window.addEventListener("online", wake);
+  window.addEventListener("focus", wake);
+  window.addEventListener("pageshow", wake);
+  document.addEventListener("visibilitychange", onVisible);
+
+  // Realtime: a change on another device triggers a pull. If the socket drops, resubscribe with growing gaps.
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+  let reconnectTimer: number | undefined;
+  let attempts = 0;
+  const connect = () => {
     if (stopped) return;
-    void syncCloudData(restaurantId).catch((error: unknown) => saveSyncError(error));
+    setLiveStatus(attempts ? "reconnecting" : "connecting");
+    const current = supabase
+      .channel(`restaurant-records-${restaurantId}-${Date.now()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_records", filter: `restaurant_id=eq.${restaurantId}` }, () => scheduler.request(250));
+    channel = current;
+    current.subscribe((status: string) => {
+      if (stopped || channel !== current) return;
+      if (status === "SUBSCRIBED") {
+        attempts = 0;
+        setLiveStatus("live");
+        scheduler.setLive(true);
+        scheduler.request(0); // catch up on anything missed while disconnected
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        scheduler.setLive(false);
+        setLiveStatus("reconnecting");
+        attempts += 1;
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = window.setTimeout(() => {
+          if (stopped || channel !== current) return;
+          void supabase.removeChannel(current);
+          connect();
+        }, Math.min(30_000, 1_000 * 2 ** Math.min(attempts, 5)));
+      }
+    });
   };
-  const schedule = (delay: number) => {
-    window.clearTimeout(timer);
-    timer = window.setTimeout(run, delay);
-  };
+  connect();
+  scheduler.request(0);
 
-  const stopLocal = onLocalChange(() => schedule(800));
-  const onOnline = () => schedule(0);
-  window.addEventListener("online", onOnline);
-  const interval = window.setInterval(() => schedule(0), 60_000);
-  const channel = supabase
-    .channel(`restaurant-records-${restaurantId}`)
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "restaurant_records", filter: `restaurant_id=eq.${restaurantId}` },
-      () => schedule(250),
-    )
-    .subscribe();
-
-  schedule(0);
   return () => {
     stopped = true;
-    window.clearTimeout(timer);
-    window.clearInterval(interval);
-    window.removeEventListener("online", onOnline);
+    scheduler.stop();
+    window.clearTimeout(reconnectTimer);
+    window.removeEventListener("online", wake);
+    window.removeEventListener("focus", wake);
+    window.removeEventListener("pageshow", wake);
+    document.removeEventListener("visibilitychange", onVisible);
     stopLocal();
-    void supabase.removeChannel(channel);
+    if (channel) void supabase.removeChannel(channel);
+    channel = null;
+    setLiveStatus("off");
   };
 }
 

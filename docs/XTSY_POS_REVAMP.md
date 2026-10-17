@@ -135,3 +135,27 @@ and outlets appear once it has.
 - [x] Shorter on-screen text across settings, stock, outlets and guest ordering
 - [x] Load tests: 7-device rush (1,050 bills + KOTs), flaky network, new device catching up on 4,000 records (`src/test/load.test.ts`)
 - [x] Database load tests with pgbench and results (`tests/load/`)
+
+### Speed and always-on sync (round 4, part 2)
+- [x] Persistent frame: sidebar, header, sync chip and the live orders connection stay mounted across staff pages; only the page swaps
+- [x] Page code preloads on hover/touch and, after the first screen, every staff screen preloads while the device is idle (cached by the service worker for offline)
+- [x] Cloud data stays fresh for 30 s, so page changes don't refetch it; quick page changes never flash a loading state; 120 ms cross-fade
+- [x] Sync scheduler (`src/lib/sync-scheduler.ts`): syncs within 2 s of edits even during a rush (the old debounce could postpone indefinitely), retries at 2/5/15/30/60 s, polls every 15 s while the live connection is down and 60 s while up
+- [x] Live connection reconnects itself with back-off and catches up on reconnect; syncs when the app returns to the screen, the network returns or a sleeping tablet wakes
+- [x] One sync at a time per device across tabs (Web Locks)
+- [x] Sync chip shows Live / Reconnecting…
+- [x] Guests page reads only bills with a guest (indexed) instead of every bill; older pulled bills get the guest index
+
+### Owner dashboard (round 4, part 3)
+- [x] `/dashboard` (owners and managers, first in the menu): Business overview and Live status tabs, in the style of the back-office tools owners know
+- [x] Overview: period presets or custom dates; sales, bills, average bill, purchases; sales by order type with share; daily sales chart (this/last week, last 15 days, this/last month); revenue leakage (cancelled bills, items cancelled after KOT, discounted, complimentary and unpaid bills); discounts and GST; billing vs guest-order sales; payment breakup; plan card
+- [x] Live status: a card per running bill (table or pickup) with guest, dishes and expected total, updating live
+- [x] Dark slate side menu that expands to labels (remembered per device)
+- [x] Logic in `src/lib/dashboard-logic.ts` with tests; nothing shown that the app doesn't record (no expenses or reprint counts yet)
+
+### Counter layout staff already know (round 4, part 4)
+- [x] Top strip: one button per floor section (tap for that section's tables, coloured by status) plus Takeaway, Delivery, Swiggy, Zomato and running pickup bills
+- [x] Category list on the left; dense dish tiles (up to 6 across) with a veg/non-veg edge, short code and price; F4 or F2 to search by name or code, Enter adds a single match
+- [x] Bill grouped like the kitchen sees it: New items (not sent), To cancel, then KOT 1, KOT 2… with how long ago and a reprint button; reduce a sent item from its KOT row
+- [x] Bottom: Tax / Items / Total, KOT and Print bill, then Cash, UPI, Card, Split
+- [x] Toolbar under the dishes: Change table, Discount, Service charge, Guest (name, phone, GSTIN)

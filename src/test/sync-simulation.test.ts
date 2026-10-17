@@ -201,4 +201,11 @@ describe("multi-device sync", () => {
     const { latestHeldOrder } = await import("@/lib/table-actions");
     expect((await on("counter", () => latestHeldOrder("T1")))?.uid).toBe("o-run");
   });
+
+  it("indexes bills from older app versions by guest phone, so the Guests page finds them without scanning every bill", async () => {
+    server.fakeServer.insertAt({ restaurant_id: R, kind: "order", record_id: "o-old", payload: order("o-old", { status: "settled", customer: { phone: "+91 98765 43210" } }), deleted: false }, server.fakeServer.now);
+    await syncNow("tablet");
+    const found = await on("tablet", () => db.getDb().orders.where("customerId").above("").toArray());
+    expect(found.map((o) => [o.uid, o.customerId])).toEqual([["o-old", "9876543210"]]);
+  });
 });

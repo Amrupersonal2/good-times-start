@@ -42,14 +42,16 @@ function useGuestOrders(restaurantId: string | null, enabled: boolean) {
     queryKey: key,
     enabled: enabled && !!restaurantId,
     queryFn: () => loadGuestOrders(restaurantId ?? ""),
-    refetchInterval: 30_000,
+    refetchInterval: 20_000,
+    refetchIntervalInBackground: true,
   });
   useEffect(() => {
     if (!enabled || !restaurantId) return;
     const channel = supabase.channel(`guest-orders-${restaurantId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "guest_orders", filter: `restaurant_id=eq.${restaurantId}` },
         () => { void queryClient.invalidateQueries({ queryKey: key }); })
-      .subscribe();
+      // On (re)connect, fetch anything that arrived while the connection was down.
+      .subscribe((status: string) => { if (status === "SUBSCRIBED") void queryClient.invalidateQueries({ queryKey: key }); });
     return () => { void supabase.removeChannel(channel); };
   }, [enabled, restaurantId, queryClient, key]);
   return query;

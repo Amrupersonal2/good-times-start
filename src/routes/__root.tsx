@@ -16,6 +16,8 @@ import { AuthProvider } from "@/lib/auth-context";
 import { LiveSync } from "@/components/LiveSync";
 import { PrintHost } from "@/components/PrintHost";
 import { AppInstall } from "@/components/AppInstall";
+import { PersistentFrame } from "@/components/AppShell";
+import { PreloadScreens } from "@/components/PreloadScreens";
 
 function NotFoundComponent() {
   return (
@@ -153,8 +155,9 @@ function RootComponent() {
         <LiveSync />
         <PrintHost />
         <AppInstall />
+        <PreloadScreens />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <PersistentFrame><Outlet /></PersistentFrame>
       </AuthProvider>
     </QueryClientProvider>
   );

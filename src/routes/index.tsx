@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound } from "lucide-react";
+import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound, ArrowLeftRight, BadgePercent, HandCoins, ChevronDown } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { PaymentPanel, ReasonPrompt, UpiPay } from "@/components/PaymentDialogs";
 import { isAdmin, useStaff } from "@/lib/auth-context";
@@ -24,7 +24,10 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Dropdown } from "@/components/Dropdown";
-import { Segmented } from "@/components/Segmented";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { lineFor, sentGroups, shortCode, since } from "@/lib/bill-view-logic";
+import { moveTable } from "@/lib/table-actions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string } => ({
@@ -84,7 +87,7 @@ function PosPage() {
     const s = q.trim().toLowerCase();
     return menu.filter((i) => {
       if (!i.available) return false;
-      if (s) return i.name.toLowerCase().includes(s) || i.name.toLowerCase().split(" ").some((w) => w.startsWith(s));
+      if (s) return i.name.toLowerCase().includes(s) || shortCode(i.name).toLowerCase() === s;
       return cat === "Popular" ? i.popular : i.category === cat;
     });
   }, [menu, q, cat]);
@@ -114,6 +117,11 @@ function PosPage() {
   const [upiOpen, setUpiOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  // Tickets already sent for this bill, grouped as the kitchen got them.
+  const activeId = cart.activeOrder?.id;
+  const sentKots = useLiveQuery(async () => (activeId === undefined ? [] : getDb().kots.where("orderId").equals(activeId).toArray()), [activeId], [] as Kot[]);
+  const sent = useMemo(() => sentGroups(sentKots), [sentKots]);
   const maxDiscount = maxDiscountFor(user?.role ?? "unknown", settings.staffDiscountLimit ?? 10);
   const discountChoices = [0, 5, 10, 15, 20, 25, 30, 50, 100].filter((d) => d <= maxDiscount || d === cart.discountPct);
   const canCancel = !user || isAdmin(user);
@@ -172,7 +180,7 @@ function PosPage() {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "F2") { e.preventDefault(); searchRef.current?.focus(); }
+      if (e.key === "F2" || e.key === "F4") { e.preventDefault(); searchRef.current?.focus(); }
       if (e.key === "F1") { e.preventDefault(); cart.clear(); }
       if (e.key === "F8" && canSettle) { e.preventDefault(); void pay("cash"); }
     };
@@ -184,183 +192,235 @@ function PosPage() {
   const unsentCount = cart.pendingKitchenLines.reduce((sum, line) => sum + line.qty, 0);
   const cancelCount = cart.pendingCancelLines.reduce((sum, line) => sum + line.qty, 0);
 
+  const hasDiscountOrCharge = cart.totals.discountAmt > 0 || cart.totals.serviceCharge > 0;
+  const blocked = !cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0));
+  const tax = cart.totals.cgst + cart.totals.sgst;
+  const currentTable = tables.find((t) => t.id === cart.tableId);
+  const pendingById = new Map(cart.pendingKitchenLines.map((l) => [l.itemId, l.qty]));
+
+  /** Discount, service charge, guest and change table: the cashier's bill tools. */
+  const billTools = (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {cart.tableId ? <ToolButton onClick={() => setMoveOpen(true)}><ArrowLeftRight className="size-3.5" />Change table</ToolButton> : null}
+      <span className="flex items-center gap-1.5 rounded-lg bg-card px-2 py-1 text-xs font-semibold ring-1 ring-border/70">
+        <BadgePercent className="size-3.5 text-muted-foreground" />Discount
+        <Dropdown<number> ariaLabel="Discount" size="sm" className="h-7 w-[4.75rem]" value={cart.discountPct} onChange={cart.setDiscountPct}
+          options={discountChoices.map((d) => ({ value: d, label: d ? `${d}%` : "None" }))} />
+      </span>
+      {(settings.serviceChargePct ?? 0) > 0 && cart.orderType === "dine-in" ? (
+        <ToolButton pressed={cart.serviceChargePct > 0} onClick={() => cart.setServiceChargePct(cart.serviceChargePct > 0 ? 0 : settings.serviceChargePct ?? 0)}>
+          <HandCoins className="size-3.5" />Service {settings.serviceChargePct}%
+        </ToolButton>
+      ) : null}
+      <ToolButton pressed={!!(cart.customer.phone || cart.customer.name)} onClick={() => setCustomerOpen(true)}><UserRound className="size-3.5" />{cart.customer.name || cart.customer.phone || "Guest"}</ToolButton>
+      <span className="ml-auto hidden text-[11px] text-muted-foreground xl:inline">F4 search · F1 new bill · F8 cash</span>
+    </div>
+  );
+
   const billPanel = (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border p-4">
-        <div className="mb-3 flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}` : "New bill"}</div>
-            <div className="mt-0.5 truncate text-[28px] font-bold leading-none tracking-tight">
-              {cart.orderType === "dine-in" ? (tables.find((t) => t.id === cart.tableId)?.label ?? "No table") : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
-            </div>
+      <div className="flex items-start justify-between gap-3 border-b border-border bg-card px-4 py-3">
+        <div className="min-w-0">
+          <div className="truncate text-xl font-bold tracking-tight">
+            {cart.orderType === "dine-in" ? (currentTable ? `${currentTable.section} · ${currentTable.label}` : "Choose a table") : cart.customer.name && cart.activeOrder?.guestCodes ? `${cart.activeOrder.guestCodes[0]} ${cart.customer.name}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
           </div>
-          <div className="text-right">
-            <div className="text-xs text-muted-foreground">{count} item{count === 1 ? "" : "s"}</div>
-            <div className="mt-0.5 text-2xl font-bold leading-none tracking-tight">{formatINR(cart.totals.total, 0)}</div>
-          </div>
+          <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}, opened ${since(cart.activeOrder.createdAt)}${since(cart.activeOrder.createdAt) === "just now" ? "" : " ago"}` : "New bill"}</div>
         </div>
-        <Segmented ariaLabel="Order type" size="sm" stretch value={cart.orderType} onChange={(v) => cart.setOrderType(v)} options={ORDER_TYPES.map((o) => ({ value: o.v, label: o.l }))} />
-        {cart.orderType === "dine-in" && (
-          <Dropdown ariaLabel="Table" className="mt-3" placeholder="Choose a table" searchable value={cart.tableId ?? ""} onChange={(id) => cart.setTableId(id || undefined)}
-            options={[...tables].sort((a, b) => a.section.localeCompare(b.section) || a.label.localeCompare(b.label, undefined, { numeric: true })).map((t) => ({
-              value: t.id, label: t.label, group: t.section,
-              ...(t.status !== "free" ? { hint: t.status === "reserved" ? "Reserved" : t.runningTotal ? formatINR(t.runningTotal, 0) : "Occupied" } : {}),
-            }))} />
-        )}
+        {cart.activeOrder && canCancel ? (
+          <button type="button" onClick={() => setCancelOpen(true)} aria-label="Cancel bill" title="Cancel bill" className="grid size-8 shrink-0 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="size-4" /></button>
+        ) : null}
       </div>
+      {guest ? (
+        <p className="border-b border-border bg-primary-tint/50 px-4 py-1.5 text-[11px] text-foreground">
+          {guest.customer.name ?? "Guest"}: {guest.stats.visits} visit{guest.stats.visits === 1 ? "" : "s"}
+          {(settings.loyaltyPct ?? 0) > 0 ? `, ${guest.stats.points} points` : ""}
+          {guest.stats.due > 0 ? <span className="font-semibold text-destructive">, {formatINR(guest.stats.due, 0)} due</span> : null}
+        </p>
+      ) : null}
 
-      <div className="flex-1 overflow-y-auto p-4">
-        {cart.lines.length === 0 ? (
+      <div className="flex-1 overflow-y-auto">
+        {cart.lines.length === 0 && !cancelCount ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
             <ShoppingBag className="mb-2 size-9 text-muted-foreground/40" strokeWidth={1.5} />
             <p className="text-sm">Tap a dish to start</p>
           </div>
         ) : (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border/70">
-            {cart.lines.map((l) => (
-              <li key={l.itemId} className="p-3">
-                <div className="flex items-start gap-2">
-                  <VegMark veg={l.veg} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{l.name}</div>
-                    <div className="text-xs text-muted-foreground">{formatINR(l.price, 0)} × {l.qty}</div>
-                  </div>
-                  <div className="text-sm font-semibold">{formatINR(l.price * l.qty, 0)}</div>
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <input placeholder="Add note" aria-label={`Note for ${l.name}`} value={l.note ?? ""} onChange={(e) => cart.setNote(l.itemId, e.target.value)}
-                    className="min-w-0 flex-1 border-0 bg-transparent px-0 py-1 text-xs text-muted-foreground placeholder:text-muted-foreground/60 focus-visible:shadow-none focus-visible:text-foreground" />
-                  <div className="flex items-center rounded-full bg-secondary">
-                    <button aria-label="Decrease" onClick={() => cart.setQty(l.itemId, l.qty - 1)} className="grid size-7 place-items-center rounded-full">{l.qty === 1 ? <Trash2 className="size-3.5 text-destructive" /> : <Minus className="size-3.5" />}</button>
-                    <span className="w-6 text-center text-sm font-semibold">{l.qty}</span>
-                    <button aria-label="Increase" onClick={() => cart.setQty(l.itemId, l.qty + 1)} className="grid size-7 place-items-center rounded-full"><Plus className="size-3.5" /></button>
-                  </div>
-                </div>
-              </li>
+          <div className="divide-y divide-border">
+            {cart.pendingKitchenLines.length ? (
+              <BillGroup title="New items" tone="new" note="not sent to kitchen">
+                {cart.lines.filter((l) => pendingById.has(l.itemId)).map((l) => {
+                  const pending = pendingById.get(l.itemId) ?? 0;
+                  return (
+                    <li key={l.itemId} className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <button type="button" aria-label={`Remove one ${l.name}`} onClick={() => cart.setQty(l.itemId, l.qty - 1)} className="grid size-6 shrink-0 place-items-center rounded-md bg-destructive/10 text-destructive">{pending === 1 && l.qty === 1 ? <Trash2 className="size-3" /> : <Minus className="size-3" />}</button>
+                        <VegMark veg={l.veg} />
+                        <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{l.name}</span>
+                        <span className="w-6 text-center text-sm font-semibold tabular-nums">{pending}</span>
+                        <button type="button" aria-label={`Add one ${l.name}`} onClick={() => cart.setQty(l.itemId, l.qty + 1)} className="grid size-6 shrink-0 place-items-center rounded-md bg-secondary"><Plus className="size-3" /></button>
+                        <span className="w-14 text-right text-[13px] font-semibold tabular-nums">{formatINR(l.price * pending, 0)}</span>
+                      </div>
+                      <input placeholder="Add note" aria-label={`Note for ${l.name}`} value={l.note ?? ""} onChange={(e) => cart.setNote(l.itemId, e.target.value)}
+                        className="ml-8 mt-0.5 w-[calc(100%-2rem)] border-0 bg-transparent px-0 py-0.5 text-[11px] text-muted-foreground placeholder:text-muted-foreground/60 focus-visible:shadow-none focus-visible:text-foreground" />
+                    </li>
+                  );
+                })}
+              </BillGroup>
+            ) : null}
+            {cart.pendingCancelLines.length ? (
+              <BillGroup title="To cancel" tone="cancel" note="send to tell the kitchen">
+                {cart.pendingCancelLines.map((l) => (
+                  <li key={l.itemId} className="flex items-center gap-2 px-4 py-2 text-[13px]">
+                    <span className="min-w-0 flex-1 truncate text-destructive line-through">{l.name}</span>
+                    <span className="w-6 text-center font-semibold tabular-nums text-destructive">{l.qty}</span>
+                    <button type="button" className="text-xs font-semibold text-primary" onClick={() => cart.restoreLine(l)}>Undo</button>
+                  </li>
+                ))}
+              </BillGroup>
+            ) : null}
+            {[...sent].reverse().map((g) => (
+              <BillGroup key={g.key} title={g.cancel ? `Cancelled after KOT ${g.number}` : `KOT ${g.number}`} tone={g.cancel ? "cancelled" : "sent"} note={`${since(g.at)}${since(g.at) === "just now" ? "" : " ago"} · ${g.station}`}
+                action={<button type="button" aria-label={`Print KOT ${g.number} again`} title="Print again" onClick={() => void printKots(g.kots, "reprint")} className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"><Printer className="size-3.5" /></button>}>
+                {g.lines.map((sl, i) => {
+                  const line = g.cancel ? undefined : lineFor(cart.lines, sl.itemId, sl.name);
+                  return (
+                    <li key={`${sl.itemId ?? sl.name}-${i}`} className="flex items-center gap-2 px-4 py-1.5 text-[13px]">
+                      {line ? (
+                        <button type="button" aria-label={`Cancel one ${sl.name}`} title="Cancel one" onClick={() => cart.setQty(line.itemId, line.qty - 1)} className="grid size-6 shrink-0 place-items-center rounded-md text-destructive/80 hover:bg-destructive/10"><Minus className="size-3" /></button>
+                      ) : <span className="size-6 shrink-0" />}
+                      <span className={cn("min-w-0 flex-1 truncate", g.cancel && "text-muted-foreground line-through")}>{sl.name}{sl.note ? <span className="block truncate text-[11px] text-muted-foreground">{sl.note}</span> : null}</span>
+                      <span className="w-6 text-center tabular-nums text-muted-foreground">{sl.qty}</span>
+                      <span className="w-14 text-right tabular-nums text-muted-foreground">{line ? formatINR(line.price * sl.qty, 0) : ""}</span>
+                    </li>
+                  );
+                })}
+              </BillGroup>
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
-      <div className="border-t border-border bg-card/80 p-4 backdrop-blur-xl">
-        {cart.lines.length > 0 || cancelCount > 0 ? <div className="mb-3 space-y-2 border-b border-border pb-3">
-          <div className="flex items-center justify-between gap-2 text-xs">
-            <span className={unsentCount || cancelCount ? "rounded-full bg-gold/20 px-2.5 py-1 font-semibold text-gold-foreground" : "font-medium text-success"}>
-              {unsentCount || cancelCount
-                ? [unsentCount ? `${unsentCount} to send` : "", cancelCount ? `${cancelCount} to cancel` : ""].filter(Boolean).join(", ")
-                : "All sent to kitchen"}
-            </span>
-            <div className="flex gap-1.5">
-              {cart.activeOrder && !unsentCount && !cancelCount ? <Button variant="outline" onClick={() => void printRunningBill()}><Printer className="size-4" />Print bill</Button> : null}
-              <Button variant="secondary" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancellation" : "Send KOT"}</Button>
-            </div>
-          </div>
-        </div> : null}
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatINR(cart.totals.subtotal)}</span></div>
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-2">Discount
-              <Dropdown<number> ariaLabel="Discount" size="sm" className="h-7 w-[4.75rem]" value={cart.discountPct} onChange={cart.setDiscountPct}
-                options={discountChoices.map((d) => ({ value: d, label: d ? `${d}%` : "None" }))} />
-            </span>
-            <span>-{formatINR(cart.totals.discountAmt)}</span>
-          </div>
-          {(settings.serviceChargePct ?? 0) > 0 && cart.orderType === "dine-in" ? (
-            <div className="flex items-center justify-between text-muted-foreground">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={cart.serviceChargePct > 0} onChange={(e) => cart.setServiceChargePct(e.target.checked ? settings.serviceChargePct ?? 0 : 0)} />
-                Service charge {settings.serviceChargePct}%
-              </label>
-              <span>{formatINR(cart.totals.serviceCharge)}</span>
-            </div>
-          ) : null}
-          <div className="flex justify-between text-muted-foreground"><span>CGST + SGST</span><span>{formatINR(cart.totals.cgst + cart.totals.sgst)}</span></div>
-          <div className="flex justify-between text-muted-foreground"><span>Round off</span><span>{formatINR(cart.totals.roundOff)}</span></div>
-          <div className="flex justify-between border-t border-border pt-2 text-xl font-bold tracking-tight"><span>Total</span><span>{formatINR(cart.totals.total, 0)}</span></div>
-        </div>
-        {customerOpen || cart.customer.name || cart.customer.phone || cart.customer.gstin ? (
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <input aria-label="Guest name" placeholder="Guest name" maxLength={60} value={cart.customer.name ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, name: e.target.value })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
-            <input aria-label="Guest phone" placeholder="Phone" inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
-            <input aria-label="Guest GSTIN" placeholder="Business GSTIN (optional)" maxLength={15} value={cart.customer.gstin ?? ""}
-              onChange={(e) => cart.setCustomer({ ...cart.customer, gstin: e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, "") })}
-              className={`col-span-2 min-w-0 rounded-lg border bg-card px-2 py-1.5 text-xs uppercase ${cart.customer.gstin && gstinError(cart.customer.gstin) ? "border-destructive" : "border-input"}`} />
-            {cart.customer.gstin && gstinError(cart.customer.gstin) ? <p className="col-span-2 text-[11px] text-destructive">{gstinError(cart.customer.gstin)}</p> : null}
-          </div>
-        ) : null}
-        {guest ? (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            Returning guest: {guest.stats.visits} visit{guest.stats.visits === 1 ? "" : "s"}
-            {(settings.loyaltyPct ?? 0) > 0 ? `, ${guest.stats.points} points` : ""}
-            {guest.stats.due > 0 ? <span className="font-semibold text-destructive">, {formatINR(guest.stats.due, 0)} due</span> : null}
+      <div className="border-t border-border bg-card p-3">
+        <div className="md:hidden">{billTools}</div>
+        <dl className="grid grid-cols-3 gap-2 rounded-xl bg-secondary/70 px-3 py-2 text-center max-md:mt-2">
+          <div><dt className="text-[11px] text-muted-foreground">Tax</dt><dd className="text-sm font-semibold tabular-nums">{formatINR(tax)}</dd></div>
+          <div><dt className="text-[11px] text-muted-foreground">Items</dt><dd className="text-sm font-semibold tabular-nums">{count}</dd></div>
+          <div><dt className="text-[11px] text-muted-foreground">Total</dt><dd className="text-lg font-bold leading-tight tabular-nums">{formatINR(cart.totals.total, 0)}</dd></div>
+        </dl>
+        {hasDiscountOrCharge ? (
+          <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+            {cart.totals.discountAmt > 0 ? `Discount ${cart.discountPct}% −${formatINR(cart.totals.discountAmt)}` : ""}
+            {cart.totals.discountAmt > 0 && cart.totals.serviceCharge > 0 ? " · " : ""}
+            {cart.totals.serviceCharge > 0 ? `Service charge ${formatINR(cart.totals.serviceCharge)}` : ""}
           </p>
         ) : null}
-        {!canSettle ? <p className="mt-3 rounded-lg bg-secondary p-3 text-center text-xs text-muted-foreground">The cashier settles this bill.</p> : null}
-        <div className={`mt-3 grid grid-cols-4 gap-2 ${canSettle ? "" : "hidden"}`}>
-          {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).filter(([m]) => !settings.paymentModes || settings.paymentModes.includes(m)).map(([m, l, Icon]) => (
-            <button key={m} disabled={!cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0))} onClick={() => void pay(m)}
-              className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-[background,transform] hover:bg-primary-hover active:scale-[0.97] disabled:opacity-40">
-              <Icon className="size-4" />{l}
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Button variant="secondary" className="h-10" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}>
+            <ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancel" : "KOT"}{unsentCount ? <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{unsentCount}</span> : null}
+          </Button>
+          <Button variant="secondary" className="h-10" disabled={!cart.activeOrder || unsentCount > 0 || cancelCount > 0} onClick={() => void printRunningBill()}><Printer className="size-4" />Print bill</Button>
+        </div>
+        {canSettle ? (
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).filter(([m]) => !settings.paymentModes || settings.paymentModes.includes(m)).map(([m, l, Icon]) => (
+              <button key={m} disabled={blocked} onClick={() => void pay(m)}
+                className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-[background,transform] hover:bg-primary-hover active:scale-[0.97] disabled:opacity-40">
+                <Icon className="size-4" />{l}
+              </button>
+            ))}
+            <button disabled={blocked} onClick={() => setPayOpen(true)}
+              className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary-tint text-xs font-semibold text-primary transition-[background,transform] hover:bg-accent active:scale-[0.97] disabled:opacity-40">
+              <Wallet className="size-4" />Split
             </button>
-          ))}
-          <button disabled={!cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0))} onClick={() => setPayOpen(true)}
-            className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary-tint text-xs font-semibold text-primary transition-[background,transform] hover:bg-accent active:scale-[0.97] disabled:opacity-40">
-            <Wallet className="size-4" />Split
-          </button>
-        </div>
-        <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-          <button type="button" className="flex items-center gap-1 font-semibold hover:text-foreground" onClick={() => setCustomerOpen(true)}><UserRound className="size-3.5" />{cart.customer.phone || cart.customer.name ? "Guest added" : "Add guest"}</button>
-          <span className="hidden text-muted-foreground/70 xl:inline">F1 new · F2 search · F8 cash</span>
-          {cart.activeOrder && canCancel ? <button type="button" className="font-semibold text-destructive hover:underline" onClick={() => setCancelOpen(true)}>Cancel bill</button> : null}
-        </div>
+          </div>
+        ) : <p className="mt-2 rounded-lg bg-secondary p-2.5 text-center text-xs text-muted-foreground">The cashier settles this bill.</p>}
       </div>
     </div>
   );
 
+  const sections = [...new Set(tables.map((t) => t.section))].sort((a, b) => a.localeCompare(b));
+
   return (
     <AppShell>
-      <div className="flex h-[calc(100vh-57px-5rem)] lg:h-[calc(100vh-57px)]">
-        {/* Category rail (desktop) */}
-        <div className="hidden w-44 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border p-3 lg:flex">
-          {rail.map((c) => (
-            <button key={c} onClick={() => { setCat(c); setQ(""); }}
-              className={`flex items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${cat === c && !q ? "bg-primary text-primary-foreground" : "text-foreground/80 hover:bg-secondary"}`}>
-              {c === "Popular" && <Star className="size-3.5 fill-gold text-gold" />}{c}
-            </button>
+      <div className="flex h-[calc(100vh-57px-5rem)] flex-col lg:h-[calc(100vh-57px)]">
+        {/* Order type and floor sections: one tap picks a section, a second picks the table */}
+        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto border-b border-border bg-card px-3 py-2">
+          {sections.length ? sections.map((section) => {
+            const inSection = tables.filter((t) => t.section === section).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+            const here = cart.orderType === "dine-in" && currentTable?.section === section;
+            const busy = inSection.filter((t) => t.status !== "free").length;
+            return (
+              <Popover key={section}>
+                <PopoverTrigger asChild>
+                  <button type="button" className={cn("flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors", here ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-accent")}>
+                    {section}{here && currentTable ? <span className="rounded-md bg-primary-foreground/20 px-1.5">{currentTable.label}</span> : busy ? <span className="text-[11px] font-medium text-muted-foreground">{busy}/{inSection.length}</span> : null}
+                    <ChevronDown className="size-3.5 opacity-60" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[min(26rem,92vw)] rounded-xl p-3">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground">{section}</p>
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                    {inSection.map((t) => (
+                      <button key={t.id} type="button" onClick={() => { cart.setOrderType("dine-in"); cart.setTableId(t.id); }}
+                        className={cn("flex min-h-14 flex-col items-center justify-center rounded-lg px-1 text-center ring-1 transition-colors",
+                          t.id === cart.tableId ? "bg-primary text-primary-foreground ring-primary"
+                            : t.status === "billed" ? "bg-gold/15 ring-gold/60" : t.status === "occupied" ? "bg-primary-tint ring-primary/40" : t.status === "reserved" ? "bg-card ring-gold/60 ring-dashed" : "bg-card ring-border hover:ring-primary/40")}>
+                        <span className="text-sm font-bold">{t.label}</span>
+                        <span className="text-[10px] opacity-75">{t.status === "free" ? `${t.seats} seats` : t.status === "reserved" ? "Reserved" : formatINR(t.runningTotal, 0)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            );
+          }) : (
+            <button type="button" onClick={() => cart.setOrderType("dine-in")} className={cn("shrink-0 rounded-lg px-3 py-1.5 text-[13px] font-semibold", cart.orderType === "dine-in" ? "bg-primary text-primary-foreground" : "bg-secondary")}>Dine-in</button>
+          )}
+          <span className="mx-1 h-6 w-px shrink-0 bg-border" aria-hidden="true" />
+          {ORDER_TYPES.filter((o) => o.v !== "dine-in").map((o) => (
+            <button key={o.v} type="button" onClick={() => { if (cart.tableId) cart.setTableId(undefined); cart.setOrderType(o.v); }}
+              className={cn("shrink-0 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors", cart.orderType === o.v ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-accent")}>{o.l}</button>
           ))}
+          {openBills.length ? <span className="mx-1 h-6 w-px shrink-0 bg-border" aria-hidden="true" /> : null}
+          {openBills.map((o) => {
+            const current = cart.activeOrder?.uid === o.uid;
+            return (
+              <button key={o.uid ?? o.billNo} type="button" onClick={() => cart.openOrder(o)} title={`Running bill ${o.billNo}`}
+                className={cn("flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ring-1", current ? "bg-primary-tint ring-primary" : "bg-card ring-border/70 hover:ring-primary/40")}>
+                <ShoppingBag className="size-3.5 text-primary" />{o.guestCodes?.[0] ?? o.billNo.split("/").pop()} {o.customer?.name ?? ""}<span className="font-normal text-muted-foreground">{formatINR(o.total, 0)}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Items */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="space-y-3 p-4">
-            {openBills.length ? (
-              <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1" aria-label="Running pickup and takeaway bills">
-                {openBills.map((o) => {
-                  const current = cart.activeOrder?.uid === o.uid;
-                  return (
-                    <button key={o.uid ?? o.billNo} type="button" onClick={() => cart.openOrder(o)}
-                      className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-1.5 text-left text-xs ring-1 ${current ? "bg-primary-tint ring-primary" : "bg-card ring-border/70 hover:ring-primary/40"}`}>
-                      <ShoppingBag className="size-3.5 text-primary" />
-                      <span><span className="block font-bold">{o.guestCodes?.[0] ?? o.billNo.split("/").pop()} {o.customer?.name ?? ORDER_TYPES.find((t) => t.v === o.orderType)?.l}</span>
-                        <span className="text-muted-foreground">{formatINR(o.total, 0)}{o.source === "online" ? ", online" : ""}</span></span>
-                    </button>
-                  );
-                })}
+        <div className="flex min-h-0 flex-1">
+          {/* Category rail (desktop) */}
+          <nav className="hidden w-48 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border bg-card p-2 lg:flex" aria-label="Menu sections">
+            {rail.map((c) => (
+              <button key={c} onClick={() => { setCat(c); setQ(""); }} aria-current={cat === c && !q ? "true" : undefined}
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] font-medium transition-colors ${cat === c && !q ? "bg-primary text-primary-foreground" : "text-foreground/80 hover:bg-secondary"}`}>
+                {c === "Popular" && <Star className={`size-3.5 ${cat === c && !q ? "fill-current" : "fill-gold text-gold"}`} />}<span className="truncate">{c}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Dishes */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="space-y-2 p-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search dishes or codes (F4)"
+                  onKeyDown={(e) => { if (e.key === "Enter" && items.length === 1 && items[0]) { pick(items[0]); setQ(""); } if (e.key === "Escape") setQ(""); }}
+                  className="w-full rounded-[10px] border-0 bg-secondary py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground" />
               </div>
-            ) : null}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search dishes"
-                className="w-full rounded-[10px] border-0 bg-secondary py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground" />
+              <div className="no-scrollbar flex gap-1.5 overflow-x-auto lg:hidden">
+                {rail.map((c) => (
+                  <button key={c} onClick={() => { setCat(c); setQ(""); }}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${cat === c && !q ? "bg-foreground text-background" : "bg-card text-foreground ring-1 ring-border/70"}`}>{c}</button>
+                ))}
+              </div>
             </div>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto lg:hidden">
-              {rail.map((c) => (
-                <button key={c} onClick={() => { setCat(c); setQ(""); }}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${cat === c && !q ? "bg-foreground text-background" : "bg-card text-foreground ring-1 ring-border/70"}`}>{c}</button>
-              ))}
-            </div>
-          </div>
-          <div className="grid flex-1 auto-rows-min grid-cols-2 gap-3 overflow-y-auto px-4 pb-4 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto px-3 pb-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {items.map((i) => {
               const inCart = qtyInCart(i.id);
               const left = stockLeft(i.id, inventory);
@@ -370,19 +430,16 @@ function PosPage() {
               const low = remaining !== null && !!stock && remaining <= stock.lowStockThreshold;
               const offHours = outsideHours(i);
               return (
-                <button key={i.id} onClick={() => pick(i)} disabled={soldOut} title={offHours && i.hours ? `Served ${i.hours.from}–${i.hours.to}` : undefined}
-                  className={`card-elevated relative flex min-h-24 flex-col justify-between p-3 text-left transition-[transform,box-shadow] hover:shadow-md active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${offHours ? "opacity-60" : ""}`}>
-                  {inCart ? <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{inCart}</span> : null}
-                  <div className="flex items-start gap-2 pr-6">
-                    <span className="mt-0.5"><VegMark veg={i.veg} /></span>
-                    <span className="text-sm font-semibold leading-snug">{i.name}</span>
-                  </div>
-                  <span className="mt-2 flex items-end justify-between gap-2">
-                    <span className="text-sm font-semibold text-foreground/80">{i.variants?.length ? `from ${formatINR(i.price, 0)}` : formatINR(priceFor(i, cart.orderType), 0)}</span>
-                    {soldOut ? <span className="text-[11px] font-semibold text-destructive">Sold out</span>
-                      : low ? <span className="rounded bg-gold/25 px-1.5 text-[11px] font-semibold text-gold-foreground">{remaining} left</span>
-                      : offHours && i.hours ? <span className="text-[11px] text-muted-foreground">{i.hours.from}–{i.hours.to}</span>
-                      : needsOptions(i) ? <span className="text-[11px] text-muted-foreground">Options</span> : null}
+                <button key={i.id} onClick={() => pick(i)} disabled={soldOut} title={offHours && i.hours ? `Served ${i.hours.from}–${i.hours.to}` : i.name}
+                  className={`relative flex min-h-[4.75rem] flex-col justify-between overflow-hidden rounded-lg border-l-[3px] bg-card py-2 pl-2.5 pr-2 text-left shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-border/70 transition-[transform,box-shadow] hover:shadow-md active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${i.veg ? "border-l-success" : "border-l-destructive"} ${offHours ? "opacity-60" : ""}`}>
+                  {inCart ? <span className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">{inCart}</span> : null}
+                  <span className="line-clamp-2 pr-5 text-[13px] font-semibold leading-snug">{i.name}</span>
+                  <span className="mt-1.5 flex items-end justify-between gap-1.5 text-[11px]">
+                    <span className="font-medium uppercase tracking-wide text-muted-foreground">{soldOut ? <span className="font-semibold normal-case text-destructive">Sold out</span>
+                      : low ? <span className="rounded bg-gold/25 px-1 font-semibold normal-case text-gold-foreground">{remaining} left</span>
+                      : offHours && i.hours ? <span className="normal-case">{i.hours.from}–{i.hours.to}</span>
+                      : shortCode(i.name)}</span>
+                    <span className="text-[12px] font-semibold tabular-nums text-foreground/80">{i.variants?.length ? `${formatINR(Math.min(...i.variants.map((v) => v.price)), 0)}+` : formatINR(priceFor(i, cart.orderType), 0)}</span>
                   </span>
                 </button>
               );
@@ -398,10 +455,12 @@ function PosPage() {
               </div>
             ) : <p className="col-span-full py-10 text-center text-sm text-muted-foreground">{q ? `No dishes match "${q}"` : "Nothing available in this category"}</p>)}
           </div>
-        </div>
+            <div className="hidden border-t border-border bg-card px-3 py-2 md:block">{billTools}</div>
+          </div>
 
-        {/* Bill panel tablet+ */}
-        <aside className="hidden w-80 shrink-0 border-l border-border bg-background md:block xl:w-96">{billPanel}</aside>
+          {/* Bill panel tablet+ */}
+          <aside className="hidden w-[22rem] shrink-0 border-l border-border bg-background md:block xl:w-[26rem]">{billPanel}</aside>
+        </div>
       </div>
 
       {/* Mobile cart bar + drawer */}
@@ -454,6 +513,56 @@ function PosPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={customerOpen} onOpenChange={setCustomerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogTitle>Guest on this bill</DialogTitle>
+          <div className="space-y-3">
+            <label className="block text-sm font-medium">Mobile number
+              <input autoFocus inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
+            </label>
+            <label className="block text-sm font-medium">Name
+              <input maxLength={60} value={cart.customer.name ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, name: e.target.value })} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
+            </label>
+            <label className="block text-sm font-medium">Business GSTIN <span className="font-normal text-muted-foreground">(optional, for a B2B invoice)</span>
+              <input maxLength={15} value={cart.customer.gstin ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, gstin: e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, "") })}
+                className={`mt-1 w-full rounded-lg border bg-card px-3 py-2.5 text-sm uppercase ${cart.customer.gstin && gstinError(cart.customer.gstin) ? "border-destructive" : "border-input"}`} />
+              {cart.customer.gstin && gstinError(cart.customer.gstin) ? <span className="mt-1 block text-xs text-destructive">{gstinError(cart.customer.gstin)}</span> : null}
+            </label>
+            {guest ? <p className="text-xs text-muted-foreground">Returning guest: {guest.stats.visits} visits{(settings.loyaltyPct ?? 0) > 0 ? `, ${guest.stats.points} points` : ""}{guest.stats.due > 0 ? `, ${formatINR(guest.stats.due, 0)} due` : ""}</p> : null}
+            <Button className="w-full" onClick={() => setCustomerOpen(false)}>Done</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={moveOpen} onOpenChange={setMoveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Move {currentTable?.label ?? "this bill"} to</DialogTitle>
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+            {sections.map((section) => {
+              const free = tables.filter((t) => t.section === section && t.status === "free" && t.id !== cart.tableId).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+              if (!free.length) return null;
+              return (
+                <div key={section}>
+                  <p className="mb-1.5 text-xs font-semibold text-muted-foreground">{section}</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {free.map((t) => (
+                      <button key={t.id} type="button" className="min-h-11 rounded-lg bg-card text-sm font-bold ring-1 ring-border hover:ring-primary"
+                        onClick={() => {
+                          const from = cart.tableId;
+                          if (!from) return;
+                          void moveTable(from, t.id).then(() => { cart.setTableId(t.id); setMoveOpen(false); toast.success(`Moved to ${t.label}`); })
+                            .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Couldn't move the table"));
+                        }}>{t.label}</button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            {!tables.some((t) => t.status === "free" && t.id !== cart.tableId) ? <p className="text-sm text-muted-foreground">No free tables right now.</p> : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!receipt} onOpenChange={(o) => !o && setReceipt(null)}>
         <DialogContent className="max-h-[90vh] max-w-sm overflow-y-auto">
           <DialogTitle>Bill {receipt?.billNo} settled</DialogTitle>
@@ -490,5 +599,30 @@ function FeedbackPrompt({ order }: { order: Order }) {
         <Button size="sm" className="mt-2" onClick={() => { void saveFeedback(order, rating, comment).then(() => setSaved(true)); }}>Save feedback</Button>
       </> : null}
     </div>
+  );
+}
+
+function ToolButton({ children, onClick, pressed }: { children: ReactNode; onClick: () => void; pressed?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={pressed}
+      className={cn("flex max-w-48 items-center gap-1.5 truncate rounded-lg px-2.5 py-1.5 text-xs font-semibold ring-1 transition-colors", pressed ? "bg-primary-tint text-primary ring-primary/40" : "bg-card text-foreground ring-border/70 hover:bg-secondary")}>
+      {children}
+    </button>
+  );
+}
+
+/** One block of the bill: new items, items to cancel, or a ticket already in the kitchen. */
+function BillGroup({ title, note, tone, action, children }: { title: string; note: string; tone: "new" | "cancel" | "sent" | "cancelled"; action?: ReactNode; children: ReactNode }) {
+  return (
+    <section className={tone === "new" ? "bg-card" : tone === "cancel" ? "bg-destructive/5" : ""}>
+      <header className="flex items-center justify-between gap-2 px-4 pb-1 pt-2.5">
+        <h3 className="text-[11px] font-semibold">
+          <span className={tone === "new" ? "text-primary" : tone === "cancel" || tone === "cancelled" ? "text-destructive" : "text-foreground"}>{title}</span>
+          <span className="ml-1.5 font-normal text-muted-foreground">{note}</span>
+        </h3>
+        {action}
+      </header>
+      <ul className="pb-1.5">{children}</ul>
+    </section>
   );
 }
