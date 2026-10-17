@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
+import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, Building2, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import { getDb, getMaterialLevels } from "@/lib/db";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import { InstallButton } from "@/components/AppInstall";
 import { isLow } from "@/lib/stock-logic";
+import { GuestOrdersButton } from "@/components/GuestOrders";
+import { useAccount, usePlatformAdmin } from "@/lib/use-account";
+import { accountState } from "@/lib/saas-logic";
 
 const NAV = [
   { to: "/", label: "Billing", icon: ClipboardList },
@@ -26,7 +29,9 @@ const NAV = [
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/insights", label: "Insights", icon: LineChart },
   { to: "/waiter", label: "Waiter", icon: Tablet },
+  { to: "/account", label: "Business", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
 
 type NavPath = (typeof NAV)[number]["to"];
@@ -39,7 +44,8 @@ const ROLE_SCREENS: Record<string, NavPath[]> = {
 };
 
 export function screensFor(role: string | undefined): readonly NavPath[] {
-  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to);
+  // Business (plan, outlets) is for owners and managers; Admin only shows for XTSY POS administrators.
+  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to).filter((to) => to !== "/admin" && (to !== "/account" || role === "owner" || role === "manager"));
 }
 
 export { useRestaurantSettings } from "@/lib/use-settings";
@@ -160,6 +166,7 @@ function SyncChip() {
 /** Shown to a signed-in account that doesn't belong to a restaurant yet. */
 function RestaurantSetup() {
   const { user, createRestaurant, refresh } = useStaff();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -171,6 +178,7 @@ function RestaurantSetup() {
     setMessage("");
     try {
       await createRestaurant(name.trim());
+      await navigate({ to: "/setup" });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Couldn't create the restaurant. Check your connection and try again.");
     } finally {
@@ -183,7 +191,7 @@ function RestaurantSetup() {
       <section className="rounded-xl border border-border bg-card p-6">
         <Store className="size-6 text-primary" />
         <h1 className="mt-3 text-xl font-bold">Set up your restaurant</h1>
-        <p className="mt-1 text-sm text-muted-foreground">You'll be the owner. Add your GSTIN, menu and staff next.</p>
+        <p className="mt-1 text-sm text-muted-foreground">You'll be the owner, with a 14-day free trial. A short setup then walks you through GST, menu, tables, printing and staff.</p>
         <form className="mt-5 space-y-3" onSubmit={(event) => void submit(event)}>
           <label className="block text-sm font-medium">Restaurant name
             <input required maxLength={120} value={name} onChange={(event) => setName(event.target.value)} placeholder="TAB Bistro" className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5" />
@@ -211,12 +219,16 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
     const [materials, levels] = await Promise.all([getDb().materials.toArray(), getMaterialLevels()]);
     return materials.filter((m) => !m.archived && isLow(m, levels.get(m.id) ?? 0)).length;
   }, [], 0);
-  const allowed = screensFor(user?.role);
+  const platformAdmin = usePlatformAdmin().data === true;
+  const allowed = [...screensFor(user?.role), ...(platformAdmin ? ["/admin" as const] : [])];
   const nav = NAV.filter((n) => allowed.includes(n.to));
+  const account = useAccount().data;
+  const plan = accountState(account?.account);
   const current = NAV.find((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
   const blocked = !!current && !allowed.includes(current.to);
   const home = nav[0]?.to ?? "/";
-  const needsDetails = isAdmin(user) && !settings.updatedAt && pathname !== "/settings";
+  const needsDetails = isAdmin(user) && !settings.updatedAt && pathname !== "/settings" && pathname !== "/setup";
+  const planWarning = isAdmin(user) && plan.warn && pathname !== "/account";
 
   return (
     <div className={`flex min-h-screen bg-background text-foreground ${tone === "dark" ? "dark" : ""}`}>
@@ -248,11 +260,16 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
               {restaurantName ? <div className="text-[11px] text-muted-foreground">XTSY POS</div> : null}
             </div>
           </div>
-          <div className="flex items-center gap-2"><InstallButton /><SyncChip /></div>
+          <div className="flex items-center gap-2"><GuestOrdersButton /><InstallButton /><SyncChip /></div>
         </header>
         {needsDetails && !needsRestaurant ? (
-          <Link to="/settings" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
-            <AlertTriangle className="size-4 shrink-0" />Add your restaurant's name, address and GSTIN so bills carry your details.
+          <Link to="/setup" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
+            <AlertTriangle className="size-4 shrink-0" />Finish setting up: add your GSTIN, menu, tables and staff so bills carry your details.
+          </Link>
+        ) : null}
+        {planWarning && !needsDetails ? (
+          <Link to="/account" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
+            <AlertTriangle className="size-4 shrink-0" />{plan.label}.{plan.live ? " See your plan." : " Billing keeps working; guest ordering and new outlets are paused. Renew in Business."}
           </Link>
         ) : null}
         <main className="min-w-0 flex-1 pb-20 lg:pb-0">

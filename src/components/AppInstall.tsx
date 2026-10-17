@@ -84,6 +84,9 @@ export function AppInstall() {
     };
   }, []);
 
+  // Guests ordering from a QR code or link are on the restaurant's page, not a staff app.
+  if (pathname.startsWith("/order/")) return null;
+
   // React 19 hoists these into <head> and updates them when the app changes.
   return (
     <>

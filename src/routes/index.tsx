@@ -25,7 +25,10 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): { table?: string } => (typeof search["table"] === "string" ? { table: search["table"] } : {}),
+  validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string } => ({
+    ...(typeof search["table"] === "string" ? { table: search["table"] } : {}),
+    ...(typeof search["bill"] === "string" ? { bill: search["bill"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Billing — XTSY POS" },
@@ -50,6 +53,16 @@ function PosPage() {
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const cart = useCart(search.table);
+  // Running bills with no table: pickup and online orders, and takeaway bills sent to the kitchen.
+  const openBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
+    .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
+  const openedBill = useRef<string | null>(null);
+  useEffect(() => {
+    if (!search.bill || openedBill.current === search.bill) return;
+    const bill = openBills.find((o) => o.uid === search.bill);
+    if (bill) { openedBill.current = search.bill; cart.openOrder(bill); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open once when the bill is available locally
+  }, [search.bill, openBills]);
   const [cat, setCat] = useState<string>("Popular");
   const [q, setQ] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
@@ -327,6 +340,21 @@ function PosPage() {
         {/* Items */}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="space-y-3 p-4">
+            {openBills.length ? (
+              <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1" aria-label="Running pickup and takeaway bills">
+                {openBills.map((o) => {
+                  const current = cart.activeOrder?.uid === o.uid;
+                  return (
+                    <button key={o.uid ?? o.billNo} type="button" onClick={() => cart.openOrder(o)}
+                      className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs ${current ? "border-primary bg-primary-tint" : "border-border bg-card hover:border-primary/40"}`}>
+                      <ShoppingBag className="size-3.5 text-primary" />
+                      <span><span className="block font-bold">{o.guestCodes?.[0] ?? o.billNo.split("/").pop()} {o.customer?.name ?? ORDER_TYPES.find((t) => t.v === o.orderType)?.l}</span>
+                        <span className="text-muted-foreground">{formatINR(o.total, 0)}{o.source === "online" ? " · online" : ""}</span></span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search dishes (F2)…"
