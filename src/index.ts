@@ -1,3 +1,4 @@
+import "./styles.css"
 export { AppShell } from "./components/AppShell"
 export { LiveSync } from "./components/LiveSync"
 export { UpiPay, PaymentPanel, ReasonPrompt } from "./components/PaymentDialogs"
