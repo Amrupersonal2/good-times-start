@@ -172,7 +172,7 @@ function Gst({ orders, file }: { orders: Order[]; file: string }) {
     const { sheets } = gstr1Workbook(orders, settings, period);
     downloadXlsx(`GSTR-1-${file}`, sheets, { title: `GSTR-1 ${period}` });
   };
-  const exportGst = download(`${file}-gst.csv`, toCsv([["GST rate %", "Taxable value", "CGST", "SGST", "Total tax"], ...rows.map((r) => [r.rate, r.taxable, r.cgst, r.sgst, Math.round((r.cgst + r.sgst) * 100) / 100])]));
+  const exportGst = () => download(`${file}-gst.csv`, toCsv([["GST rate %", "Taxable value", "CGST", "SGST", "Total tax"], ...rows.map((r) => [r.rate, r.taxable, r.cgst, r.sgst, Math.round((r.cgst + r.sgst) * 100) / 100])]));
   return (
     <div className="card-elevated p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -181,9 +181,9 @@ function Gst({ orders, file }: { orders: Order[]; file: string }) {
           <p className="text-xs text-muted-foreground">{settled.length ? `Bills ${settled[0]?.billNo} to ${settled[settled.length - 1]?.billNo}, across all counters. Check with your accountant before filing.` : "No settled bills in this period."}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={!settled.length} onClick={exportGstr1}><Download />GSTR-1 (Excel)</Button>
-          <Button size="sm" variant="outline" disabled={!rows.length} onClick={exportGst}><Download />GST CSV</Button>
-          <Button size="sm" variant="outline" disabled={!orders.length} onClick={exportBills}><Download />All bills CSV</Button>
+          <Button size="sm" disabled={!settled.length} onClick={() => { void exportGstr1(); }}><Download />GSTR-1 (Excel)</Button>
+          <Button size="sm" variant="outline" disabled={!rows.length} onClick={() => { void exportGst(); }}><Download />GST CSV</Button>
+          <Button size="sm" variant="outline" disabled={!orders.length} onClick={() => { void exportBills(); }}><Download />All bills CSV</Button>
         </div>
       </div>
       {untaxed.aggregator || untaxed.other ? (
