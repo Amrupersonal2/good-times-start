@@ -100,6 +100,32 @@ import { DialogTitle } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2
 import { DialogTrigger } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### Dropdown
+
+```ts
+import { Dropdown } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `value` | any | `—` |
+| `onChange` | function | `—` |
+| `options` | any | `—` |
+| `placeholder` | string | `Choose` |
+| `ariaLabel` | string | `—` |
+| `size` | sm · md | `md` |
+| `searchable` | boolean | `—` |
+| `disabled` | boolean | `—` |
+| `className` | string | `ml-2 text-xs opacity-60` |
+
+### GuestOrdersButton
+
+```ts
+import { GuestOrdersButton } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### InstallButton
 
 ```ts
@@ -124,10 +150,52 @@ import { LiveSync } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302
 import { MenuExcel } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### OrderingSettings
+
+```ts
+import { OrderingSettings } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### PaymentPanel
 
 ```ts
 import { PaymentPanel } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PersistentFrame
+
+```ts
+import { PersistentFrame } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### Popover
+
+```ts
+import { Popover } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PopoverAnchor
+
+```ts
+import { PopoverAnchor } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PopoverContent
+
+```ts
+import { PopoverContent } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PopoverTrigger
+
+```ts
+import { PopoverTrigger } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PreloadScreens
+
+```ts
+import { PreloadScreens } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
 ### PrintHost
@@ -146,6 +214,84 @@ import { ReasonPrompt } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b
 
 ```ts
 import { Receipt } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### Segmented
+
+```ts
+import { Segmented } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### Select
+
+```ts
+import { Select } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectContent
+
+```ts
+import { SelectContent } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectGroup
+
+```ts
+import { SelectGroup } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectItem
+
+```ts
+import { SelectItem } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectLabel
+
+```ts
+import { SelectLabel } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectScrollDownButton
+
+```ts
+import { SelectScrollDownButton } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectScrollUpButton
+
+```ts
+import { SelectScrollUpButton } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectSeparator
+
+```ts
+import { SelectSeparator } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectTrigger
+
+```ts
+import { SelectTrigger } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SelectValue
+
+```ts
+import { SelectValue } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### Switch
+
+```ts
+import { Switch } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SyncScheduler
+
+```ts
+import { SyncScheduler } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
 ### UpiPay

@@ -2,7 +2,7 @@
   "meta": {
     "name": "Good Times Start",
     "package": "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d",
-    "version": "1.1.0",
+    "version": "2.0.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -11,7 +11,7 @@
     ],
     "source_type": "local",
     "source_manifest": {
-      "#enrichment": "3600e3d11a7c87bbba212f07c9d6fd53fb830fe7ad6e8f51bb1fc40ddda1207d",
+      "#enrichment": "9a9cb84536757d6eb0a37e306107fcd763da3887efada26e40bee3bed06e4260",
       ".gitignore": "6d9e901a692b46a83707c245fb03bc91",
       ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
       ".lovable/plan/table-first-pos-kitchen-tickets-and-sync-recovery-2026-10-16.md": "7956f6185a7718331d049c136f03c7d4",
@@ -23,7 +23,7 @@
       "README.md": "e9c1c6685644ec8321ce8276fcd7dc5f",
       "bunfig.toml": "89115995d9de72fdfc894e16b1e75297",
       "components.json": "30d3d035361ce807021f5c54620962e9",
-      "docs/XTSY_POS_REVAMP.md": "87d5eae051cbea07ab86b27492f4da2b",
+      "docs/XTSY_POS_REVAMP.md": "0f40f4620e80447c7d8d2d4e946f993b",
       "drizzle.config.ts": "c2b6029fa56b49433380b7263b06e3f7",
       "drizzle/migrations/0000_restaurant_cloud_foundation.sql": "204d86011cff3318a24e670f61130b4a",
       "drizzle/migrations/0001_link_inventory_to_menu.sql": "67491f96ec7e926690f0ed1a850590ec",
@@ -31,6 +31,7 @@
       "drizzle/migrations/0003_stock_and_customer_records.sql": "e7229b0d904f67984f450c3a6a9ef898",
       "drizzle/migrations/0004_day_close_records.sql": "c047b0e88d343bc5aa1a7c0404d793e6",
       "drizzle/migrations/0005_restaurant_team_sharing.sql": "ed80239f3e207d17670248e50f6d6314",
+      "drizzle/migrations/0006_outlets_plans_guest_ordering.sql": "ca39f1ace51c9c604d2e3eb5b0c9a471",
       "drizzle/migrations/meta/0000_snapshot.json": "3f3f6d4a75c86798a22be17be432907a",
       "drizzle/migrations/meta/0001_snapshot.json": "3ce5c45e4bc10b29448b36fdc2e8c244",
       "drizzle/migrations/meta/0002_snapshot.json": "9d4d9e89780cc4034e91fdd104e3b6f5",
@@ -54,21 +55,26 @@
       "public/icons/waiter-512.png": "1e5bcecf077125e63715ba5f479041ad",
       "public/icons/waiter-apple-180.png": "d7915807278abbb05771fde7c9aac2d1",
       "public/icons/waiter-maskable-512.png": "be5e3186f80e6ec9aa262c106f0ce919",
-      "public/manifest-insights.webmanifest": "5845db6a9e386ae8aebf879c35ed9159",
-      "public/manifest-pos.webmanifest": "e162f168f5c696a9a80975b34ce1ba3d",
-      "public/manifest-waiter.webmanifest": "a2f4bfe7e14b44a4eef7312969621efa",
+      "public/manifest-insights.webmanifest": "2874e0bc711b0aa2695b634f7995d2e4",
+      "public/manifest-pos.webmanifest": "e511a2f18938e25d729d283f857b7cec",
+      "public/manifest-waiter.webmanifest": "f9073cdfee467fbba13bdba7b0bf89c8",
       "public/robots.txt": "f9dff89adf98833e676de2205921996a",
-      "public/sw.js": "2535723ea5459b177e5773767ddc7234",
+      "public/sw.js": "84e56c8b54ba8491bc89e9f55e13eaeb",
       "roadmap.md": "988a43a090c7d5cf5b9be856ed250066",
       "src/assets/logo.png": "a03e4eedebddbee2a4e1008fc0de1621",
-      "src/components/AppInstall.tsx": "511102e7030789c739e832fb4546e268",
-      "src/components/AppShell.tsx": "6366049898f4a58e54217dd14ddd8472",
+      "src/components/AppInstall.tsx": "cc2b9bface2fce4f27d31144c035e90f",
+      "src/components/AppShell.tsx": "465c89b39dc2e41640b92d827e442e78",
+      "src/components/Dropdown.tsx": "c6fe0e074dce11a31504acda7d1d71de",
+      "src/components/GuestOrders.tsx": "43cac79268371bf5695b047d47f66e5a",
       "src/components/ItemOptions.tsx": "d1d857cef3facb0a9b81dd4bc4ef33bc",
       "src/components/LiveSync.tsx": "fac92412a9dd89d9d0b3c8c5472059bf",
       "src/components/MenuExcel.tsx": "207ab10b433578d5402205c928852b5d",
-      "src/components/PaymentDialogs.tsx": "81d9128f98a07b5919764939734cb10d",
+      "src/components/OrderingSettings.tsx": "9de35f9689b53a71e4ba3981ea711ff6",
+      "src/components/PaymentDialogs.tsx": "18276df0694392753ca155f632bef85e",
+      "src/components/PreloadScreens.tsx": "c51ad931e70fc978bdc9df5f3e0120ea",
       "src/components/PrintHost.tsx": "e502029977ddab0f51ca5863a8c46e7a",
       "src/components/Receipt.tsx": "85d1119bd5e8d827b1327b173fb3dace",
+      "src/components/Segmented.tsx": "ef8d4dc439cd68c739b566850ede8221",
       "src/components/VegMark.tsx": "9ba84542ab9117baa9379814c04b250b",
       "src/components/ui/accordion.tsx": "55f9dda62b4e3913c9b23e5015a86aef",
       "src/components/ui/alert-dialog.tsx": "96350e949e9b7b674545430a410ab89c",
@@ -102,7 +108,7 @@
       "src/components/ui/radio-group.tsx": "0e1ace237a5da3197e3eb1e6683faba9",
       "src/components/ui/resizable.tsx": "d9fcb9203c749fcab4e125a99bb12a86",
       "src/components/ui/scroll-area.tsx": "87b65d3eb26f2b02ff35a7acea585ba5",
-      "src/components/ui/select.tsx": "31ea1bbd6671833b010b2e852c8a55d0",
+      "src/components/ui/select.tsx": "2e6571f6650396cace46e5270c90b9eb",
       "src/components/ui/separator.tsx": "433d163c4ffa00b59398a0c293198b5e",
       "src/components/ui/sheet.tsx": "0221fbf97b69611b47fcbc10bb27669a",
       "src/components/ui/sidebar.tsx": "83c1623eb50ebc370d7b1b84a542e369",
@@ -127,26 +133,35 @@
       "src/integrations/supabase/client.ts": "2e72a87ed578e0084537f2646f2d7e6a",
       "src/integrations/supabase/cron-auth.ts": "6c04781ff98ada5977945fae55d39385",
       "src/integrations/supabase/previewAuthStorage.ts": "bb74f08a89d367e3a4a18880dad1050f",
-      "src/integrations/supabase/types.ts": "8e80240efd1cc678cffbe064f213c243",
+      "src/integrations/supabase/types.ts": "c7df550fbb572e66a26554cf0f6eb994",
       "src/lib/ai-gateway/responses.server.ts": "6df55c548d40f91cd29e065314c45c7c",
       "src/lib/ai-gateway/run-id.ts": "4652f725587a5a8e4a60bd56d9042234",
       "src/lib/auth-context.tsx": "1afcdb9a5a379d65c7cd65775e1701ef",
       "src/lib/bill-actions.ts": "fbad8901da43e6cacf0341f69ebd33f9",
       "src/lib/bill-splitting.test.ts": "d18ad77d49b05d0bf5a526398d7486d5",
       "src/lib/bill-splitting.ts": "20f30f664539d43609eae81f61ff6b1e",
+      "src/lib/bill-view-logic.test.ts": "67a7feda5c85445b4b933f42a14390d5",
+      "src/lib/bill-view-logic.ts": "8ea94c33e128fbb86f9001920917bf62",
       "src/lib/billing-config.ts": "67956d76e0a4b25d16e2864b3fa18e36",
       "src/lib/billing.test.ts": "e259e781866ffcee1c23c3efa1a797cd",
       "src/lib/billing.ts": "fa0a2db1dcbc24af2ca1b3f209c7d575",
-      "src/lib/cart-store.ts": "40e57ec2b773df62fb80de804bbd4fdb",
-      "src/lib/cloud-sync.ts": "15724fd5b95b6be98d7fefdeed44905b",
+      "src/lib/cart-store.ts": "06393fdc24af1933f7ce1fa6427ce8c5",
+      "src/lib/cloud-sync.ts": "c589ca0729723807258d705e043fd770",
       "src/lib/customer-actions.ts": "85bc70a59ed137fee7e25eccffbf26b4",
       "src/lib/customer-logic.test.ts": "dd03634b20d6b0cec6accc7aa5eade3a",
       "src/lib/customer-logic.ts": "06d8c520cc3f2d850ddaf18f2603ec50",
+      "src/lib/dashboard-logic.test.ts": "70a21083338d8c1299fe92f60ece8e25",
+      "src/lib/dashboard-logic.ts": "c956b6f4c1df38531d2d735a26d61c3a",
       "src/lib/db.ts": "c9f651d14c8ba0c6a709e14072ef37c1",
+      "src/lib/dropdown-logic.test.ts": "b2b5be3785623255066753c97fadb9ff",
+      "src/lib/dropdown-logic.ts": "f91bc271235bc85d599530db5357d7b3",
       "src/lib/error-capture.ts": "f630d9686a9a989170f22eff4de7b30d",
       "src/lib/error-page.ts": "8da0ddd7569bac2676b9a5c8edff8a36",
       "src/lib/gstr1.test.ts": "f6b884a6a7b1e51808865443cba4e7f7",
       "src/lib/gstr1.ts": "7d7dac1c422d35c47c80bacf1cb1dfd8",
+      "src/lib/guest-order-actions.ts": "6017ac30452d7ae079110b7c8970b372",
+      "src/lib/guest-order-logic.test.ts": "5af5b9d57b9b13edad00daf4d717f041",
+      "src/lib/guest-order-logic.ts": "c573dacb8faf8d41b65c112255d82199",
       "src/lib/insights-logic.test.ts": "7b2d88259c8facde6ec3224678cf92ed",
       "src/lib/insights-logic.ts": "b1c31fa08486c3afcb34829820d20989",
       "src/lib/inventory.test.ts": "c7c8cf9c51a8e78ef93e83ef4f21b093",
@@ -159,6 +174,7 @@
       "src/lib/menu-excel.ts": "08067e5408f56c9fd95e9c033e4c1e5e",
       "src/lib/menu-logic.test.ts": "5f2e637dc01098116f011fa8480c3363",
       "src/lib/menu-logic.ts": "3fae87105935cb6fdae647ef70a5fb72",
+      "src/lib/outlet-actions.ts": "fda7007e64a1737992401e822937c86e",
       "src/lib/payment-logic.test.ts": "6b35698a7916fad7beb4a3ca1af37563",
       "src/lib/payment-logic.ts": "02d999b8f5179769b9525b47b8563055",
       "src/lib/print-config.ts": "be13e2e08a9252d6d59ab7e54b18a1e2",
@@ -168,6 +184,8 @@
       "src/lib/report-excel.ts": "b0ba08234a6dadc9eeefd70a6a285fc1",
       "src/lib/report-logic.test.ts": "d1b7116098e615a435f63207b4efe78e",
       "src/lib/report-logic.ts": "1fd10b0b996b4daf63cf34a78c3db6f0",
+      "src/lib/saas-logic.test.ts": "0ed0170149e4c2c3a4efda5bdbb91361",
+      "src/lib/saas-logic.ts": "4859107e48fa50f1e11fedfce64c1ad5",
       "src/lib/seed.ts": "2636ab1ef56febb14c2383e453ffab57",
       "src/lib/stock-actions.ts": "f1d240aaae53b4b4c9f9882a11b3259d",
       "src/lib/stock-logic.test.ts": "1f7eddc89f38c4879c51fd9aaaa37087",
@@ -175,41 +193,55 @@
       "src/lib/sync-core.test.ts": "0ed9e35738781400b2ed782e879160e8",
       "src/lib/sync-core.ts": "40a269085b65038371a8604949ba1fad",
       "src/lib/sync-diagnosis.functions.ts": "71f0ff66121166fe9b33441cf88767e9",
+      "src/lib/sync-scheduler.test.ts": "7cdeabdcbe3b4fb731e376359aafed2b",
+      "src/lib/sync-scheduler.ts": "8376acddf6a001ebbddf4c93c5f74bbd",
       "src/lib/table-actions.ts": "77cc3d3f36bf3f5fcde75c5387bb65f1",
       "src/lib/table-logic.test.ts": "5a85fc65c70a7805b83b341a09fa3abd",
       "src/lib/table-logic.ts": "f11a17e56a443c8db16c9899c1aaeb81",
-      "src/lib/types.ts": "6c5fe9cebd34609432b26e923c64000b",
+      "src/lib/types.ts": "3c62a2049ff10bd0325c66ea02d86de0",
+      "src/lib/use-account.ts": "8ea712f8337e308c3be8b5006404f517",
       "src/lib/use-settings.ts": "b7ed92c2dddafa75c0fdda96aabcd60e",
       "src/lib/utils.ts": "d9837f38cc05303254571985e3164050",
       "src/lib/validation.test.ts": "54c3bd9d6485dda979f6b07bd07c88a8",
       "src/lib/validation.ts": "70277682dac6278b111f7462d2193391",
       "src/lib/xlsx.test.ts": "d866886cb38abcc32b279510242c1979",
       "src/lib/xlsx.ts": "d90a88f879b6294e9c6e0b70607306fb",
-      "src/routeTree.gen.ts": "73b5839f107d8abd93538da11b071d64",
-      "src/router.tsx": "8f905e713b0eba7fa8148b7995a708c9",
+      "src/routeTree.gen.ts": "ab954911c78cd121e0425f1c06df559b",
+      "src/router.tsx": "9c9169c28c5de8a189c3960a6c3354a3",
       "src/routes/README.md": "b3a2f259b66fd1a11f54b6d5ac83bf57",
-      "src/routes/__root.tsx": "a57ac42a1ba8c4265a3108a8bd55a13b",
+      "src/routes/__root.tsx": "c480aa72294003e3f1445bd9a09c6202",
+      "src/routes/account.tsx": "1dde1ad2878f0f672102f9271e625625",
+      "src/routes/admin.tsx": "4493293e622289c9d019135b986b4073",
       "src/routes/auth.tsx": "3f9c9d6584da72e93a23d047f9d64a29",
-      "src/routes/customers.tsx": "2250b6bd1f6f545f16f257c75f568b5a",
-      "src/routes/index.tsx": "723b45e989d6b4644e44e993f08f3955",
-      "src/routes/insights.tsx": "b885c3d7f1039e37af8d7d7283e28bc6",
-      "src/routes/kitchen.tsx": "79451d1062498b256b9cea7aa920507a",
-      "src/routes/menu.tsx": "edddc0d65d29f74428f8b0424fe1179d",
-      "src/routes/reports.tsx": "88a2feb6f1ae1f3796157ffeedf2eef9",
-      "src/routes/settings.tsx": "121213bb5a589f7d5e070c15e25e0d48",
-      "src/routes/stock.tsx": "144f7126954c5dc74c52d45d1f1f24ad",
+      "src/routes/customers.tsx": "b9c75b54a2502025e72518ef1b3ffea3",
+      "src/routes/dashboard.tsx": "dfe8dc8c25388be7c642cfefa7386150",
+      "src/routes/index.tsx": "8086c4fe8328a72341c1159baafc2dfa",
+      "src/routes/insights.tsx": "7f637edb5daaf80e9d6f7e6c092b500e",
+      "src/routes/kitchen.tsx": "09f91d1279fb9931c2286724ae4b85c2",
+      "src/routes/menu.tsx": "77e9cade6eec37ddb78769abf25a2fab",
+      "src/routes/order.$slug.tsx": "30479ffe6d3b1ef4c6c61b855d15c2f1",
+      "src/routes/reports.tsx": "7570c8671439906726f356c6fdb7c004",
+      "src/routes/settings.tsx": "a603cf6684b7f5c7b8fcdb073cab87fa",
+      "src/routes/setup.tsx": "142a36119e15a3f5a9d26b3bf20ff5e2",
+      "src/routes/stock.tsx": "5f4b72884792d6ad18a4abcdbd087f01",
       "src/routes/tables.tsx": "d77b07592ac050c3f93aae652ebc0825",
-      "src/routes/waiter.tsx": "91fad0b6af74dfaef934aa3b069c4ca9",
+      "src/routes/waiter.tsx": "8ff5b5166819417f837048ef71dea189",
       "src/server.ts": "c7bbc49bb70e318af618d92775ee0f27",
       "src/start.ts": "d77c1c12904be5077c6955d9b30071af",
-      "src/styles.css": "25ca57847ac96b3ad15aa7f8a66be307",
+      "src/styles.css": "ae48272dcc5ea505b7eeb107c68d7b0d",
       "src/test/app-routing.test.tsx": "dda0393c89450a1e5b7874b424dca80d",
       "src/test/fakes/fake-dexie.ts": "c3704d46b84733382144ccdd4b3939c6",
       "src/test/fakes/fake-supabase.ts": "4c47de4b20f62e6b5811c56a041b19ab",
-      "src/test/performance.test.ts": "35dc1094909771ce14d85a45769b8bd8",
+      "src/test/load.test.ts": "1f2283165daa9e5d87da96dc1beed48d",
+      "src/test/performance.test.ts": "34ddbaa3018b7302f7debaa9aec0b1a7",
       "src/test/setup.ts": "ef5807c07db57482ab718e40246688a2",
-      "src/test/sync-simulation.test.ts": "e5c7c0d9c8f9bf400e1660f6acaf2218",
+      "src/test/sync-simulation.test.ts": "d6cd2f112cb681b73f979d05920aec50",
       "supabase/config.toml": "4d09215584fd5ff868dddb7d5fdf248c",
+      "tests/load/README.md": "15a3020ac4c4788c6454659b852b5ce7",
+      "tests/load/order.sql": "73356394ab9f2d8669129bc0e9c50184",
+      "tests/load/seed-menu.ts": "309379dce0cbd03a8be7533cc4afbd65",
+      "tests/load/storefront.sql": "1c7ca93e6b95f096002211c9bd3bcb18",
+      "tests/load/supabase-stub.sql": "78dacf3afd1096b707ccebdcd0c7998e",
       "tsconfig.json": "3d34aff71739a382bec105bad1c6948f",
       "vite.config.ts": "d67e8217e5f31b87c276b6357c9aedcf",
       "vitest.config.ts": "cdf9aff9538e6bc3eb92842264b030a9"
@@ -220,12 +252,12 @@
     "color": [
       {
         "name": "--background",
-        "raw": "#eef2f0",
+        "raw": "#f2f2f7",
         "source": "src/styles.css"
       },
       {
         "name": "--foreground",
-        "raw": "#17352e",
+        "raw": "#1d1d1f",
         "source": "src/styles.css"
       },
       {
@@ -235,7 +267,7 @@
       },
       {
         "name": "--card-foreground",
-        "raw": "#17352e",
+        "raw": "#1d1d1f",
         "source": "src/styles.css"
       },
       {
@@ -245,127 +277,127 @@
       },
       {
         "name": "--popover-foreground",
-        "raw": "#17352e",
+        "raw": "#1d1d1f",
         "source": "src/styles.css"
       },
       {
         "name": "--primary",
-        "raw": "#1f4d42",
+        "raw": "#0071e3",
         "source": "src/styles.css"
       },
       {
         "name": "--primary-foreground",
-        "raw": "#f6faf8",
+        "raw": "#ffffff",
         "source": "src/styles.css"
       },
       {
         "name": "--primary-hover",
-        "raw": "#163a32",
+        "raw": "#0062c4",
         "source": "src/styles.css"
       },
       {
         "name": "--primary-tint",
-        "raw": "#dfeae5",
+        "raw": "#e8f1fc",
         "source": "src/styles.css"
       },
       {
         "name": "--secondary",
-        "raw": "#e3e9e6",
+        "raw": "#e9e9ee",
         "source": "src/styles.css"
       },
       {
         "name": "--secondary-foreground",
-        "raw": "#17352e",
+        "raw": "#1d1d1f",
         "source": "src/styles.css"
       },
       {
         "name": "--muted",
-        "raw": "#e3e9e6",
+        "raw": "#e9e9ee",
         "source": "src/styles.css"
       },
       {
         "name": "--muted-foreground",
-        "raw": "#5b6f69",
+        "raw": "#6e6e73",
         "source": "src/styles.css"
       },
       {
         "name": "--accent",
-        "raw": "#dfeae5",
+        "raw": "#e8f1fc",
         "source": "src/styles.css"
       },
       {
         "name": "--accent-foreground",
-        "raw": "#17352e",
+        "raw": "#1d1d1f",
         "source": "src/styles.css"
       },
       {
         "name": "--gold",
-        "raw": "#e8a33d",
+        "raw": "#ff9f0a",
         "source": "src/styles.css"
       },
       {
         "name": "--gold-foreground",
-        "raw": "#2b1d06",
+        "raw": "#3d2400",
         "source": "src/styles.css"
       },
       {
         "name": "--destructive",
-        "raw": "#c2412d",
+        "raw": "#d70015",
         "source": "src/styles.css"
       },
       {
         "name": "--destructive-foreground",
-        "raw": "#fff7f5",
+        "raw": "#ffffff",
         "source": "src/styles.css"
       },
       {
         "name": "--success",
-        "raw": "#2f7d5b",
+        "raw": "#248a3d",
         "source": "src/styles.css"
       },
       {
         "name": "--warning",
-        "raw": "#b9720f",
+        "raw": "#b25000",
         "source": "src/styles.css"
       },
       {
         "name": "--border",
-        "raw": "#d5ddd9",
+        "raw": "#e3e3e8",
         "source": "src/styles.css"
       },
       {
         "name": "--input",
-        "raw": "#c9d3ce",
+        "raw": "#d2d2d7",
         "source": "src/styles.css"
       },
       {
         "name": "--ring",
-        "raw": "#1f4d42",
+        "raw": "#0071e3",
         "source": "src/styles.css"
       },
       {
         "name": "--sidebar",
-        "raw": "#17352e",
+        "raw": "#16202c",
         "source": "src/styles.css"
       },
       {
         "name": "--sidebar-foreground",
-        "raw": "#e6efeb",
+        "raw": "#e3e9f0",
         "source": "src/styles.css"
       },
       {
         "name": "--sidebar-primary",
-        "raw": "#e8a33d",
+        "raw": "#4c9aff",
         "source": "src/styles.css"
       },
       {
         "name": "--sidebar-primary-foreground",
-        "raw": "#2b1d06",
+        "raw": "#ffffff",
         "source": "src/styles.css"
       },
       {
         "name": "--sidebar-accent",
-        "raw": "#234a40",
+        "raw": "#233244",
         "source": "src/styles.css"
       },
       {
@@ -375,14 +407,14 @@
       },
       {
         "name": "--sidebar-border",
-        "raw": "#2a5348",
+        "raw": "#263649",
         "source": "src/styles.css"
       }
     ],
     "typography": [
       {
         "name": "--font-sans",
-        "raw": "\"Figtree\", \"Noto Sans\", system-ui, sans-serif",
+        "raw": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"Segoe UI Variable Text\", \"Segoe UI\", Roboto, \"Noto Sans\", \"Helvetica Neue\", Arial, system-ui, sans-serif",
         "source": "src/styles.css"
       }
     ],
@@ -419,7 +451,7 @@
       },
       {
         "name": "--radius",
-        "raw": "0.625rem",
+        "raw": "0.75rem",
         "source": "src/styles.css"
       }
     ]
@@ -436,8 +468,71 @@
       "import_path": ""
     },
     {
+      "name": "PersistentFrame",
+      "file": "src/components/AppShell",
+      "import_path": ""
+    },
+    {
       "name": "AppShell",
       "file": "src/components/AppShell",
+      "import_path": ""
+    },
+    {
+      "name": "Dropdown",
+      "file": "src/components/Dropdown",
+      "import_path": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "any",
+          "required": true
+        },
+        {
+          "name": "onChange",
+          "type": "function",
+          "required": true
+        },
+        {
+          "name": "options",
+          "type": "any",
+          "required": true
+        },
+        {
+          "name": "placeholder",
+          "type": "string",
+          "default": "Choose"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string"
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "values": [
+            "sm",
+            "md"
+          ],
+          "default": "md"
+        },
+        {
+          "name": "searchable",
+          "type": "boolean"
+        },
+        {
+          "name": "disabled",
+          "type": "boolean"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "ml-2 text-xs opacity-60"
+        }
+      ]
+    },
+    {
+      "name": "GuestOrdersButton",
+      "file": "src/components/GuestOrders",
       "import_path": ""
     },
     {
@@ -448,6 +543,11 @@
     {
       "name": "MenuExcel",
       "file": "src/components/MenuExcel",
+      "import_path": ""
+    },
+    {
+      "name": "OrderingSettings",
+      "file": "src/components/OrderingSettings",
       "import_path": ""
     },
     {
@@ -466,6 +566,11 @@
       "import_path": ""
     },
     {
+      "name": "PreloadScreens",
+      "file": "src/components/PreloadScreens",
+      "import_path": ""
+    },
+    {
       "name": "PrintHost",
       "file": "src/components/PrintHost",
       "import_path": ""
@@ -478,6 +583,11 @@
     {
       "name": "KotTicket",
       "file": "src/components/Receipt",
+      "import_path": ""
+    },
+    {
+      "name": "Segmented",
+      "file": "src/components/Segmented",
       "import_path": ""
     },
     {
@@ -572,6 +682,81 @@
       "import_path": ""
     },
     {
+      "name": "Popover",
+      "file": "src/components/ui/popover",
+      "import_path": ""
+    },
+    {
+      "name": "PopoverTrigger",
+      "file": "src/components/ui/popover",
+      "import_path": ""
+    },
+    {
+      "name": "PopoverContent",
+      "file": "src/components/ui/popover",
+      "import_path": ""
+    },
+    {
+      "name": "PopoverAnchor",
+      "file": "src/components/ui/popover",
+      "import_path": ""
+    },
+    {
+      "name": "Select",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectGroup",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectValue",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectTrigger",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectContent",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectLabel",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectItem",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectSeparator",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectScrollUpButton",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectScrollDownButton",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "Switch",
+      "file": "src/components/ui/switch",
+      "import_path": ""
+    },
+    {
       "name": "Constants",
       "file": "src/integrations/supabase/types",
       "import_path": ""
@@ -579,6 +764,11 @@
     {
       "name": "AuthProvider",
       "file": "src/lib/auth-context",
+      "import_path": ""
+    },
+    {
+      "name": "SyncScheduler",
+      "file": "src/lib/sync-scheduler",
       "import_path": ""
     }
   ],
