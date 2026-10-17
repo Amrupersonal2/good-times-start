@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, Building2, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ROLE_LABELS, isAdmin, useStaff } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { getSyncSnapshot, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
+import { getLiveStatus, getSyncSnapshot, onLiveStatus, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
 import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
 import { getDb, getMaterialLevels } from "@/lib/db";
@@ -66,6 +66,7 @@ function SyncChip() {
     return getSyncSnapshot();
   }, [], { pendingOrders: 0, lastSyncAt: null, error: "", pendingStock: 0 });
   const pending = snapshot.pendingOrders + snapshot.pendingStock;
+  const live = useSyncExternalStore(onLiveStatus, getLiveStatus, () => "off" as const);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -115,7 +116,7 @@ function SyncChip() {
   };
 
   const tone = !online || snapshot.error ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
-  const label = !online ? "Offline" : snapshot.error ? "Sync needs attention" : pending ? `${pending} to sync` : staff ? "Synced" : "This device only";
+  const label = !online ? "Offline" : snapshot.error ? "Sync needs attention" : pending ? `${pending} to sync` : !staff ? "This device only" : live === "reconnecting" ? "Reconnecting…" : live === "live" ? "Live" : "Synced";
 
   return <>
     <div className="flex items-center gap-2">
@@ -124,7 +125,7 @@ function SyncChip() {
         <span className="text-muted-foreground">{staff.role === "unknown" ? "No restaurant yet" : ROLE_LABELS[staff.role]}</span>
       </span> : null}
       <Button size="sm" variant="outline" onClick={() => setOpen(true)} className={`gap-1.5 ${tone}`} aria-label={`Sync status: ${label}`}>
-        {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
+        {online ? (live === "live" && !snapshot.error && !pending ? <span className="size-2 rounded-full bg-success" aria-hidden="true" /> : <Wifi className="size-3.5" />) : <WifiOff className="size-3.5" />}
         <span className="hidden sm:inline">{label}</span>
         {busy ? <RefreshCw className="size-3 animate-spin" /> : null}
         {snapshot.error ? <AlertTriangle className="size-3.5" /> : null}
@@ -209,7 +210,37 @@ function RestaurantSetup() {
   );
 }
 
-export function AppShell({ children, tone = "light" }: { children: ReactNode; tone?: "light" | "dark" }) {
+type Tone = "light" | "dark";
+const FrameContext = createContext<((tone: Tone) => void) | null>(null);
+const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/** Staff screens that share the persistent frame (sidebar, header, orders bell). */
+const FRAMED = ["/", "/tables", "/kitchen", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
+export function isFramedPath(pathname: string): boolean {
+  return FRAMED.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`)));
+}
+
+/**
+ * Mounted once in the root around staff pages, so moving between pages swaps
+ * only the page: the sidebar, header, sync chip and live orders connection
+ * stay put instead of being rebuilt on every tap.
+ */
+export function PersistentFrame({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [tone, setTone] = useState<Tone>("light");
+  if (!isFramedPath(pathname)) return <>{children}</>;
+  return <FrameContext.Provider value={setTone}><Frame tone={tone}>{children}</Frame></FrameContext.Provider>;
+}
+
+/** Pages wrap themselves in AppShell; inside the persistent frame it only sets the page's tone. */
+export function AppShell({ children, tone = "light" }: { children: ReactNode; tone?: Tone }) {
+  const setTone = useContext(FrameContext);
+  useIsoLayoutEffect(() => { setTone?.(tone); }, [setTone, tone]);
+  if (setTone) return <>{children}</>;
+  return <Frame tone={tone}>{children}</Frame>;
+}
+
+function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user } = useStaff();
   const settings = useRestaurantSettings();

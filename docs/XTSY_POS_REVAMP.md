@@ -135,3 +135,13 @@ and outlets appear once it has.
 - [x] Shorter on-screen text across settings, stock, outlets and guest ordering
 - [x] Load tests: 7-device rush (1,050 bills + KOTs), flaky network, new device catching up on 4,000 records (`src/test/load.test.ts`)
 - [x] Database load tests with pgbench and results (`tests/load/`)
+
+### Speed and always-on sync (round 4, part 2)
+- [x] Persistent frame: sidebar, header, sync chip and the live orders connection stay mounted across staff pages; only the page swaps
+- [x] Page code preloads on hover/touch and, after the first screen, every staff screen preloads while the device is idle (cached by the service worker for offline)
+- [x] Cloud data stays fresh for 30 s, so page changes don't refetch it; quick page changes never flash a loading state; 120 ms cross-fade
+- [x] Sync scheduler (`src/lib/sync-scheduler.ts`): syncs within 2 s of edits even during a rush (the old debounce could postpone indefinitely), retries at 2/5/15/30/60 s, polls every 15 s while the live connection is down and 60 s while up
+- [x] Live connection reconnects itself with back-off and catches up on reconnect; syncs when the app returns to the screen, the network returns or a sleeping tablet wakes
+- [x] One sync at a time per device across tabs (Web Locks)
+- [x] Sync chip shows Live / Reconnecting…
+- [x] Guests page reads only bills with a guest (indexed) instead of every bill; older pulled bills get the guest index

@@ -176,6 +176,19 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+/* Page changes: a quick cross-fade, never long enough to feel like waiting. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 120ms;
+  animation-timing-function: ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 /* Frosted bars, as in iOS navigation and tab bars. */
 @utility glass {
   background: color-mix(in srgb, var(--color-background) 78%, transparent);
