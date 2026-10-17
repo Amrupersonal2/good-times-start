@@ -14,6 +14,7 @@ import { adjustPoints, recordDuePayment, updateCustomer } from "@/lib/customer-a
 import { guestsWorkbook } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import type { Customer, Order, PaymentMode } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({
@@ -75,9 +76,8 @@ function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { custo
           <h3 className="text-sm font-semibold">{formatINR(stats.due)} due</h3>
           <div className="mt-2 flex gap-2">
             <input aria-label="Amount received" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-28 rounded-lg border border-input bg-card px-2 py-2 text-right text-sm" />
-            <select aria-label="Paid by" value={mode} onChange={(e) => setMode(e.target.value as PaymentMode)} className="rounded-lg border border-input bg-card px-2 py-2 text-sm">
-              <option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option>
-            </select>
+            <Dropdown<PaymentMode> ariaLabel="Paid by" className="w-28" value={mode} onChange={setMode}
+              options={[{ value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "card", label: "Card" }]} />
             <Button onClick={() => void collect()}>Record payment</Button>
           </div>
         </section>

@@ -23,6 +23,8 @@ import { buildLine, needsOptions, orderCategories, outsideHours, priceFor, stock
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Dropdown } from "@/components/Dropdown";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string } => ({
@@ -187,44 +189,36 @@ function PosPage() {
       <div className="border-b border-border p-4">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-medium text-muted-foreground">{cart.activeOrder ? `Running bill ${cart.activeOrder.billNo}` : "New bill"}</div>
-            <div className="truncate text-3xl font-extrabold leading-none tracking-tight">
+            <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}` : "New bill"}</div>
+            <div className="mt-0.5 truncate text-[28px] font-bold leading-none tracking-tight">
               {cart.orderType === "dine-in" ? (tables.find((t) => t.id === cart.tableId)?.label ?? "No table") : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs font-medium text-muted-foreground">{count} item{count === 1 ? "" : "s"}</div>
-            <div className="text-2xl font-extrabold leading-none">{formatINR(cart.totals.total, 0)}</div>
+            <div className="text-xs text-muted-foreground">{count} item{count === 1 ? "" : "s"}</div>
+            <div className="mt-0.5 text-2xl font-bold leading-none tracking-tight">{formatINR(cart.totals.total, 0)}</div>
           </div>
         </div>
-        <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-          {ORDER_TYPES.map((o) => (
-            <button key={o.v} onClick={() => cart.setOrderType(o.v)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${cart.orderType === o.v ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-accent"}`}>
-              {o.l}
-            </button>
-          ))}
-        </div>
+        <Segmented ariaLabel="Order type" size="sm" stretch value={cart.orderType} onChange={(v) => cart.setOrderType(v)} options={ORDER_TYPES.map((o) => ({ value: o.v, label: o.l }))} />
         {cart.orderType === "dine-in" && (
-          <select aria-label="Select table" value={cart.tableId ?? ""} onChange={(e) => cart.setTableId(e.target.value || undefined)}
-            className="mt-3 w-full rounded-xl border border-input bg-card px-3 py-2 text-sm">
-            <option value="">Select table</option>
-            {tables.map((t) => <option key={t.id} value={t.id}>{t.label} ({t.section})</option>)}
-          </select>
+          <Dropdown ariaLabel="Table" className="mt-3" placeholder="Choose a table" searchable value={cart.tableId ?? ""} onChange={(id) => cart.setTableId(id || undefined)}
+            options={[...tables].sort((a, b) => a.section.localeCompare(b.section) || a.label.localeCompare(b.label, undefined, { numeric: true })).map((t) => ({
+              value: t.id, label: t.label, group: t.section,
+              ...(t.status !== "free" ? { hint: t.status === "reserved" ? "Reserved" : t.runningTotal ? formatINR(t.runningTotal, 0) : "Occupied" } : {}),
+            }))} />
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
         {cart.lines.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
-            <ShoppingBag className="mb-3 size-10 text-primary/30" />
-            <p className="text-sm font-medium">No items yet</p>
-            <p className="text-xs">Tap a dish to start the bill</p>
+            <ShoppingBag className="mb-2 size-9 text-muted-foreground/40" strokeWidth={1.5} />
+            <p className="text-sm">Tap a dish to start</p>
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border/70">
             {cart.lines.map((l) => (
-              <li key={l.itemId} className="rounded-xl bg-secondary/60 p-3">
+              <li key={l.itemId} className="p-3">
                 <div className="flex items-start gap-2">
                   <VegMark veg={l.veg} />
                   <div className="min-w-0 flex-1">
@@ -234,12 +228,12 @@ function PosPage() {
                   <div className="text-sm font-semibold">{formatINR(l.price * l.qty, 0)}</div>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <input placeholder="Note (less spicy…)" value={l.note ?? ""} onChange={(e) => cart.setNote(l.itemId, e.target.value)}
-                    className="min-w-0 flex-1 rounded-lg border border-input bg-card px-2 py-1 text-xs" />
-                  <div className="flex items-center rounded-lg border border-input bg-card">
-                    <button aria-label="Decrease" onClick={() => cart.setQty(l.itemId, l.qty - 1)} className="p-1.5">{l.qty === 1 ? <Trash2 className="size-3.5 text-destructive" /> : <Minus className="size-3.5" />}</button>
+                  <input placeholder="Add note" aria-label={`Note for ${l.name}`} value={l.note ?? ""} onChange={(e) => cart.setNote(l.itemId, e.target.value)}
+                    className="min-w-0 flex-1 border-0 bg-transparent px-0 py-1 text-xs text-muted-foreground placeholder:text-muted-foreground/60 focus-visible:shadow-none focus-visible:text-foreground" />
+                  <div className="flex items-center rounded-full bg-secondary">
+                    <button aria-label="Decrease" onClick={() => cart.setQty(l.itemId, l.qty - 1)} className="grid size-7 place-items-center rounded-full">{l.qty === 1 ? <Trash2 className="size-3.5 text-destructive" /> : <Minus className="size-3.5" />}</button>
                     <span className="w-6 text-center text-sm font-semibold">{l.qty}</span>
-                    <button aria-label="Increase" onClick={() => cart.setQty(l.itemId, l.qty + 1)} className="p-1.5"><Plus className="size-3.5" /></button>
+                    <button aria-label="Increase" onClick={() => cart.setQty(l.itemId, l.qty + 1)} className="grid size-7 place-items-center rounded-full"><Plus className="size-3.5" /></button>
                   </div>
                 </div>
               </li>
@@ -248,17 +242,17 @@ function PosPage() {
         )}
       </div>
 
-      <div className="border-t border-border bg-card p-4">
+      <div className="border-t border-border bg-card/80 p-4 backdrop-blur-xl">
         {cart.lines.length > 0 || cancelCount > 0 ? <div className="mb-3 space-y-2 border-b border-border pb-3">
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span className={unsentCount || cancelCount ? "rounded-md bg-gold/25 px-2 py-1 font-semibold text-gold-foreground" : "text-success"}>
+            <span className={unsentCount || cancelCount ? "rounded-full bg-gold/20 px-2.5 py-1 font-semibold text-gold-foreground" : "font-medium text-success"}>
               {unsentCount || cancelCount
                 ? [unsentCount ? `${unsentCount} to send` : "", cancelCount ? `${cancelCount} to cancel` : ""].filter(Boolean).join(", ")
-                : "Kitchen has everything"}
+                : "All sent to kitchen"}
             </span>
             <div className="flex gap-1.5">
               {cart.activeOrder && !unsentCount && !cancelCount ? <Button variant="outline" onClick={() => void printRunningBill()}><Printer className="size-4" />Print bill</Button> : null}
-              <Button variant="secondary" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancellation" : "Send & print KOT"}</Button>
+              <Button variant="secondary" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancellation" : "Send KOT"}</Button>
             </div>
           </div>
         </div> : null}
@@ -266,9 +260,8 @@ function PosPage() {
           <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatINR(cart.totals.subtotal)}</span></div>
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="flex items-center gap-2">Discount
-              <select aria-label="Discount" value={cart.discountPct} onChange={(e) => cart.setDiscountPct(Number(e.target.value))} className="rounded-md border border-input bg-card px-1 py-0.5 text-xs">
-                {discountChoices.map((d) => <option key={d} value={d}>{d}%</option>)}
-              </select>
+              <Dropdown<number> ariaLabel="Discount" size="sm" className="h-7 w-[4.75rem]" value={cart.discountPct} onChange={cart.setDiscountPct}
+                options={discountChoices.map((d) => ({ value: d, label: d ? `${d}%` : "None" }))} />
             </span>
             <span>-{formatINR(cart.totals.discountAmt)}</span>
           </div>
@@ -276,14 +269,14 @@ function PosPage() {
             <div className="flex items-center justify-between text-muted-foreground">
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={cart.serviceChargePct > 0} onChange={(e) => cart.setServiceChargePct(e.target.checked ? settings.serviceChargePct ?? 0 : 0)} />
-                Service charge {settings.serviceChargePct}% (guest agreed)
+                Service charge {settings.serviceChargePct}%
               </label>
               <span>{formatINR(cart.totals.serviceCharge)}</span>
             </div>
           ) : null}
           <div className="flex justify-between text-muted-foreground"><span>CGST + SGST</span><span>{formatINR(cart.totals.cgst + cart.totals.sgst)}</span></div>
           <div className="flex justify-between text-muted-foreground"><span>Round off</span><span>{formatINR(cart.totals.roundOff)}</span></div>
-          <div className="flex justify-between pt-1 text-xl font-bold"><span>Total</span><span className="text-primary">{formatINR(cart.totals.total, 0)}</span></div>
+          <div className="flex justify-between border-t border-border pt-2 text-xl font-bold tracking-tight"><span>Total</span><span>{formatINR(cart.totals.total, 0)}</span></div>
         </div>
         {customerOpen || cart.customer.name || cart.customer.phone || cart.customer.gstin ? (
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -302,22 +295,22 @@ function PosPage() {
             {guest.stats.due > 0 ? <span className="font-semibold text-destructive">, {formatINR(guest.stats.due, 0)} due</span> : null}
           </p>
         ) : null}
-        {!canSettle ? <p className="mt-3 rounded-lg bg-secondary p-3 text-center text-xs text-muted-foreground">Send the KOT here. The cashier settles the bill from the counter.</p> : null}
+        {!canSettle ? <p className="mt-3 rounded-lg bg-secondary p-3 text-center text-xs text-muted-foreground">The cashier settles this bill.</p> : null}
         <div className={`mt-3 grid grid-cols-4 gap-2 ${canSettle ? "" : "hidden"}`}>
           {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).filter(([m]) => !settings.paymentModes || settings.paymentModes.includes(m)).map(([m, l, Icon]) => (
             <button key={m} disabled={!cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0))} onClick={() => void pay(m)}
-              className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-40">
+              className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-[background,transform] hover:bg-primary-hover active:scale-[0.97] disabled:opacity-40">
               <Icon className="size-4" />{l}
             </button>
           ))}
           <button disabled={!cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0))} onClick={() => setPayOpen(true)}
-            className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary text-xs font-semibold text-primary transition-colors hover:bg-primary-tint disabled:opacity-40">
+            className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary-tint text-xs font-semibold text-primary transition-[background,transform] hover:bg-accent active:scale-[0.97] disabled:opacity-40">
             <Wallet className="size-4" />Split
           </button>
         </div>
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
           <button type="button" className="flex items-center gap-1 font-semibold hover:text-foreground" onClick={() => setCustomerOpen(true)}><UserRound className="size-3.5" />{cart.customer.phone || cart.customer.name ? "Guest added" : "Add guest"}</button>
-          <span className="hidden lg:inline">F1 new bill, F2 search, F8 settle in cash</span>
+          <span className="hidden text-muted-foreground/70 xl:inline">F1 new · F2 search · F8 cash</span>
           {cart.activeOrder && canCancel ? <button type="button" className="font-semibold text-destructive hover:underline" onClick={() => setCancelOpen(true)}>Cancel bill</button> : null}
         </div>
       </div>
@@ -331,7 +324,7 @@ function PosPage() {
         <div className="hidden w-44 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border p-3 lg:flex">
           {rail.map((c) => (
             <button key={c} onClick={() => { setCat(c); setQ(""); }}
-              className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${cat === c && !q ? "bg-primary-tint text-primary" : "text-muted-foreground hover:bg-secondary"}`}>
+              className={`flex items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${cat === c && !q ? "bg-primary text-primary-foreground" : "text-foreground/80 hover:bg-secondary"}`}>
               {c === "Popular" && <Star className="size-3.5 fill-gold text-gold" />}{c}
             </button>
           ))}
@@ -346,10 +339,10 @@ function PosPage() {
                   const current = cart.activeOrder?.uid === o.uid;
                   return (
                     <button key={o.uid ?? o.billNo} type="button" onClick={() => cart.openOrder(o)}
-                      className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs ${current ? "border-primary bg-primary-tint" : "border-border bg-card hover:border-primary/40"}`}>
+                      className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-1.5 text-left text-xs ring-1 ${current ? "bg-primary-tint ring-primary" : "bg-card ring-border/70 hover:ring-primary/40"}`}>
                       <ShoppingBag className="size-3.5 text-primary" />
                       <span><span className="block font-bold">{o.guestCodes?.[0] ?? o.billNo.split("/").pop()} {o.customer?.name ?? ORDER_TYPES.find((t) => t.v === o.orderType)?.l}</span>
-                        <span className="text-muted-foreground">{formatINR(o.total, 0)}{o.source === "online" ? " · online" : ""}</span></span>
+                        <span className="text-muted-foreground">{formatINR(o.total, 0)}{o.source === "online" ? ", online" : ""}</span></span>
                     </button>
                   );
                 })}
@@ -357,13 +350,13 @@ function PosPage() {
             ) : null}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search dishes (F2)…"
-                className="w-full rounded-xl border border-input bg-card py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring/30" />
+              <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search dishes"
+                className="w-full rounded-[10px] border-0 bg-secondary py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground" />
             </div>
             <div className="no-scrollbar flex gap-2 overflow-x-auto lg:hidden">
               {rail.map((c) => (
                 <button key={c} onClick={() => { setCat(c); setQ(""); }}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${cat === c && !q ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{c}</button>
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${cat === c && !q ? "bg-foreground text-background" : "bg-card text-foreground ring-1 ring-border/70"}`}>{c}</button>
               ))}
             </div>
           </div>
@@ -378,14 +371,14 @@ function PosPage() {
               const offHours = outsideHours(i);
               return (
                 <button key={i.id} onClick={() => pick(i)} disabled={soldOut} title={offHours && i.hours ? `Served ${i.hours.from}–${i.hours.to}` : undefined}
-                  className={`card-elevated relative flex min-h-24 flex-col justify-between p-3 text-left transition-transform hover:border-primary/40 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${offHours ? "opacity-60" : ""}`}>
+                  className={`card-elevated relative flex min-h-24 flex-col justify-between p-3 text-left transition-[transform,box-shadow] hover:shadow-md active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${offHours ? "opacity-60" : ""}`}>
                   {inCart ? <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{inCart}</span> : null}
                   <div className="flex items-start gap-2 pr-6">
                     <span className="mt-0.5"><VegMark veg={i.veg} /></span>
                     <span className="text-sm font-semibold leading-snug">{i.name}</span>
                   </div>
                   <span className="mt-2 flex items-end justify-between gap-2">
-                    <span className="text-sm font-bold text-primary">{i.variants?.length ? `from ${formatINR(i.price, 0)}` : formatINR(priceFor(i, cart.orderType), 0)}</span>
+                    <span className="text-sm font-semibold text-foreground/80">{i.variants?.length ? `from ${formatINR(i.price, 0)}` : formatINR(priceFor(i, cart.orderType), 0)}</span>
                     {soldOut ? <span className="text-[11px] font-semibold text-destructive">Sold out</span>
                       : low ? <span className="rounded bg-gold/25 px-1.5 text-[11px] font-semibold text-gold-foreground">{remaining} left</span>
                       : offHours && i.hours ? <span className="text-[11px] text-muted-foreground">{i.hours.from}–{i.hours.to}</span>
@@ -397,10 +390,10 @@ function PosPage() {
             {items.length === 0 && (menu.length === 0 ? (
               <div className="col-span-full rounded-xl border border-dashed border-border p-8 text-center">
                 <p className="font-semibold">No dishes yet</p>
-                <p className="mt-1 text-sm text-muted-foreground">Add your dishes in Menu, or start from the sample menu in Settings.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Add dishes in Menu, or import them from Excel.</p>
                 <div className="mt-4 flex justify-center gap-2">
                   <Link to="/menu" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Open Menu</Link>
-                  <Link to="/settings" className="rounded-lg border border-border px-4 py-2 text-sm font-semibold">Settings</Link>
+                  <Link to="/setup" className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold">Setup</Link>
                 </div>
               </div>
             ) : <p className="col-span-full py-10 text-center text-sm text-muted-foreground">{q ? `No dishes match "${q}"` : "Nothing available in this category"}</p>)}
@@ -408,7 +401,7 @@ function PosPage() {
         </div>
 
         {/* Bill panel tablet+ */}
-        <aside className="hidden w-80 shrink-0 border-l border-border bg-card md:block xl:w-96">{billPanel}</aside>
+        <aside className="hidden w-80 shrink-0 border-l border-border bg-background md:block xl:w-96">{billPanel}</aside>
       </div>
 
       {/* Mobile cart bar + drawer */}
@@ -456,7 +449,7 @@ function PosPage() {
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="max-w-md">
           {cancelOpen ? <ReasonPrompt title={`Cancel bill ${cart.activeOrder?.billNo ?? ""}`}
-            description="The kitchen has already been told about these items. The bill is kept as cancelled, with your reason, for the records."
+            description="The kitchen already has these items. The bill is kept as cancelled with your reason."
             confirmLabel="Cancel this bill" onConfirm={(reason) => { void cart.cancelOrder(reason, closedBy).then(() => setCancelOpen(false)); }} /> : null}
         </DialogContent>
       </Dialog>

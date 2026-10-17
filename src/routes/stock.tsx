@@ -16,6 +16,8 @@ import { gstinError } from "@/lib/validation";
 import { downloadXlsx } from "@/lib/xlsx";
 import { dayKey } from "@/lib/report-logic";
 import type { Material, StockEntry, StockUnit, Supplier } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/stock")({
   head: () => ({
@@ -69,9 +71,7 @@ function MaterialForm({ material, onDone }: { material: Material | null; onDone:
       <label className="block text-sm font-medium">Name<input autoFocus maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder="Paneer" className={inputClass} /></label>
       <div className="grid grid-cols-3 gap-3">
         <label className="block text-sm font-medium">Unit
-          <select value={unit} onChange={(e) => setUnit(e.target.value as StockUnit)} className={inputClass}>
-            {STOCK_UNITS.map((u) => <option key={u.v} value={u.v}>{u.l}</option>)}
-          </select>
+          <Dropdown<StockUnit> ariaLabel="Unit" className="mt-1" value={unit} onChange={setUnit} options={STOCK_UNITS.map((u) => ({ value: u.v, label: u.l }))} />
         </label>
         <label className="block text-sm font-medium">Warn at<input inputMode="decimal" value={low} onChange={(e) => setLow(e.target.value)} className={inputClass} /></label>
         <label className="block text-sm font-medium">Cost / {unit}<input inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="₹" className={inputClass} /></label>
@@ -149,10 +149,8 @@ function PurchaseForm({ materials, suppliers, onDone }: { materials: Material[];
     <form className="space-y-3" onSubmit={(event) => void submit(event)}>
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-sm font-medium">Supplier
-          <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inputClass}>
-            <option value="">Not recorded</option>
-            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          <Dropdown ariaLabel="Supplier" className="mt-1" value={supplierId} onChange={setSupplierId}
+            options={[{ value: "", label: "Not recorded" }, ...suppliers.map((s) => ({ value: s.id, label: s.name }))]} />
         </label>
         <label className="block text-sm font-medium">Invoice number<input maxLength={40} value={reference} onChange={(e) => setReference(e.target.value)} className={inputClass} /></label>
       </div>
@@ -162,9 +160,8 @@ function PurchaseForm({ materials, suppliers, onDone }: { materials: Material[];
           const update = (change: Partial<typeof row>) => setRows(rows.map((r, i) => (i === index ? { ...r, ...change } : r)));
           return (
             <div key={row.key} className="flex gap-2">
-              <select aria-label="Material" value={row.materialId} onChange={(e) => update({ materialId: e.target.value })} className="min-w-0 flex-1 rounded-lg border border-input bg-card px-2 py-2 text-sm">
-                {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
+              <Dropdown ariaLabel="Material" className="min-w-0 flex-1" value={row.materialId} onChange={(materialId) => update({ materialId })} placeholder="Choose material"
+                options={materials.map((m) => ({ value: m.id, label: m.name, hint: m.unit }))} />
               <input aria-label="Quantity" inputMode="decimal" value={row.qty} onChange={(e) => update({ qty: e.target.value })} placeholder={unit || "Qty"} className="w-20 rounded-lg border border-input bg-card px-2 py-2 text-right text-sm" />
               <input aria-label="Cost per unit" inputMode="decimal" value={row.cost} onChange={(e) => update({ cost: e.target.value })} placeholder={`₹/${unit}`} className="w-20 rounded-lg border border-input bg-card px-2 py-2 text-right text-sm" />
               {rows.length > 1 ? <Button type="button" size="icon" variant="ghost" aria-label="Remove line" onClick={() => setRows(rows.filter((_, i) => i !== index))}><X /></Button> : null}
@@ -339,11 +336,7 @@ function StockPage() {
           ) : null}
         </div>
 
-        <div className="mb-5 flex gap-1 rounded-lg bg-secondary p-1 text-sm font-semibold" role="tablist">
-          {tabs.map((t) => (
-            <button key={t.v} role="tab" aria-selected={tab === t.v} onClick={() => setTab(t.v)} className={`flex-1 rounded-md py-2 ${tab === t.v ? "bg-card shadow-sm" : "text-muted-foreground"}`}>{t.l}</button>
-          ))}
-        </div>
+        <Segmented ariaLabel="Stock view" stretch className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} />
 
         {tab === "stock" ? (
           active.length ? (
@@ -370,7 +363,7 @@ function StockPage() {
           ) : (
             <div className="rounded-xl border border-dashed border-border p-8 text-center">
               <p className="font-semibold">No materials yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Add the ingredients you buy, like paneer, rice and oil. Then give each dish a recipe in Menu, and every bill uses them up automatically.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Add what you buy, then give dishes recipes in Menu. Every bill uses stock up automatically.</p>
             </div>
           )
         ) : null}

@@ -44,80 +44,80 @@
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
-  --font-sans: "Figtree", "Noto Sans", system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI Variable Text", "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
 }
 
 :root {
-  /* XTSY POS — pine, steel and saffron. */
-  --radius: 0.625rem;
-  --background: #eef2f0; /* steel */
-  --foreground: #17352e; /* pine ink */
-  --card: #ffffff; /* paper */
-  --card-foreground: #17352e;
+  /* XTSY POS — Apple-style system palette: grouped grey canvas, white surfaces, one blue tint. */
+  --radius: 0.75rem;
+  --background: #f2f2f7; /* grouped background */
+  --foreground: #1d1d1f; /* label */
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
   --popover: #ffffff;
-  --popover-foreground: #17352e;
-  --primary: #1f4d42; /* pine — confirm, send, settle */
-  --primary-foreground: #f6faf8;
-  --primary-hover: #163a32;
-  --primary-tint: #dfeae5;
-  --secondary: #e3e9e6;
-  --secondary-foreground: #17352e;
-  --muted: #e3e9e6;
-  --muted-foreground: #5b6f69;
-  --accent: #dfeae5;
-  --accent-foreground: #17352e;
-  --gold: #e8a33d; /* saffron — waiting on someone */
-  --gold-foreground: #2b1d06;
-  --destructive: #c2412d; /* chilli */
-  --destructive-foreground: #fff7f5;
-  --success: #2f7d5b;
-  --warning: #b9720f;
-  --border: #d5ddd9;
-  --input: #c9d3ce;
-  --ring: #1f4d42;
-  --sidebar: #17352e;
-  --sidebar-foreground: #e6efeb;
-  --sidebar-primary: #e8a33d;
-  --sidebar-primary-foreground: #2b1d06;
-  --sidebar-accent: #234a40;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2a5348;
+  --popover-foreground: #1d1d1f;
+  --primary: #0071e3; /* tint — confirm, send, settle (4.6:1 with white) */
+  --primary-foreground: #ffffff;
+  --primary-hover: #0062c4;
+  --primary-tint: #e8f1fc;
+  --secondary: #e9e9ee; /* fill */
+  --secondary-foreground: #1d1d1f;
+  --muted: #e9e9ee;
+  --muted-foreground: #6e6e73; /* secondary label */
+  --accent: #e8f1fc;
+  --accent-foreground: #1d1d1f;
+  --gold: #ff9f0a; /* system orange — waiting on someone */
+  --gold-foreground: #3d2400;
+  --destructive: #d70015;
+  --destructive-foreground: #ffffff;
+  --success: #248a3d;
+  --warning: #b25000;
+  --border: #e3e3e8; /* separator */
+  --input: #d2d2d7;
+  --ring: #0071e3;
+  --sidebar: #f5f5f7;
+  --sidebar-foreground: #1d1d1f;
+  --sidebar-primary: #0071e3;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e3e3e8;
+  --sidebar-accent-foreground: #1d1d1f;
+  --sidebar-border: #e3e3e8;
 }
 
-/* Wall-mounted kitchen screens and late-night service. */
+/* Dark appearance: kitchen wall screens, the waiter tablet and late-night service. */
 .dark {
-  --background: #0f2420;
-  --foreground: #e8f1ed;
-  --card: #17352e;
-  --card-foreground: #e8f1ed;
-  --popover: #17352e;
-  --popover-foreground: #e8f1ed;
-  --primary: #e8a33d;
-  --primary-foreground: #2b1d06;
-  --primary-hover: #f0b65c;
-  --primary-tint: #2c4a3b;
-  --secondary: #1f4038;
-  --secondary-foreground: #e8f1ed;
-  --muted: #1f4038;
-  --muted-foreground: #9fb6ae;
-  --accent: #234a40;
-  --accent-foreground: #ffffff;
-  --gold: #e8a33d;
-  --gold-foreground: #2b1d06;
-  --destructive: #e0614b;
-  --destructive-foreground: #fff7f5;
-  --success: #5fbf8f;
-  --warning: #f0b65c;
-  --border: #2a5348;
-  --input: #315c50;
-  --ring: #e8a33d;
-  --sidebar: #0b1c19;
-  --sidebar-foreground: #e6efeb;
-  --sidebar-primary: #e8a33d;
-  --sidebar-primary-foreground: #2b1d06;
-  --sidebar-accent: #17352e;
+  --background: #000000;
+  --foreground: #f5f5f7;
+  --card: #1c1c1e;
+  --card-foreground: #f5f5f7;
+  --popover: #2c2c2e;
+  --popover-foreground: #f5f5f7;
+  --primary: #0a84ff;
+  --primary-foreground: #ffffff;
+  --primary-hover: #409cff;
+  --primary-tint: #0b2a4a;
+  --secondary: #2c2c2e;
+  --secondary-foreground: #f5f5f7;
+  --muted: #2c2c2e;
+  --muted-foreground: #98989d;
+  --accent: #0b2a4a;
+  --accent-foreground: #f5f5f7;
+  --gold: #ff9f0a;
+  --gold-foreground: #2a1800;
+  --destructive: #ff453a;
+  --destructive-foreground: #ffffff;
+  --success: #30d158;
+  --warning: #ffb340;
+  --border: #38383a;
+  --input: #48484a;
+  --ring: #0a84ff;
+  --sidebar: #1c1c1e;
+  --sidebar-foreground: #f5f5f7;
+  --sidebar-primary: #0a84ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2c2c2e;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1f4038;
+  --sidebar-border: #38383a;
 }
 
 @layer base {
@@ -131,6 +131,34 @@
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
     font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+  }
+
+  input, textarea {
+    border-radius: 10px;
+  }
+
+  input:focus-visible, textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-ring);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-ring) 18%, transparent);
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -143,8 +171,16 @@
 
 @utility card-elevated {
   background: var(--color-card);
-  border: 1px solid var(--color-border);
+  border: 0.5px solid color-mix(in srgb, var(--color-foreground) 8%, transparent);
   border-radius: var(--radius-xl);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Frosted bars, as in iOS navigation and tab bars. */
+@utility glass {
+  background: color-mix(in srgb, var(--color-background) 78%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 /* Thermal printing is set up per device by PrintHost (src/components/PrintHost.tsx). */

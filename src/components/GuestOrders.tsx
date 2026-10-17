@@ -13,6 +13,7 @@ import { useAccount } from "@/lib/use-account";
 import { formatINR } from "@/lib/billing";
 import { acceptGuestOrder, isActiveGuestOrder, loadGuestOrders, setGuestOrderStatus } from "@/lib/guest-order-actions";
 import { sortGuestOrders, type GuestOrder } from "@/lib/guest-order-logic";
+import { Segmented } from "@/components/Segmented";
 
 function chime(ctx: AudioContext) {
   const now = ctx.currentTime;
@@ -119,12 +120,8 @@ function GuestOrdersPanel({ orders, onDone }: { orders: GuestOrder[]; onDone: ()
     <div>
       <DialogTitle>Guest orders</DialogTitle>
       <p className="-mt-1 text-sm text-muted-foreground">From table QR codes and your online ordering page. Accepting sends the KOT and opens the bill.</p>
-      <div className="mt-3 flex gap-1 rounded-lg bg-secondary p-1" role="tablist">
-        {([["waiting", "Waiting"], ["progress", "In progress"], ["done", "Done today"]] as const).map(([v, l]) => (
-          <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
-            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-semibold ${view === v ? "bg-card shadow-sm" : "text-muted-foreground"}`}>{l}{groups[v].length ? ` (${groups[v].length})` : ""}</button>
-        ))}
-      </div>
+      <Segmented ariaLabel="Order status" stretch className="mt-3" value={view} onChange={setView}
+        options={([["waiting", "Waiting"], ["progress", "In progress"], ["done", "Done today"]] as const).map(([v, l]) => ({ value: v, label: l, badge: groups[v].length }))} />
       <div className="mt-3 space-y-3">
         {list.length ? list.map((o) => <GuestOrderCard key={o.id} order={o} onOpenBill={onDone} />) : (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{view === "waiting" ? "No orders waiting." : "Nothing here yet."}</p>

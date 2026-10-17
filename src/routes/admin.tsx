@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlatformAdmin } from "@/lib/use-account";
 import { FEATURE_LABELS, STATUS_LABELS, monthlyRevenue, type AccountStatus, type Plan, type PlanFeature } from "@/lib/saas-logic";
 import { formatINR } from "@/lib/billing";
+import { Dropdown } from "@/components/Dropdown";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — XTSY POS" }, { name: "robots", content: "noindex" }] }),
@@ -82,9 +83,8 @@ function AdminPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-60 flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search restaurant, email, city" className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm" /></div>
-            <select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="all">All statuses</option>{(Object.keys(STATUS_LABELS) as AccountStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-            </select>
+            <Dropdown<"all" | AccountStatus> ariaLabel="Status" className="w-44" value={filter} onChange={setFilter}
+              options={[{ value: "all", label: "All statuses" }, ...(Object.keys(STATUS_LABELS) as AccountStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))]} />
           </div>
           {accounts.isError ? <p className="mt-3 text-sm text-destructive">{accounts.error instanceof Error ? accounts.error.message : "Couldn't load accounts"}</p> : null}
           <div className="mt-3 overflow-x-auto">
@@ -172,8 +172,8 @@ function ManageAccount({ account, plans, onSaved }: { account: AdminAccount; pla
       <p className="text-sm text-muted-foreground">{account.outlets.map((o) => o.name).join(", ")}</p>
       <p className="mt-1 text-xs text-muted-foreground">Owner {account.ownerEmail ?? "—"} · Joined {shortDate(account.createdAt)}{account.billingGstin ? ` · GSTIN ${account.billingGstin}` : ""}{account.billingPhone ? ` · ${account.billingPhone}` : ""}</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm font-medium">Plan<select value={plan} onChange={(e) => setPlan(e.target.value)} className={inputClass}>{plans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-        <label className="block text-sm font-medium">Status<select value={status} onChange={(e) => setStatus(e.target.value as AccountStatus)} className={inputClass}>{(Object.keys(STATUS_LABELS) as AccountStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}</select></label>
+        <label className="block text-sm font-medium">Plan<Dropdown ariaLabel="Plan" className="mt-1" value={plan} onChange={setPlan} options={plans.map((p) => ({ value: p.id, label: p.name }))} /></label>
+        <label className="block text-sm font-medium">Status<Dropdown<AccountStatus> ariaLabel="Status" className="mt-1" value={status} onChange={setStatus} options={(Object.keys(STATUS_LABELS) as AccountStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))} /></label>
         <label className="block text-sm font-medium">Trial ends<input type="date" value={trial} onChange={(e) => setTrial(e.target.value)} className={inputClass} /></label>
         <label className="block text-sm font-medium">Paid until<input type="date" value={paid} onChange={(e) => setPaid(e.target.value)} className={inputClass} /><span className="mt-1 block text-xs font-normal text-muted-foreground">Empty with Active = complimentary</span></label>
         <label className="block text-sm font-medium sm:col-span-2">Notes<textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} /></label>
@@ -185,7 +185,7 @@ function ManageAccount({ account, plans, onSaved }: { account: AdminAccount; pla
         <p className="text-xs text-muted-foreground">For bank transfer or UPI received outside the app. Sets the account Active and extends the paid period.</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
           <input inputMode="decimal" placeholder="Amount ₹" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))} className="rounded-lg border border-input bg-card px-3 py-2 text-sm" />
-          <select value={months} onChange={(e) => setMonths(Number(e.target.value))} className="rounded-lg border border-input bg-card px-3 py-2 text-sm">{[1, 3, 6, 12, 24].map((m) => <option key={m} value={m}>{m} month{m === 1 ? "" : "s"}</option>)}</select>
+          <Dropdown<number> ariaLabel="Months" value={months} onChange={setMonths} options={[1, 3, 6, 12, 24].map((m) => ({ value: m, label: `${m} month${m === 1 ? "" : "s"}` }))} />
           <input placeholder="Reference" value={reference} maxLength={60} onChange={(e) => setReference(e.target.value)} className="rounded-lg border border-input bg-card px-3 py-2 text-sm" />
         </div>
         <Button className="mt-2" variant="secondary" disabled={busy || !amount} onClick={() => void recordPayment()}>Record payment</Button>

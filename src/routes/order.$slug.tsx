@@ -14,6 +14,7 @@ import {
   type GuestCartLine, type GuestChannel, type GuestLine, type GuestStatus, type Storefront,
 } from "@/lib/guest-order-logic";
 import type { CartLine, MenuItem } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
 
 interface OrderSearch { table?: string; o?: string; k?: string }
 
@@ -336,9 +337,8 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
             <span className="mt-1 block text-xs font-normal text-muted-foreground">The restaurant calls this number if anything changes.</span>
           </label>
           <label className="block text-sm font-medium">Pickup time
-            <select value={pickup} onChange={(e) => setPickup(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm">
-              {slots.map((c) => <option key={c.label} value={c.at ?? ""}>{c.label}</option>)}
-            </select>
+            <Dropdown ariaLabel="Pickup time" className="mt-1 h-11" value={pickup} onChange={setPickup} searchable={false}
+              options={slots.map((c) => ({ value: c.at ?? "", label: c.label }))} />
           </label>
         </> : null}
         <label className="block text-sm font-medium">Anything the kitchen should know?

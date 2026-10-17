@@ -191,7 +191,7 @@ function RestaurantSetup() {
       <section className="rounded-xl border border-border bg-card p-6">
         <Store className="size-6 text-primary" />
         <h1 className="mt-3 text-xl font-bold">Set up your restaurant</h1>
-        <p className="mt-1 text-sm text-muted-foreground">You'll be the owner, with a 14-day free trial. A short setup then walks you through GST, menu, tables, printing and staff.</p>
+        <p className="mt-1 text-sm text-muted-foreground">You'll be the owner, with a 14-day free trial. Setup takes about five minutes.</p>
         <form className="mt-5 space-y-3" onSubmit={(event) => void submit(event)}>
           <label className="block text-sm font-medium">Restaurant name
             <input required maxLength={120} value={name} onChange={(event) => setName(event.target.value)} placeholder="TAB Bistro" className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5" />
@@ -232,31 +232,30 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
 
   return (
     <div className={`flex min-h-screen bg-background text-foreground ${tone === "dark" ? "dark" : ""}`}>
-      <aside className="sticky top-0 hidden h-screen w-24 shrink-0 flex-col items-center bg-sidebar py-4 text-sidebar-foreground lg:flex">
-        <img src={logo} alt="XTSY POS" width={40} height={40} className="rounded-lg" />
-        <nav className="mt-6 flex w-full flex-col gap-1 px-2" aria-label="Main">
+      <aside className="sticky top-0 hidden h-screen w-[5.5rem] shrink-0 flex-col items-center border-r border-sidebar-border bg-sidebar/80 py-4 text-sidebar-foreground backdrop-blur-xl lg:flex">
+        <img src={logo} alt="XTSY POS" width={36} height={36} className="rounded-[10px] shadow-sm" />
+        <nav className="no-scrollbar mt-5 flex w-full flex-col gap-0.5 overflow-y-auto px-2" aria-label="Main">
           {nav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link key={to} to={to} aria-current={active ? "page" : undefined}
-                className={`relative flex flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-[11px] font-semibold transition-colors ${active ? "bg-sidebar-accent text-white" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"}`}>
-                {active ? <span className="absolute inset-y-2 left-0 w-1 rounded-r bg-gold" aria-hidden="true" /> : null}
-                <Icon className="size-5" />
+                className={`relative flex flex-col items-center gap-1 rounded-[10px] px-1 py-2 text-[10.5px] font-medium transition-colors ${active ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"}`}>
+                <Icon className="size-[1.35rem]" strokeWidth={active ? 2.2 : 1.8} />
                 {label}
-                {to === "/stock" && lowStock > 0 ? <span className="absolute right-2 top-1.5 min-w-5 rounded-full bg-gold px-1 text-[10px] font-bold text-gold-foreground" aria-label={`${lowStock} running low`}>{lowStock}</span> : null}
+                {to === "/stock" && lowStock > 0 ? <span className="absolute right-1.5 top-1 min-w-[1.1rem] rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground" aria-label={`${lowStock} running low`}>{lowStock}</span> : null}
               </Link>
             );
           })}
         </nav>
-        <div className="mt-auto px-2 text-center text-[10px] leading-tight text-sidebar-foreground/50">XTSY POS</div>
+        <div className="mt-auto px-2 pt-2 text-center text-[10px] leading-tight text-sidebar-foreground/40">XTSY POS</div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur lg:px-6">
+        <header className="glass sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border/70 px-4 py-2.5 lg:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
-            <img src={logo} alt="" width={28} height={28} className="rounded-md lg:hidden" />
+            <img src={logo} alt="" width={28} height={28} className="rounded-[8px] lg:hidden" />
             <div className="min-w-0">
-              <div className="truncate text-sm font-bold">{restaurantName || "XTSY POS"}</div>
+              <div className="truncate text-[15px] font-semibold tracking-tight">{restaurantName || "XTSY POS"}</div>
               {restaurantName ? <div className="text-[11px] text-muted-foreground">XTSY POS</div> : null}
             </div>
           </div>
@@ -283,12 +282,12 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
         </main>
       </div>
 
-      <nav className="no-scrollbar fixed inset-x-0 bottom-0 z-30 flex overflow-x-auto border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground lg:hidden" aria-label="Main">
+      <nav className="glass no-scrollbar fixed inset-x-0 bottom-0 z-30 flex overflow-x-auto border-t border-border/70 pb-[env(safe-area-inset-bottom)] text-foreground lg:hidden" aria-label="Main">
         {nav.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link key={to} to={to} aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 min-w-[4.25rem] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold ${active ? "text-gold" : "text-sidebar-foreground/70"}`}>
+              className={`flex min-h-14 min-w-[4.25rem] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>
               <Icon className="size-5" />
               {label}
             </Link>

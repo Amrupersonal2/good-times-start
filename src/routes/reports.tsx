@@ -22,6 +22,8 @@ import {
   presetRange, salesSummary, seriesOf, staffSales, toCsv, type Range,
 } from "@/lib/report-logic";
 import type { DayClose, Order } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -260,9 +262,8 @@ function DayCloseTab() {
         <h2 className="text-sm font-semibold">Close today's cash drawer</h2>
         {running ? <p className="rounded-lg bg-gold/20 p-2 text-sm text-gold-foreground">{running} running bill{running === 1 ? " is" : "s are"} still open. Settle or cancel {running === 1 ? "it" : "them"} first for an exact count.</p> : null}
         <label className="block text-sm font-medium">Counter (bill series)
-          <select value={chosen} onChange={(e) => setSeries(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm">
-            {[...new Set([myCode, ...seriesToday])].filter(Boolean).map((s) => <option key={s} value={s}>{s}{s === myCode ? " (this device)" : ""}</option>)}
-          </select>
+          <Dropdown ariaLabel="Bill series" className="mt-1" value={chosen} onChange={setSeries}
+            options={[...new Set([myCode, ...seriesToday])].filter(Boolean).map((s) => ({ value: s, label: s, ...(s === myCode ? { hint: "This device" } : {}) }))} />
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm font-medium">Opening float<input inputMode="decimal" value={opening} onChange={(e) => setOpening(e.target.value)} placeholder="₹0" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" /></label>
@@ -344,11 +345,7 @@ function ReportsPage() {
           </div>
         </div>
 
-        <div className="no-scrollbar mb-5 flex gap-1 overflow-x-auto rounded-lg bg-secondary p-1 text-sm font-semibold" role="tablist">
-          {tabs.map((t) => (
-            <button key={t.v} role="tab" aria-selected={tab === t.v} onClick={() => setTab(t.v)} className={`shrink-0 flex-1 rounded-md px-3 py-2 ${tab === t.v ? "bg-card shadow-sm" : "text-muted-foreground"}`}>{t.l}</button>
-          ))}
-        </div>
+        <Segmented ariaLabel="Report" className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} />
 
         {tab === "overview" ? <Overview orders={orders} range={range} /> : null}
         {tab === "items" ? <Items orders={orders} file={file} /> : null}

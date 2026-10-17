@@ -124,3 +124,14 @@ Lovable Cloud does not run SQL files from GitHub by itself. After merging, ask
 the Lovable agent: "Run drizzle/migrations/0006_outlets_plans_guest_ordering.sql
 on the database." The app keeps working before it runs; guest ordering, plans
 and outlets appear once it has.
+
+## Round 4 (October 2026) — `revamp-4`: Apple-style redesign and load testing
+
+- [x] Apple system palette (grouped grey canvas, white surfaces, one blue tint; full dark appearance) and the device's own system font (no web-font download)
+- [x] Frosted header and phone tab bar; macOS-style sidebar
+- [x] One dropdown for the whole app (`src/components/Dropdown.tsx`): native-feeling menus, with search for long lists (ingredients, tables grouped by section); all 21 browser dropdowns replaced
+- [x] Segmented controls for order type and every tab bar (`src/components/Segmented.tsx`)
+- [x] Billing screen: grouped bill lines, compact steppers, quieter notes and totals
+- [x] Shorter on-screen text across settings, stock, outlets and guest ordering
+- [x] Load tests: 7-device rush (1,050 bills + KOTs), flaky network, new device catching up on 4,000 records (`src/test/load.test.ts`)
+- [x] Database load tests with pgbench and results (`tests/load/`)

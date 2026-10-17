@@ -16,6 +16,7 @@ import { normaliseDeviceCode } from "@/lib/sync-core";
 import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
 import { usePlatformAdmin } from "@/lib/use-account";
 import type { RestaurantSettings } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
 
 export const Route = createFileRoute("/setup")({
   head: () => ({ meta: [{ title: "Set up — XTSY POS" }, { name: "description", content: "Set up your restaurant on XTSY POS in a few minutes." }] }),
@@ -262,7 +263,7 @@ function DeviceStep({ onNext }: { onNext: () => void }) {
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <Field label="Bill series code" hint="Short and unique per counter, e.g. C1, C2"><input maxLength={4} value={code} onChange={(e) => setCode(normaliseDeviceCode(e.target.value))} className={`${inputClass} uppercase`} /></Field>
         <Field label="Receipt paper">
-          <select value={paper} onChange={(e) => setPaper(Number(e.target.value) as 58 | 80)} className={inputClass}><option value={80}>80 mm (3 inch)</option><option value={58}>58 mm (2 inch)</option></select>
+          <Dropdown<58 | 80> ariaLabel="Receipt paper" className="mt-1" value={paper} onChange={setPaper} options={[{ value: 80, label: "80 mm (3 inch)" }, { value: 58, label: "58 mm (2 inch)" }]} />
         </Field>
         <label className="mt-6 flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={autoBill} onChange={(e) => setAutoBill(e.target.checked)} />Print the bill as soon as it's settled</label>
       </div>
@@ -298,9 +299,8 @@ function TeamStep({ onNext }: { onNext: () => void }) {
         {rows.map((r, i) => (
           <div key={i} className="flex gap-2">
             <input type="email" value={r.email} placeholder="name@example.com" onChange={(e) => setRows((all) => all.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))} className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
-            <select value={r.role} onChange={(e) => setRows((all) => all.map((x, j) => (j === i ? { ...x, role: e.target.value as StaffRole } : x)))} className="rounded-lg border border-input bg-card px-2 text-sm">
-              {TEAM_ROLES.map((role) => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
-            </select>
+            <Dropdown<StaffRole> ariaLabel="Role" className="h-[42px] w-44 shrink-0" value={r.role} onChange={(role) => setRows((all) => all.map((x, j) => (j === i ? { ...x, role } : x)))}
+              options={TEAM_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }))} />
           </div>
         ))}
         <button type="button" className="text-sm font-semibold text-primary" onClick={() => setRows((all) => [...all, { email: "", role: "cashier" }])}>+ Another person</button>

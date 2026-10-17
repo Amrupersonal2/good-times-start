@@ -19,6 +19,8 @@ import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
 import type { PaymentMode, RestaurantSettings } from "@/lib/types";
 import { OrderingSettings } from "@/components/OrderingSettings";
 import { prepareOutletSwitch } from "@/lib/outlet-actions";
+import { Dropdown } from "@/components/Dropdown";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -175,7 +177,7 @@ function BillingSettings() {
 
   return (
     <>
-      <Section title="GST" description="How tax is worked out on every bill. Bills already settled keep the rules they were made under.">
+      <Section title="GST" description="How tax is worked out. Settled bills keep the rules they were made under.">
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="GST registration">
             {GST_MODES.map((m) => (
@@ -189,7 +191,7 @@ function BillingSettings() {
           {mode === "regular" ? <>
             <Toggle label="Menu prices include GST" hint={`A ₹1,000 dish then bills ₹${sample.total.toLocaleString("en-IN")} with ₹${(sample.cgst + sample.sgst).toLocaleString("en-IN")} GST inside it.`}
               checked={Boolean(form.pricesIncludeGst)} disabled={!canEdit} onChange={(v) => patch({ pricesIncludeGst: v })} />
-            <Toggle label="Swiggy and Zomato pay GST on their orders" hint="Under section 9(5), the aggregator collects and pays GST on restaurant orders it delivers, so those bills carry no GST. Turn off only if your accountant says so."
+            <Toggle label="Swiggy and Zomato pay GST on their orders" hint="Swiggy and Zomato pay GST on their orders (section 9(5)). Turn off only if your accountant says so."
               checked={form.aggregatorGstByOperator ?? true} disabled={!canEdit} onChange={(v) => patch({ aggregatorGstByOperator: v })} />
             <Field label="SAC code" hint="996331 is restaurant service; it appears in the GSTR-1 HSN summary.">
               <input disabled={!canEdit} maxLength={8} value={form.sac ?? RESTAURANT_SAC} onChange={(e) => patch({ sac: e.target.value.replace(/\D/g, "") })} className={`${inputClass} max-w-40`} />
@@ -214,7 +216,7 @@ function BillingSettings() {
               <input inputMode="decimal" disabled={!canEdit} value={form.loyaltyPct ?? 0} onChange={(e) => patch({ loyaltyPct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })} className={inputClass} />
             </Field>
           </div>
-          <Toggle label="Send to kitchen automatically when settling" hint="For counters that take payment first (quick service). Unsent items go to the kitchen, then the bill settles."
+          <Toggle label="Send to kitchen automatically when settling" hint="For quick service: unsent items go to the kitchen when you settle."
             checked={Boolean(form.autoKotOnSettle)} disabled={!canEdit} onChange={(v) => patch({ autoKotOnSettle: v })} />
           <fieldset>
             <legend className="text-sm font-medium">Payment modes you accept</legend>
@@ -232,7 +234,7 @@ function BillingSettings() {
 
       <Section title="Kitchen tickets" description="How KOTs read on every device that prints them.">
         <div className="space-y-4">
-          <Toggle label="One ticket per kitchen station" hint="Off prints one combined ticket with each station's items grouped. Cancellations always print on their own ticket."
+          <Toggle label="One ticket per kitchen station" hint="Off prints one combined ticket. Cancellations always print separately."
             checked={form.kotByStation ?? true} disabled={!canEdit} onChange={(v) => patch({ kotByStation: v })} />
           <Field label="Line at the top of every KOT" hint="Optional, e.g. 'TAB Bistro kitchen'.">
             <input maxLength={40} disabled={!canEdit} value={form.kotHeader ?? ""} onChange={(e) => patch({ kotHeader: e.target.value })} className={`${inputClass} max-w-sm`} />
@@ -266,14 +268,11 @@ function PrintingSettings() {
   };
 
   return (
-    <Section title="This device's printer" description="Each counter and kitchen screen has its own printer setup. This doesn't sync to other devices.">
+    <Section title="This device's printer" description="Set up separately on each counter and kitchen screen.">
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Paper width">
-            <select value={form.paper} onChange={(e) => patch({ paper: Number(e.target.value) === 58 ? 58 : 80 })} className={inputClass}>
-              <option value={80}>80 mm (3 inch)</option>
-              <option value={58}>58 mm (2 inch)</option>
-            </select>
+            <Dropdown<58 | 80> ariaLabel="Paper width" className="mt-1" value={form.paper} onChange={(paper) => patch({ paper })} options={[{ value: 80, label: "80 mm (3 inch)" }, { value: 58, label: "58 mm (2 inch)" }]} />
           </Field>
           <Field label="Bill copies">
             <input type="number" min={1} max={5} value={form.billCopies} onChange={(e) => patch({ billCopies: Number(e.target.value) })} className={inputClass} />
@@ -283,7 +282,7 @@ function PrintingSettings() {
           </Field>
         </div>
         <Toggle label="Print KOTs sent from this device" checked={form.printKotOnSend} onChange={(v) => patch({ printKotOnSend: v })} />
-        <Toggle label="Print KOTs sent from other devices" hint="For a kitchen station with its own printer: keep the Kitchen screen open and new tickets print as they arrive."
+        <Toggle label="Print KOTs sent from other devices" hint="For a station with its own printer. Keep the Kitchen screen open."
           checked={form.printIncomingKots} onChange={(v) => patch({ printIncomingKots: v })} />
         <Toggle label="Print the bill as soon as it's settled" checked={form.autoPrintBill} onChange={(v) => patch({ autoPrintBill: v })} />
         <Toggle label="Large item text on KOTs" checked={form.largeKotText} onChange={(v) => patch({ largeKotText: v })} />
@@ -301,7 +300,7 @@ function PrintingSettings() {
             </div>
           </fieldset>
         ) : null}
-        <p className="text-xs text-muted-foreground">Printing uses the browser's print dialog. For silent printing on a counter PC, set the thermal printer as default and start Chrome with --kiosk-printing.</p>
+        <p className="text-xs text-muted-foreground">For printing without a dialog, make the thermal printer the default and start Chrome with --kiosk-printing.</p>
         <div className="flex flex-wrap gap-2">
           <Button disabled={!dirty} onClick={() => { void savePrintConfig(form).then(() => toast.success("Printer settings saved on this device")); }}>Save printer settings</Button>
           <Button variant="outline" onClick={testPrint}>Print a test KOT</Button>
@@ -341,7 +340,7 @@ function ThisDevice() {
   };
 
   return (
-    <Section title="This device" description="Each billing device needs its own series code so two counters never print the same bill number.">
+    <Section title="This device" description="Each counter needs its own bill code so numbers never repeat.">
       <div className="space-y-5">
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Bill series code" hint={`Next bill: ${billNumber(next === code ? (typeof seq === "number" ? seq : 0) + 1 : 1, new Date(), next || code)}`}>
@@ -431,9 +430,7 @@ function Staff() {
       <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => void invite(event)}>
         <div className="min-w-56 flex-1"><Field label="Email"><input type="email" maxLength={255} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="cashier@example.com" className={inputClass} /></Field></div>
         <Field label="Role">
-          <select value={role} onChange={(event) => setRole(event.target.value as StaffRole)} className={inputClass}>
-            {INVITE_ROLES.filter((r) => owner || r !== "owner").map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-          </select>
+          <Dropdown<StaffRole> ariaLabel="Role" className="mt-1 w-48" value={role} onChange={setRole} options={INVITE_ROLES.filter((r) => owner || r !== "owner").map((r) => ({ value: r, label: ROLE_LABELS[r] }))} />
         </Field>
         <Button type="submit" disabled={busy}><UserPlus />Invite</Button>
       </form>
@@ -448,9 +445,7 @@ function Staff() {
               <div className="truncate text-xs text-muted-foreground">{member.email}</div>
             </div>
             {owner ? (
-              <select aria-label={`Role for ${member.email}`} value={member.role} onChange={(event) => void changeRole(member, event.target.value as StaffRole)} className="rounded-lg border border-input bg-card px-2 py-1.5 text-sm">
-                {INVITE_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-              </select>
+              <Dropdown<StaffRole> ariaLabel={`Role for ${member.email}`} size="sm" className="w-40" value={member.role} onChange={(next) => void changeRole(member, next)} options={INVITE_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))} />
             ) : <span className="text-sm text-muted-foreground">{ROLE_LABELS[member.role]}</span>}
             {owner && member.user_id !== user?.id ? (
               <Button size="icon" variant="ghost" aria-label={`Remove ${member.email}`} onClick={() => void remove(member)}><Trash2 /></Button>
@@ -482,9 +477,7 @@ function SwitchRestaurant() {
   };
   return (
     <Section title="Outlet" description="You belong to more than one outlet. Each device works with one at a time.">
-      <select value={user.restaurantId ?? ""} onChange={(event) => void choose(event.target.value)} className={`${inputClass} max-w-sm`}>
-        {user.memberships.map((m) => <option key={m.restaurantId} value={m.restaurantId}>{m.restaurantName} ({ROLE_LABELS[m.role]})</option>)}
-      </select>
+      <Dropdown ariaLabel="Outlet" className="max-w-sm" value={user.restaurantId ?? ""} onChange={(id) => void choose(id)} options={user.memberships.map((m) => ({ value: m.restaurantId, label: m.restaurantName, hint: ROLE_LABELS[m.role] }))} />
     </Section>
   );
 }
@@ -510,12 +503,7 @@ function SettingsPage() {
     <AppShell>
       <div className="mx-auto max-w-5xl p-4 lg:p-8">
         <h1 className="text-2xl font-bold">Settings</h1>
-        <div className="no-scrollbar mt-4 flex gap-1 overflow-x-auto border-b border-border" role="tablist">
-          {TABS.map((t) => (
-            <button key={t.v} role="tab" aria-selected={tab === t.v} onClick={() => choose(t.v)}
-              className={`shrink-0 border-b-2 px-3 py-2.5 text-sm font-semibold ${tab === t.v ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{t.l}</button>
-          ))}
-        </div>
+        <Segmented ariaLabel="Settings section" className="mt-4" value={tab} onChange={choose} options={TABS.map((t) => ({ value: t.v, label: t.l }))} />
         <div className="mt-4">
           {tab === "restaurant" ? <><RestaurantDetails /><SwitchRestaurant /></> : null}
           {tab === "billing" ? <BillingSettings /> : null}
