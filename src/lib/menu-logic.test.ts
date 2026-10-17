@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLine, draftFromItem, itemFromDraft, needsOptions, outsideHours, parseLineId, priceFor, stockItemId, stockLeft } from "./menu-logic";
+import { orderCategories, buildLine, draftFromItem, itemFromDraft, needsOptions, outsideHours, parseLineId, priceFor, stockItemId, stockLeft } from "./menu-logic";
 import type { MenuItem } from "./types";
 
 const tikka: MenuItem = {
@@ -89,5 +89,7 @@ describe("menu logic", () => {
     };
     expect(itemFromDraft("i1", draftFromItem(full))).toEqual({ item: full });
   });
+  it("orders menu sections like the printed menu", () => {
+    expect(orderCategories(["Desserts", "Zebra", "Tea", "Apple"], ["Tea", "Desserts"], ["Apple"])).toEqual(["Tea", "Desserts", "Apple", "Zebra"]);
+  });
 });
-

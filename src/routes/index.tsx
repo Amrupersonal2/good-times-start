@@ -15,7 +15,7 @@ import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
 import { useCart } from "@/lib/cart-store";
 import type { Kot, MenuItem, Order, OrderType, PaymentMode } from "@/lib/types";
-import { buildLine, needsOptions, priceFor, stockLeft } from "@/lib/menu-logic";
+import { buildLine, needsOptions, orderCategories, outsideHours, priceFor, stockLeft } from "@/lib/menu-logic";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -54,10 +54,8 @@ function PosPage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Sample categories keep their usual order; any others follow alphabetically.
-  const categories = useMemo(() => {
-    const used = new Set(menu.map((i) => i.category));
-    return [...CATEGORIES.filter((c) => used.has(c)), ...[...used].filter((c) => !CATEGORIES.includes(c)).sort()];
-  }, [menu]);
+  const categoryOrder = useRestaurantSettings().categoryOrder;
+  const categories = useMemo(() => orderCategories(menu.map((i) => i.category), categoryOrder, CATEGORIES), [menu, categoryOrder]);
   const hasPopular = menu.some((i) => i.popular && i.available);
   const rail = hasPopular ? ["Popular", ...categories] : categories;
   useEffect(() => {
@@ -335,9 +333,10 @@ function PosPage() {
               const soldOut = remaining !== null && remaining <= 0;
               const stock = inventory.find((s) => s.menuItemId === i.id);
               const low = remaining !== null && !!stock && remaining <= stock.lowStockThreshold;
+              const offHours = outsideHours(i);
               return (
-                <button key={i.id} onClick={() => pick(i)} disabled={soldOut}
-                  className="card-elevated relative flex min-h-24 flex-col justify-between p-3 text-left transition-transform hover:border-primary/40 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100">
+                <button key={i.id} onClick={() => pick(i)} disabled={soldOut} title={offHours && i.hours ? `Served ${i.hours.from}–${i.hours.to}` : undefined}
+                  className={`card-elevated relative flex min-h-24 flex-col justify-between p-3 text-left transition-transform hover:border-primary/40 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${offHours ? "opacity-60" : ""}`}>
                   {inCart ? <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{inCart}</span> : null}
                   <div className="flex items-start gap-2 pr-6">
                     <span className="mt-0.5"><VegMark veg={i.veg} /></span>
@@ -347,6 +346,7 @@ function PosPage() {
                     <span className="text-sm font-bold text-primary">{i.variants?.length ? `from ${formatINR(i.price, 0)}` : formatINR(priceFor(i, cart.orderType), 0)}</span>
                     {soldOut ? <span className="text-[11px] font-semibold text-destructive">Sold out</span>
                       : low ? <span className="rounded bg-gold/25 px-1.5 text-[11px] font-semibold text-gold-foreground">{remaining} left</span>
+                      : offHours && i.hours ? <span className="text-[11px] text-muted-foreground">{i.hours.from}–{i.hours.to}</span>
                       : needsOptions(i) ? <span className="text-[11px] text-muted-foreground">Options</span> : null}
                   </span>
                 </button>

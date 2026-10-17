@@ -198,3 +198,11 @@ export function itemFromDraft(id: string, draft: MenuDraft): { item: MenuItem } 
   };
   return { item };
 }
+
+/** Sort menu sections: the restaurant's own order first, then any fallback order, then A–Z. */
+export function orderCategories(used: Iterable<string>, preferred: string[] = [], fallback: string[] = []): string[] {
+  const set = new Set(used);
+  const out: string[] = [];
+  for (const c of [...preferred, ...fallback]) if (set.has(c) && !out.includes(c)) out.push(c);
+  return [...out, ...[...set].filter((c) => !out.includes(c)).sort((a, b) => a.localeCompare(b))];
+}

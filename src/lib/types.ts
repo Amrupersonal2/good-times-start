@@ -154,6 +154,8 @@ export interface RestaurantSettings {
   serviceChargePct?: number;
   /** Highest discount % cashiers and captains can give. */
   staffDiscountLimit?: number;
+  /** Menu sections in the order they appear on the printed menu. */
+  categoryOrder?: string[];
   /** Loyalty: % of each bill earned back as points (1 point = ₹1). 0 turns loyalty off. */
   loyaltyPct?: number;
   updatedAt?: number;
