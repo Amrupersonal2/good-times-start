@@ -57,7 +57,8 @@ syncs to Lovable and the live app) only after review in Lovable.
       sales, date ranges, export
 
 ### Phase 8 — SaaS
-- [ ] Onboarding wizard, multiple outlets, subscription plans, admin console
+- [x] Onboarding wizard, multiple outlets, subscription plans, admin console (round 3)
+- [ ] Online subscription payments (Razorpay or similar) — plans are renewed by recording payments in the admin console for now
 - [ ] Aggregator orders (Swiggy/Zomato) — needs partner API approval
 
 ## Sync architecture (Phase 1)
@@ -98,3 +99,28 @@ syncs to Lovable and the live app) only after review in Lovable.
 - `src/test/sync-simulation.test.ts` runs the real sync code against in-memory
   stand-ins (`src/test/fakes`) for IndexedDB and the server.
 - `src/test/performance.test.ts` holds speed budgets for ~60,000 bills.
+
+## Round 3 (October 2026) — `revamp-3`
+
+Database: `drizzle/migrations/0006_outlets_plans_guest_ordering.sql` (additive,
+safe to re-run). Existing restaurants become complimentary Chain accounts; the
+first restaurant's creator becomes the platform administrator.
+
+- [x] QR ordering at tables: `/order/<outlet>?table=<id>`; orders add to the table's running bill
+- [x] Online ordering for pickup: `/order/<outlet>`, pickup time, minimum order, pay at pickup or by UPI
+- [x] Prices are always set by the database from the outlet's menu, never by the guest's phone
+- [x] Guest orders ring on every counter (realtime + chime); accept claims the order once, sends KOTs and opens the bill
+- [x] Running pickup bills listed at the counter; open, add to, settle
+- [x] Settings → Guest ordering: switches, pause, web address, link + QR, printable A4 table cards
+- [x] Accounts and plans (Free trial 14 days, Starter, Growth, Chain) with outlet and staff limits; billing never stops when a plan lapses
+- [x] Business page: plan, outlets, add outlet (copy menu/stock/details), send menu to outlets, sales across outlets
+- [x] Safe outlet switch on a device (refuses while changes are unsynced or bills are running)
+- [x] Setup wizard for new restaurants: details, GST, menu, tables, printing, team
+- [x] Admin console `/admin`: accounts, plan/status/trial/paid-until, record payments, edit plans, revenue
+- [x] Fix: only owners and managers can change restaurant settings in the cloud (an earlier policy let any member)
+
+### Applying the migration
+Lovable Cloud does not run SQL files from GitHub by itself. After merging, ask
+the Lovable agent: "Run drizzle/migrations/0006_outlets_plans_guest_ordering.sql
+on the database." The app keeps working before it runs; guest ordering, plans
+and outlets appear once it has.

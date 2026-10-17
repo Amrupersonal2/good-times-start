@@ -158,6 +158,19 @@ export function useCart(initialTableId?: string) {
     void restoreDraft(id);
   }, [restoreDraft, tableId]);
 
+  /** Open a running bill that has no table (a pickup or takeaway order) to add to it or settle it. */
+  const openOrder = useCallback((order: Order) => {
+    if (order.tableId) { setTableId(order.tableId); return; }
+    setTableIdState(undefined);
+    setActiveOrder(order);
+    setLines(order.lines);
+    setDiscountPct(order.discountPct);
+    setServiceChargePct(order.serviceChargePct ?? 0);
+    setCustomer(order.customer ?? {});
+    setOrderType(order.orderType);
+    setDraftReady(true);
+  }, [setTableId]);
+
   /** Start a fresh bill. A table with items already in the kitchen keeps its running order. */
   const clear = useCallback(() => {
     void getDb().drafts.delete(tableId ?? "walkin");
@@ -383,6 +396,6 @@ export function useCart(initialTableId?: string) {
   return {
     lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct, tax,
     serviceChargePct, setServiceChargePct, customer, setCustomer, addItem, setQty, setNote, clear, totals,
-    settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, pendingCancelLines, activeOrder,
+    settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, pendingCancelLines, activeOrder, openOrder,
   };
 }

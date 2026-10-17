@@ -17,6 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { normaliseDeviceCode } from "@/lib/sync-core";
 import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
 import type { PaymentMode, RestaurantSettings } from "@/lib/types";
+import { OrderingSettings } from "@/components/OrderingSettings";
+import { prepareOutletSwitch } from "@/lib/outlet-actions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -472,19 +474,26 @@ function Staff() {
 function SwitchRestaurant() {
   const { user, switchRestaurant } = useStaff();
   if (!user || user.memberships.length < 2) return null;
+  const choose = async (id: string) => {
+    const problem = await prepareOutletSwitch(id);
+    if (problem) { toast.error(problem); return; }
+    switchRestaurant(id);
+    toast.success("Switched. This device now loads that outlet's menu, tables and bills.");
+  };
   return (
-    <Section title="Restaurant" description="You belong to more than one restaurant. Each device works with one at a time.">
-      <select value={user.restaurantId ?? ""} onChange={(event) => switchRestaurant(event.target.value)} className={`${inputClass} max-w-sm`}>
+    <Section title="Outlet" description="You belong to more than one outlet. Each device works with one at a time.">
+      <select value={user.restaurantId ?? ""} onChange={(event) => void choose(event.target.value)} className={`${inputClass} max-w-sm`}>
         {user.memberships.map((m) => <option key={m.restaurantId} value={m.restaurantId}>{m.restaurantName} ({ROLE_LABELS[m.role]})</option>)}
       </select>
     </Section>
   );
 }
 
-type Tab = "restaurant" | "billing" | "printing" | "staff" | "device";
+type Tab = "restaurant" | "billing" | "ordering" | "printing" | "staff" | "device";
 const TABS: { v: Tab; l: string }[] = [
   { v: "restaurant", l: "Restaurant" },
   { v: "billing", l: "Billing & GST" },
+  { v: "ordering", l: "Guest ordering" },
   { v: "printing", l: "Printing" },
   { v: "staff", l: "Staff" },
   { v: "device", l: "This device" },
@@ -510,6 +519,7 @@ function SettingsPage() {
         <div className="mt-4">
           {tab === "restaurant" ? <><RestaurantDetails /><SwitchRestaurant /></> : null}
           {tab === "billing" ? <BillingSettings /> : null}
+          {tab === "ordering" ? <OrderingSettings /> : null}
           {tab === "printing" ? <PrintingSettings /> : null}
           {tab === "staff" ? <Staff /> : null}
           {tab === "device" ? <ThisDevice /> : null}
