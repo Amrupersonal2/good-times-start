@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLine, draftFromItem, itemFromDraft, needsOptions, priceFor, stockItemId, stockLeft } from "./menu-logic";
+import { buildLine, draftFromItem, itemFromDraft, needsOptions, outsideHours, parseLineId, priceFor, stockItemId, stockLeft } from "./menu-logic";
 import type { MenuItem } from "./types";
 
 const tikka: MenuItem = {
@@ -66,4 +66,28 @@ describe("menu logic", () => {
     const result = itemFromDraft("x", draft);
     expect("item" in result && result.item.price).toBe(200);
   });
+
+  it("reads ids back out of a bill line and knows serving hours", () => {
+    expect(parseLineId("i1|v:f|a:c|a:m")).toEqual({ menuItemId: "i1", variantId: "f", addonIds: ["c", "m"] });
+    expect(parseLineId("i2")).toEqual({ menuItemId: "i2", addonIds: [] });
+    const breakfast = { hours: { from: "08:45", to: "10:45" } };
+    expect(outsideHours(breakfast, new Date(2026, 9, 16, 9, 30))).toBe(false);
+    expect(outsideHours(breakfast, new Date(2026, 9, 16, 13, 0))).toBe(true);
+    expect(outsideHours({}, new Date())).toBe(false);
+  });
+
+  it("uses a portion's own veg mark", () => {
+    const pasta: MenuItem = { ...lassi, id: "p", veg: true, variants: [{ id: "c", name: "Chicken", price: 349, veg: false }] };
+    expect(buildLine(pasta, "dine-in", "c").veg).toBe(false);
+  });
+
+  it("keeps portion recipes, veg marks, hours and descriptions when a dish is edited", () => {
+    const full: MenuItem = {
+      ...tikka, popular: false, description: "Comes with mint dip", hours: { from: "08:45", to: "10:45" },
+      variants: [{ id: "h", name: "Half", price: 180, veg: true, recipe: [{ materialId: "paneer", qty: 0.1 }] }, { id: "f", name: "Full", price: 320 }],
+      addons: [{ id: "c", name: "Extra cheese", price: 40, recipe: [{ materialId: "cheese", qty: 0.02 }] }],
+    };
+    expect(itemFromDraft("i1", draftFromItem(full))).toEqual({ item: full });
+  });
 });
+

@@ -39,4 +39,16 @@ describe("stock ledger", () => {
     expect(purchaseTotal([{ materialId: "a", qty: 2, unitCost: 45.5 }, { materialId: "b", qty: 1 }])).toBe(91);
     expect(formatQty(0.30000000000000004, "kg")).toBe("0.3 kg");
   });
+
+  it("adds portion and add-on ingredients on top of the dish's own recipe", () => {
+    const pasta: MenuItem = {
+      id: "alfredo", name: "Alfredo", category: "Pasta", price: 329, veg: true, gstRate: 5, station: "Continental", available: true,
+      recipe: [{ materialId: "penne", qty: 0.1 }],
+      variants: [{ id: "veg", name: "Veg", price: 329, veg: true }, { id: "chicken", name: "Chicken", price: 349, veg: false, recipe: [{ materialId: "chicken", qty: 0.12 }] }],
+      addons: [{ id: "crab", name: "Crab", price: 50, recipe: [{ materialId: "crab", qty: 1 }] }],
+    };
+    expect(consumptionFor([line("alfredo|v:chicken|a:crab", 2, "alfredo"), line("alfredo|v:veg", 1, "alfredo")], [pasta])).toEqual([
+      { materialId: "penne", qty: 0.3 }, { materialId: "chicken", qty: 0.24 }, { materialId: "crab", qty: 2 },
+    ]);
+  });
 });

@@ -12,6 +12,10 @@ export interface MenuOption {
   id: string;
   name: string;
   price: number;
+  /** A portion can differ from its dish, e.g. the Veg version of a pasta. */
+  veg?: boolean;
+  /** Extra ingredients this portion or add-on uses, on top of the dish's own recipe. */
+  recipe?: { materialId: string; qty: number }[];
 }
 
 export interface MenuItem {
@@ -34,6 +38,10 @@ export interface MenuItem {
   prices?: Partial<Record<OrderType, number>>;
   /** Raw materials used per portion; deducted from stock when the bill settles. */
   recipe?: { materialId: string; qty: number }[];
+  /** What comes with the dish, e.g. a breakfast platter's contents. */
+  description?: string;
+  /** Served only between these times (24h "HH:MM"), e.g. breakfast. */
+  hours?: { from: string; to: string };
 }
 
 export interface CartLine {

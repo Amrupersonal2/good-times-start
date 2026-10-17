@@ -410,7 +410,7 @@ ${specs.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openx
 /** Save a workbook from the browser. */
 export function downloadXlsx(fileName: string, specs: SheetSpec[], meta?: WorkbookMeta): void {
   const bytes = buildXlsx(specs, meta);
-  const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const blob = new Blob([new Uint8Array(bytes)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -428,7 +428,7 @@ export interface ReadSheet { name: string; rows: ReadValue[][] }
 
 async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
   if (typeof DecompressionStream === "undefined") throw new Error("This browser can't open compressed Excel files. Update your browser and try again.");
-  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  const stream = new Blob([new Uint8Array(data)]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 

@@ -1,4 +1,4 @@
-import { stockItemId } from "./menu-logic";
+import { parseLineId, stockItemId } from "./menu-logic";
 import type { CartLine, Material, MenuItem, StockEntry, StockUnit } from "./types";
 
 export const STOCK_UNITS: { v: StockUnit; l: string }[] = [
@@ -27,8 +27,15 @@ export function consumptionFor(lines: CartLine[], menu: MenuItem[]): { materialI
   const byId = new Map(menu.map((item) => [item.id, item]));
   const used = new Map<string, number>();
   for (const line of lines) {
-    const recipe = byId.get(stockItemId(line))?.recipe ?? [];
-    for (const part of recipe) used.set(part.materialId, r3((used.get(part.materialId) ?? 0) + part.qty * line.qty));
+    const { variantId, addonIds } = parseLineId(line.itemId);
+    const item = byId.get(stockItemId(line));
+    if (!item) continue;
+    const parts = [
+      ...(item.recipe ?? []),
+      ...(item.variants?.find((v) => v.id === variantId)?.recipe ?? []),
+      ...(item.addons ?? []).filter((a) => addonIds.includes(a.id)).flatMap((a) => a.recipe ?? []),
+    ];
+    for (const part of parts) used.set(part.materialId, r3((used.get(part.materialId) ?? 0) + part.qty * line.qty));
   }
   return [...used].filter(([, qty]) => qty > 0).map(([materialId, qty]) => ({ materialId, qty }));
 }

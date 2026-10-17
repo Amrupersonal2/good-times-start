@@ -42,8 +42,9 @@ describe("xlsx", () => {
   it("reads files saved by other spreadsheet apps (compressed, shared strings)", async () => {
     const path = process.env["XLSX_FIXTURE"];
     if (!path) return;
-    const file = Bun.file(path);
-    const sheets = await readXlsx(new Uint8Array(await file.arrayBuffer()));
+    const fsModule = "node:fs/promises";
+    const { readFile } = (await import(/* @vite-ignore */ fsModule)) as { readFile: (p: string) => Promise<Uint8Array> };
+    const sheets = await readXlsx(new Uint8Array(await readFile(path)));
     expect(sheets[0]?.rows).toEqual([["Dish", "Category", "Price", "Veg"], ["Paneer Tikka", "Starters", 329, "Yes"], ["Chicken 65 & co <spicy>", "Starters", 299.5, "No"]]);
     expect(sheets[1]?.rows[2]).toEqual([null, null, "far cell"]);
   });
