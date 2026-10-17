@@ -8,10 +8,15 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABELS, isAdmin, useStaff, type StaffRole } from "@/lib/auth-context";
 import { getDb, getDeviceCode, loadSampleData, resetDevice, saveSettings, setDeviceCode } from "@/lib/db";
-import { billNumber } from "@/lib/billing";
+import { billNumber, computeTotals } from "@/lib/billing";
+import { ALL_PAYMENT_MODES, GST_MODES, RESTAURANT_SAC } from "@/lib/billing-config";
+import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
+import type { PrintConfig } from "@/lib/print-logic";
+import { printKots } from "@/components/PrintHost";
+import { Switch } from "@/components/ui/switch";
 import { normaliseDeviceCode } from "@/lib/sync-core";
 import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
-import type { RestaurantSettings } from "@/lib/types";
+import type { PaymentMode, RestaurantSettings } from "@/lib/types";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -80,6 +85,7 @@ function RestaurantDetails() {
     if (invalid) return;
     setBusy(true);
     const clean: RestaurantSettings = {
+      ...saved,
       name: form.name.trim(),
       legalName: form.legalName?.trim() ?? "",
       address: form.address?.trim() ?? "",
@@ -88,9 +94,6 @@ function RestaurantDetails() {
       fssai: form.fssai?.trim() ?? "",
       upiVpa: form.upiVpa?.trim() ?? "",
       billFooter: form.billFooter?.trim() ?? "",
-      serviceChargePct: Math.min(20, Math.max(0, Number(form.serviceChargePct) || 0)),
-      staffDiscountLimit: Math.min(100, Math.max(0, Number(form.staffDiscountLimit ?? 10) || 0)),
-      loyaltyPct: Math.min(25, Math.max(0, Number(form.loyaltyPct) || 0)),
     };
     await saveSettings(clean, !!user?.restaurantId);
     if (user?.restaurantId && clean.name !== user.restaurantName) {
@@ -102,7 +105,7 @@ function RestaurantDetails() {
   };
 
   return (
-    <Section title="Restaurant details" description="Printed on every bill, plus the billing rules every device follows. Your GSTIN and FSSAI number must match your registration.">
+    <Section title="Restaurant details" description="Printed on every bill. Your GSTIN and FSSAI number must match your registration.">
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => void submit(event)}>
         <Field label="Restaurant name"><input required maxLength={120} disabled={!canEdit} value={form.name} onChange={set("name")} className={inputClass} /></Field>
         <Field label="Legal business name" hint="If different, e.g. XTSY Ventures Private Limited"><input maxLength={160} disabled={!canEdit} value={form.legalName ?? ""} onChange={set("legalName")} className={inputClass} /></Field>
@@ -112,22 +115,196 @@ function RestaurantDetails() {
         <Field label="FSSAI licence number" error={errors.fssai}><input inputMode="numeric" maxLength={14} disabled={!canEdit} value={form.fssai ?? ""} onChange={set("fssai")} className={inputClass} /></Field>
         <Field label="UPI ID for the payment QR" error={errors.upiVpa}><input maxLength={120} disabled={!canEdit} value={form.upiVpa ?? ""} onChange={set("upiVpa")} placeholder="restaurant@okaxis" className={inputClass} /></Field>
         <div className="sm:col-span-2"><Field label="Bill footer" hint="Shown at the bottom of every bill"><input maxLength={140} disabled={!canEdit} value={form.billFooter ?? ""} onChange={set("billFooter")} placeholder="Thank you! Visit again." className={inputClass} /></Field></div>
-        <Field label="Service charge %" hint="Offered on dine-in bills, off unless the cashier ticks it. Guests can decline it. Leave 0 to hide.">
-          <input inputMode="decimal" disabled={!canEdit} value={form.serviceChargePct ?? 0}
-            onChange={(e) => setForm((prev) => ({ ...prev, serviceChargePct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 }))} className={inputClass} />
-        </Field>
-        <Field label="Loyalty points (% of each bill)" hint="Guests with a phone number on the bill earn this back as points; 1 point = ₹1. Leave 0 to turn loyalty off.">
-          <input inputMode="decimal" disabled={!canEdit} value={form.loyaltyPct ?? 0}
-            onChange={(e) => setForm((prev) => ({ ...prev, loyaltyPct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 }))} className={inputClass} />
-        </Field>
-        <Field label="Highest discount for cashiers and captains (%)" hint="Owners and managers can give any discount.">
-          <input inputMode="numeric" disabled={!canEdit} value={form.staffDiscountLimit ?? 10}
-            onChange={(e) => setForm((prev) => ({ ...prev, staffDiscountLimit: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 }))} className={inputClass} />
-        </Field>
         {canEdit
           ? <div className="sm:col-span-2"><Button type="submit" disabled={busy || invalid}>{busy ? "Saving…" : "Save details"}</Button></div>
           : <p className="text-sm text-muted-foreground sm:col-span-2">Only the owner or a manager can change these.</p>}
       </form>
+    </Section>
+  );
+}
+
+function Toggle({ label, hint, checked, disabled, onChange }: { label: string; hint?: string; checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm">
+      <Switch checked={checked} disabled={disabled} onCheckedChange={onChange} className="mt-0.5" />
+      <span><span className="font-medium">{label}</span>{hint ? <span className="mt-0.5 block text-xs text-muted-foreground">{hint}</span> : null}</span>
+    </label>
+  );
+}
+
+const PAY_LABELS: Record<PaymentMode, string> = { cash: "Cash", upi: "UPI", card: "Card", wallet: "Wallet", credit: "Due (pay later)", points: "Loyalty points" };
+
+function BillingSettings() {
+  const { user } = useStaff();
+  const saved = useRestaurantSettings();
+  const canEdit = !user || isAdmin(user);
+  const [form, setForm] = useState<RestaurantSettings>(saved);
+  const [busy, setBusy] = useState(false);
+  const savedJson = JSON.stringify(saved);
+  useEffect(() => { setForm(JSON.parse(savedJson) as RestaurantSettings); }, [savedJson]);
+  const patch = (p: Partial<RestaurantSettings>) => setForm((prev) => ({ ...prev, ...p }));
+  const mode = form.gstMode ?? "regular";
+  const modes = form.paymentModes ?? ALL_PAYMENT_MODES;
+  const dirty = JSON.stringify(form) !== savedJson;
+
+  const save = async () => {
+    setBusy(true);
+    await saveSettings({
+      ...saved,
+      gstMode: mode,
+      pricesIncludeGst: Boolean(form.pricesIncludeGst),
+      aggregatorGstByOperator: form.aggregatorGstByOperator ?? true,
+      roundToRupee: form.roundToRupee ?? true,
+      sac: (form.sac ?? "").trim() || RESTAURANT_SAC,
+      serviceChargePct: Math.min(20, Math.max(0, Number(form.serviceChargePct) || 0)),
+      staffDiscountLimit: Math.min(100, Math.max(0, Number(form.staffDiscountLimit ?? 10) || 0)),
+      loyaltyPct: Math.min(25, Math.max(0, Number(form.loyaltyPct) || 0)),
+      autoKotOnSettle: Boolean(form.autoKotOnSettle),
+      paymentModes: modes.length ? modes : ["cash"],
+      kotByStation: form.kotByStation ?? true,
+      kotHeader: (form.kotHeader ?? "").trim(),
+    }, !!user?.restaurantId);
+    setBusy(false);
+    toast.success("Billing settings saved on every device");
+  };
+
+  const sample = computeTotals([{ itemId: "x", name: "x", price: 1000, qty: 1, veg: true, gstRate: 5, station: "x" }], 0, 0,
+    { inclusive: Boolean(form.pricesIncludeGst), exempt: mode !== "regular", roundToRupee: form.roundToRupee ?? true });
+
+  return (
+    <>
+      <Section title="GST" description="How tax is worked out on every bill. Bills already settled keep the rules they were made under.">
+        <div className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="GST registration">
+            {GST_MODES.map((m) => (
+              <button key={m.v} type="button" role="radio" aria-checked={mode === m.v} disabled={!canEdit} onClick={() => patch({ gstMode: m.v })}
+                className={`rounded-lg border p-3 text-left text-sm ${mode === m.v ? "border-primary bg-primary-tint" : "border-border"}`}>
+                <span className="block font-semibold">{m.l}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{m.hint}</span>
+              </button>
+            ))}
+          </div>
+          {mode === "regular" ? <>
+            <Toggle label="Menu prices include GST" hint={`A ₹1,000 dish then bills ₹${sample.total.toLocaleString("en-IN")} with ₹${(sample.cgst + sample.sgst).toLocaleString("en-IN")} GST inside it.`}
+              checked={Boolean(form.pricesIncludeGst)} disabled={!canEdit} onChange={(v) => patch({ pricesIncludeGst: v })} />
+            <Toggle label="Swiggy and Zomato pay GST on their orders" hint="Under section 9(5), the aggregator collects and pays GST on restaurant orders it delivers, so those bills carry no GST. Turn off only if your accountant says so."
+              checked={form.aggregatorGstByOperator ?? true} disabled={!canEdit} onChange={(v) => patch({ aggregatorGstByOperator: v })} />
+            <Field label="SAC code" hint="996331 is restaurant service; it appears in the GSTR-1 HSN summary.">
+              <input disabled={!canEdit} maxLength={8} value={form.sac ?? RESTAURANT_SAC} onChange={(e) => patch({ sac: e.target.value.replace(/\D/g, "") })} className={`${inputClass} max-w-40`} />
+            </Field>
+          </> : (
+            <p className="rounded-lg bg-secondary p-3 text-sm">Bills print as {mode === "composition" ? "a bill of supply with the required composition wording" : "plain bills"}, with no CGST or SGST.</p>
+          )}
+          <Toggle label="Round totals to the rupee" hint="Shows a round-off line on the bill." checked={form.roundToRupee ?? true} disabled={!canEdit} onChange={(v) => patch({ roundToRupee: v })} />
+        </div>
+      </Section>
+
+      <Section title="Billing" description="Rules every counter follows when taking payment.">
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Service charge %" hint="Offered on dine-in bills; off until the cashier ticks it. 0 hides it.">
+              <input inputMode="decimal" disabled={!canEdit} value={form.serviceChargePct ?? 0} onChange={(e) => patch({ serviceChargePct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })} className={inputClass} />
+            </Field>
+            <Field label="Cashier discount limit %" hint="Owners and managers can give any discount.">
+              <input inputMode="numeric" disabled={!canEdit} value={form.staffDiscountLimit ?? 10} onChange={(e) => patch({ staffDiscountLimit: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 })} className={inputClass} />
+            </Field>
+            <Field label="Loyalty points %" hint="Earned back on bills with a phone number; 1 point = ₹1. 0 turns it off.">
+              <input inputMode="decimal" disabled={!canEdit} value={form.loyaltyPct ?? 0} onChange={(e) => patch({ loyaltyPct: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })} className={inputClass} />
+            </Field>
+          </div>
+          <Toggle label="Send to kitchen automatically when settling" hint="For counters that take payment first (quick service). Unsent items go to the kitchen, then the bill settles."
+            checked={Boolean(form.autoKotOnSettle)} disabled={!canEdit} onChange={(v) => patch({ autoKotOnSettle: v })} />
+          <fieldset>
+            <legend className="text-sm font-medium">Payment modes you accept</legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {ALL_PAYMENT_MODES.map((m) => (
+                <label key={m} className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${modes.includes(m) ? "border-primary bg-primary-tint" : "border-border"}`}>
+                  <input type="checkbox" disabled={!canEdit} checked={modes.includes(m)} onChange={(e) => patch({ paymentModes: e.target.checked ? [...modes, m] : modes.filter((x) => x !== m) })} />
+                  {PAY_LABELS[m]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      </Section>
+
+      <Section title="Kitchen tickets" description="How KOTs read on every device that prints them.">
+        <div className="space-y-4">
+          <Toggle label="One ticket per kitchen station" hint="Off prints one combined ticket with each station's items grouped. Cancellations always print on their own ticket."
+            checked={form.kotByStation ?? true} disabled={!canEdit} onChange={(v) => patch({ kotByStation: v })} />
+          <Field label="Line at the top of every KOT" hint="Optional, e.g. 'TAB Bistro kitchen'.">
+            <input maxLength={40} disabled={!canEdit} value={form.kotHeader ?? ""} onChange={(e) => patch({ kotHeader: e.target.value })} className={`${inputClass} max-w-sm`} />
+          </Field>
+        </div>
+      </Section>
+
+      {canEdit ? (
+        <div className="sticky bottom-20 z-10 flex items-center justify-end gap-3 py-4 lg:bottom-0">
+          {dirty ? <span className="text-sm text-muted-foreground">Unsaved changes</span> : null}
+          <Button disabled={busy || !dirty} onClick={() => void save()}>{busy ? "Saving…" : "Save billing settings"}</Button>
+        </div>
+      ) : <p className="py-4 text-sm text-muted-foreground">Only the owner or a manager can change these.</p>}
+    </>
+  );
+}
+
+function PrintingSettings() {
+  const saved = usePrintConfig();
+  const [form, setForm] = useState<PrintConfig>(saved);
+  const savedJson = JSON.stringify(saved);
+  useEffect(() => { setForm(JSON.parse(savedJson) as PrintConfig); }, [savedJson]);
+  const stations = useLiveQuery(async () => [...new Set((await getDb().menu.toArray()).map((m) => m.station))].sort(), [], []);
+  const patch = (p: Partial<PrintConfig>) => setForm((prev) => ({ ...prev, ...p }));
+  const dirty = JSON.stringify(form) !== savedJson;
+
+  const testPrint = () => {
+    const now = Date.now();
+    void printKots([{ uid: `test-${now}`, orderId: 0, billNo: "TEST/0001", station: form.stations[0] ?? stations[0] ?? "Kitchen", kind: "order", tableLabel: "T1",
+      lines: [{ name: "Test dish", qty: 2, note: "Printer check" }], status: "new", createdAt: now }], "reprint");
+  };
+
+  return (
+    <Section title="This device's printer" description="Each counter and kitchen screen has its own printer setup. This doesn't sync to other devices.">
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Paper width">
+            <select value={form.paper} onChange={(e) => patch({ paper: Number(e.target.value) === 58 ? 58 : 80 })} className={inputClass}>
+              <option value={80}>80 mm (3 inch)</option>
+              <option value={58}>58 mm (2 inch)</option>
+            </select>
+          </Field>
+          <Field label="Bill copies">
+            <input type="number" min={1} max={5} value={form.billCopies} onChange={(e) => patch({ billCopies: Number(e.target.value) })} className={inputClass} />
+          </Field>
+          <Field label="KOT copies">
+            <input type="number" min={1} max={5} value={form.kotCopies} onChange={(e) => patch({ kotCopies: Number(e.target.value) })} className={inputClass} />
+          </Field>
+        </div>
+        <Toggle label="Print KOTs sent from this device" checked={form.printKotOnSend} onChange={(v) => patch({ printKotOnSend: v })} />
+        <Toggle label="Print KOTs sent from other devices" hint="For a kitchen station with its own printer: keep the Kitchen screen open and new tickets print as they arrive."
+          checked={form.printIncomingKots} onChange={(v) => patch({ printIncomingKots: v })} />
+        <Toggle label="Print the bill as soon as it's settled" checked={form.autoPrintBill} onChange={(v) => patch({ autoPrintBill: v })} />
+        <Toggle label="Large item text on KOTs" checked={form.largeKotText} onChange={(v) => patch({ largeKotText: v })} />
+        {stations.length ? (
+          <fieldset>
+            <legend className="text-sm font-medium">Stations this device prints</legend>
+            <p className="text-xs text-muted-foreground">None ticked prints every station.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {stations.map((st) => (
+                <label key={st} className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${form.stations.includes(st) ? "border-primary bg-primary-tint" : "border-border"}`}>
+                  <input type="checkbox" checked={form.stations.includes(st)} onChange={(e) => patch({ stations: e.target.checked ? [...form.stations, st] : form.stations.filter((x) => x !== st) })} />
+                  {st}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+        <p className="text-xs text-muted-foreground">Printing uses the browser's print dialog. For silent printing on a counter PC, set the thermal printer as default and start Chrome with --kiosk-printing.</p>
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={!dirty} onClick={() => { void savePrintConfig(form).then(() => toast.success("Printer settings saved on this device")); }}>Save printer settings</Button>
+          <Button variant="outline" onClick={testPrint}>Print a test KOT</Button>
+        </div>
+      </div>
     </Section>
   );
 }
@@ -304,16 +481,38 @@ function SwitchRestaurant() {
   );
 }
 
+type Tab = "restaurant" | "billing" | "printing" | "staff" | "device";
+const TABS: { v: Tab; l: string }[] = [
+  { v: "restaurant", l: "Restaurant" },
+  { v: "billing", l: "Billing & GST" },
+  { v: "printing", l: "Printing" },
+  { v: "staff", l: "Staff" },
+  { v: "device", l: "This device" },
+];
+
 function SettingsPage() {
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "restaurant";
+    const h = window.location.hash.slice(1) as Tab;
+    return TABS.some((t) => t.v === h) ? h : "restaurant";
+  });
+  const choose = (t: Tab) => { setTab(t); try { window.history.replaceState(null, "", `#${t}`); } catch { /* ignore */ } };
   return (
     <AppShell>
       <div className="mx-auto max-w-5xl p-4 lg:p-8">
         <h1 className="text-2xl font-bold">Settings</h1>
+        <div className="no-scrollbar mt-4 flex gap-1 overflow-x-auto border-b border-border" role="tablist">
+          {TABS.map((t) => (
+            <button key={t.v} role="tab" aria-selected={tab === t.v} onClick={() => choose(t.v)}
+              className={`shrink-0 border-b-2 px-3 py-2.5 text-sm font-semibold ${tab === t.v ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{t.l}</button>
+          ))}
+        </div>
         <div className="mt-4">
-          <RestaurantDetails />
-          <ThisDevice />
-          <Staff />
-          <SwitchRestaurant />
+          {tab === "restaurant" ? <><RestaurantDetails /><SwitchRestaurant /></> : null}
+          {tab === "billing" ? <BillingSettings /> : null}
+          {tab === "printing" ? <PrintingSettings /> : null}
+          {tab === "staff" ? <Staff /> : null}
+          {tab === "device" ? <ThisDevice /> : null}
         </div>
       </div>
     </AppShell>

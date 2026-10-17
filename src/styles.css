@@ -147,25 +147,4 @@
   border-radius: var(--radius-xl);
 }
 
-/* Thermal receipt print styles */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #receipt-print,
-  #receipt-print *,
-  #kot-print,
-  #kot-print * {
-    visibility: visible;
-  }
-  #receipt-print,
-  #kot-print {
-    position: absolute;
-    inset: 0;
-    width: 72mm;
-  }
-  @page {
-    size: 80mm auto;
-    margin: 4mm;
-  }
-}
+/* Thermal printing is set up per device by PrintHost (src/components/PrintHost.tsx). */

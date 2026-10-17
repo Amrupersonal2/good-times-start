@@ -11,7 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSyncSnapshot, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
 import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
-import { EMPTY_SETTINGS, getDb, getSettings } from "@/lib/db";
+import { getDb } from "@/lib/db";
+import { useRestaurantSettings } from "@/lib/use-settings";
 import { isLow, stockLevels } from "@/lib/stock-logic";
 
 const NAV = [
@@ -37,13 +38,7 @@ export function screensFor(role: string | undefined): readonly NavPath[] {
   return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to);
 }
 
-/** Restaurant details as this device currently knows them (updates live as sync lands). */
-export function useRestaurantSettings() {
-  return useLiveQuery(async () => {
-    await getDb().meta.get("restaurantSettings");
-    return getSettings();
-  }, [], EMPTY_SETTINGS);
-}
+export { useRestaurantSettings } from "@/lib/use-settings";
 
 function SyncChip() {
   const [online, setOnline] = useState(true);

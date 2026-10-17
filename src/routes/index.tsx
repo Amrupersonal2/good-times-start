@@ -8,9 +8,12 @@ import { isAdmin, useStaff } from "@/lib/auth-context";
 import { maxDiscountFor, type Payment } from "@/lib/payment-logic";
 import { customerStats, normalisePhone } from "@/lib/customer-logic";
 import { saveFeedback } from "@/lib/customer-actions";
+import { gstinError } from "@/lib/validation";
+import { printBill, printKots } from "@/components/PrintHost";
+import { usePrintConfig } from "@/lib/print-config";
 import { VegMark } from "@/components/VegMark";
 import { Receipt } from "@/components/Receipt";
-import { getDb } from "@/lib/db";
+import { getDb, markDirty } from "@/lib/db";
 import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
 import { useCart } from "@/lib/cart-store";
@@ -50,7 +53,6 @@ function PosPage() {
   const [q, setQ] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [receipt, setReceipt] = useState<Order | null>(null);
-  const [kitchenTickets, setKitchenTickets] = useState<Kot[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Sample categories keep their usual order; any others follow alphabetically.
@@ -91,6 +93,7 @@ function PosPage() {
   const { user } = useStaff();
   const settings = useRestaurantSettings();
   const closedBy = user?.displayName;
+  const printConfig = usePrintConfig();
   const [payOpen, setPayOpen] = useState(false);
   const [upiOpen, setUpiOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -115,17 +118,19 @@ function PosPage() {
 
   const done = (o: Order | null) => {
     if (!o) return;
+    if (printConfig.autoPrintBill) void printBill(o);
     setReceipt(o);
     setCartOpen(false);
     setPayOpen(false);
     setUpiOpen(false);
     setCustomerOpen(false);
   };
+  const settleOptions = { autoKot: Boolean(settings.autoKotOnSettle), onKots: (k: Kot[]) => { void printKots(k, "sent"); } };
   const pay = async (mode: PaymentMode) => {
     if (mode === "upi" && settings.upiVpa) { setUpiOpen(true); return; }
-    done(await cart.settle(mode, closedBy));
+    done(await cart.settle(mode, closedBy, settleOptions));
   };
-  const payWith = async (payments: Payment[]) => done(await cart.settle(payments, closedBy));
+  const payWith = async (payments: Payment[]) => done(await cart.settle(payments, closedBy, settleOptions));
   const payPart = async (quantities: Record<string, number>, payments: Payment[]) => {
     const o = await cart.settlePart(quantities, payments, closedBy);
     if (o) { setReceipt(o); setPayOpen(false); }
@@ -133,20 +138,20 @@ function PosPage() {
 
   const sendToKitchen = async () => {
     const tickets = await cart.sendKitchen();
-    if (!tickets.length) return;
-    setKitchenTickets(tickets);
+    if (tickets.length) void printKots(tickets, "sent");
   };
 
-  useEffect(() => {
-    if (!kitchenTickets.length) return;
-    const timer = window.setTimeout(() => window.print(), 300);
-    const clear = () => setKitchenTickets([]);
-    window.addEventListener("afterprint", clear, { once: true });
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("afterprint", clear);
-    };
-  }, [kitchenTickets]);
+  /** Print the running bill for the table before payment, and mark the table as billed. */
+  const printRunningBill = async () => {
+    const running = cart.activeOrder;
+    if (!running) return;
+    const preview: Order = { ...running, lines: cart.lines, ...cart.totals, discountPct: cart.discountPct, serviceChargePct: cart.serviceChargePct, status: "held" };
+    void printBill(preview);
+    if (cart.tableId) {
+      await getDb().restTables.update(cart.tableId, { status: "billed" });
+      await markDirty(["table", cart.tableId]);
+    }
+  };
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -236,7 +241,10 @@ function PosPage() {
                 ? [unsentCount ? `${unsentCount} to send` : "", cancelCount ? `${cancelCount} to cancel` : ""].filter(Boolean).join(", ")
                 : "Kitchen has everything"}
             </span>
-            <Button variant="secondary" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancellation" : "Send & print KOT"}</Button>
+            <div className="flex gap-1.5">
+              {cart.activeOrder && !unsentCount && !cancelCount ? <Button variant="outline" onClick={() => void printRunningBill()}><Printer className="size-4" />Print bill</Button> : null}
+              <Button variant="secondary" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}><ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancellation" : "Send & print KOT"}</Button>
+            </div>
           </div>
         </div> : null}
         <div className="space-y-1 text-sm">
@@ -262,10 +270,14 @@ function PosPage() {
           <div className="flex justify-between text-muted-foreground"><span>Round off</span><span>{formatINR(cart.totals.roundOff)}</span></div>
           <div className="flex justify-between pt-1 text-xl font-bold"><span>Total</span><span className="text-primary">{formatINR(cart.totals.total, 0)}</span></div>
         </div>
-        {customerOpen || cart.customer.name || cart.customer.phone ? (
+        {customerOpen || cart.customer.name || cart.customer.phone || cart.customer.gstin ? (
           <div className="mt-3 grid grid-cols-2 gap-2">
             <input aria-label="Guest name" placeholder="Guest name" maxLength={60} value={cart.customer.name ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, name: e.target.value })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
             <input aria-label="Guest phone" placeholder="Phone" inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""} onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })} className="min-w-0 rounded-lg border border-input bg-card px-2 py-1.5 text-xs" />
+            <input aria-label="Guest GSTIN" placeholder="Business GSTIN (optional)" maxLength={15} value={cart.customer.gstin ?? ""}
+              onChange={(e) => cart.setCustomer({ ...cart.customer, gstin: e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, "") })}
+              className={`col-span-2 min-w-0 rounded-lg border bg-card px-2 py-1.5 text-xs uppercase ${cart.customer.gstin && gstinError(cart.customer.gstin) ? "border-destructive" : "border-input"}`} />
+            {cart.customer.gstin && gstinError(cart.customer.gstin) ? <p className="col-span-2 text-[11px] text-destructive">{gstinError(cart.customer.gstin)}</p> : null}
           </div>
         ) : null}
         {guest ? (
@@ -277,13 +289,13 @@ function PosPage() {
         ) : null}
         {!canSettle ? <p className="mt-3 rounded-lg bg-secondary p-3 text-center text-xs text-muted-foreground">Send the KOT here. The cashier settles the bill from the counter.</p> : null}
         <div className={`mt-3 grid grid-cols-4 gap-2 ${canSettle ? "" : "hidden"}`}>
-          {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).map(([m, l, Icon]) => (
-            <button key={m} disabled={!cart.lines.length || unsentCount > 0 || cancelCount > 0} onClick={() => void pay(m)}
+          {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).filter(([m]) => !settings.paymentModes || settings.paymentModes.includes(m)).map(([m, l, Icon]) => (
+            <button key={m} disabled={!cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0))} onClick={() => void pay(m)}
               className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-40">
               <Icon className="size-4" />{l}
             </button>
           ))}
-          <button disabled={!cart.lines.length || unsentCount > 0 || cancelCount > 0} onClick={() => setPayOpen(true)}
+          <button disabled={!cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0))} onClick={() => setPayOpen(true)}
             className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border border-primary text-xs font-semibold text-primary transition-colors hover:bg-primary-tint disabled:opacity-40">
             <Wallet className="size-4" />Split
           </button>
@@ -397,7 +409,8 @@ function PosPage() {
       <Dialog open={payOpen} onOpenChange={setPayOpen}>
         <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto">
           {payOpen ? <PaymentPanel lines={cart.lines} discountPct={cart.discountPct} serviceChargePct={cart.serviceChargePct}
-            canSplitBill={!!cart.activeOrder && cart.lines.reduce((s, l) => s + l.qty, 0) > 1}
+            canSplitBill={!!cart.activeOrder && cart.lines.reduce((s, l) => s + l.qty, 0) > 1} tax={cart.tax}
+            {...(settings.paymentModes ? { allowedModes: settings.paymentModes } : {})}
             pointsAvailable={(settings.loyaltyPct ?? 0) > 0 ? guest?.stats.points ?? 0 : 0} hasCustomer={!!guestId}
             onSettle={(p) => void payWith(p)} onSettlePart={(q, p) => void payPart(q, p)} /> : null}
         </DialogContent>
@@ -406,7 +419,7 @@ function PosPage() {
       <Dialog open={upiOpen} onOpenChange={setUpiOpen}>
         <DialogContent className="max-w-sm">
           {upiOpen && settings.upiVpa ? <UpiPay vpa={settings.upiVpa} payee={settings.name || "Restaurant"} amount={cart.totals.total}
-            billNo={cart.activeOrder?.billNo ?? "new"} onPaid={() => { void cart.settle("upi", closedBy).then(done); }} /> : null}
+            billNo={cart.activeOrder?.billNo ?? "new"} onPaid={() => { void cart.settle("upi", closedBy, settleOptions).then(done); }} /> : null}
         </DialogContent>
       </Dialog>
 
@@ -423,18 +436,12 @@ function PosPage() {
           <DialogTitle>Bill {receipt?.billNo} settled</DialogTitle>
           {receipt && receipt.payments.length > 1 ? <p className="-mt-2 text-sm text-muted-foreground">{receipt.payments.map((p) => `${p.mode.toUpperCase()} ${formatINR(p.amount, 0)}`).join(", ")}</p> : null}
           {receipt && <Receipt order={receipt} />}
-          <button onClick={() => window.print()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
+          <button onClick={() => { if (receipt) void printBill(receipt); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
             <Printer className="size-4" /> Print receipt
           </button>
           {receipt ? <FeedbackPrompt key={receipt.uid ?? receipt.billNo} order={receipt} /> : null}
         </DialogContent>
       </Dialog>
-      {kitchenTickets.length > 0 ? <div className="fixed left-[-10000px] top-0" aria-hidden="true">
-        {kitchenTickets.map((kot, index) => <Receipt key={`${kot.billNo}-${kot.station}-${index}`} order={{
-          billNo: kot.billNo, orderType: kot.orderType ?? cart.orderType, tableId: kot.tableId, tableLabel: kot.tableLabel, lines: kot.lines.map((line) => ({ itemId: line.itemId ?? "", name: line.name, price: 0, qty: line.qty, veg: false, gstRate: 0, station: kot.station, ...(line.note ? { note: line.note } : {}) })),
-          subtotal: 0, discountPct: 0, discountAmt: 0, cgst: 0, sgst: 0, roundOff: 0, total: 0, payments: [], status: "held", createdAt: kot.createdAt, synced: false,
-        }} mode="kot" kot={kot} />)}
-      </div> : null}
     </AppShell>
   );
 }
