@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { Search, Star } from "lucide-react";
+import { Download, Search, Star } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +11,8 @@ import { isAdmin, useStaff } from "@/lib/auth-context";
 import { formatINR } from "@/lib/billing";
 import { customerStats, normalisePhone, ordersByCustomer, type CustomerStats } from "@/lib/customer-logic";
 import { adjustPoints, recordDuePayment, updateCustomer } from "@/lib/customer-actions";
+import { guestsWorkbook } from "@/lib/report-excel";
+import { downloadXlsx } from "@/lib/xlsx";
 import type { Customer, Order, PaymentMode } from "@/lib/types";
 
 export const Route = createFileRoute("/customers")({
@@ -148,7 +150,10 @@ function CustomersPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-5xl p-4 lg:p-6">
-        <h1 className="text-2xl font-bold">Customers</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold">Guests</h1>
+          <Button variant="outline" size="sm" disabled={!rows.length} onClick={() => downloadXlsx(`guests-${new Date().toISOString().slice(0, 10)}`, guestsWorkbook(rows, settings.name), { title: "Guests" })}><Download />Excel</Button>
+        </div>
         <p className="mb-5 text-sm text-muted-foreground">
           {rows.length} guests{totalDue > 0 ? `, ${formatINR(totalDue, 0)} owed to you` : ""}
           {rated.length ? `, rated ${(rated.reduce((s, r) => s + (r.stats.averageRating ?? 0), 0) / rated.length).toFixed(1)} on average` : ""}.

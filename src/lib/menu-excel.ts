@@ -33,8 +33,12 @@ const optionText = (opts: MenuOption[] | undefined, withMark: boolean) =>
 
 /* ---------------- export ---------------- */
 
-export function menuWorkbook(menu: MenuItem[], materials: Material[], restaurant = "Menu"): SheetSpec[] {
-  const sorted = [...menu].sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+export function menuWorkbook(menu: MenuItem[], materials: Material[], restaurant = "Menu", categoryOrder: string[] = []): SheetSpec[] {
+  // Sections in the restaurant's printed order (others A–Z after), dishes in menu order within a section.
+  const rank = (c: string) => { const i = categoryOrder.indexOf(c); return i < 0 ? categoryOrder.length : i; };
+  const sorted = menu.map((m, i) => ({ m, i }))
+    .sort((a, b) => rank(a.m.category) - rank(b.m.category) || (rank(a.m.category) === categoryOrder.length ? a.m.category.localeCompare(b.m.category) : 0) || a.i - b.i)
+    .map((x) => x.m);
   const matName = new Map(materials.map((m) => [m.id, m]));
 
   const menuSheet: SheetSpec = {

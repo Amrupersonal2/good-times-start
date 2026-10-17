@@ -20,7 +20,9 @@ export function MenuExcel({ restaurant, menuCount }: { restaurant: string; menuC
 
   const download = async () => {
     const [menu, materials] = await Promise.all([getDb().menu.toArray(), getDb().materials.toArray()]);
-    downloadXlsx(`${restaurant || "menu"}-menu-${dayKey(Date.now())}`, menuWorkbook(menu, materials, restaurant || "Menu"), { title: `${restaurant} menu` });
+    const { getSettings } = await import("@/lib/db");
+    const order = (await getSettings()).categoryOrder ?? [];
+    downloadXlsx(`${restaurant || "menu"}-menu-${dayKey(Date.now())}`, menuWorkbook(menu, materials, restaurant || "Menu", order), { title: `${restaurant} menu` });
   };
 
   const pick = async (f: File | undefined) => {

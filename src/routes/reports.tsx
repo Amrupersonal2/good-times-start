@@ -6,6 +6,7 @@ import { Download, Printer, Search } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { gstr1Workbook } from "@/lib/gstr1";
+import { reportsWorkbook } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import { Receipt } from "@/components/Receipt";
 import { printBill } from "@/components/PrintHost";
@@ -306,6 +307,12 @@ function ReportsPage() {
   const range = preset === "custom" ? custom : presetRange(preset);
   const all = useLiveQuery(() => getDb().orders.where("createdAt").between(range.from, range.to, true, true).toArray(), [range.from, range.to], []);
   const orders = inRange(all, range);
+  const restaurant = useRestaurantSettings().name;
+  const exportAll = async () => {
+    const db = getDb();
+    const [menu, closes] = await Promise.all([db.menu.toArray(), db.dayCloses.where("day").between(dayKey(range.from), dayKey(range.to), true, true).toArray()]);
+    downloadXlsx(`reports-${file}`, reportsWorkbook(orders, menu, closes, range, restaurant), { title: `${restaurant} reports` });
+  };
   const file = `xtsy-pos-${dayKey(range.from)}${dayKey(range.from) === dayKey(range.to) ? "" : `-to-${dayKey(range.to)}`}`;
   const presets: { v: Preset; l: string }[] = [
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
@@ -322,6 +329,7 @@ function ReportsPage() {
             <h1 className="text-2xl font-bold">Reports</h1>
             <p className="text-sm text-muted-foreground">Bills from every device in the restaurant that has synced.</p>
           </div>
+          <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button>
           <div className="flex flex-wrap items-center gap-1.5">
             {presets.map((p) => (
               <button key={p.v} onClick={() => setPreset(p.v)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${preset === p.v ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{p.l}</button>
