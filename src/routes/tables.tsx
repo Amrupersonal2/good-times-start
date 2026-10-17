@@ -13,6 +13,7 @@ import { deleteTable, mergeTables, moveTable, saveTable, setTableStatus, tableId
 import type { RestaurantTable, TableStatus } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({
@@ -147,7 +148,7 @@ function TableActions({ table, tables, onDone }: { table: RestaurantTable; table
 function TablesPage() {
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const { user } = useStaff();
-  const canEdit = !user || isAdmin(user);
+  const canEdit = can(user, "tables.edit");
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<RestaurantTable | null>(null);
   const [form, setForm] = useState<RestaurantTable | "new" | null>(null);

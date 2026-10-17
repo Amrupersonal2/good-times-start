@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ROLE_LABELS, isAdmin, useStaff } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { getLiveStatus, getSyncSnapshot, onLiveStatus, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
+import { clearSyncNotice, getLiveStatus, getSyncSnapshot, onLiveStatus, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
 import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
 import { getDb, getMaterialLevels } from "@/lib/db";
@@ -46,6 +46,8 @@ const ROLE_SCREENS: Record<string, NavPath[]> = {
 };
 
 export function screensFor(role: string | undefined): readonly NavPath[] {
+  // Signed out, or signed in without a restaurant yet: no screens.
+  if (!role || role === "unknown") return [];
   // Business (plan, outlets) is for owners and managers; Admin only shows for XTSY POS administrators.
   return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to).filter((to) => to !== "/admin" && ((to !== "/account" && to !== "/dashboard") || role === "owner" || role === "manager" || !role));
 }
@@ -66,7 +68,7 @@ function SyncChip() {
     await getDb().outbox.count();
     await getDb().meta.toArray();
     return getSyncSnapshot();
-  }, [], { pendingOrders: 0, lastSyncAt: null, error: "", pendingStock: 0 });
+  }, [], { pendingOrders: 0, lastSyncAt: null, error: "", notice: "", pendingStock: 0 });
   const pending = snapshot.pendingOrders + snapshot.pendingStock;
   const live = useSyncExternalStore(onLiveStatus, getLiveStatus, () => "off" as const);
 
@@ -117,7 +119,7 @@ function SyncChip() {
     await navigate({ to: "/auth", replace: true });
   };
 
-  const tone = !online || snapshot.error ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
+  const tone = !online || snapshot.error || snapshot.notice ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
   const label = !online ? "Offline" : snapshot.error ? "Sync needs attention" : pending ? `${pending} to sync` : !staff ? "This device only" : live === "reconnecting" ? "Reconnecting…" : live === "live" ? "Live" : "Synced";
 
   return <>
@@ -151,6 +153,7 @@ function SyncChip() {
         </div>
         <p className="text-sm text-muted-foreground">Last synced: {snapshot.lastSyncAt ? format(new Date(snapshot.lastSyncAt), "dd MMM yyyy, h:mm a") : "not yet"}</p>
         {snapshot.error ? <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"><strong className="flex items-center gap-2"><AlertTriangle className="size-4" />Sync needs attention</strong><p className="mt-1 break-words">{snapshot.error}</p></div> : null}
+        {snapshot.notice ? <div role="status" className="rounded-lg border border-gold/50 bg-gold/10 p-3 text-sm"><p className="break-words">{snapshot.notice}</p><Button size="sm" variant="ghost" className="mt-1 -ml-2" onClick={() => void clearSyncNotice()}>Got it</Button></div> : null}
         {!staff ? <p className="text-sm text-muted-foreground">Sign in to share bills, tables and kitchen tickets with your other devices.</p> : null}
         <Button onClick={() => void retry()} disabled={busy || !online || (!!staff && !restaurantId)} className="w-full"><RefreshCw className={`size-4 ${busy ? "animate-spin" : ""}`} />{busy ? "Syncing…" : staff ? "Sync now" : "Sign in to sync"}</Button>
         {isAdmin(staff) ? <section className="border-t border-border pt-4">
@@ -242,7 +245,22 @@ export function isFramedPath(pathname: string): boolean {
 export function PersistentFrame({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [tone, setTone] = useState<Tone>("light");
-  if (!isFramedPath(pathname)) return <>{children}</>;
+  const { user, loading } = useStaff();
+  const navigate = useNavigate();
+  const framed = isFramedPath(pathname);
+  const staffApp = framed || pathname === "/waiter" || pathname === "/insights";
+  // Internal system: every staff screen needs a signed-in person.
+  useEffect(() => {
+    if (staffApp && !loading && !user) void navigate({ to: "/auth", replace: true });
+  }, [staffApp, loading, user, navigate]);
+  if (staffApp && (loading || !user)) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <img src={logo} alt="XTSY POS" width={44} height={44} className="rounded-xl opacity-80" />
+      </div>
+    );
+  }
+  if (!framed) return <>{children}</>;
   return <FrameContext.Provider value={setTone}><Frame tone={tone}>{children}</Frame></FrameContext.Provider>;
 }
 

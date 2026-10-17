@@ -41,12 +41,23 @@ export const fakeServer = {
 
 const offlineError = { message: "Failed to fetch", code: "NETWORK" };
 
+const ADMIN_KINDS = ["settings", "menu", "material", "supplier"];
+function refusedForStaff(row: Omit<ServerRow, "updated_at">): boolean {
+  if (ADMIN_KINDS.includes(row.kind)) return true;
+  if (row.kind !== "order") return false;
+  const before = fakeServer.rows.get(`${row.restaurant_id}|${row.kind}|${row.record_id}`)?.payload as { status?: string; total?: number; lines?: unknown } | undefined;
+  if (!before || (before.status !== "settled" && before.status !== "void")) return false;
+  const after = row.payload as { status?: string; total?: number; lines?: unknown };
+  return row.deleted || after.status !== before.status || after.total !== before.total || JSON.stringify(after.lines) !== JSON.stringify(before.lines);
+}
+
 class Query implements PromiseLike<{ data: ServerRow[] | null; error: { message: string } | null }> {
   private filters: ((r: ServerRow) => boolean)[] = [];
   private max = Infinity;
   eq(col: keyof ServerRow, v: unknown) { this.filters.push((r) => r[col] === v); return this; }
   gte(col: keyof ServerRow, v: string) { this.filters.push((r) => String(r[col]) >= v); return this; }
   gt(col: keyof ServerRow, v: string) { this.filters.push((r) => String(r[col]) > v); return this; }
+  in(col: keyof ServerRow, values: unknown[]) { this.filters.push((r) => values.includes(r[col])); return this; }
   order() { return this; }
   limit(n: number) { this.max = n; return this; }
   then<A, B>(ok?: ((v: { data: ServerRow[] | null; error: { message: string } | null }) => A | PromiseLike<A>) | null, fail?: ((e: unknown) => B | PromiseLike<B>) | null) {
@@ -70,7 +81,9 @@ export const supabase = {
       async upsert(rows: Omit<ServerRow, "updated_at">[]) {
         fakeServer.requests.upsert += 1;
         if (fakeServer.offline) return { error: offlineError };
-        if (rows.some((r) => r.kind === "settings") && fakeServer.staffOnly.has(fakeDevices.current)) {
+        // Like the database rules (0008): staff can't change settings, menu, materials or suppliers,
+        // or alter a settled or cancelled bill. One refused row fails the whole request.
+        if (fakeServer.staffOnly.has(fakeDevices.current) && rows.some((r) => refusedForStaff(r))) {
           return { error: { message: 'new row violates row-level security policy for table "restaurant_records"', code: "42501" } };
         }
         for (const r of rows) {

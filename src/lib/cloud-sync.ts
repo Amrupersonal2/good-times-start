@@ -68,10 +68,56 @@ async function readLocal(kind: RecordKind, recordId: string): Promise<unknown> {
   }
 }
 
-async function upsert(rows: { restaurant_id: string; kind: string; record_id: string; payload: Json; deleted: boolean }[]) {
+type PushRow = { restaurant_id: string; kind: string; record_id: string; payload: Json; deleted: boolean };
+
+async function upsert(rows: PushRow[]) {
   if (!rows.length) return null;
   const { error } = await supabase.from("restaurant_records").upsert(rows, { onConflict: "restaurant_id,kind,record_id" });
   return error;
+}
+
+/** The cloud said no (a role rule), as opposed to "couldn't reach the cloud". */
+export function isRefusal(error: { code?: string; message?: string } | null | undefined): boolean {
+  if (!error) return false;
+  return error.code === "42501" || /row-level security|only the owner or a manager/i.test(error.message ?? "");
+}
+
+/**
+ * Upload a batch. If the cloud refuses some rows (a cashier's device holding a
+ * menu change, a changed settled bill), find them one by one so every allowed
+ * change still goes through. Returns the refused rows; throws on network errors.
+ */
+async function upsertAllowed(rows: PushRow[]): Promise<PushRow[]> {
+  const error = await upsert(rows);
+  if (!error) return [];
+  if (!isRefusal(error)) throw error;
+  const refused: PushRow[] = [];
+  for (const row of rows) {
+    const one = await upsert([row]);
+    if (!one) continue;
+    if (!isRefusal(one)) throw one;
+    refused.push(row);
+  }
+  return refused;
+}
+
+/** Put this device back in line with the cloud for records the cloud refused. */
+async function restoreRefused(restaurantId: string, refused: PushRow[]): Promise<void> {
+  const byKind = new Map<string, string[]>();
+  for (const r of refused) byKind.set(r.kind, [...(byKind.get(r.kind) ?? []), r.record_id]);
+  const rows: RemoteRow[] = [];
+  for (const [kind, ids] of byKind) {
+    const { data, error } = await supabase.from("restaurant_records").select("kind, record_id, payload, deleted, updated_at")
+      .eq("restaurant_id", restaurantId).eq("kind", kind).in("record_id", ids);
+    if (error) throw error;
+    const found = (data ?? []) as RemoteRow[];
+    rows.push(...found);
+    // Refused new records exist only here: remove them.
+    for (const id of ids) if (!found.some((f) => f.record_id === id)) rows.push({ kind, record_id: id, payload: {} as Json, deleted: true, updated_at: new Date(0).toISOString() });
+  }
+  await applyRemote(rows);
+  const db = getDb();
+  await db.meta.put({ key: "syncNotice", value: JSON.stringify({ at: Date.now(), count: refused.length, kinds: [...byKind.keys()] }) });
 }
 
 async function push(restaurantId: string): Promise<void> {
@@ -80,7 +126,7 @@ async function push(restaurantId: string): Promise<void> {
     const entries: OutboxEntry[] = await db.outbox.orderBy("at").limit(PUSH_BATCH).toArray();
     if (!entries.length) return;
 
-    const rows: { restaurant_id: string; kind: string; record_id: string; payload: Json; deleted: boolean }[] = [];
+    const rows: PushRow[] = [];
     for (const entry of entries) {
       const local = await readLocal(entry.kind, entry.recordId);
       if (entry.kind === "settings" && local === undefined) continue;
@@ -93,10 +139,9 @@ async function push(restaurantId: string): Promise<void> {
       });
     }
 
-    const error = await upsert(rows.filter((row) => row.kind !== "settings"));
-    if (error) throw error;
-    // Only owners and managers may change restaurant details; drop a refused change instead of retrying forever.
-    const settingsError = await upsert(rows.filter((row) => row.kind === "settings"));
+    // A refused change is dropped and the cloud's copy restored, never retried forever:
+    // one change this device isn't allowed to make must not hold up every other change.
+    const refused = await upsertAllowed(rows);
 
     await db.transaction("rw", db.outbox, async () => {
       for (const entry of entries) {
@@ -104,7 +149,7 @@ async function push(restaurantId: string): Promise<void> {
         if (current && current.at === entry.at) await db.outbox.delete(entry.key);
       }
     });
-    if (settingsError) throw new Error("Only the owner or a manager can change restaurant details. Your change stays on this device only.");
+    if (refused.length) await restoreRefused(restaurantId, refused);
     if (entries.length < PUSH_BATCH) return;
   }
 }
@@ -394,19 +439,36 @@ export async function applyLocalStockSale(soldLines: Order["lines"], ref?: { ord
 
 export async function getSyncSnapshot() {
   const db = getDb();
-  const [total, pendingOrders, lastSync, error] = await Promise.all([
+  const [total, pendingOrders, lastSync, error, notice] = await Promise.all([
     db.outbox.count(),
     db.outbox.where("kind").equals("order").count(),
     db.meta.get("lastSyncAt"),
     db.meta.get("syncError"),
+    db.meta.get("syncNotice"),
   ]);
   return {
     pendingOrders,
     pendingStock: total - pendingOrders,
     lastSyncAt: typeof lastSync?.value === "number" ? lastSync.value : null,
     error: typeof error?.value === "string" ? error.value : "",
+    notice: describeNotice(notice?.value),
   };
 }
+
+const KIND_WORDS: Record<string, string> = { settings: "restaurant details", menu: "menu", material: "stock items", supplier: "suppliers", order: "settled bills" };
+
+/** Plain words for changes the cloud refused and this device put back. */
+export function describeNotice(value: unknown): string {
+  if (typeof value !== "string") return "";
+  try {
+    const n = JSON.parse(value) as { count?: number; kinds?: string[] };
+    if (!n.count) return "";
+    const what = (n.kinds ?? []).map((k) => KIND_WORDS[k] ?? k).join(", ");
+    return `${n.count} change${n.count === 1 ? "" : "s"} to ${what || "records"} ${n.count === 1 ? "was" : "were"} undone: only the owner or a manager can make ${n.count === 1 ? "it" : "them"}. Everything else synced normally.`;
+  } catch { return ""; }
+}
+
+export async function clearSyncNotice() { await getDb().meta.delete("syncNotice"); }
 
 export async function saveSyncError(error: unknown) {
   const message = error instanceof Error

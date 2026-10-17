@@ -141,16 +141,55 @@ describe("multi-device sync", () => {
     expect(await on("kitchen", () => db.getDb().menu.get("late"))).toBeTruthy();
   });
 
-  it("refuses a cashier's change to restaurant details without holding up their other changes", async () => {
+  it("refuses a cashier's menu and settings changes without holding up their sales, and puts the menu back", async () => {
+    await on("owner", async () => { await db.getDb().menu.put(dish("d1", 100)); await db.markDirty(["menu", "d1"]); });
+    await syncNow("owner");
+    await syncNow("cashier");
+
     server.fakeServer.staffOnly.add("cashier");
     await on("cashier", async () => {
       await db.saveSettings({ name: "Renamed by cashier" });
-      await db.getDb().menu.put(dish("d1", 150));
-      await db.markDirty(["menu", "d1"]);
+      await db.getDb().menu.put(dish("d1", 150)); // price change
+      await db.getDb().menu.put(dish("new-dish", 90)); // new dish
+      await db.markDirty(["menu", "d1"], ["menu", "new-dish"]);
+      await addOrder(order("o-5001", { status: "settled" }));
     });
-    await expect(syncNow("cashier")).rejects.toThrow(/owner or a manager/);
+    await syncNow("cashier"); // no error: the sale goes through
+
     expect(await on("cashier", () => db.getDb().outbox.count())).toBe(0);
-    expect([...server.fakeServer.rows.values()].map((r) => r.kind)).toEqual(["menu"]);
+    const kinds = [...server.fakeServer.rows.values()].map((r) => `${r.kind}:${r.record_id}`).sort();
+    expect(kinds).toEqual(["menu:d1", "order:o-5001"]);
+    expect([...server.fakeServer.rows.values()].find((r) => r.record_id === "d1")?.payload).toMatchObject({ price: 100 });
+    // The cashier's screen matches the cloud again.
+    expect((await on("cashier", () => db.getDb().menu.get("d1")))?.price).toBe(100);
+    expect(await on("cashier", () => db.getDb().menu.get("new-dish"))).toBeUndefined();
+    const notice = await on("cashier", async () => (await db.getDb().meta.get("syncNotice"))?.value);
+    expect(JSON.parse(String(notice))).toMatchObject({ count: 3 });
+    expect(sync.describeNotice(notice)).toMatch(/3 changes to restaurant details, menu were undone/);
+  });
+
+  it("won't let staff rewrite a settled bill, and restores the original on their device", async () => {
+    await on("counter", () => addOrder(order("o-6001", { status: "settled", total: 210 })));
+    await syncNow("counter");
+    server.fakeServer.staffOnly.add("counter");
+    await on("counter", async () => {
+      const d = db.getDb();
+      const o = await d.orders.where("uid").equals("o-6001").first();
+      await d.orders.update(o!.id!, { total: 10 });
+      await db.markDirty(["order", "o-6001"]);
+      await addOrder(order("o-6002", { status: "held" }));
+    });
+    await syncNow("counter");
+    expect([...server.fakeServer.rows.values()].find((r) => r.record_id === "o-6001")?.payload).toMatchObject({ total: 210 });
+    expect([...server.fakeServer.rows.values()].some((r) => r.record_id === "o-6002")).toBe(true);
+    expect((await on("counter", () => db.getDb().orders.where("uid").equals("o-6001").first()))?.total).toBe(210);
+  });
+
+  it("keeps retrying when the cloud can't be reached, rather than dropping changes", async () => {
+    server.fakeServer.offline = true;
+    await on("counter", () => addOrder(order("o-7001")));
+    await expect(syncNow("counter")).rejects.toBeTruthy();
+    expect(await on("counter", () => db.getDb().outbox.count())).toBe(1);
   });
 
   it("won't mix two restaurants' data on one device", async () => {

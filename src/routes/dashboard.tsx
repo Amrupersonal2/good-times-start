@@ -11,6 +11,8 @@ import { accountState, STATUS_LABELS } from "@/lib/saas-logic";
 import { PRESET_LABELS, businessOverview, dashboardRange, liveStatus, salesByDay, type Preset } from "@/lib/dashboard-logic";
 import type { Range } from "@/lib/report-logic";
 import { cn } from "@/lib/utils";
+import { can } from "@/lib/permissions";
+import { useStaff } from "@/lib/auth-context";
 import { PRIVATE_EDITION } from "@/lib/edition";
 
 export const Route = createFileRoute("/dashboard")({
@@ -26,6 +28,10 @@ function DashboardPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const tab = search.tab ?? "overview";
+  const { user } = useStaff();
+  if (!can(user, "dashboard.view")) {
+    return <AppShell><p className="mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">The dashboard is for the owner and managers.</p></AppShell>;
+  }
   return (
     <AppShell>
       <div className="min-h-full">

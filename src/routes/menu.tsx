@@ -20,6 +20,7 @@ import type { GstRate, InventoryItem, Material, MenuItem } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({
@@ -224,7 +225,7 @@ function MenuPage() {
   const inventory = useLiveQuery(() => getDb().inventory.toArray(), [], []);
   const materials = useLiveQuery(async () => (await getDb().materials.toArray()).filter((m) => !m.archived).sort((a, b) => a.name.localeCompare(b.name)), [], []);
   const { user } = useStaff();
-  const canEdit = !user || isAdmin(user);
+  const canEdit = can(user, "menu.edit");
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<MenuItem | "new" | null>(null);
 

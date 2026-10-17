@@ -47,6 +47,29 @@ function writeActive(id: string) {
   try { window.localStorage.setItem(ACTIVE_KEY, id); } catch { /* storage unavailable */ }
 }
 
+/*
+ * The signed-in person and their role are remembered on this device, so the
+ * app opens instantly and keeps enforcing roles when the internet is down.
+ * The cloud copy refreshes it whenever there's a connection.
+ */
+const STAFF_CACHE = "xtsy-pos-staff";
+function readCachedStaff(id: string): SignedInStaff | null {
+  try {
+    const raw = window.localStorage.getItem(STAFF_CACHE);
+    const parsed = raw ? (JSON.parse(raw) as SignedInStaff) : null;
+    return parsed && parsed.id === id ? parsed : null;
+  } catch { return null; }
+}
+function writeCachedStaff(staff: SignedInStaff | null) {
+  try {
+    if (staff) window.localStorage.setItem(STAFF_CACHE, JSON.stringify(staff));
+    else window.localStorage.removeItem(STAFF_CACHE);
+  } catch { /* storage unavailable */ }
+}
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([work, new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))]);
+}
+
 async function resolveStaff(id: string, email: string): Promise<SignedInStaff> {
   // Joining is automatic: any invite sent to this email becomes a membership.
   await supabase.rpc("accept_restaurant_invites");
@@ -54,6 +77,8 @@ async function resolveStaff(id: string, email: string): Promise<SignedInStaff> {
     supabase.from("profiles").select("display_name").eq("id", id).maybeSingle(),
     supabase.from("restaurant_members").select("restaurant_id, role, restaurants(name)").eq("user_id", id),
   ]);
+  // Never mistake "couldn't reach the cloud" for "belongs to no restaurant".
+  if (members.error) throw members.error;
   const memberships: Membership[] = (members.data ?? []).map((row) => ({
     restaurantId: row.restaurant_id,
     restaurantName: row.restaurants?.name ?? "Restaurant",
@@ -85,8 +110,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.auth.getUser();
-    setUser(data.user ? await resolveStaff(data.user.id, data.user.email ?? "") : null);
+    // The session is stored on the device: no network needed to know who's signed in.
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+    if (!session) { setUser(null); setLoading(false); return; }
+    const cached = readCachedStaff(session.user.id);
+    if (cached) { setUser(cached); setLoading(false); }
+    try {
+      const fresh = await withTimeout(resolveStaff(session.user.id, session.user.email ?? ""), 8000);
+      writeCachedStaff(fresh);
+      setUser(fresh);
+    } catch {
+      // Offline or slow: keep the remembered role. A first sign-in on a new device needs the internet once.
+      if (!cached) setUser({ id: session.user.id, email: session.user.email ?? "", displayName: session.user.email?.split("@")[0] ?? "Staff", role: "unknown", restaurantId: null, restaurantName: "", memberships: [] });
+    }
     setLoading(false);
   }, []);
 
@@ -95,12 +132,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!(["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"] as string[]).includes(event)) return;
       if (!session?.user) {
+        writeCachedStaff(null);
         if (active) setUser(null);
         return;
       }
       void resolveStaff(session.user.id, session.user.email ?? "").then((resolved) => {
+        writeCachedStaff(resolved);
         if (active) setUser(resolved);
-      });
+      }).catch(() => { /* offline: keep what we have */ });
     });
     void load().catch(() => { if (active) setLoading(false); });
     return () => {

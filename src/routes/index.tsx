@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { lineFor, sentGroups, shortCode, since } from "@/lib/bill-view-logic";
 import { moveTable } from "@/lib/table-actions";
 import { cn } from "@/lib/utils";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string } => ({
@@ -125,7 +126,7 @@ function PosPage() {
   const sent = useMemo(() => sentGroups(sentKots), [sentKots]);
   const maxDiscount = maxDiscountFor(user?.role ?? "unknown", settings.staffDiscountLimit ?? 10);
   const discountChoices = [0, 5, 10, 15, 20, 25, 30, 50, 100].filter((d) => d <= maxDiscount || d === cart.discountPct);
-  const canCancel = !user || isAdmin(user);
+  const canCancel = can(user, "bill.cancel");
   const guestId = normalisePhone(cart.customer.phone);
   const guest = useLiveQuery(async () => {
     if (!guestId) return null;
@@ -140,7 +141,7 @@ function PosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fill the name once when a known guest is recognised
   }, [guestName]);
   /** Captains take orders and send KOTs; a cashier or manager settles. */
-  const canSettle = user?.role !== "captain";
+  const canSettle = can(user, "bill.settle");
 
   const done = (o: Order | null) => {
     if (!o) return;

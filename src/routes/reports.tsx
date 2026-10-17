@@ -26,6 +26,7 @@ import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -304,9 +305,13 @@ function DayCloseTab() {
 }
 
 function ReportsPage() {
+  const { user } = useStaff();
+  // Sales figures are for the owner and managers; a cashier only closes their counter here.
+  const full = can(user, "reports.view");
   const [preset, setPreset] = useState<Preset>("today");
   const [custom, setCustom] = useState<Range>(() => presetRange("7d"));
-  const [tab, setTab] = useState<Tab>("overview");
+  const [chosenTab, setTab] = useState<Tab>("overview");
+  const tab: Tab = full ? chosenTab : "close";
   const range = preset === "custom" ? custom : presetRange(preset);
   const all = useLiveQuery(() => getDb().orders.where("createdAt").between(range.from, range.to, true, true).toArray(), [range.from, range.to], []);
   const orders = inRange(all, range);
@@ -320,20 +325,20 @@ function ReportsPage() {
   const presets: { v: Preset; l: string }[] = [
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
   ];
-  const tabs: { v: Tab; l: string }[] = [
+  const tabs: { v: Tab; l: string }[] = full ? [
     { v: "overview", l: "Overview" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Close day" },
-  ];
+  ] : [{ v: "close", l: "Close day" }];
 
   return (
     <AppShell>
       <div className="p-4 lg:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Reports</h1>
-            <p className="text-sm text-muted-foreground">Bills from every device in the restaurant that has synced.</p>
+            <h1 className="text-2xl font-bold">{full ? "Reports" : "Close day"}</h1>
+            <p className="text-sm text-muted-foreground">{full ? "Bills from every device in the restaurant that has synced." : "Count the cash drawer and close your counter."}</p>
           </div>
-          <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button>
-          <div className="flex flex-wrap items-center gap-1.5">
+          {full && can(user, "reports.export") ? <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button> : null}
+          <div className={`flex flex-wrap items-center gap-1.5 ${full ? "" : "hidden"}`}>
             {presets.map((p) => (
               <button key={p.v} onClick={() => setPreset(p.v)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${preset === p.v ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{p.l}</button>
             ))}
@@ -347,7 +352,7 @@ function ReportsPage() {
           </div>
         </div>
 
-        <Segmented ariaLabel="Report" className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} />
+        {tabs.length > 1 ? <Segmented ariaLabel="Report" className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} /> : null}
 
         {tab === "overview" ? <Overview orders={orders} range={range} /> : null}
         {tab === "items" ? <Items orders={orders} file={file} /> : null}
@@ -364,7 +369,7 @@ const STATUS_LABEL: Record<Order["status"], string> = { settled: "Settled", held
 
 function BillsList({ orders }: { orders: Order[] }) {
   const { user } = useStaff();
-  const canVoid = !user || isAdmin(user);
+  const canVoid = can(user, "bill.void");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Order | null>(null);
   const [voiding, setVoiding] = useState(false);
