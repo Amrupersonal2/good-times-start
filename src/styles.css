@@ -75,13 +75,14 @@
   --border: #e3e3e8; /* separator */
   --input: #d2d2d7;
   --ring: #0071e3;
-  --sidebar: #f5f5f7;
-  --sidebar-foreground: #1d1d1f;
-  --sidebar-primary: #0071e3;
+  /* Deep slate side menu, as in back-office tools: calm next to the light work area. */
+  --sidebar: #16202c;
+  --sidebar-foreground: #e3e9f0;
+  --sidebar-primary: #4c9aff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e3e3e8;
-  --sidebar-accent-foreground: #1d1d1f;
-  --sidebar-border: #e3e3e8;
+  --sidebar-accent: #233244;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #263649;
 }
 
 /* Dark appearance: kitchen wall screens, the waiter tablet and late-night service. */
@@ -111,13 +112,13 @@
   --border: #38383a;
   --input: #48484a;
   --ring: #0a84ff;
-  --sidebar: #1c1c1e;
-  --sidebar-foreground: #f5f5f7;
-  --sidebar-primary: #0a84ff;
+  --sidebar: #11161e;
+  --sidebar-foreground: #e3e9f0;
+  --sidebar-primary: #4c9aff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2c2c2e;
+  --sidebar-accent: #1f2a38;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #38383a;
+  --sidebar-border: #222c3a;
 }
 
 @layer base {

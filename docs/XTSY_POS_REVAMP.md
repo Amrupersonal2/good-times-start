@@ -145,3 +145,10 @@ and outlets appear once it has.
 - [x] One sync at a time per device across tabs (Web Locks)
 - [x] Sync chip shows Live / Reconnecting…
 - [x] Guests page reads only bills with a guest (indexed) instead of every bill; older pulled bills get the guest index
+
+### Owner dashboard (round 4, part 3)
+- [x] `/dashboard` (owners and managers, first in the menu): Business overview and Live status tabs, in the style of the back-office tools owners know
+- [x] Overview: period presets or custom dates; sales, bills, average bill, purchases; sales by order type with share; daily sales chart (this/last week, last 15 days, this/last month); revenue leakage (cancelled bills, items cancelled after KOT, discounted, complimentary and unpaid bills); discounts and GST; billing vs guest-order sales; payment breakup; plan card
+- [x] Live status: a card per running bill (table or pickup) with guest, dishes and expected total, updating live
+- [x] Dark slate side menu that expands to labels (remembered per device)
+- [x] Logic in `src/lib/dashboard-logic.ts` with tests; nothing shown that the app doesn't record (no expenses or reprint counts yet)

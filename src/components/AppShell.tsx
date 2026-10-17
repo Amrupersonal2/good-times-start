@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, Building2, ShieldCheck } from "lucide-react";
+import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, Building2, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { useAccount, usePlatformAdmin } from "@/lib/use-account";
 import { accountState } from "@/lib/saas-logic";
 
 const NAV = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/", label: "Billing", icon: ClipboardList },
   { to: "/tables", label: "Tables", icon: LayoutGrid },
   { to: "/kitchen", label: "Kitchen", icon: ChefHat },
@@ -45,7 +46,7 @@ const ROLE_SCREENS: Record<string, NavPath[]> = {
 
 export function screensFor(role: string | undefined): readonly NavPath[] {
   // Business (plan, outlets) is for owners and managers; Admin only shows for XTSY POS administrators.
-  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to).filter((to) => to !== "/admin" && (to !== "/account" || role === "owner" || role === "manager"));
+  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to).filter((to) => to !== "/admin" && ((to !== "/account" && to !== "/dashboard") || role === "owner" || role === "manager" || !role));
 }
 
 export { useRestaurantSettings } from "@/lib/use-settings";
@@ -215,7 +216,7 @@ const FrameContext = createContext<((tone: Tone) => void) | null>(null);
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /** Staff screens that share the persistent frame (sidebar, header, orders bell). */
-const FRAMED = ["/", "/tables", "/kitchen", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
+const FRAMED = ["/", "/dashboard", "/tables", "/kitchen", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
 export function isFramedPath(pathname: string): boolean {
   return FRAMED.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`)));
 }
@@ -240,8 +241,14 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
   return <Frame tone={tone}>{children}</Frame>;
 }
 
+const WIDE_KEY = "xtsy-sidebar-wide";
+
 function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // The menu opens with labels or stays a slim icon rail; each device remembers its choice.
+  const [wide, setWide] = useState(false);
+  useEffect(() => { try { setWide(window.localStorage.getItem(WIDE_KEY) === "1"); } catch { /* storage unavailable */ } }, []);
+  const toggleWide = () => setWide((w) => { try { window.localStorage.setItem(WIDE_KEY, w ? "0" : "1"); } catch { /* ignore */ } return !w; });
   const { user } = useStaff();
   const settings = useRestaurantSettings();
   const restaurantName = settings.name || user?.restaurantName || "";
@@ -263,22 +270,30 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
 
   return (
     <div className={`flex min-h-screen bg-background text-foreground ${tone === "dark" ? "dark" : ""}`}>
-      <aside className="sticky top-0 hidden h-screen w-[5.5rem] shrink-0 flex-col items-center border-r border-sidebar-border bg-sidebar/80 py-4 text-sidebar-foreground backdrop-blur-xl lg:flex">
-        <img src={logo} alt="XTSY POS" width={36} height={36} className="rounded-[10px] shadow-sm" />
-        <nav className="no-scrollbar mt-5 flex w-full flex-col gap-0.5 overflow-y-auto px-2" aria-label="Main">
+      <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar py-3 text-sidebar-foreground transition-[width] duration-200 lg:flex ${wide ? "w-60" : "w-[4.75rem]"}`}>
+        <div className={`flex items-center gap-2.5 px-3 ${wide ? "" : "flex-col"}`}>
+          <img src={logo} alt="XTSY POS" width={36} height={36} className="rounded-[10px]" />
+          {wide ? <span className="flex-1 truncate text-[15px] font-semibold tracking-tight">XTSY POS</span> : null}
+          <button type="button" onClick={toggleWide} aria-label={wide ? "Collapse menu" : "Expand menu"} aria-expanded={wide}
+            className="grid size-8 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground">
+            {wide ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
+          </button>
+        </div>
+        <nav className="no-scrollbar mt-4 flex w-full flex-col gap-0.5 overflow-y-auto px-2" aria-label="Main">
           {nav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
-              <Link key={to} to={to} aria-current={active ? "page" : undefined}
-                className={`relative flex flex-col items-center gap-1 rounded-[10px] px-1 py-2 text-[10.5px] font-medium transition-colors ${active ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"}`}>
-                <Icon className="size-[1.35rem]" strokeWidth={active ? 2.2 : 1.8} />
-                {label}
-                {to === "/stock" && lowStock > 0 ? <span className="absolute right-1.5 top-1 min-w-[1.1rem] rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground" aria-label={`${lowStock} running low`}>{lowStock}</span> : null}
+              <Link key={to} to={to} aria-current={active ? "page" : undefined} title={wide ? undefined : label}
+                className={`relative flex items-center rounded-[10px] font-medium transition-colors ${wide ? "gap-3 px-3 py-2.5 text-sm" : "flex-col gap-1 px-1 py-2 text-[10.5px]"} ${active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"}`}>
+                {active ? <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r bg-sidebar-primary" aria-hidden="true" /> : null}
+                <Icon className={wide ? "size-[1.15rem] shrink-0" : "size-[1.3rem]"} strokeWidth={active ? 2.2 : 1.8} />
+                <span className="truncate">{label}</span>
+                {to === "/stock" && lowStock > 0 ? <span className={`min-w-[1.1rem] rounded-full bg-destructive px-1 text-center text-[10px] font-semibold text-destructive-foreground ${wide ? "ml-auto" : "absolute right-1.5 top-1"}`} aria-label={`${lowStock} running low`}>{lowStock}</span> : null}
               </Link>
             );
           })}
         </nav>
-        <div className="mt-auto px-2 pt-2 text-center text-[10px] leading-tight text-sidebar-foreground/40">XTSY POS</div>
+        <div className="mt-auto px-3 pt-2 text-[10px] leading-tight text-sidebar-foreground/40">{wide ? "XTSY POS · works offline" : "XTSY"}</div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
