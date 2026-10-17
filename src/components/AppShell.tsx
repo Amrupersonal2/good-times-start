@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
+import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSyncSnapshot, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
 import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
-import { EMPTY_SETTINGS, getDb, getSettings } from "@/lib/db";
-import { isLow, stockLevels } from "@/lib/stock-logic";
+import { getDb, getMaterialLevels } from "@/lib/db";
+import { useRestaurantSettings } from "@/lib/use-settings";
+import { InstallButton } from "@/components/AppInstall";
+import { isLow } from "@/lib/stock-logic";
 
 const NAV = [
   { to: "/", label: "Billing", icon: ClipboardList },
@@ -22,6 +24,8 @@ const NAV = [
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/insights", label: "Insights", icon: LineChart },
+  { to: "/waiter", label: "Waiter", icon: Tablet },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -30,20 +34,15 @@ type NavPath = (typeof NAV)[number]["to"];
 /** Screens each role works with. Signed-out devices (single-user mode) see everything. */
 const ROLE_SCREENS: Record<string, NavPath[]> = {
   kitchen: ["/kitchen", "/stock", "/settings"],
-  captain: ["/", "/tables", "/kitchen", "/menu", "/settings"],
+  captain: ["/waiter", "/", "/tables", "/kitchen", "/menu", "/settings"],
+  cashier: ["/", "/tables", "/kitchen", "/menu", "/stock", "/customers", "/reports", "/waiter", "/settings"],
 };
 
 export function screensFor(role: string | undefined): readonly NavPath[] {
   return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to);
 }
 
-/** Restaurant details as this device currently knows them (updates live as sync lands). */
-export function useRestaurantSettings() {
-  return useLiveQuery(async () => {
-    await getDb().meta.get("restaurantSettings");
-    return getSettings();
-  }, [], EMPTY_SETTINGS);
-}
+export { useRestaurantSettings } from "@/lib/use-settings";
 
 function SyncChip() {
   const [online, setOnline] = useState(true);
@@ -209,8 +208,7 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
   const restaurantName = settings.name || user?.restaurantName || "";
   const needsRestaurant = !!user && !user.restaurantId && pathname !== "/settings";
   const lowStock = useLiveQuery(async () => {
-    const [materials, entries] = await Promise.all([getDb().materials.toArray(), getDb().stockEntries.toArray()]);
-    const levels = stockLevels(entries);
+    const [materials, levels] = await Promise.all([getDb().materials.toArray(), getMaterialLevels()]);
     return materials.filter((m) => !m.archived && isLow(m, levels.get(m.id) ?? 0)).length;
   }, [], 0);
   const allowed = screensFor(user?.role);
@@ -250,7 +248,7 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
               {restaurantName ? <div className="text-[11px] text-muted-foreground">XTSY POS</div> : null}
             </div>
           </div>
-          <SyncChip />
+          <div className="flex items-center gap-2"><InstallButton /><SyncChip /></div>
         </header>
         {needsDetails && !needsRestaurant ? (
           <Link to="/settings" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
@@ -268,12 +266,12 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground lg:hidden" aria-label="Main">
+      <nav className="no-scrollbar fixed inset-x-0 bottom-0 z-30 flex overflow-x-auto border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground lg:hidden" aria-label="Main">
         {nav.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link key={to} to={to} aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold ${active ? "text-gold" : "text-sidebar-foreground/70"}`}>
+              className={`flex min-h-14 min-w-[4.25rem] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold ${active ? "text-gold" : "text-sidebar-foreground/70"}`}>
               <Icon className="size-5" />
               {label}
             </Link>

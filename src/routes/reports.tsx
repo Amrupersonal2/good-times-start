@@ -4,8 +4,12 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { Download, Printer, Search } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { AppShell } from "@/components/AppShell";
+import { AppShell, useRestaurantSettings } from "@/components/AppShell";
+import { gstr1Workbook } from "@/lib/gstr1";
+import { reportsWorkbook } from "@/lib/report-excel";
+import { downloadXlsx } from "@/lib/xlsx";
 import { Receipt } from "@/components/Receipt";
+import { printBill } from "@/components/PrintHost";
 import { ReasonPrompt } from "@/components/PaymentDialogs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -14,7 +18,7 @@ import { formatINR } from "@/lib/billing";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { voidSettledBill } from "@/lib/bill-actions";
 import {
-  categorySales, dailySales, dayKey, expectedCash, gstByRate, hourlySales, inRange, itemSales, paymentLabel,
+  categorySales, dailySales, untaxedSales, dayKey, expectedCash, gstByRate, hourlySales, inRange, itemSales, paymentLabel,
   presetRange, salesSummary, seriesOf, staffSales, toCsv, type Range,
 } from "@/lib/report-logic";
 import type { DayClose, Order } from "@/lib/types";
@@ -156,7 +160,19 @@ function Gst({ orders, file }: { orders: Order[]; file: string }) {
       o.cgst, o.sgst, o.roundOff, o.total, o.payments.map((p) => `${paymentLabel(p.mode)} ${p.amount}`).join("; "), o.status, o.voidReason ?? "", o.closedBy ?? "",
     ]),
   ]));
-  const exportGst = () => download(`${file}-gst.csv`, toCsv([["GST rate %", "Taxable value", "CGST", "SGST", "Total tax"], ...rows.map((r) => [r.rate, r.taxable, r.cgst, r.sgst, Math.round((r.cgst + r.sgst) * 100) / 100])]));
+  const settings = useRestaurantSettings();
+  const untaxed = untaxedSales(orders);
+  const exportGstr1 = () => {
+    const first = settled[0]?.createdAt ?? Date.now();
+    const last = settled[settled.length - 1]?.createdAt ?? first;
+    const sameMonth = new Date(first).getMonth() === new Date(last).getMonth() && new Date(first).getFullYear() === new Date(last).getFullYear();
+    const period = sameMonth
+      ? new Date(first).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+      : `${new Date(first).toLocaleDateString("en-IN")} to ${new Date(last).toLocaleDateString("en-IN")}`;
+    const { sheets } = gstr1Workbook(orders, settings, period);
+    downloadXlsx(`GSTR-1-${file}`, sheets, { title: `GSTR-1 ${period}` });
+  };
+  const exportGst = download(`${file}-gst.csv`, toCsv([["GST rate %", "Taxable value", "CGST", "SGST", "Total tax"], ...rows.map((r) => [r.rate, r.taxable, r.cgst, r.sgst, Math.round((r.cgst + r.sgst) * 100) / 100])]));
   return (
     <div className="card-elevated p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -164,11 +180,19 @@ function Gst({ orders, file }: { orders: Order[]; file: string }) {
           <h2 className="text-sm font-semibold">GST summary</h2>
           <p className="text-xs text-muted-foreground">{settled.length ? `Bills ${settled[0]?.billNo} to ${settled[settled.length - 1]?.billNo}, across all counters. Check with your accountant before filing.` : "No settled bills in this period."}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" disabled={!settled.length} onClick={exportGstr1}><Download />GSTR-1 (Excel)</Button>
           <Button size="sm" variant="outline" disabled={!rows.length} onClick={exportGst}><Download />GST CSV</Button>
           <Button size="sm" variant="outline" disabled={!orders.length} onClick={exportBills}><Download />All bills CSV</Button>
         </div>
       </div>
+      {untaxed.aggregator || untaxed.other ? (
+        <p className="mb-3 rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
+          Not in this table: {untaxed.aggregator ? `${formatINR(untaxed.aggregator, 0)} through Swiggy/Zomato (GST paid by them)` : ""}
+          {untaxed.aggregator && untaxed.other ? " and " : ""}{untaxed.other ? `${formatINR(untaxed.other, 0)} of bills without GST` : ""}.
+        </p>
+      ) : null}
+      <p className="mb-2 text-xs text-muted-foreground">For GSTR-1, choose This month or a whole month's dates above.</p>
       <table className="w-full text-sm">
         <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-1 font-medium">Rate</th><th className="text-right font-medium">Taxable value</th><th className="text-right font-medium">CGST</th><th className="text-right font-medium">SGST</th></tr></thead>
         <tbody className="divide-y divide-border">
@@ -283,6 +307,12 @@ function ReportsPage() {
   const range = preset === "custom" ? custom : presetRange(preset);
   const all = useLiveQuery(() => getDb().orders.where("createdAt").between(range.from, range.to, true, true).toArray(), [range.from, range.to], []);
   const orders = inRange(all, range);
+  const restaurant = useRestaurantSettings().name;
+  const exportAll = async () => {
+    const db = getDb();
+    const [menu, closes] = await Promise.all([db.menu.toArray(), db.dayCloses.where("day").between(dayKey(range.from), dayKey(range.to), true, true).toArray()]);
+    downloadXlsx(`reports-${file}`, reportsWorkbook(orders, menu, closes, range, restaurant), { title: `${restaurant} reports` });
+  };
   const file = `xtsy-pos-${dayKey(range.from)}${dayKey(range.from) === dayKey(range.to) ? "" : `-to-${dayKey(range.to)}`}`;
   const presets: { v: Preset; l: string }[] = [
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
@@ -299,6 +329,7 @@ function ReportsPage() {
             <h1 className="text-2xl font-bold">Reports</h1>
             <p className="text-sm text-muted-foreground">Bills from every device in the restaurant that has synced.</p>
           </div>
+          <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button>
           <div className="flex flex-wrap items-center gap-1.5">
             {presets.map((p) => (
               <button key={p.v} onClick={() => setPreset(p.v)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${preset === p.v ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{p.l}</button>
@@ -389,7 +420,7 @@ function BillsList({ orders }: { orders: Order[] }) {
             {live.status === "void" && live.voidReason ? <p className="-mt-2 text-sm text-destructive">Void: {live.voidReason}{live.closedBy ? `, by ${live.closedBy}` : ""}</p> : null}
             <Receipt order={live} />
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={() => window.print()}><Printer />Reprint</Button>
+              <Button className="flex-1" onClick={() => void printBill(live)}><Printer />Reprint</Button>
               {canVoid && live.status === "settled" ? <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setVoiding(true)}>Void</Button> : null}
             </div>
           </> : null}

@@ -81,3 +81,20 @@ syncs to Lovable and the live app) only after review in Lovable.
   each other. Sale entries are keyed by bill, so a bill can't deduct twice.
 - Realtime notifications on `restaurant_records` trigger a pull so other devices
   see new KOTs and table changes within seconds.
+
+## Round 2 (October 2026) — `revamp-2`
+
+- [x] TAB Bistro by XTSY menu: 131 dishes, portions, add-ons, 95 ingredients, a recipe for every dish
+- [x] Excel engine (no extra packages); menu import/export; stock, reports, guests and GSTR-1 workbooks
+- [x] GST modes (regular / composition / unregistered), inclusive prices, Swiggy/Zomato u/s 9(5), round-off, SAC
+- [x] Billing settings (service charge, discount limit, loyalty, payment modes, auto-KOT on settle)
+- [x] GST-compliant bill numbers (≤16 characters): `C1/26-27/0001`
+- [x] KOT and bill printing per device (paper, copies, stations, incoming KOTs, auto-print) via one print service
+- [x] Speed: indexed running bills and guests, cached stock levels (local DB v7)
+- [x] Multi-device sync simulation and year-of-data speed budgets (`src/test`)
+- [x] Installable apps: XTSY POS (`/`), XTSY Waiter (`/waiter`, tablet), XTSY Insights (`/insights`, phone)
+
+### Testing notes
+- `src/test/sync-simulation.test.ts` runs the real sync code against in-memory
+  stand-ins (`src/test/fakes`) for IndexedDB and the server.
+- `src/test/performance.test.ts` holds speed budgets for ~60,000 bills.

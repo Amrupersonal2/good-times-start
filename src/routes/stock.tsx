@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Download, Pencil, Plus, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -10,9 +10,11 @@ import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { formatINR } from "@/lib/billing";
 import { newUid } from "@/lib/sync-core";
-import { STOCK_UNITS, countAdjustment, formatQty, isLow, purchaseTotal, stockLevels, stockValue } from "@/lib/stock-logic";
+import { STOCK_UNITS, countAdjustment, formatQty, isLow, purchaseTotal, stockValue } from "@/lib/stock-logic";
 import { deleteSupplier, recordStockEntry, saveMaterial, saveSupplier } from "@/lib/stock-actions";
 import { gstinError } from "@/lib/validation";
+import { downloadXlsx } from "@/lib/xlsx";
+import { dayKey } from "@/lib/report-logic";
 import type { Material, StockEntry, StockUnit, Supplier } from "@/lib/types";
 
 export const Route = createFileRoute("/stock")({
@@ -218,10 +220,53 @@ function SupplierForm({ supplier, onDone }: { supplier: Supplier | null; onDone:
   );
 }
 
+function CountAllForm({ materials, levels, onDone }: { materials: Material[]; levels: Map<string, number>; onDone: () => void }) {
+  const { user } = useStaff();
+  const [counts, setCounts] = useState<Record<string, string>>({});
+  const [q, setQ] = useState("");
+  const filled = materials.filter((m) => (counts[m.id] ?? "").trim() !== "");
+  const shown = q.trim() ? materials.filter((m) => m.name.toLowerCase().includes(q.trim().toLowerCase())) : materials;
+
+  const save = async () => {
+    const items: StockEntry["items"] = [];
+    for (const m of filled) {
+      const value = num(counts[m.id] ?? "");
+      if (value === null || value < 0) { toast.error(`${m.name}: enter 0 or more.`); return; }
+      const delta = countAdjustment(levels.get(m.id) ?? 0, value);
+      if (delta !== 0) items.push({ materialId: m.id, qty: delta });
+    }
+    if (items.length) await recordStockEntry({ type: "count", items, note: `Stock count of ${filled.length} items`, ...(user ? { by: user.displayName } : {}) });
+    toast.success(items.length ? `${items.length} item${items.length === 1 ? "" : "s"} adjusted` : "Stock already matches your count");
+    onDone();
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">Enter what's on the shelf now. Leave an item blank to skip it. Use this for opening stock too.</p>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find an ingredient" className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm" />
+      <ul className="max-h-[52vh] divide-y divide-border overflow-y-auto rounded-lg border border-border">
+        {shown.map((m) => (
+          <li key={m.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+            <span className="min-w-0 flex-1 truncate">{m.name}<span className="block text-xs text-muted-foreground">On the books {formatQty(levels.get(m.id) ?? 0, m.unit)}</span></span>
+            <input aria-label={`Counted ${m.name}`} inputMode="decimal" value={counts[m.id] ?? ""} onChange={(e) => setCounts({ ...counts, [m.id]: e.target.value })}
+              className="w-24 rounded-lg border border-input bg-card px-2 py-1.5 text-right" />
+            <span className="w-10 text-xs text-muted-foreground">{m.unit}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-2">
+        <Button disabled={!filled.length} onClick={() => void save()}>Save count of {filled.length} item{filled.length === 1 ? "" : "s"}</Button>
+        <Button variant="ghost" onClick={onDone}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
 type Sheet =
   | { kind: "material"; material: Material | null }
   | { kind: "count" | "wastage"; material: Material }
   | { kind: "purchase" }
+  | { kind: "count-all" }
   | { kind: "supplier"; supplier: Supplier | null };
 
 function StockPage() {
@@ -229,18 +274,43 @@ function StockPage() {
   const admin = !user || isAdmin(user);
   const materials = useLiveQuery(() => getDb().materials.toArray(), [], []);
   const suppliers = useLiveQuery(() => getDb().suppliers.toArray(), [], []);
-  const entries = useLiveQuery(() => getDb().stockEntries.toArray(), [], []);
+  // Recent movements only; the ledger grows with every bill, so screens never load all of it.
+  const recent = useLiveQuery(() => getDb().stockEntries.orderBy("at").reverse().limit(100).toArray(), [], []);
+  const purchaseEntries = useLiveQuery(async () => (await getDb().stockEntries.where("type").equals("purchase").toArray()).sort((a, b) => b.at - a.at), [], []);
+  const levelRows = useLiveQuery(() => getDb().materialLevels.toArray(), [], []);
   const [tab, setTab] = useState<Tab>("stock");
   const [sheet, setSheet] = useState<Sheet | null>(null);
 
   const active = materials.filter((m) => !m.archived).sort((a, b) => a.name.localeCompare(b.name));
-  const levels = useMemo(() => stockLevels(entries), [entries]);
+  const levels = useMemo(() => new Map(levelRows.map((l) => [l.materialId, l.qty])), [levelRows]);
   const low = active.filter((m) => isLow(m, levels.get(m.id) ?? 0));
-  const purchases = entries.filter((e) => e.type === "purchase").sort((a, b) => b.at - a.at).slice(0, 60);
-  const history = [...entries].sort((a, b) => b.at - a.at).slice(0, 100);
+  const purchases = purchaseEntries.slice(0, 60);
+  const history = recent;
   const nameOf = (id: string) => materials.find((m) => m.id === id)?.name ?? "Removed material";
   const unitOf = (id: string): StockUnit => materials.find((m) => m.id === id)?.unit ?? "pcs";
   const close = () => setSheet(null);
+  const exportStock = async () => {
+    const entries = await getDb().stockEntries.toArray();
+    const supplierName = (id?: string) => suppliers.find((x) => x.id === id)?.name ?? "";
+    const levelRows = active.map((m) => {
+      const level = levels.get(m.id) ?? 0;
+      return [m.name, m.unit, level, m.lowStockLevel, m.costPerUnit ?? null, Math.max(0, level) * (m.costPerUnit ?? 0), level < 0 ? "Below zero — count it" : isLow(m, level) ? "Low" : "OK"];
+    });
+    downloadXlsx(`stock-${dayKey(Date.now())}`, [
+      { name: "Stock", title: "Stock on hand", subtitle: new Date().toLocaleString("en-IN"), totals: true,
+        columns: [{ header: "Ingredient", width: 40 }, { header: "Unit" }, { header: "On hand", format: "qty" }, { header: "Warn at", format: "qty" }, { header: "Cost per unit", format: "inr" }, { header: "Stock value", format: "inr", total: true }, { header: "Status" }],
+        rows: levelRows },
+      { name: "Purchases", title: "Purchases", totals: true,
+        columns: [{ header: "Date", format: "datetime" }, { header: "Supplier", width: 28 }, { header: "Invoice" }, { header: "Ingredient", width: 34 }, { header: "Qty", format: "qty" }, { header: "Unit" }, { header: "Cost per unit", format: "inr" }, { header: "Amount", format: "inr", total: true }],
+        rows: entries.filter((e) => e.type === "purchase").sort((a, b) => b.at - a.at).flatMap((e) => e.items.map((i) => [e.at, supplierName(e.supplierId), e.reference ?? "", nameOf(i.materialId), i.qty, unitOf(i.materialId), i.unitCost ?? null, Math.round(i.qty * (i.unitCost ?? 0) * 100) / 100])) },
+      { name: "Movements", title: "Every stock movement",
+        columns: [{ header: "Date", format: "datetime" }, { header: "Type" }, { header: "Ingredient", width: 34 }, { header: "Change", format: "qty" }, { header: "Unit" }, { header: "Reference" }, { header: "Note", width: 30 }, { header: "By" }],
+        rows: [...entries].sort((a, b) => b.at - a.at).flatMap((e) => e.items.map((i) => [e.at, ENTRY_LABEL[e.type], nameOf(i.materialId), i.qty, unitOf(i.materialId), e.reference ?? "", e.note ?? "", e.by ?? ""])) },
+      { name: "Suppliers", title: "Suppliers",
+        columns: [{ header: "Supplier", width: 30 }, { header: "Phone" }, { header: "GSTIN" }, { header: "Supplies", width: 40 }],
+        rows: suppliers.map((x) => [x.name, x.phone ?? "", x.gstin ?? "", x.note ?? ""]) },
+    ], { title: "Stock" });
+  };
 
   const tabs: { v: Tab; l: string }[] = [
     { v: "stock", l: "Stock" },
@@ -262,6 +332,8 @@ function StockPage() {
           {admin ? (
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setSheet({ kind: "material", material: null })}><Plus />Material</Button>
+              <Button variant="outline" disabled={!active.length} onClick={() => void exportStock()}><Download />Excel</Button>
+              <Button variant="outline" disabled={!active.length} onClick={() => setSheet({ kind: "count-all" })}>Count all</Button>
               <Button disabled={!active.length} onClick={() => setSheet({ kind: "purchase" })}><Plus />Purchase</Button>
             </div>
           ) : null}
@@ -362,6 +434,7 @@ function StockPage() {
           {sheet?.kind === "material" ? <><DialogTitle>{sheet.material ? `Edit ${sheet.material.name}` : "Add material"}</DialogTitle><MaterialForm material={sheet.material} onDone={close} /></> : null}
           {sheet?.kind === "count" || sheet?.kind === "wastage" ? <><DialogTitle>{sheet.kind === "count" ? `Count ${sheet.material.name}` : `${sheet.material.name} wastage`}</DialogTitle>
             <MovementForm material={sheet.material} kind={sheet.kind} onBooks={levels.get(sheet.material.id) ?? 0} onDone={close} /></> : null}
+          {sheet?.kind === "count-all" ? <><DialogTitle>Count stock</DialogTitle><CountAllForm materials={active} levels={levels} onDone={close} /></> : null}
           {sheet?.kind === "purchase" ? <><DialogTitle>Record purchase</DialogTitle><PurchaseForm materials={active} suppliers={suppliers} onDone={close} /></> : null}
           {sheet?.kind === "supplier" ? <><DialogTitle>{sheet.supplier ? `Edit ${sheet.supplier.name}` : "Add supplier"}</DialogTitle><SupplierForm supplier={sheet.supplier} onDone={close} /></> : null}
         </DialogContent>

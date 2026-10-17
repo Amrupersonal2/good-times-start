@@ -3,7 +3,8 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
-import { AppShell } from "@/components/AppShell";
+import { AppShell, useRestaurantSettings } from "@/components/AppShell";
+import { MenuExcel } from "@/components/MenuExcel";
 import { VegMark } from "@/components/VegMark";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,8 @@ import { isAdmin, useStaff } from "@/lib/auth-context";
 import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
 import { newUid } from "@/lib/sync-core";
-import { DEFAULT_STATIONS, GST_RATES, PRICED_ORDER_TYPES, draftFromItem, itemFromDraft, type MenuDraft } from "@/lib/menu-logic";
+import { DEFAULT_STATIONS, GST_RATES, PRICED_ORDER_TYPES, draftFromItem, itemFromDraft, orderCategories, type MenuDraft } from "@/lib/menu-logic";
+import { foodCostShare, recipeCost } from "@/lib/stock-logic";
 import type { GstRate, InventoryItem, Material, MenuItem } from "@/lib/types";
 
 export const Route = createFileRoute("/menu")({
@@ -27,11 +29,6 @@ export const Route = createFileRoute("/menu")({
 });
 
 const inputClass = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm";
-
-function sortCategories(names: string[]) {
-  const used = new Set(names);
-  return [...CATEGORIES.filter((c) => used.has(c)), ...[...used].filter((c) => !CATEGORIES.includes(c)).sort()];
-}
 
 interface StockDraft { tracked: boolean; quantity: string; threshold: string }
 
@@ -231,7 +228,8 @@ function MenuPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<MenuItem | "new" | null>(null);
 
-  const categories = useMemo(() => sortCategories(menu.map((m) => m.category)), [menu]);
+  const settings = useRestaurantSettings();
+  const categories = useMemo(() => orderCategories(menu.map((m) => m.category), settings.categoryOrder, CATEGORIES), [menu, settings.categoryOrder]);
   const stations = useMemo(() => [...new Set([...DEFAULT_STATIONS, ...menu.map((m) => m.station)])], [menu]);
   const shown = q.trim() ? menu.filter((m) => m.name.toLowerCase().includes(q.trim().toLowerCase())) : menu;
   const stockFor = (id: string) => inventory.find((i) => i.menuItemId === id);
@@ -249,7 +247,12 @@ function MenuPage() {
             <h1 className="text-2xl font-bold">Menu</h1>
             <p className="text-sm text-muted-foreground">{menu.length} dishes. Changes reach every device within seconds.</p>
           </div>
-          {canEdit ? <Button onClick={() => setEditing("new")}><Plus />Add dish</Button> : null}
+          {canEdit ? (
+            <div className="flex flex-wrap gap-2">
+              <MenuExcel restaurant={settings.name} menuCount={menu.length} />
+              <Button onClick={() => setEditing("new")}><Plus />Add dish</Button>
+            </div>
+          ) : null}
         </div>
         <div className="relative mb-5 max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -259,7 +262,7 @@ function MenuPage() {
         {menu.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No dishes yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">{canEdit ? "Add your first dish, or load the sample menu from Settings." : "Ask the owner or a manager to add the menu."}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{canEdit ? "Add your first dish, load the TAB Bistro menu, or import an Excel file." : "Ask the owner or a manager to add the menu."}</p>
           </div>
         ) : null}
 
@@ -282,6 +285,13 @@ function MenuPage() {
                           {m.station}, GST {m.gstRate}%
                           {m.variants?.length ? `, ${m.variants.map((v) => v.name).join(" / ")}` : ""}
                           {m.addons?.length ? `, ${m.addons.length} add-on${m.addons.length === 1 ? "" : "s"}` : ""}
+                          {(() => {
+                            const v = m.variants?.[0];
+                            const cost = recipeCost(m, materials, v?.id);
+                            if (!cost) return null;
+                            const share = foodCostShare(cost, v?.price ?? m.price);
+                            return <span className={share > 0.35 ? "font-semibold text-gold-foreground" : ""}>, food cost {Math.round(share * 100)}%</span>;
+                          })()}
                         </div>
                       </div>
                       {stock?.tracked ? (

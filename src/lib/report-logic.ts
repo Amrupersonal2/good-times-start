@@ -69,7 +69,7 @@ export function salesSummary(orders: Order[]): SalesSummary {
     gross: sum((o) => o.subtotal),
     discounts: sum((o) => o.discountAmt),
     serviceCharge: sum((o) => o.serviceCharge ?? 0),
-    taxable: sum((o) => o.subtotal - o.discountAmt + (o.serviceCharge ?? 0)),
+    taxable: sum((o) => (o.taxable ?? o.subtotal - o.discountAmt) + (o.serviceCharge ?? 0)),
     cgst: sum((o) => o.cgst),
     sgst: sum((o) => o.sgst),
     roundOff: sum((o) => o.roundOff),
@@ -85,33 +85,47 @@ export function salesSummary(orders: Order[]): SalesSummary {
 export interface GstRow { rate: number; taxable: number; cgst: number; sgst: number }
 
 /**
- * Taxable value and tax by GST rate, for filing. Each line is valued after
- * the bill's discount; service charge is shown at the bill's effective rate.
+ * Taxable value (before GST, after discount) per GST rate for one bill.
+ * Service charge is shared across the rates in proportion to their value, so
+ * it carries the same tax the bill charged and every row keeps a real rate.
+ * Bills with no GST (composition, unregistered, Swiggy/Zomato under 9(5))
+ * return nothing.
  */
-export function gstByRate(orders: Order[]): GstRow[] {
-  const rows = new Map<number, { taxable: number; tax: number }>();
-  const add = (rate: number, taxable: number) => {
-    const row = rows.get(rate) ?? { taxable: 0, tax: 0 };
-    row.taxable += taxable;
-    row.tax += taxable * rate / 100;
-    rows.set(rate, row);
-  };
-  for (const o of orders.filter((x) => x.status === "settled")) {
-    const factor = 1 - Math.min(Math.max(o.discountPct, 0), 100) / 100;
-    let foodTaxable = 0;
-    let foodTax = 0;
-    for (const l of o.lines) {
-      const value = l.price * l.qty * factor;
-      add(l.gstRate, value);
-      foodTaxable += value;
-      foodTax += value * l.gstRate / 100;
-    }
-    const sc = o.serviceCharge ?? 0;
-    if (sc > 0 && foodTaxable > 0) add(Math.round((foodTax / foodTaxable) * 10000) / 100, sc);
+export function orderRateBuckets(o: Order): Map<number, number> {
+  const out = new Map<number, number>();
+  if (o.status !== "settled" || o.tax?.exempt) return out;
+  const factor = 1 - Math.min(Math.max(o.discountPct, 0), 100) / 100;
+  let food = 0;
+  for (const l of o.lines) {
+    const gross = l.price * l.qty * factor;
+    const value = o.tax?.inclusive ? gross / (1 + l.gstRate / 100) : gross;
+    out.set(l.gstRate, (out.get(l.gstRate) ?? 0) + value);
+    food += value;
   }
+  const sc = o.serviceCharge ?? 0;
+  if (sc > 0 && food > 0) for (const [rate, value] of out) out.set(rate, value + sc * (value / food));
+  return out;
+}
+
+/** Taxable value and tax by GST rate across bills, for filing. */
+export function gstByRate(orders: Order[]): GstRow[] {
+  const rows = new Map<number, number>();
+  for (const o of orders) for (const [rate, value] of orderRateBuckets(o)) rows.set(rate, (rows.get(rate) ?? 0) + value);
   return [...rows]
     .sort(([a], [b]) => a - b)
-    .map(([rate, v]) => ({ rate, taxable: r2(v.taxable), cgst: r2(v.tax / 2), sgst: r2(v.tax / 2) }));
+    .map(([rate, taxable]) => ({ rate, taxable: r2(taxable), cgst: r2((taxable * rate) / 200), sgst: r2((taxable * rate) / 200) }));
+}
+
+/** Sales on which no GST was charged, split by why. */
+export function untaxedSales(orders: Order[]): { aggregator: number; other: number } {
+  let aggregator = 0;
+  let other = 0;
+  for (const o of orders) {
+    if (o.status !== "settled" || !o.tax?.exempt) continue;
+    if (o.orderType === "swiggy" || o.orderType === "zomato") aggregator += o.total;
+    else other += o.total;
+  }
+  return { aggregator: r2(aggregator), other: r2(other) };
 }
 
 export interface ItemRow { name: string; category: string; qty: number; amount: number }
@@ -172,8 +186,15 @@ export function hourlySales(orders: Order[]): { hour: number; net: number }[] {
 }
 
 /** The bill series code inside a bill number: INV/26-27/C1/0007 → C1. */
+/** The device series inside a bill number: "C1/26-27/0007" → C1 (older "INV/26-27/C1/0007" → C1). */
 export function seriesOf(billNo: string): string {
-  return billNo.split("/")[2] ?? "";
+  const parts = billNo.split("/");
+  return (parts[0] === "INV" ? parts[2] : parts[0]) ?? "";
+}
+
+/** The running number at the end of a bill number. */
+export function seqOf(billNo: string): number {
+  return Number(/(\d+)$/.exec(billNo)?.[1] ?? 0);
 }
 
 /** Cash that should be in one counter's drawer: opening float plus cash kept on that counter's bills. */

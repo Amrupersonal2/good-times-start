@@ -44,10 +44,32 @@ export function buildLine(item: MenuItem, orderType: OrderType, variantId?: stri
     name,
     price,
     qty: 1,
-    veg: item.veg,
+    veg: variant?.veg ?? item.veg,
     gstRate: item.gstRate,
     station: item.station,
   };
+}
+
+/** The menu item, portion and add-on ids encoded in a bill line's id ("dish|v:half|a:cheese"). */
+export function parseLineId(itemId: string): { menuItemId: string; variantId?: string; addonIds: string[] } {
+  const [menuItemId = itemId, ...parts] = itemId.split("|");
+  const variant = parts.find((p) => p.startsWith("v:"));
+  return {
+    menuItemId,
+    ...(variant ? { variantId: variant.slice(2) } : {}),
+    addonIds: parts.filter((p) => p.startsWith("a:")).map((p) => p.slice(2)),
+  };
+}
+
+/** True when the dish is only served at certain hours and it's outside them now. */
+export function outsideHours(item: Pick<MenuItem, "hours">, now = new Date()): boolean {
+  if (!item.hours) return false;
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const toMinutes = (hhmm: string) => {
+    const [h = "0", m = "0"] = hhmm.split(":");
+    return Number(h) * 60 + Number(m);
+  };
+  return minutes < toMinutes(item.hours.from) || minutes > toMinutes(item.hours.to);
 }
 
 /** The menu item a bill line draws stock from. */
@@ -61,6 +83,15 @@ export function stockLeft(itemId: string, inventory: InventoryItem[]): number | 
   return stock ? stock.quantity : null;
 }
 
+/** An editable portion or add-on row; veg mark and recipe ride along untouched. */
+export interface OptionDraft {
+  id: string;
+  name: string;
+  price: string;
+  veg?: boolean;
+  recipe?: { materialId: string; qty: number }[];
+}
+
 export interface MenuDraft {
   name: string;
   category: string;
@@ -70,10 +101,13 @@ export interface MenuDraft {
   veg: boolean;
   popular: boolean;
   available: boolean;
-  variants: { id: string; name: string; price: string }[];
-  addons: { id: string; name: string; price: string }[];
+  variants: OptionDraft[];
+  addons: OptionDraft[];
   prices: Partial<Record<OrderType, string>>;
   recipe: { materialId: string; qty: string }[];
+  /** Fields the editor doesn't show, kept as they were. */
+  description?: string;
+  hours?: { from: string; to: string };
 }
 
 export function draftFromItem(item?: MenuItem): MenuDraft {
@@ -86,8 +120,10 @@ export function draftFromItem(item?: MenuItem): MenuDraft {
     veg: item?.veg ?? true,
     popular: item?.popular ?? false,
     available: item?.available ?? true,
-    variants: (item?.variants ?? []).map((v) => ({ id: v.id, name: v.name, price: String(v.price) })),
-    addons: (item?.addons ?? []).map((a) => ({ id: a.id, name: a.name, price: String(a.price) })),
+    variants: (item?.variants ?? []).map((v) => ({ id: v.id, name: v.name, price: String(v.price), ...(v.veg !== undefined ? { veg: v.veg } : {}), ...(v.recipe ? { recipe: v.recipe } : {}) })),
+    addons: (item?.addons ?? []).map((a) => ({ id: a.id, name: a.name, price: String(a.price), ...(a.recipe ? { recipe: a.recipe } : {}) })),
+    ...(item?.description ? { description: item.description } : {}),
+    ...(item?.hours ? { hours: item.hours } : {}),
     prices: Object.fromEntries(Object.entries(item?.prices ?? {}).map(([k, v]) => [k, String(v)])) as Partial<Record<OrderType, string>>,
     recipe: (item?.recipe ?? []).map((r) => ({ materialId: r.materialId, qty: String(r.qty) })),
   };
@@ -110,14 +146,14 @@ export function itemFromDraft(id: string, draft: MenuDraft): { item: MenuItem } 
     if (!v.name.trim() && !v.price.trim()) continue;
     const price = money(v.price);
     if (!v.name.trim() || price === null) { errors.push("Each portion needs a name and a price."); break; }
-    variants.push({ id: v.id, name: v.name.trim(), price });
+    variants.push({ id: v.id, name: v.name.trim(), price, ...(v.veg !== undefined ? { veg: v.veg } : {}), ...(v.recipe?.length ? { recipe: v.recipe } : {}) });
   }
   const addons: MenuOption[] = [];
   for (const a of draft.addons) {
     if (!a.name.trim() && !a.price.trim()) continue;
     const price = money(a.price);
     if (!a.name.trim() || price === null) { errors.push("Each add-on needs a name and a price (0 is fine)."); break; }
-    addons.push({ id: a.id, name: a.name.trim(), price });
+    addons.push({ id: a.id, name: a.name.trim(), price, ...(a.recipe?.length ? { recipe: a.recipe } : {}) });
   }
 
   const base = variants.length ? variants[0]!.price : money(draft.price);
@@ -157,6 +193,16 @@ export function itemFromDraft(id: string, draft: MenuDraft): { item: MenuItem } 
     ...(addons.length ? { addons } : {}),
     ...(Object.keys(prices).length && !variants.length ? { prices } : {}),
     ...(recipe.length ? { recipe } : {}),
+    ...(draft.description ? { description: draft.description } : {}),
+    ...(draft.hours ? { hours: draft.hours } : {}),
   };
   return { item };
+}
+
+/** Sort menu sections: the restaurant's own order first, then any fallback order, then A–Z. */
+export function orderCategories(used: Iterable<string>, preferred: string[] = [], fallback: string[] = []): string[] {
+  const set = new Set(used);
+  const out: string[] = [];
+  for (const c of [...preferred, ...fallback]) if (set.has(c) && !out.includes(c)) out.push(c);
+  return [...out, ...[...set].filter((c) => !out.includes(c)).sort((a, b) => a.localeCompare(b))];
 }

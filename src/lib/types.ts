@@ -12,6 +12,10 @@ export interface MenuOption {
   id: string;
   name: string;
   price: number;
+  /** A portion can differ from its dish, e.g. the Veg version of a pasta. */
+  veg?: boolean;
+  /** Extra ingredients this portion or add-on uses, on top of the dish's own recipe. */
+  recipe?: { materialId: string; qty: number }[];
 }
 
 export interface MenuItem {
@@ -34,6 +38,10 @@ export interface MenuItem {
   prices?: Partial<Record<OrderType, number>>;
   /** Raw materials used per portion; deducted from stock when the bill settles. */
   recipe?: { materialId: string; qty: number }[];
+  /** What comes with the dish, e.g. a breakfast platter's contents. */
+  description?: string;
+  /** Served only between these times (24h "HH:MM"), e.g. breakfast. */
+  hours?: { from: string; to: string };
 }
 
 export interface CartLine {
@@ -74,7 +82,13 @@ export interface Order {
   voidReason?: string;
   serviceChargePct?: number;
   serviceCharge?: number;
-  customer?: { name?: string; phone?: string };
+  /** Value before GST after discount (excludes service charge). */
+  taxable?: number;
+  /** Tax rules this bill was made under. */
+  tax?: { inclusive?: boolean; exempt?: boolean; roundToRupee?: boolean };
+  customer?: { name?: string; phone?: string; gstin?: string };
+  /** Guest's phone as the last 10 digits, kept indexed so their visits load quickly. */
+  customerId?: string;
   /** Who settled or voided the bill, for the staff report. */
   closedBy?: string;
   feedback?: { rating: 1 | 2 | 3 | 4 | 5; comment?: string; at: number };
@@ -146,6 +160,26 @@ export interface RestaurantSettings {
   serviceChargePct?: number;
   /** Highest discount % cashiers and captains can give. */
   staffDiscountLimit?: number;
+  /** GST registration type; regular charges CGST + SGST. */
+  gstMode?: "regular" | "composition" | "unregistered";
+  /** Menu prices already include GST. */
+  pricesIncludeGst?: boolean;
+  /** Swiggy/Zomato pay GST on their orders (section 9(5)); bills for them carry no GST. Default on. */
+  aggregatorGstByOperator?: boolean;
+  /** Round bill totals to the rupee (default on). */
+  roundToRupee?: boolean;
+  /** SAC code for restaurant service, printed on GSTR-1 HSN summary. */
+  sac?: string;
+  /** Send unsent items to the kitchen automatically when a bill is settled. */
+  autoKotOnSettle?: boolean;
+  /** Payment buttons shown when settling. */
+  paymentModes?: PaymentMode[];
+  /** KOT: one ticket per kitchen station (default) or one combined ticket. */
+  kotByStation?: boolean;
+  /** Text printed at the top of every KOT, e.g. "Kitchen copy". */
+  kotHeader?: string;
+  /** Menu sections in the order they appear on the printed menu. */
+  categoryOrder?: string[];
   /** Loyalty: % of each bill earned back as points (1 point = ₹1). 0 turns loyalty off. */
   loyaltyPct?: number;
   updatedAt?: number;

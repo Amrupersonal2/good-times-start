@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { Minus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogTitle } from "@/components/ui/dialog";
-import { computeTotals, formatINR, upiLink } from "@/lib/billing";
+import { computeTotals, formatINR, upiLink, type TaxOptions } from "@/lib/billing";
 import { splitLines } from "@/lib/bill-splitting";
 import { PAYMENT_MODES, paymentSummary, type Payment } from "@/lib/payment-logic";
 import type { CartLine, PaymentMode } from "@/lib/types";
@@ -34,12 +34,13 @@ function paymentRuleError(entries: Payment[], pointsAvailable: number, hasCustom
   return "";
 }
 
-function PaymentRows({ total, entries, setEntries, pointsAvailable, hasCustomer }: {
-  total: number; entries: Payment[]; setEntries: (next: Payment[]) => void; pointsAvailable: number; hasCustomer: boolean;
+function PaymentRows({ total, entries, setEntries, pointsAvailable, hasCustomer, allowedModes }: {
+  total: number; entries: Payment[]; setEntries: (next: Payment[]) => void; pointsAvailable: number; hasCustomer: boolean; allowedModes?: PaymentMode[];
 }) {
   const summary = paymentSummary(entries, total);
   const ruleError = paymentRuleError(entries, pointsAvailable, hasCustomer);
-  const modes = PAYMENT_MODES.filter((m) => m.v !== "points" || pointsAvailable > 0 || entries.some((e) => e.mode === "points"));
+  const modes = PAYMENT_MODES.filter((m) => (!allowedModes || allowedModes.includes(m.v) || entries.some((e) => e.mode === m.v))
+    && (m.v !== "points" || pointsAvailable > 0 || entries.some((e) => e.mode === "points")));
   const update = (index: number, change: Partial<Payment>) => setEntries(entries.map((p, i) => (i === index ? { ...p, ...change } : p)));
   return (
     <div>
@@ -76,11 +77,14 @@ function PaymentRows({ total, entries, setEntries, pointsAvailable, hasCustomer 
  * Settle with several payment modes (cash and UPI, say), or split the bill so
  * some guests pay for their items now and the rest stays on the table.
  */
-export function PaymentPanel({ lines, discountPct, serviceChargePct, canSplitBill, pointsAvailable = 0, hasCustomer = false, onSettle, onSettlePart }: {
+export function PaymentPanel({ lines, discountPct, serviceChargePct, tax = {}, canSplitBill, pointsAvailable = 0, hasCustomer = false, allowedModes, onSettle, onSettlePart }: {
   lines: CartLine[];
   discountPct: number;
   serviceChargePct: number;
+  tax?: TaxOptions;
   canSplitBill: boolean;
+  /** Payment modes this restaurant accepts; all when left out. */
+  allowedModes?: PaymentMode[];
   pointsAvailable?: number;
   hasCustomer?: boolean;
   onSettle: (payments: Payment[]) => void;
@@ -90,9 +94,10 @@ export function PaymentPanel({ lines, discountPct, serviceChargePct, canSplitBil
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const splitTotal = useMemo(() => {
     const { split } = splitLines(lines, quantities);
-    return { count: split.reduce((s, l) => s + l.qty, 0), total: computeTotals(split, discountPct, serviceChargePct).total };
+    return { count: split.reduce((s, l) => s + l.qty, 0), total: computeTotals(split, discountPct, serviceChargePct, tax).total };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tax rules are fixed for an open bill
   }, [discountPct, lines, quantities, serviceChargePct]);
-  const total = tab === "pay" ? computeTotals(lines, discountPct, serviceChargePct).total : splitTotal.total;
+  const total = tab === "pay" ? computeTotals(lines, discountPct, serviceChargePct, tax).total : splitTotal.total;
   const [entries, setEntries] = useState<Payment[]>([{ mode: "cash", amount: total }]);
   useEffect(() => { setEntries([{ mode: "cash", amount: total }]); }, [total]);
   const summary = paymentSummary(entries, total);
@@ -132,7 +137,7 @@ export function PaymentPanel({ lines, discountPct, serviceChargePct, canSplitBil
       <div className="mt-4">
         {tab === "split" && splitTotal.count === 0
           ? <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">Pick items above to see this guest's share.</p>
-          : <PaymentRows total={total} entries={entries} setEntries={setEntries} pointsAvailable={pointsAvailable} hasCustomer={hasCustomer} />}
+          : <PaymentRows total={total} entries={entries} setEntries={setEntries} pointsAvailable={pointsAvailable} hasCustomer={hasCustomer} {...(allowedModes ? { allowedModes } : {})} />}
       </div>
 
       <Button className="mt-4 w-full" disabled={!summary.complete || !!paymentRuleError(entries, pointsAvailable, hasCustomer) || (tab === "split" && splitTotal.count === 0)}

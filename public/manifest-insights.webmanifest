@@ -1,0 +1,42 @@
+{
+  "id": "/insights",
+  "name": "XTSY Insights",
+  "short_name": "XTSY Insights",
+  "description": "Live sales, tables, kitchen and stock for owners, on your phone.",
+  "start_url": "/insights",
+  "scope": "/insights",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "orientation": "portrait",
+  "theme_color": "#0F2420",
+  "background_color": "#0F2420",
+  "lang": "en-IN",
+  "categories": [
+    "business",
+    "food",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/icons/insights-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/insights-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/insights-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -3,9 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Bell, BellOff, ChefHat, Clock, Printer, Undo2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { Receipt } from "@/components/Receipt";
+import { markKotsSeen, printKots } from "@/components/PrintHost";
 import { getDb, markDirty } from "@/lib/db";
-import type { Kot, KotStatus, Order } from "@/lib/types";
+import type { Kot, KotStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/kitchen")({
   head: () => ({
@@ -63,7 +63,6 @@ function KitchenPage() {
   const [station, setStation] = useState("All");
   const [sound, setSound] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const [printing, setPrinting] = useState<Kot | null>(null);
   const audio = useRef<AudioContext | null>(null);
   const seen = useRef<Set<string> | null>(null);
 
@@ -77,12 +76,15 @@ function KitchenPage() {
   const stations = useMemo(() => ["All", ...[...new Set(kots.map((k) => k.station))].sort()], [kots]);
   const visible = kots.filter((k) => k.status !== "served" && (station === "All" || k.station === station));
 
-  // Chime for tickets that arrive while the screen is open (not for the ones already there).
+  // Chime (and print, if this device prints incoming tickets) for tickets that arrive while the screen is open.
   useEffect(() => {
     const ids = new Set(kots.map((k) => k.uid ?? String(k.id)));
     if (seen.current) {
-      const fresh = kots.some((k) => k.status === "new" && !seen.current?.has(k.uid ?? String(k.id)) && (station === "All" || k.station === station));
-      if (fresh && sound && audio.current) chime(audio.current);
+      const fresh = kots.filter((k) => k.status === "new" && !seen.current?.has(k.uid ?? String(k.id)));
+      if (fresh.some((k) => station === "All" || k.station === station) && sound && audio.current) chime(audio.current);
+      if (fresh.length) void printKots(fresh, "incoming");
+    } else {
+      markKotsSeen(kots);
     }
     seen.current = ids;
   }, [kots, sound, station]);
@@ -104,20 +106,6 @@ function KitchenPage() {
     await getDb().kots.update(kot.id, { status });
     if (kot.uid) await markDirty(["kot", kot.uid]);
   };
-
-  useEffect(() => {
-    if (!printing) return;
-    const timer = window.setTimeout(() => window.print(), 200);
-    const clear = () => setPrinting(null);
-    window.addEventListener("afterprint", clear, { once: true });
-    return () => { window.clearTimeout(timer); window.removeEventListener("afterprint", clear); };
-  }, [printing]);
-
-  const printOrder: Order | null = printing ? {
-    billNo: printing.billNo, orderType: printing.orderType ?? "dine-in", tableId: printing.tableId, tableLabel: printing.tableLabel,
-    lines: printing.lines.map((l) => ({ itemId: l.itemId ?? "", name: l.name, price: 0, qty: l.qty, veg: false, gstRate: 0, station: printing.station, ...(l.note ? { note: l.note } : {}) })),
-    subtotal: 0, discountPct: 0, discountAmt: 0, cgst: 0, sgst: 0, roundOff: 0, total: 0, payments: [], status: "held", createdAt: printing.createdAt, synced: true,
-  } : null;
 
   return (
     <AppShell tone="dark">
@@ -180,7 +168,7 @@ function KitchenPage() {
                           {c.s !== "new" && !cancel ? (
                             <button aria-label="Move back" title="Move back" onClick={() => void move(k, c.s === "ready" ? "preparing" : "new")} className="rounded-lg bg-secondary px-3"><Undo2 className="size-4" /></button>
                           ) : null}
-                          <button aria-label="Reprint ticket" title="Reprint ticket" onClick={() => setPrinting(k)} className="rounded-lg bg-secondary px-3"><Printer className="size-4" /></button>
+                          <button aria-label="Reprint ticket" title="Reprint ticket" onClick={() => void printKots([k], "reprint")} className="rounded-lg bg-secondary px-3"><Printer className="size-4" /></button>
                         </div>
                       </article>
                     );
@@ -191,7 +179,6 @@ function KitchenPage() {
           })}
         </div>
       </div>
-      {printing && printOrder ? <div className="fixed left-[-10000px] top-0" aria-hidden="true"><Receipt order={printOrder} mode="kot" kot={printing} /></div> : null}
     </AppShell>
   );
 }

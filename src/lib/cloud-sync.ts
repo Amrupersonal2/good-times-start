@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import { getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
+import { applyEntryToLevels, getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
 import { deductInventory } from "@/lib/inventory";
 import { recordSaleConsumption } from "@/lib/stock-actions";
 import {
@@ -110,7 +110,7 @@ async function push(restaurantId: string): Promise<void> {
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
   // The outbox is read inside the same transaction, so a local edit can't slip in between the check and the write.
-  await db.transaction("rw", [db.outbox, db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses], async () => {
+  await db.transaction("rw", [db.outbox, db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses, db.materialLevels], async () => {
     const pending = new Set((await db.outbox.toCollection().primaryKeys()).map(String));
     for (const row of rows) {
       if (!isKind(row.kind)) continue;
@@ -176,8 +176,15 @@ async function applyRemote(rows: RemoteRow[]): Promise<void> {
           else if (isSupplierPayload(payload)) await db.suppliers.put({ ...payload, id });
           break;
         case "stock_entry":
-          if (row.deleted) await db.stockEntries.delete(id);
-          else if (isStockEntryPayload(payload)) await db.stockEntries.put({ ...payload, id });
+          // Ledger entries also move the cached stock levels; re-applying the same entry is a no-op.
+          if (row.deleted) {
+            await applyEntryToLevels(db, id, null);
+            await db.stockEntries.delete(id);
+          } else if (isStockEntryPayload(payload)) {
+            const entry = { ...payload, id };
+            await applyEntryToLevels(db, id, entry);
+            await db.stockEntries.put(entry);
+          }
           break;
         case "customer":
           if (row.deleted) await db.customers.delete(id);
@@ -321,15 +328,15 @@ export async function applyLocalStockSale(soldLines: Order["lines"], ref?: { ord
 
 export async function getSyncSnapshot() {
   const db = getDb();
-  const [outbox, lastSync, error] = await Promise.all([
-    db.outbox.toArray(),
+  const [total, pendingOrders, lastSync, error] = await Promise.all([
+    db.outbox.count(),
+    db.outbox.where("kind").equals("order").count(),
     db.meta.get("lastSyncAt"),
     db.meta.get("syncError"),
   ]);
-  const pendingOrders = outbox.filter((entry) => entry.kind === "order").length;
   return {
     pendingOrders,
-    pendingStock: outbox.length - pendingOrders,
+    pendingStock: total - pendingOrders,
     lastSyncAt: typeof lastSync?.value === "number" ? lastSync.value : null,
     error: typeof error?.value === "string" ? error.value : "",
   };

@@ -49,3 +49,23 @@ export function customerStats(customer: Pick<Customer, "id" | "pointsAdjustment"
     averageRating: rated.length ? Math.round((rated.reduce((s, o) => s + (o.feedback?.rating ?? 0), 0) / rated.length) * 10) / 10 : null,
   };
 }
+
+/** Set the indexed guest id from the bill's phone number (or clear it). */
+export function withCustomerId<T extends { customer?: { phone?: string } | undefined; customerId?: string }>(order: T): T {
+  const id = normalisePhone(order.customer?.phone);
+  const next = { ...order };
+  if (id) next.customerId = id; else delete next.customerId;
+  return next;
+}
+
+/** Bills grouped by guest id, so every guest's stats come from one pass over the bills. */
+export function ordersByCustomer(orders: Order[]): Map<string, Order[]> {
+  const out = new Map<string, Order[]>();
+  for (const o of orders) {
+    const id = o.customerId ?? normalisePhone(o.customer?.phone);
+    if (!id) continue;
+    const list = out.get(id);
+    if (list) list.push(o); else out.set(id, [o]);
+  }
+  return out;
+}

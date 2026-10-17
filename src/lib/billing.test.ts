@@ -37,6 +37,29 @@ describe("billing", () => {
   it("uses Indian financial year in bill numbers", () => {
     expect(financialYear(new Date(2026, 9, 11))).toBe("26-27");
     expect(financialYear(new Date(2026, 1, 1))).toBe("25-26");
-    expect(billNumber(1, new Date(2026, 1, 1))).toBe("INV/25-26/D1/0001");
+    expect(billNumber(1, new Date(2026, 1, 1))).toBe("D1/25-26/0001");
+    expect(billNumber(12345, new Date(2026, 9, 1), "TAB12").length).toBeLessThanOrEqual(16);
+  });
+  it("works GST out backwards when menu prices include it", () => {
+    const t = computeTotals([line(105, 2, 5)], 0, 0, { inclusive: true });
+    expect(t.taxable).toBe(200);
+    expect(t.cgst).toBe(5);
+    expect(t.total).toBe(210);
+    expect(t.subtotal).toBe(210);
+  });
+  it("charges no GST on exempt bills (composition, or GST paid by Swiggy/Zomato)", () => {
+    const t = computeTotals([line(290, 1, 5)], 10, 0, { exempt: true });
+    expect([t.taxable, t.cgst, t.sgst, t.total]).toEqual([261, 0, 0, 261]);
+  });
+  it("can keep paise instead of rounding to the rupee", () => {
+    const t = computeTotals([line(290, 1, 5)], 0, 0, { roundToRupee: false });
+    expect(t.total).toBe(304.5);
+    expect(t.roundOff).toBe(0);
+  });
+  it("taxes service charge at the bill's rate with inclusive prices too", () => {
+    const t = computeTotals([line(105, 1, 5)], 0, 10, { inclusive: true });
+    expect(t.serviceCharge).toBe(10);
+    expect(t.cgst).toBe(2.75);
+    expect(t.total).toBe(116);
   });
 });

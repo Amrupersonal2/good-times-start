@@ -7,13 +7,15 @@ export function combineOrders(into: Order, from: Order): Order {
   const lines = mergeSentLines(into.lines, from.lines);
   const sent: Record<string, number> = { ...(into.kotSubmittedQty ?? {}) };
   for (const [key, qty] of Object.entries(from.kotSubmittedQty ?? {})) sent[key] = (sent[key] ?? 0) + qty;
-  const totals = computeTotals(lines, into.discountPct);
+  const totals = computeTotals(lines, into.discountPct, into.serviceChargePct ?? 0, into.tax ?? {});
   return {
     ...into,
     lines,
     kotSubmittedQty: sent,
     subtotal: totals.subtotal,
     discountAmt: totals.discountAmt,
+    serviceCharge: totals.serviceCharge,
+    taxable: totals.taxable,
     cgst: totals.cgst,
     sgst: totals.sgst,
     roundOff: totals.roundOff,

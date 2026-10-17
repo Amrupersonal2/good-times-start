@@ -1,4 +1,4 @@
-import { stockItemId } from "./menu-logic";
+import { parseLineId, stockItemId } from "./menu-logic";
 import type { CartLine, Material, MenuItem, StockEntry, StockUnit } from "./types";
 
 export const STOCK_UNITS: { v: StockUnit; l: string }[] = [
@@ -27,8 +27,15 @@ export function consumptionFor(lines: CartLine[], menu: MenuItem[]): { materialI
   const byId = new Map(menu.map((item) => [item.id, item]));
   const used = new Map<string, number>();
   for (const line of lines) {
-    const recipe = byId.get(stockItemId(line))?.recipe ?? [];
-    for (const part of recipe) used.set(part.materialId, r3((used.get(part.materialId) ?? 0) + part.qty * line.qty));
+    const { variantId, addonIds } = parseLineId(line.itemId);
+    const item = byId.get(stockItemId(line));
+    if (!item) continue;
+    const parts = [
+      ...(item.recipe ?? []),
+      ...(item.variants?.find((v) => v.id === variantId)?.recipe ?? []),
+      ...(item.addons ?? []).filter((a) => addonIds.includes(a.id)).flatMap((a) => a.recipe ?? []),
+    ];
+    for (const part of parts) used.set(part.materialId, r3((used.get(part.materialId) ?? 0) + part.qty * line.qty));
   }
   return [...used].filter(([, qty]) => qty > 0).map(([materialId, qty]) => ({ materialId, qty }));
 }
@@ -60,4 +67,20 @@ export function purchaseTotal(items: StockEntry["items"]): number {
 export function formatQty(qty: number, unit: StockUnit): string {
   const value = Number.isInteger(qty) ? String(qty) : String(r3(qty));
   return `${value} ${unit}`;
+}
+
+/** Ingredient cost of one portion of a dish (optionally a specific portion and add-ons), from material costs. */
+export function recipeCost(item: MenuItem, materials: Material[], variantId?: string, addonIds: string[] = []): number {
+  const cost = new Map(materials.map((m) => [m.id, m.costPerUnit ?? 0]));
+  const parts = [
+    ...(item.recipe ?? []),
+    ...(item.variants?.find((v) => v.id === variantId)?.recipe ?? []),
+    ...(item.addons ?? []).filter((a) => addonIds.includes(a.id)).flatMap((a) => a.recipe ?? []),
+  ];
+  return Math.round(parts.reduce((sum, p) => sum + p.qty * (cost.get(p.materialId) ?? 0), 0) * 100) / 100;
+}
+
+/** Food cost as a share of the selling price (0.28 = 28%). */
+export function foodCostShare(cost: number, price: number): number {
+  return price > 0 ? Math.round((cost / price) * 1000) / 1000 : 0;
 }
