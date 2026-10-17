@@ -1,0 +1,74 @@
+{
+  "id": "/",
+  "name": "XTSY POS \u2014 Counter",
+  "short_name": "XTSY POS",
+  "description": "Restaurant billing, KOTs, tables, stock and reports. Works offline.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "orientation": "any",
+  "theme_color": "#17352E",
+  "background_color": "#EEF2F0",
+  "lang": "en-IN",
+  "categories": [
+    "business",
+    "food",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/icons/pos-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pos-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pos-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tables",
+      "url": "/tables",
+      "icons": [
+        {
+          "src": "/icons/pos-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Kitchen",
+      "url": "/kitchen",
+      "icons": [
+        {
+          "src": "/icons/pos-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "url": "/reports",
+      "icons": [
+        {
+          "src": "/icons/pos-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

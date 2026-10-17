@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { LiveSync } from "@/components/LiveSync";
 import { PrintHost } from "@/components/PrintHost";
+import { AppInstall } from "@/components/AppInstall";
 
 function NotFoundComponent() {
   return (
@@ -82,7 +83,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#17352E" },
       { title: "XTSY POS" },
       { name: "description", content: "Restaurant billing, KOTs and live multi-device sync for India — works offline." },
       { name: "author", content: "XTSY" },
@@ -126,6 +126,7 @@ function RootComponent() {
       <AuthProvider>
         <LiveSync />
         <PrintHost />
+        <AppInstall />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </AuthProvider>

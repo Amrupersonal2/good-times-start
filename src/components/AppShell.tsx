@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
+import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
 import { getDb, getMaterialLevels } from "@/lib/db";
 import { useRestaurantSettings } from "@/lib/use-settings";
+import { InstallButton } from "@/components/AppInstall";
 import { isLow } from "@/lib/stock-logic";
 
 const NAV = [
@@ -23,6 +24,8 @@ const NAV = [
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/insights", label: "Insights", icon: LineChart },
+  { to: "/waiter", label: "Waiter", icon: Tablet },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -31,7 +34,8 @@ type NavPath = (typeof NAV)[number]["to"];
 /** Screens each role works with. Signed-out devices (single-user mode) see everything. */
 const ROLE_SCREENS: Record<string, NavPath[]> = {
   kitchen: ["/kitchen", "/stock", "/settings"],
-  captain: ["/", "/tables", "/kitchen", "/menu", "/settings"],
+  captain: ["/waiter", "/", "/tables", "/kitchen", "/menu", "/settings"],
+  cashier: ["/", "/tables", "/kitchen", "/menu", "/stock", "/customers", "/reports", "/waiter", "/settings"],
 };
 
 export function screensFor(role: string | undefined): readonly NavPath[] {
@@ -244,7 +248,7 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
               {restaurantName ? <div className="text-[11px] text-muted-foreground">XTSY POS</div> : null}
             </div>
           </div>
-          <SyncChip />
+          <div className="flex items-center gap-2"><InstallButton /><SyncChip /></div>
         </header>
         {needsDetails && !needsRestaurant ? (
           <Link to="/settings" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
@@ -262,12 +266,12 @@ export function AppShell({ children, tone = "light" }: { children: ReactNode; to
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground lg:hidden" aria-label="Main">
+      <nav className="no-scrollbar fixed inset-x-0 bottom-0 z-30 flex overflow-x-auto border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] text-sidebar-foreground lg:hidden" aria-label="Main">
         {nav.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link key={to} to={to} aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold ${active ? "text-gold" : "text-sidebar-foreground/70"}`}>
+              className={`flex min-h-14 min-w-[4.25rem] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold ${active ? "text-gold" : "text-sidebar-foreground/70"}`}>
               <Icon className="size-5" />
               {label}
             </Link>
