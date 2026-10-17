@@ -20,9 +20,9 @@ export function appForPath(pathname: string): AppKind {
 }
 
 const APP_META: Record<AppKind, { title: string; theme: string }> = {
-  pos: { title: "XTSY POS", theme: "#17352E" },
-  waiter: { title: "XTSY Waiter", theme: "#17352E" },
-  insights: { title: "XTSY Insights", theme: "#0F2420" },
+  pos: { title: "XTSY POS", theme: "#F2F2F7" },
+  waiter: { title: "XTSY Waiter", theme: "#000000" },
+  insights: { title: "XTSY Insights", theme: "#000000" },
 };
 
 /* ---- install prompt (Chrome / Edge / Android) ---- */
@@ -96,7 +96,7 @@ export function AppInstall() {
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-title" content={meta.title} />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="apple-mobile-web-app-status-bar-style" content={app === "pos" ? "default" : "black-translucent"} />
     </>
   );
 }

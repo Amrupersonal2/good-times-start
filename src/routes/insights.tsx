@@ -12,6 +12,7 @@ import { dailySales, dayStart, itemSales, paymentLabel, salesSummary, staffSales
 import { isLow } from "@/lib/stock-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import type { Order } from "@/lib/types";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/insights")({
   head: () => ({
@@ -29,7 +30,7 @@ const PERIODS: { v: Period; l: string }[] = [
 ];
 const ORDER_TYPE: Record<string, string> = { "dine-in": "Dine-in", takeaway: "Takeaway", delivery: "Delivery", swiggy: "Swiggy", zomato: "Zomato" };
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-/** Categorical slots validated for colour-blind separation on the pine surface (dataviz validator, dark mode). */
+/** Categorical slots validated for colour-blind separation on a near-black surface (dataviz validator, dark mode). */
 const SERIES = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181"];
 
 const compact = (n: number) => (n >= 100000 ? `₹${(n / 100000).toFixed(n >= 1000000 ? 1 : 2)}L` : n >= 1000 ? `₹${(n / 1000).toFixed(1)}k` : formatINR(n, 0));
@@ -54,7 +55,7 @@ function Delta({ value, label }: { value: number | null; label: string }) {
   );
 }
 
-/** Running total through the day: this period (saffron) against the comparison (muted). Touch or hover to read values. */
+/** Running total through the day: this period (accent) against the comparison (muted). Touch or hover to read values. */
 function DayLine({ current, previous, upToHour }: { current: number[]; previous: number[]; upToHour: number }) {
   const [hover, setHover] = useState<number | null>(null);
   const W = 320, H = 120, PAD = 6;
@@ -206,12 +207,7 @@ function InsightsApp() {
 
   return (
     <Shell name={settings.name} lastSync={data.lastSync}>
-      <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1" role="tablist" aria-label="Period">
-        {PERIODS.map((x) => (
-          <button key={x.v} role="tab" aria-selected={period === x.v} onClick={() => setPeriod(x.v)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${period === x.v ? "bg-primary text-primary-foreground" : "bg-card text-foreground"}`}>{x.l}</button>
-        ))}
-      </div>
+      <Segmented ariaLabel="Period" stretch value={period} onChange={setPeriod} options={PERIODS.map((x) => ({ value: x.v, label: x.l }))} />
 
       <section className="pt-2">
         <p className="text-sm text-muted-foreground">Net sales{period === "today" ? " so far today" : ""}</p>

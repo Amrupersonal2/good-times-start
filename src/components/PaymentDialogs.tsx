@@ -7,6 +7,8 @@ import { computeTotals, formatINR, upiLink, type TaxOptions } from "@/lib/billin
 import { splitLines } from "@/lib/bill-splitting";
 import { PAYMENT_MODES, paymentSummary, type Payment } from "@/lib/payment-logic";
 import type { CartLine, PaymentMode } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
+import { Segmented } from "@/components/Segmented";
 
 /** Shows a UPI QR for the exact amount so the guest can pay from their phone. */
 export function UpiPay({ vpa, payee, amount, billNo, onPaid }: { vpa: string; payee: string; amount: number; billNo: string; onPaid: () => void }) {
@@ -47,9 +49,8 @@ function PaymentRows({ total, entries, setEntries, pointsAvailable, hasCustomer,
       <div className="space-y-2">
         {entries.map((p, index) => (
           <div key={index} className="flex gap-2">
-            <select aria-label="Payment mode" value={p.mode} onChange={(e) => update(index, { mode: e.target.value as PaymentMode })} className="rounded-lg border border-input bg-card px-2 py-2 text-sm">
-              {modes.map((m) => <option key={m.v} value={m.v}>{m.v === "points" ? `${m.l} (${pointsAvailable})` : m.l}</option>)}
-            </select>
+            <Dropdown ariaLabel="Payment mode" className="w-36 shrink-0" value={p.mode} onChange={(mode) => update(index, { mode })}
+              options={modes.map((m) => ({ value: m.v, label: m.l, ...(m.v === "points" ? { hint: `${pointsAvailable} pts` } : {}) }))} />
             <input aria-label="Amount" inputMode="decimal" value={Number.isFinite(p.amount) && p.amount !== 0 ? String(p.amount) : ""}
               onChange={(e) => update(index, { amount: Number(e.target.value) || 0 })} placeholder="0"
               className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2 text-right text-sm" />
@@ -106,12 +107,8 @@ export function PaymentPanel({ lines, discountPct, serviceChargePct, tax = {}, c
     <div>
       <DialogTitle>Take payment</DialogTitle>
       {canSplitBill ? (
-        <div className="mt-3 grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1 text-sm font-semibold" role="tablist">
-          {([["pay", "Whole bill"], ["split", "Split the bill"]] as const).map(([v, l]) => (
-            <button key={v} type="button" role="tab" aria-selected={tab === v} onClick={() => setTab(v)}
-              className={`rounded-md py-2 ${tab === v ? "bg-card shadow-sm" : "text-muted-foreground"}`}>{l}</button>
-          ))}
-        </div>
+        <Segmented ariaLabel="Payment" stretch className="mt-3" value={tab} onChange={setTab}
+          options={[{ value: "pay" as const, label: "Whole bill" }, { value: "split" as const, label: "Split the bill" }]} />
       ) : null}
 
       {tab === "split" ? (

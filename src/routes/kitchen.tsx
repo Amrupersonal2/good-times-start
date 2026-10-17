@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { markKotsSeen, printKots } from "@/components/PrintHost";
 import { getDb, markDirty } from "@/lib/db";
 import type { Kot, KotStatus } from "@/lib/types";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/kitchen")({
   head: () => ({
@@ -113,12 +114,7 @@ function KitchenPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold">Kitchen</h1>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="no-scrollbar flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Station">
-              {stations.map((s) => (
-                <button key={s} role="tab" aria-selected={station === s} onClick={() => chooseStation(s)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${station === s ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{s}</button>
-              ))}
-            </div>
+            <Segmented ariaLabel="Station" value={station} onChange={chooseStation} options={stations.map((s) => ({ value: s, label: s }))} />
             <button onClick={toggleSound} className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-sm font-semibold" aria-pressed={sound}>
               {sound ? <Bell className="size-4" /> : <BellOff className="size-4" />}{sound ? "Sound on" : "Turn on sound"}
             </button>

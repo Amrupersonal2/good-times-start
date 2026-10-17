@@ -120,10 +120,10 @@ export function OrderingSettings() {
       <section className="grid gap-4 lg:grid-cols-[16rem_1fr]">
         <div>
           <h2 className="text-base font-bold">Guest ordering</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Guests order from their phone. New orders ring on every counter; accepting one sends the KOT and opens the bill.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Guests order from their phone. Accepting an order sends the KOT and opens the bill.</p>
         </div>
         <div className="space-y-3">
-          <Row title="QR ordering at tables" hint="Each table's QR code opens the menu for that table. Orders add to the table's running bill.">
+          <Row title="QR ordering at tables" hint="Each table's QR code opens its menu. Orders join the table's bill.">
             <Switch checked={!!form.table} disabled={!canEdit || !qrAllowed} onCheckedChange={(v) => set({ table: v })} className="mt-0.5" />
           </Row>
           <Row title="Online ordering for pickup" hint="Share the link on WhatsApp, Instagram and Google. Guests order ahead and collect.">

@@ -17,6 +17,7 @@ import { newUid } from "@/lib/sync-core";
 import { DEFAULT_STATIONS, GST_RATES, PRICED_ORDER_TYPES, draftFromItem, itemFromDraft, orderCategories, type MenuDraft } from "@/lib/menu-logic";
 import { foodCostShare, recipeCost } from "@/lib/stock-logic";
 import type { GstRate, InventoryItem, Material, MenuItem } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({
@@ -129,9 +130,7 @@ function ItemEditor({ item, stock, categories, stations, materials, onClose }: {
           <input inputMode="decimal" disabled={draft.variants.length > 0} value={draft.variants.length ? "" : draft.price} onChange={(e) => set("price", e.target.value)} placeholder={draft.variants.length ? "Set by portions" : "0"} className={`${inputClass} disabled:bg-secondary`} />
         </label>
         <label className="block text-sm font-medium">GST
-          <select value={draft.gstRate} onChange={(e) => set("gstRate", Number(e.target.value) as GstRate)} className={inputClass}>
-            {GST_RATES.map((r) => <option key={r} value={r}>{r}%</option>)}
-          </select>
+          <Dropdown<GstRate> ariaLabel="GST rate" className="mt-1" value={draft.gstRate} onChange={(rate) => set("gstRate", rate)} options={GST_RATES.map((r) => ({ value: r, label: `${r}%` }))} />
         </label>
       </div>
       <datalist id="menu-categories">{categories.map((c) => <option key={c} value={c} />)}</datalist>
@@ -179,10 +178,8 @@ function ItemEditor({ item, stock, categories, stations, materials, onClose }: {
               const update = (change: Partial<typeof row>) => set("recipe", draft.recipe.map((r, i) => (i === index ? { ...r, ...change } : r)));
               return (
                 <div key={index} className="flex gap-2">
-                  <select aria-label="Ingredient" value={row.materialId} onChange={(e) => update({ materialId: e.target.value })} className="min-w-0 flex-1 rounded-lg border border-input bg-card px-2 py-2 text-sm">
-                    <option value="">Choose ingredient</option>
-                    {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
+                  <Dropdown ariaLabel="Ingredient" className="min-w-0 flex-1" value={row.materialId} onChange={(materialId) => update({ materialId })} placeholder="Choose ingredient" searchable
+                    options={materials.map((m) => ({ value: m.id, label: m.name, hint: m.unit }))} />
                   <input aria-label="Amount per portion" inputMode="decimal" value={row.qty} onChange={(e) => update({ qty: e.target.value })} placeholder={unit || "Amount"} className="w-24 rounded-lg border border-input bg-card px-2 py-2 text-right text-sm" />
                   <span className="w-10 self-center text-xs text-muted-foreground">{unit}</span>
                   <Button type="button" size="icon" variant="ghost" aria-label="Remove ingredient" onClick={() => set("recipe", draft.recipe.filter((_, i) => i !== index))}><X /></Button>

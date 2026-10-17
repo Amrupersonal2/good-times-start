@@ -12,6 +12,7 @@ import { FEATURE_LABELS, STATUS_LABELS, accountState, canAddOutlet, type PlanFea
 import { createOutlet, outletSales, prepareOutletSwitch, pushMenu, type OutletDay } from "@/lib/outlet-actions";
 import { formatINR } from "@/lib/billing";
 import { gstinError, emailError } from "@/lib/validation";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "Business — XTSY POS" }, { name: "description", content: "Your plan, outlets and sales across outlets." }] }),
@@ -80,7 +81,7 @@ function PlanCard({ view }: { view: AccountView }) {
           return <li key={f} className={`flex items-center gap-2 text-sm ${on ? "" : "text-muted-foreground line-through"}`}>{on ? <Check className="size-4 text-success" /> : <X className="size-4" />}{FEATURE_LABELS[f]}</li>;
         })}
       </ul>
-      {!state.live ? <p className="mt-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">Billing, KOTs and reports keep working. Guest ordering and adding outlets are paused until the plan is renewed.</p> : null}
+      {!state.live ? <p className="mt-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">Billing keeps working. Guest ordering and new outlets pause until you renew.</p> : null}
       <div className="mt-5 grid gap-2 sm:grid-cols-3">
         {paid.map((p) => {
           const current = p.id === plan?.id;
@@ -137,7 +138,7 @@ function Outlets({ view }: { view: AccountView }) {
   };
 
   return (
-    <Card title="Outlets" description="Each outlet has its own menu prices, tables, stock and bills. Staff can belong to several."
+    <Card title="Outlets" description="Each outlet keeps its own prices, tables, stock and bills."
       action={owner && view.account ? <Button size="sm" variant="outline" disabled={!roomForMore} onClick={() => setAdding(true)} title={roomForMore ? undefined : "Upgrade your plan to add outlets"}><Plus />Add outlet</Button> : undefined}>
       <ul className="divide-y divide-border rounded-xl border border-border">
         {view.outlets.map((o) => (
@@ -160,7 +161,7 @@ function Outlets({ view }: { view: AccountView }) {
           </div>
           <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={copy} onChange={(e) => setCopy(e.target.checked)} />
             <span>Start with {view.outlet.name}'s menu, stock items, suppliers and bill details<span className="block text-xs text-muted-foreground">Tables, bills and stock levels start empty.</span></span></label>
-          <p className="text-xs text-muted-foreground">Give each new outlet's devices their own bill series code (Settings → This device), e.g. P1, P2, so no two outlets print the same bill number under one GSTIN.</p>
+          <p className="text-xs text-muted-foreground">Give the new outlet's counters their own bill codes (e.g. P1, P2) in Settings → This device.</p>
           <div className="flex gap-2"><Button type="submit" disabled={busy || !name.trim()}>{busy ? "Adding…" : "Add outlet"}</Button><Button type="button" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button></div>
         </form>
       ) : null}
@@ -236,7 +237,7 @@ function OutletSales({ view }: { view: AccountView }) {
 
   return (
     <Card title={outlets.length > 1 ? "All outlets" : "Sales"} description={`Settled bills from the cloud, ${outlets.length} outlet${outlets.length === 1 ? "" : "s"}. Bills still on a device appear once it syncs.`}
-      action={<div className="flex gap-1 rounded-lg bg-secondary p-1">{RANGES.map((r) => <button key={r.v} onClick={() => setDays(r.v)} className={`rounded-md px-3 py-1 text-sm font-semibold ${days === r.v ? "bg-card shadow-sm" : "text-muted-foreground"}`}>{r.l}</button>)}</div>}>
+      action={<Segmented<number> ariaLabel="Period" size="sm" value={days} onChange={setDays} options={RANGES.map((r) => ({ value: r.v, label: r.l }))} />}>
       {sales.isError ? <p className="text-sm text-destructive">Couldn't load sales. Check the internet connection.</p> : null}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[["Net sales", formatINR(net, 0)], ["Bills", bills.toLocaleString("en-IN")], ["Average bill", formatINR(bills ? net / bills : 0, 0)], ["Ordered by guests", net ? `${Math.round((guest / net) * 100)}%` : "0%"]].map(([l, v]) => (
@@ -302,7 +303,7 @@ function BillingDetails({ view }: { view: AccountView }) {
     if (error) toast.error(error.message); else { toast.success("Billing details saved"); void queryClient.invalidateQueries({ queryKey: ["account"] }); }
   };
   return (
-    <Card title="Subscription billing details" description="Who XTSY POS invoices for your plan. Your restaurant's own GST details for guest bills are in Settings.">
+    <Card title="Subscription billing details" description="Who we invoice for your plan. Guest-bill GST details are in Settings.">
       <form className="grid gap-3 sm:grid-cols-2" onSubmit={(e) => void save(e)}>
         <label className="block text-sm font-medium">Business name<input required maxLength={160} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></label>
         <label className="block text-sm font-medium">GSTIN for invoices<input maxLength={15} value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })} className={`${inputClass} uppercase`} />{errors.gstin ? <span className="mt-1 block text-xs text-destructive">{errors.gstin}</span> : null}</label>

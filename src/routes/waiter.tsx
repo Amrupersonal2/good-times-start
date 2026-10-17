@@ -116,7 +116,7 @@ function WaiterApp() {
         {tableId ? <OrderPad key={tableId} tableId={tableId} /> : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
             <p className="text-2xl font-extrabold">Pick a table</p>
-            <p className="max-w-sm text-sm text-muted-foreground">Saffron tables have guests. Light tables have asked for the bill. Orders reach the kitchen the moment you send them.</p>
+            <p className="max-w-sm text-sm text-muted-foreground">Blue tables have guests. White tables have asked for the bill.</p>
           </div>
         )}
       </div>

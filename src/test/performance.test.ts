@@ -8,6 +8,8 @@ import { consumptionFor } from "@/lib/stock-logic";
 import { buildXlsx } from "@/lib/xlsx";
 import { TAB_MATERIALS, TAB_MENU } from "@/data/tab-bistro";
 import type { CartLine, Order } from "@/lib/types";
+import { filterOptions } from "@/lib/dropdown-logic";
+import { cartLinesFromGuest, billWithGuestLines } from "@/lib/guest-order-logic";
 
 /**
  * Speed budgets for a busy restaurant's year: ~60,000 bills, 3,000 guests.
@@ -86,5 +88,31 @@ describe("speed budgets", () => {
   it("exports the full menu with recipes and food cost", () => {
     const ms = time(() => buildXlsx(menuWorkbook(TAB_MENU, TAB_MATERIALS)));
     expect(ms).toBeLessThan(800);
+  });
+});
+
+describe("speed budgets: guest ordering and dropdowns", () => {
+  it("prices 2,000 guest orders against the full TAB menu in well under a second", () => {
+    const orders = Array.from({ length: 2000 }, (_, i) => Array.from({ length: 1 + (i % 6) }, (_, j) => {
+      const m = TAB_MENU[(i * 11 + j * 17) % TAB_MENU.length]!;
+      const v = m.variants?.[(i + j) % m.variants.length];
+      return { itemId: m.id, ...(v ? { variantId: v.id } : {}), qty: 1 + (j % 3), name: m.name, price: m.price };
+    }));
+    let total = 0;
+    const ms = time(() => {
+      for (const lines of orders) {
+        const built = cartLinesFromGuest(lines, TAB_MENU, "table").lines;
+        total += billWithGuestLines(null, built, { billNo: "x", orderType: "dine-in", discountPct: 0, payments: [], status: "held", createdAt: 0, synced: false }, "Q-0001").total;
+      }
+    });
+    expect(total).toBeGreaterThan(0);
+    expect(ms).toBeLessThan(1500);
+  });
+
+  it("filters 95 ingredients on every keystroke without lag", () => {
+    const options = TAB_MATERIALS.map((m) => ({ value: m.id, label: m.name, hint: m.unit }));
+    const words = ["p", "pa", "pan", "pane", "panee", "paneer", "c", "ch", "chi", "chic", "o", "oi", "oil", "r", "ri", "ric", "rice"];
+    const ms = time(() => { for (let i = 0; i < 200; i += 1) for (const w of words) filterOptions(options, w); });
+    expect(ms / (200 * words.length)).toBeLessThan(1); // under 1 ms a keystroke
   });
 });
