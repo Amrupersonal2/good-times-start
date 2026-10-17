@@ -13,9 +13,10 @@ import { createOutlet, outletSales, prepareOutletSwitch, pushMenu, type OutletDa
 import { formatINR } from "@/lib/billing";
 import { gstinError, emailError } from "@/lib/validation";
 import { Segmented } from "@/components/Segmented";
+import { PRIVATE_EDITION } from "@/lib/edition";
 
 export const Route = createFileRoute("/account")({
-  head: () => ({ meta: [{ title: "Business — XTSY POS" }, { name: "description", content: "Your plan, outlets and sales across outlets." }] }),
+  head: () => ({ meta: [{ title: "Outlets — XTSY POS" }, { name: "description", content: "Your outlets and sales across outlets." }] }),
   component: AccountPage,
 });
 
@@ -42,8 +43,8 @@ function AccountPage() {
     <AppShell>
       <div className="mx-auto max-w-6xl space-y-5 p-4 lg:p-8">
         <div>
-          <h1 className="text-2xl font-bold">Business</h1>
-          <p className="text-sm text-muted-foreground">Your XTSY POS plan, your outlets and how they're doing together.</p>
+          <h1 className="text-2xl font-bold">{PRIVATE_EDITION ? "Outlets" : "Business"}</h1>
+          <p className="text-sm text-muted-foreground">{PRIVATE_EDITION ? "Your outlets and how they're doing together." : "Your XTSY POS plan, your outlets and how they're doing together."}</p>
         </div>
         {query.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p>
           : !view ? <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">This page needs an internet connection and a signed-in owner or manager.</p>
@@ -51,10 +52,10 @@ function AccountPage() {
             <OutletSales view={view} />
             <div className="grid gap-5 lg:grid-cols-2">
               <Outlets view={view} />
-              <PlanCard view={view} />
+              {PRIVATE_EDITION ? null : <PlanCard view={view} />}
             </div>
             <PushMenu view={view} />
-            <BillingDetails view={view} />
+            {PRIVATE_EDITION ? null : <BillingDetails view={view} />}
           </>}
       </div>
     </AppShell>
@@ -139,7 +140,7 @@ function Outlets({ view }: { view: AccountView }) {
 
   return (
     <Card title="Outlets" description="Each outlet keeps its own prices, tables, stock and bills."
-      action={owner && view.account ? <Button size="sm" variant="outline" disabled={!roomForMore} onClick={() => setAdding(true)} title={roomForMore ? undefined : "Upgrade your plan to add outlets"}><Plus />Add outlet</Button> : undefined}>
+      action={owner && view.account ? <Button size="sm" variant="outline" disabled={!roomForMore} onClick={() => setAdding(true)} title={roomForMore ? undefined : PRIVATE_EDITION ? "Outlet limit reached" : "Upgrade your plan to add outlets"}><Plus />Add outlet</Button> : undefined}>
       <ul className="divide-y divide-border rounded-xl border border-border">
         {view.outlets.map((o) => (
           <li key={o.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
@@ -152,7 +153,7 @@ function Outlets({ view }: { view: AccountView }) {
           </li>
         ))}
       </ul>
-      {!roomForMore && owner ? <p className="mt-2 text-xs text-muted-foreground">Your plan has room for {view.plan?.max_outlets ?? 1} outlet{(view.plan?.max_outlets ?? 1) === 1 ? "" : "s"}. The Chain plan runs up to 5.</p> : null}
+      {!roomForMore && owner && !PRIVATE_EDITION ? <p className="mt-2 text-xs text-muted-foreground">Your plan has room for {view.plan?.max_outlets ?? 1} outlet{(view.plan?.max_outlets ?? 1) === 1 ? "" : "s"}. The Chain plan runs up to 5.</p> : null}
       {adding ? (
         <form className="mt-4 space-y-3 rounded-xl bg-secondary/60 p-4" onSubmit={(e) => void add(e)}>
           <div className="grid gap-3 sm:grid-cols-2">

@@ -7,7 +7,7 @@ import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { MenuExcel } from "@/components/MenuExcel";
 import { VegMark } from "@/components/VegMark";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getDb, markDirty } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
@@ -18,6 +18,8 @@ import { DEFAULT_STATIONS, GST_RATES, PRICED_ORDER_TYPES, draftFromItem, itemFro
 import { foodCostShare, recipeCost } from "@/lib/stock-logic";
 import type { GstRate, InventoryItem, Material, MenuItem } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({
@@ -106,7 +108,7 @@ function ItemEditor({ item, stock, categories, stations, materials, onClose }: {
   };
 
   const remove = async () => {
-    if (!item || !window.confirm(`Delete ${item.name} from the menu? Past bills keep it.`)) return;
+    if (!item) return;
     await getDb().menu.delete(item.id);
     await markDirty(["menu", item.id]);
     toast.success(`${item.name} deleted`);
@@ -210,7 +212,8 @@ function ItemEditor({ item, stock, categories, stations, materials, onClose }: {
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit">{item ? "Save dish" : "Add dish"}</Button>
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-        {item ? <Button type="button" variant="ghost" className="ml-auto text-destructive hover:text-destructive" onClick={() => void remove()}><Trash2 />Delete</Button> : null}
+        {item ? <ConfirmButton id={`delete-dish-${item.id}`} className={cn(buttonVariants({ variant: "ghost" }), "ml-auto text-destructive hover:text-destructive")} armedClassName="!bg-destructive !text-destructive-foreground"
+          onConfirm={remove} confirm={<><Trash2 />Tap again to delete</>}><Trash2 />Delete</ConfirmButton> : null}
       </div>
     </form>
   );

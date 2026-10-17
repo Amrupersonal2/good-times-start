@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { Download, Pencil, Plus, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
@@ -18,6 +18,8 @@ import { dayKey } from "@/lib/report-logic";
 import type { Material, StockEntry, StockUnit, Supplier } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/stock")({
   head: () => ({
@@ -115,7 +117,7 @@ function MovementForm({ material, kind, onBooks, onDone }: { material: Material;
       </label>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       <div className="flex gap-2">
-        <Button type="submit">{kind === "count" ? "Save count" : "Record wastage"}</Button>
+        <ConfirmButton id={`stock-${kind}`} submit className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again to save">{kind === "count" ? "Save count" : "Record wastage"}</ConfirmButton>
         <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
       </div>
     </form>
@@ -173,7 +175,7 @@ function PurchaseForm({ materials, suppliers, onDone }: { materials: Material[];
       <p className="text-right text-sm font-semibold">Total {formatINR(total)}</p>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       <div className="flex gap-2">
-        <Button type="submit" disabled={!valid.length}>Record purchase</Button>
+        <ConfirmButton id="stock-purchase" submit disabled={!valid.length} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again to record">Record purchase</ConfirmButton>
         <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
       </div>
     </form>
@@ -195,7 +197,7 @@ function SupplierForm({ supplier, onDone }: { supplier: Supplier | null; onDone:
     onDone();
   };
   const remove = async () => {
-    if (!supplier || !window.confirm(`Delete ${supplier.name}? Past purchases keep their records.`)) return;
+    if (!supplier) return;
     await deleteSupplier(supplier.id);
     onDone();
   };
@@ -211,7 +213,8 @@ function SupplierForm({ supplier, onDone }: { supplier: Supplier | null; onDone:
       <div className="flex gap-2">
         <Button type="submit" disabled={!name.trim() || !!gstProblem}>{supplier ? "Save supplier" : "Add supplier"}</Button>
         <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
-        {supplier ? <Button type="button" variant="ghost" className="ml-auto text-destructive hover:text-destructive" onClick={() => void remove()}><Trash2 />Delete</Button> : null}
+        {supplier ? <ConfirmButton id={`delete-supplier-${supplier.id}`} className={cn(buttonVariants({ variant: "ghost" }), "ml-auto text-destructive hover:text-destructive")} armedClassName="!bg-destructive !text-destructive-foreground"
+          onConfirm={remove} confirm={<><Trash2 />Tap again to delete</>}><Trash2 />Delete</ConfirmButton> : null}
       </div>
     </form>
   );

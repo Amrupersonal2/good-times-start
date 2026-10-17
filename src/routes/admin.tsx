@@ -11,6 +11,7 @@ import { usePlatformAdmin } from "@/lib/use-account";
 import { FEATURE_LABELS, STATUS_LABELS, monthlyRevenue, type AccountStatus, type Plan, type PlanFeature } from "@/lib/saas-logic";
 import { formatINR } from "@/lib/billing";
 import { Dropdown } from "@/components/Dropdown";
+import { PRIVATE_EDITION } from "@/lib/edition";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — XTSY POS" }, { name: "robots", content: "noindex" }] }),
@@ -60,6 +61,7 @@ function AdminPage() {
     (!q || [a.name, a.ownerEmail ?? "", a.billingEmail, ...a.outlets.map((o) => `${o.name} ${o.city} ${o.slug}`)].join(" ").toLowerCase().includes(q.toLowerCase()))), [list, filter, q]);
   const refresh = () => { void queryClient.invalidateQueries({ queryKey: ["admin-accounts"] }); void queryClient.invalidateQueries({ queryKey: ["admin-plans"] }); };
 
+  if (PRIVATE_EDITION) return <AppShell><p className="mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">Not used in this private edition.</p></AppShell>;
   if (admin.isLoading) return <AppShell><p className="p-8 text-sm text-muted-foreground">Loading…</p></AppShell>;
   if (admin.data !== true) return <AppShell><p className="mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">This console is for XTSY POS administrators.</p></AppShell>;
 

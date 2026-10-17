@@ -16,6 +16,7 @@ import { formatINR } from "@/lib/billing";
 import { needsOptions, orderCategories, outsideHours, priceFor, stockLeft } from "@/lib/menu-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import type { MenuItem, RestaurantTable } from "@/lib/types";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export const Route = createFileRoute("/waiter")({
   head: () => ({
@@ -242,10 +243,11 @@ function OrderPad({ tableId }: { tableId: string }) {
         </ul>
         <div className="space-y-2 border-t border-border p-3">
           {cancels ? <p className="text-xs font-semibold text-warning">{cancels} item{cancels === 1 ? "" : "s"} to cancel with the kitchen</p> : null}
-          <button onClick={() => void send()} disabled={sending || (!unsent && !cancels)}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-40">
+          <ConfirmButton id="waiter-send" onConfirm={send} disabled={sending || (!unsent && !cancels)}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-40"
+            armedClassName="!bg-gold !text-gold-foreground" confirm={<><ChefHat className="size-5" />Tap again to send</>}>
             <ChefHat className="size-5" />{sending ? "Sending…" : unsent ? `Send ${unsent} to kitchen` : cancels ? "Send cancellation" : "Kitchen has everything"}
-          </button>
+          </ConfirmButton>
           <button onClick={() => void askForBill()} disabled={!cart.activeOrder || unsent > 0 || table?.status === "billed"}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold ring-1 ring-border disabled:opacity-40">
             <Bell className="size-4" />{table?.status === "billed" ? "Counter has been told" : "Guest asked for the bill"}

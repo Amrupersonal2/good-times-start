@@ -11,6 +11,7 @@ import { accountState, STATUS_LABELS } from "@/lib/saas-logic";
 import { PRESET_LABELS, businessOverview, dashboardRange, liveStatus, salesByDay, type Preset } from "@/lib/dashboard-logic";
 import type { Range } from "@/lib/report-logic";
 import { cn } from "@/lib/utils";
+import { PRIVATE_EDITION } from "@/lib/edition";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (search: Record<string, unknown>): { tab?: "overview" | "live" } => (search["tab"] === "live" ? { tab: "live" } : {}),
@@ -147,7 +148,7 @@ function Overview() {
         </div>
 
         <aside className="space-y-6">
-          <PlanCard />
+          {PRIVATE_EDITION ? null : <PlanCard />}
           <Card title="Sales breakup">
             <dl className="divide-y divide-border">
               <Line icon={Store} label="Billing counter" value={money(o?.breakup.pos ?? 0)} />

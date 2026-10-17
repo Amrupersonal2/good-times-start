@@ -18,6 +18,7 @@ import { isLow } from "@/lib/stock-logic";
 import { GuestOrdersButton } from "@/components/GuestOrders";
 import { useAccount, usePlatformAdmin } from "@/lib/use-account";
 import { accountState } from "@/lib/saas-logic";
+import { PRIVATE_EDITION } from "@/lib/edition";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,7 +31,7 @@ const NAV = [
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/insights", label: "Insights", icon: LineChart },
   { to: "/waiter", label: "Waiter", icon: Tablet },
-  { to: "/account", label: "Business", icon: Building2 },
+  { to: "/account", label: PRIVATE_EDITION ? "Outlets" : "Business", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
   { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
@@ -188,6 +189,18 @@ function RestaurantSetup() {
     }
   };
 
+  if (PRIVATE_EDITION) {
+    // One owner's system: people join by invite only.
+    return (
+      <div className="mx-auto max-w-md p-4 py-12 text-center">
+        <Store className="mx-auto size-7 text-primary" />
+        <h1 className="mt-3 text-xl font-bold">Waiting for your invite</h1>
+        <p className="mt-1 text-sm text-muted-foreground">This is a private system. Ask the owner to invite <strong className="text-foreground">{user?.email}</strong> in Settings → Staff, then check again.</p>
+        <Button variant="outline" className="mt-5" onClick={() => void refresh()}><RefreshCw />Check for my invite</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto grid max-w-3xl gap-6 p-4 py-10 lg:grid-cols-2 lg:p-8">
       <section className="rounded-xl border border-border bg-card p-6">
@@ -257,7 +270,8 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
     const [materials, levels] = await Promise.all([getDb().materials.toArray(), getMaterialLevels()]);
     return materials.filter((m) => !m.archived && isLow(m, levels.get(m.id) ?? 0)).length;
   }, [], 0);
-  const platformAdmin = usePlatformAdmin().data === true;
+  const adminQuery = usePlatformAdmin();
+  const platformAdmin = !PRIVATE_EDITION && adminQuery.data === true;
   const allowed = [...screensFor(user?.role), ...(platformAdmin ? ["/admin" as const] : [])];
   const nav = NAV.filter((n) => allowed.includes(n.to));
   const account = useAccount().data;
@@ -266,7 +280,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
   const blocked = !!current && !allowed.includes(current.to);
   const home = nav[0]?.to ?? "/";
   const needsDetails = isAdmin(user) && !settings.updatedAt && pathname !== "/settings" && pathname !== "/setup";
-  const planWarning = isAdmin(user) && plan.warn && pathname !== "/account";
+  const planWarning = !PRIVATE_EDITION && isAdmin(user) && plan.warn && pathname !== "/account";
 
   return (
     <div className={`flex min-h-screen bg-background text-foreground ${tone === "dark" ? "dark" : ""}`}>

@@ -4,13 +4,15 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { ArrowRightLeft, Combine, Pencil, Plus, ReceiptText, Trash2, Users } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { formatINR } from "@/lib/billing";
 import { deleteTable, mergeTables, moveTable, saveTable, setTableStatus, tableIdFor } from "@/lib/table-actions";
 import type { RestaurantTable, TableStatus } from "@/lib/types";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({
@@ -53,7 +55,7 @@ function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable 
     onDone();
   };
   const remove = async () => {
-    if (!table || !window.confirm(`Delete table ${table.label}?`)) return;
+    if (!table) return;
     try {
       await deleteTable(table.id);
       toast.success(`${table.label} deleted`);
@@ -81,7 +83,8 @@ function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable 
       <div className="flex gap-2">
         <Button type="submit">{table ? "Save table" : "Add table"}</Button>
         <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
-        {table ? <Button type="button" variant="ghost" className="ml-auto text-destructive hover:text-destructive" onClick={() => void remove()}><Trash2 />Delete</Button> : null}
+        {table ? <ConfirmButton id={`delete-table-${table.id}`} className={cn(buttonVariants({ variant: "ghost" }), "ml-auto text-destructive hover:text-destructive")} armedClassName="!bg-destructive !text-destructive-foreground"
+          onConfirm={remove} confirm={<><Trash2 />Tap again to delete</>}><Trash2 />Delete</ConfirmButton> : null}
       </div>
     </form>
   );
@@ -135,7 +138,8 @@ function TableActions({ table, tables, onDone }: { table: RestaurantTable; table
         <Button variant="outline" className="justify-start" onClick={() => setMode("merge")}><Combine />Merge into another table</Button>
       </> : null}
       {table.status === "free" ? <Button variant="outline" className="justify-start" onClick={() => void run(() => setTableStatus(table.id, "reserved"), `${table.label} reserved`)}>Reserve</Button> : null}
-      {table.status !== "free" ? <Button variant="ghost" className="justify-start" onClick={() => void run(() => setTableStatus(table.id, "free"), `${table.label} is free`)}>Mark as free</Button> : null}
+      {table.status !== "free" ? <ConfirmButton id={`free-${table.id}`} className={cn(buttonVariants({ variant: "ghost" }), "justify-start")} armedClassName="!bg-gold/20"
+        onConfirm={() => run(() => setTableStatus(table.id, "free"), `${table.label} is free`)} confirm="Tap again to free the table">Mark as free</ConfirmButton> : null}
     </div>
   );
 }

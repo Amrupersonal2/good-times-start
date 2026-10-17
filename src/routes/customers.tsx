@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { Download, Search, Star } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
@@ -15,6 +15,7 @@ import { guestsWorkbook } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import type { Customer, Order, PaymentMode } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({
@@ -78,7 +79,7 @@ function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { custo
             <input aria-label="Amount received" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-28 rounded-lg border border-input bg-card px-2 py-2 text-right text-sm" />
             <Dropdown<PaymentMode> ariaLabel="Paid by" className="w-28" value={mode} onChange={setMode}
               options={[{ value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "card", label: "Card" }]} />
-            <Button onClick={() => void collect()}>Record payment</Button>
+            <ConfirmButton id="collect-due" onConfirm={collect} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again to record">Record payment</ConfirmButton>
           </div>
         </section>
       ) : null}
@@ -94,7 +95,7 @@ function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { custo
           <label className="block text-sm font-medium">Add or remove points
             <input inputMode="numeric" value={points} onChange={(e) => setPoints(e.target.value.replace(/[^0-9-]/g, ""))} placeholder="e.g. 50 or -20" className={inputClass} />
           </label>
-          <Button variant="outline" onClick={() => void changePoints()}>Apply</Button>
+          <ConfirmButton id="change-points" onConfirm={changePoints} className={buttonVariants({ variant: "outline" })} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again">Apply</ConfirmButton>
         </div>
       ) : null}
 
