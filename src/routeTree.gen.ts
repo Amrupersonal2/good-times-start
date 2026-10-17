@@ -20,6 +20,10 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StockRouteImport } from './routes/stock'
 import { Route as TablesRouteImport } from './routes/tables'
 import { Route as WaiterRouteImport } from './routes/waiter'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as SetupRouteImport } from './routes/setup'
+import { Route as OrderSlugRouteImport } from './routes/order.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +80,26 @@ const WaiterRoute = WaiterRouteImport.update({
   path: '/waiter',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderSlugRoute = OrderSlugRouteImport.update({
+  id: '/order/$slug',
+  path: '/order/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +113,10 @@ export interface FileRoutesByFullPath {
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
+  '/setup': typeof SetupRoute
+  '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +130,10 @@ export interface FileRoutesByTo {
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
+  '/setup': typeof SetupRoute
+  '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +148,10 @@ export interface FileRoutesById {
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
+  '/setup': typeof SetupRoute
+  '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +167,10 @@ export interface FileRouteTypes {
     | '/stock'
     | '/tables'
     | '/waiter'
+    | '/account'
+    | '/admin'
+    | '/setup'
+    | '/order/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +184,10 @@ export interface FileRouteTypes {
     | '/stock'
     | '/tables'
     | '/waiter'
+    | '/account'
+    | '/admin'
+    | '/setup'
+    | '/order/$slug'
   id:
     | '__root__'
     | '/'
@@ -157,6 +201,10 @@ export interface FileRouteTypes {
     | '/stock'
     | '/tables'
     | '/waiter'
+    | '/account'
+    | '/admin'
+    | '/setup'
+    | '/order/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,10 +219,42 @@ export interface RootRouteChildren {
   StockRoute: typeof StockRoute
   TablesRoute: typeof TablesRoute
   WaiterRoute: typeof WaiterRoute
+  AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRoute
+  SetupRoute: typeof SetupRoute
+  OrderSlugRoute: typeof OrderSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order/$slug': {
+      id: '/order/$slug'
+      path: '/order/$slug'
+      fullPath: '/order/$slug'
+      preLoaderRoute: typeof OrderSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -267,6 +347,10 @@ const rootRouteChildren: RootRouteChildren = {
   StockRoute: StockRoute,
   TablesRoute: TablesRoute,
   WaiterRoute: WaiterRoute,
+  AccountRoute: AccountRoute,
+  AdminRoute: AdminRoute,
+  SetupRoute: SetupRoute,
+  OrderSlugRoute: OrderSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
