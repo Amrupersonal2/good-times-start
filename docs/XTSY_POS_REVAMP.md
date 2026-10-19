@@ -168,3 +168,25 @@ and outlets appear once it has.
   - Mark table free, delete dish / table / supplier, record due payment, loyalty points, close counter, record purchase, wastage and stock count
   - UPI with a QR already has its own second step ("Payment received"); cancelling a bill already asks for a reason
 - [x] Private edition (`src/lib/edition.ts`, `drizzle/migrations/0007_private_edition.sql`): no plans, trials, plan banners or admin console; strangers can't create restaurants (invite only); the owner's account gets an unlisted Owner plan (50 outlets, 500 staff, never expires); "Business" becomes "Outlets"
+
+## Round 6 (October 2026) — `revamp-6`: admin-only controls, staff login, unblockable sync
+
+**Admin controls.** `src/lib/permissions.ts` is the single list of who may do what; every screen checks `can(user, action)`.
+- Owner and manager only: menu and table set-up, stock set-up, purchases and counts, voiding or cancelling bills, large discounts, loyalty points, guest export, all settings, staff, bill series, reports and the dashboard.
+- Owner only: resetting a device and managing outlets.
+- Cashiers: billing, settling, collecting dues and closing the day (the Reports screen shows them only "Close day").
+- Captains: tables, orders and KOTs. Kitchen: tickets and wastage.
+- Nobody signed in may do nothing.
+
+**Database enforcement (migration `0008_admin_guards.sql`; run after 0007).**
+- Settings, menu, stock materials and suppliers can only be written by an owner or manager.
+- A settled or cancelled bill's status, amounts, items, payments and bill number can't be changed or deleted by staff (feedback can still be added).
+- Tested on Postgres 16 with owner and cashier sessions.
+
+**Login.** Internal staff login only: email and password, invite-only, no Google button and no "use without signing in". Every staff screen sends a signed-out device to the login page. Sign-in works offline from the last known staff record, so a dropped connection never locks the counter.
+
+**Sync can't get stuck.**
+- Before: one change the cloud refused held up every later change on that device.
+- Now: refused rows are found one by one and dropped from the queue, and the cloud's copy is restored on the device. The sync window explains what was undone and why.
+- Network failures still retry; nothing is lost.
+- Covered by sync-simulation tests (cashier menu edit, settled-bill rewrite, offline retry); a mutation check confirms the tests fail on the old behaviour.

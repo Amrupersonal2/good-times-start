@@ -129,7 +129,7 @@ describe("load: Friday-night rush", () => {
     for (const d of devices) expect(await snapshot(d)).toEqual(first);
   });
 
-  it("brings a brand-new kitchen screen up to date with 4,000 records in a few pages", async () => {
+  it("brings a brand-new device up to date with 4,000 records in a few pages", async () => {
     for (let n = 0; n < 2000; n += 1) await on("c1", () => ring("c1", n));
     await trySync("c1");
     const before = server.fakeServer.requests.select;
@@ -141,5 +141,5 @@ describe("load: Friday-night rush", () => {
     expect(s.kots).toBe(2000);
     expect(server.fakeServer.requests.select - before).toBeLessThan(20);
     expect(elapsed).toBeLessThan(20_000);
-  });
+  }, 30_000); // setting up 2,000 bills in the in-memory test database is the slow part, not the sync
 });

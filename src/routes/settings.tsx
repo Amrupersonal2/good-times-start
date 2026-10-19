@@ -21,6 +21,7 @@ import { OrderingSettings } from "@/components/OrderingSettings";
 import { prepareOutletSwitch } from "@/lib/outlet-actions";
 import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -69,7 +70,7 @@ const inputClass = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2
 function RestaurantDetails() {
   const { user, refresh } = useStaff();
   const saved = useRestaurantSettings();
-  const canEdit = !user || isAdmin(user);
+  const canEdit = can(user, "settings.restaurant");
   const [form, setForm] = useState<RestaurantSettings>(saved);
   const [busy, setBusy] = useState(false);
   const savedJson = JSON.stringify(saved);
@@ -141,7 +142,7 @@ const PAY_LABELS: Record<PaymentMode, string> = { cash: "Cash", upi: "UPI", card
 function BillingSettings() {
   const { user } = useStaff();
   const saved = useRestaurantSettings();
-  const canEdit = !user || isAdmin(user);
+  const canEdit = can(user, "settings.restaurant");
   const [form, setForm] = useState<RestaurantSettings>(saved);
   const [busy, setBusy] = useState(false);
   const savedJson = JSON.stringify(saved);
@@ -321,7 +322,7 @@ function ThisDevice() {
   const [draft, setDraft] = useState("");
   useEffect(() => { setDraft(code); }, [code]);
   const next = normaliseDeviceCode(draft);
-  const canReset = !user || user.role === "owner";
+  const canReset = can(user, "device.reset");
 
   const saveCode = async () => {
     if (!next || next === code) return;
@@ -344,11 +345,12 @@ function ThisDevice() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Bill series code" hint={`Next bill: ${billNumber(next === code ? (typeof seq === "number" ? seq : 0) + 1 : 1, new Date(), next || code)}`}>
-            <input value={draft} maxLength={4} onChange={(event) => setDraft(normaliseDeviceCode(event.target.value))} className={`${inputClass} w-32 uppercase`} />
+            <input value={draft} maxLength={4} disabled={!can(user, "settings.series")} onChange={(event) => setDraft(normaliseDeviceCode(event.target.value))} className={`${inputClass} w-32 uppercase`} />
           </Field>
-          <Button variant="secondary" disabled={!next || next === code} onClick={() => void saveCode()}>Start new series</Button>
+          {can(user, "settings.series") ? <Button variant="secondary" disabled={!next || next === code} onClick={() => void saveCode()}>Start new series</Button>
+            : <p className="pb-2 text-xs text-muted-foreground">Only the owner or a manager can change it.</p>}
         </div>
-        {menuCount === 0 && (!user || isAdmin(user)) ? (
+        {menuCount === 0 && can(user, "menu.edit") ? (
           <div className="rounded-lg border border-dashed border-border p-4">
             <p className="text-sm font-medium">Your menu is empty.</p>
             <p className="mt-1 text-sm text-muted-foreground">Start from a sample Indian menu and floor plan, then change prices and dishes in Menu.</p>
@@ -391,7 +393,7 @@ function Staff() {
   }, [restaurantId]);
   useEffect(() => { void load(); }, [load]);
 
-  if (!restaurantId || !isAdmin(user)) return null;
+  if (!restaurantId || !can(user, "staff.manage")) return null;
 
   const invite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

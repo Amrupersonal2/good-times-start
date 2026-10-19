@@ -16,6 +16,7 @@ import { downloadXlsx } from "@/lib/xlsx";
 import type { Customer, Order, PaymentMode } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({
@@ -36,7 +37,7 @@ function formatPhone(id: string) {
 
 function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { customer: Customer; stats: CustomerStats; orders: Order[]; loyaltyOn: boolean; onClose: () => void }) {
   const { user } = useStaff();
-  const admin = !user || isAdmin(user);
+  const admin = can(user, "guests.points");
   const [name, setName] = useState(customer.name ?? "");
   const [note, setNote] = useState(customer.note ?? "");
   const [amount, setAmount] = useState(stats.due ? String(stats.due) : "");

@@ -20,6 +20,7 @@ import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/stock")({
   head: () => ({
@@ -271,7 +272,7 @@ type Sheet =
 
 function StockPage() {
   const { user } = useStaff();
-  const admin = !user || isAdmin(user);
+  const admin = can(user, "stock.setup");
   const materials = useLiveQuery(() => getDb().materials.toArray(), [], []);
   const suppliers = useLiveQuery(() => getDb().suppliers.toArray(), [], []);
   // Recent movements only; the ledger grows with every bill, so screens never load all of it.
