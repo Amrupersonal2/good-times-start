@@ -1,9 +1,9 @@
 {
   "id": "/waiter",
-  "name": "XTSY Waiter",
-  "short_name": "XTSY Waiter",
-  "description": "Take table orders and send KOTs from a tablet.",
-  "start_url": "/waiter",
+  "name": "POS Waiter",
+  "short_name": "POS Waiter",
+  "description": "TAB Bistro waiters: take table orders and send KOTs from an Android phone or tablet.",
+  "start_url": "/waiter?app=waiter",
   "scope": "/waiter",
   "display": "standalone",
   "display_override": [

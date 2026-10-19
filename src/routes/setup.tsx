@@ -14,7 +14,7 @@ import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
 import { loadTabBistroMenu } from "@/lib/menu-actions";
 import { normaliseDeviceCode } from "@/lib/sync-core";
 import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
-import { usePlatformAdmin } from "@/lib/use-account";
+import { APPS, DEVICE_LABELS, LOGINS, type LoginId } from "@/lib/staff-login-logic";
 import type { RestaurantSettings } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 
@@ -29,7 +29,7 @@ const STEPS = [
   { id: "menu", label: "Menu", icon: UtensilsCrossed },
   { id: "tables", label: "Tables", icon: LayoutGrid },
   { id: "device", label: "Printing", icon: Printer },
-  { id: "team", label: "Team", icon: UserPlus },
+  { id: "team", label: "Logins", icon: UserPlus },
 ] as const;
 
 const inputClass = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm";
@@ -175,7 +175,7 @@ function GstStep({ onNext }: { onNext: () => void }) {
 
 function MenuStep({ onNext }: { onNext: () => void }) {
   const count = useLiveQuery(() => getDb().menu.count(), [], 0);
-  const admin = usePlatformAdmin().data === true;
+  const admin = isAdmin(useStaff().user);
   const [busy, setBusy] = useState(false);
   const run = async (work: () => Promise<unknown>, message: string) => {
     setBusy(true);
@@ -273,41 +273,28 @@ function DeviceStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-const TEAM_ROLES: StaffRole[] = ["manager", "cashier", "captain", "kitchen"];
+const DEFAULT_DEVICES: Record<LoginId, (keyof typeof DEVICE_LABELS)[]> = { admin: ["android", "ios", "desktop"], billdesk: ["desktop"], waiter: ["android"] };
 
+/** The three internal logins, one per app. Passwords and WhatsApp numbers are managed in Settings → Logins. */
 function TeamStep({ onNext }: { onNext: () => void }) {
-  const { user } = useStaff();
-  const [rows, setRows] = useState<{ email: string; role: StaffRole }[]>([{ email: "", role: "cashier" }, { email: "", role: "captain" }, { email: "", role: "kitchen" }]);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const filled = rows.filter((r) => r.email.trim());
-  const bad = filled.find((r) => emailError(r.email));
-  const send = async () => {
-    if (!user?.restaurantId || !filled.length) { onNext(); return; }
-    setBusy(true);
-    setMessage("");
-    const { error } = await supabase.from("restaurant_invites").insert(filled.map((r) => ({ restaurant_id: user.restaurantId ?? "", email: r.email.trim().toLowerCase(), role: r.role, invited_by: user.id })));
-    setBusy(false);
-    if (error) { setMessage(error.code === "23505" ? "One of these emails already has an invite." : error.message); return; }
-    toast.success(`${filled.length} invite${filled.length === 1 ? "" : "s"} saved. They join when they sign in with that email.`);
-    onNext();
-  };
   return (
     <div>
-      <p className="text-sm text-muted-foreground">Invite staff by the email they'll sign in with. Each role sees only the screens it needs.</p>
-      <div className="mt-4 space-y-2">
-        {rows.map((r, i) => (
-          <div key={i} className="flex gap-2">
-            <input type="email" value={r.email} placeholder="name@example.com" onChange={(e) => setRows((all) => all.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))} className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
-            <Dropdown<StaffRole> ariaLabel="Role" className="h-[42px] w-44 shrink-0" value={r.role} onChange={(role) => setRows((all) => all.map((x, j) => (j === i ? { ...x, role } : x)))}
-              options={TEAM_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }))} />
-          </div>
-        ))}
-        <button type="button" className="text-sm font-semibold text-primary" onClick={() => setRows((all) => [...all, { email: "", role: "cashier" }])}>+ Another person</button>
-      </div>
-      {bad ? <p className="mt-2 text-sm text-destructive">Check {bad.email}: {emailError(bad.email)}</p> : null}
-      {message ? <p role="alert" className="mt-2 text-sm text-destructive">{message}</p> : null}
-      <NextBar busy={busy} disabled={!!bad} label={filled.length ? `Invite ${filled.length} and finish` : "Finish"} onClick={() => void send()} skip={filled.length ? onNext : undefined} />
+      <p className="text-sm text-muted-foreground">TAB Bistro uses three logins, one for each app. No emails are sent; xtsy.pos is internal only.</p>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+        {(Object.keys(LOGINS) as LoginId[]).map((id) => {
+          const app = APPS[LOGINS[id].app];
+          return (
+            <li key={id} className="rounded-xl border border-border p-4">
+              <p className="text-sm font-semibold">{LOGINS[id].label}</p>
+              <p className="mt-0.5 break-all text-xs font-mono">{LOGINS[id].email}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{app.name}{id === "admin" ? ", plus every other app" : ""}</p>
+              <p className="text-xs text-muted-foreground">{DEFAULT_DEVICES[id].map((d) => DEVICE_LABELS[d]).join(" · ")}</p>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-xs text-muted-foreground">Change passwords, WhatsApp numbers for password resets, devices, and switch logins on or off in <Link to="/settings" hash="logins" className="font-semibold text-primary">Settings → Logins</Link>.</p>
+      <NextBar label="Finish" onClick={onNext} />
     </div>
   );
 }
@@ -318,8 +305,8 @@ function Finished({ onBill }: { onBill: () => void }) {
       <p className="text-sm text-muted-foreground">Your counter is ready. A few more things you can switch on when you like:</p>
       <ul className="mt-4 grid gap-3 sm:grid-cols-3">
         <li><Link to="/settings" hash="ordering" className="block rounded-xl border border-border p-4 hover:border-primary"><p className="text-sm font-semibold">Guest ordering</p><p className="mt-1 text-xs text-muted-foreground">QR codes on tables and an online pickup link.</p></Link></li>
-        <li><Link to="/waiter" className="block rounded-xl border border-border p-4 hover:border-primary"><p className="text-sm font-semibold">Waiter tablets</p><p className="mt-1 text-xs text-muted-foreground">Open /waiter on a tablet and install it as an app.</p></Link></li>
-        <li><Link to="/account" className="block rounded-xl border border-border p-4 hover:border-primary"><p className="text-sm font-semibold">Plan and outlets</p><p className="mt-1 text-xs text-muted-foreground">See your trial, add outlets, compare sales.</p></Link></li>
+        <li><Link to="/waiter" className="block rounded-xl border border-border p-4 hover:border-primary"><p className="text-sm font-semibold">Waiter tablets</p><p className="mt-1 text-xs text-muted-foreground">Install POS Waiter on Android phones and tablets from Settings → Logins.</p></Link></li>
+        <li><Link to="/marketing" className="block rounded-xl border border-border p-4 hover:border-primary"><p className="text-sm font-semibold">Brand and WhatsApp</p><p className="mt-1 text-xs text-muted-foreground">Your look on the QR menu, printable QR cards, WhatsApp offers.</p></Link></li>
       </ul>
       <Button className="mt-6" onClick={onBill}>Start billing<ChevronRight /></Button>
     </div>

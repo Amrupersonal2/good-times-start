@@ -2,27 +2,27 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Download, Share, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { syncAppModeFromUrl, useChosenApp } from "@/lib/app-mode";
+import type { AppKind } from "@/lib/staff-login-logic";
 
 /**
  * Three installable apps from one codebase:
- *   /            XTSY POS (counter, desktop)
- *   /waiter      XTSY Waiter (tablet)
- *   /insights    XTSY Insights (owner's phone)
- * Each has its own manifest, icon and theme, chosen by the current path.
+ *   /manager   POS Business Manager (admin: phone, tablet, computer)
+ *   /?app=pos  Restro POS by XTSY (reception counter: Windows or Mac)
+ *   /waiter    POS Waiter (waiters: Android phone or tablet)
+ * Each has its own manifest, icon and theme, chosen by the window's app.
  */
 
-export type AppKind = "pos" | "waiter" | "insights";
-
-export function appForPath(pathname: string): AppKind {
+export function appForPath(pathname: string, chosen: AppKind | null): AppKind {
   if (pathname === "/waiter" || pathname.startsWith("/waiter/")) return "waiter";
-  if (pathname === "/insights" || pathname.startsWith("/insights/")) return "insights";
-  return "pos";
+  if (pathname === "/manager" || pathname === "/insights" || pathname.startsWith("/insights/")) return "manager";
+  return chosen ?? "pos";
 }
 
 const APP_META: Record<AppKind, { title: string; theme: string }> = {
-  pos: { title: "XTSY POS", theme: "#F2F2F7" },
-  waiter: { title: "XTSY Waiter", theme: "#000000" },
-  insights: { title: "XTSY Insights", theme: "#000000" },
+  manager: { title: "Business Manager", theme: "#000000" },
+  pos: { title: "Restro POS", theme: "#F2F2F7" },
+  waiter: { title: "POS Waiter", theme: "#000000" },
 };
 
 /* ---- install prompt (Chrome / Edge / Android) ---- */
@@ -67,7 +67,9 @@ function isStandalone(): boolean {
 /** Head tags for the current app, plus service worker registration. Mounted once in the root. */
 export function AppInstall() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const app = appForPath(pathname);
+  const chosen = useChosenApp();
+  useEffect(() => { syncAppModeFromUrl(); }, [pathname]);
+  const app = appForPath(pathname, chosen);
   const meta = APP_META[app];
 
   useEffect(() => {

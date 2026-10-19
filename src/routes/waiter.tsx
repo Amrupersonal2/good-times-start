@@ -2,7 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { Bell, Check, ChefHat, LogIn, Minus, Plus, Search, Tablet, Users } from "lucide-react";
+import { ArrowLeft, Bell, Check, ChefHat, LogOut, Minus, Plus, Search, Users } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VegMark } from "@/components/VegMark";
@@ -21,7 +24,7 @@ import { ConfirmButton } from "@/components/ConfirmButton";
 export const Route = createFileRoute("/waiter")({
   head: () => ({
     meta: [
-      { title: "XTSY Waiter" },
+      { title: "POS Waiter" },
       { name: "description", content: "Take table orders on a tablet and send them straight to the kitchen." },
     ],
   }),
@@ -56,8 +59,8 @@ function useIsTablet() {
 function WaiterApp() {
   const { user, loading } = useStaff();
   const settings = useRestaurantSettings();
-  const tablet = useIsTablet();
-  const [anyway, setAnyway] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [tableId, setTableIdState] = useState<string | undefined>(undefined);
   const [, tick] = useState(0);
   useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30_000); return () => window.clearInterval(t); }, []);
@@ -65,40 +68,33 @@ function WaiterApp() {
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const sections = useMemo(() => [...new Set(tables.map((t) => t.section))], [tables]);
 
-  if (!tablet && !anyway) {
-    return (
-      <div className="dark flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
-        <Tablet className="size-10 text-primary" />
-        <p className="text-xl font-bold">XTSY Waiter is made for tablets</p>
-        <p className="max-w-xs text-sm text-muted-foreground">Open it on a tablet, or turn your phone sideways. Owners can follow the restaurant on XTSY Insights.</p>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setAnyway(true)}>Use it anyway</Button>
-          <Button variant="outline" asChild><Link to="/insights">Open Insights</Link></Button>
-        </div>
-      </div>
-    );
-  }
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    await navigate({ to: "/auth", replace: true });
+  };
 
   return (
     <div className="dark flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
         <div className="min-w-0">
-          <div className="truncate text-base font-extrabold">{settings.name || "XTSY Waiter"}</div>
-          <div className="text-xs text-muted-foreground">{user ? `${user.displayName}, ${user.role === "unknown" ? "no restaurant yet" : user.role}` : loading ? "" : "Not signed in: orders stay on this tablet"}</div>
+          <div className="truncate text-base font-extrabold">{settings.name || "POS Waiter"}</div>
+          <div className="text-xs text-muted-foreground">{user ? `POS Waiter · ${user.displayName}` : loading ? "" : "POS Waiter"}</div>
         </div>
         <div className="flex items-center gap-2">
           <InstallButton />
-          {!user && !loading ? <Button size="sm" variant="secondary" asChild><Link to="/auth"><LogIn />Sign in</Link></Button> : null}
+          {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="flex w-56 shrink-0 flex-col overflow-y-auto border-r border-border p-3 xl:w-64" aria-label="Tables">
+        <aside className={`${tableId ? "hidden md:flex" : "flex w-full"} shrink-0 flex-col overflow-y-auto border-r border-border p-3 md:w-56 xl:w-64`} aria-label="Tables">
           {tables.length === 0 ? <p className="p-2 text-sm text-muted-foreground">No tables yet. Set up the floor on the counter POS.</p> : null}
           {sections.map((sec) => (
             <section key={sec} className="mb-4">
               <h2 className="mb-2 px-1 text-xs font-semibold text-muted-foreground">{sec}</h2>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-2">
                 {tables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })).map((t) => (
                   <button key={t.id} onClick={() => setTableIdState(t.id)} aria-pressed={tableId === t.id}
                     className={`relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 ${STATUS_STYLE[t.status]} ${tableId === t.id ? "outline outline-2 outline-offset-2 outline-foreground" : ""}`}>
@@ -114,8 +110,8 @@ function WaiterApp() {
           ))}
         </aside>
 
-        {tableId ? <OrderPad key={tableId} tableId={tableId} /> : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
+        {tableId ? <OrderPad key={tableId} tableId={tableId} onBack={() => setTableIdState(undefined)} /> : (
+          <div className="hidden flex-1 flex-col items-center justify-center gap-2 p-8 text-center md:flex">
             <p className="text-2xl font-extrabold">Pick a table</p>
             <p className="max-w-sm text-sm text-muted-foreground">Blue tables have guests. White tables have asked for the bill.</p>
           </div>
@@ -125,7 +121,7 @@ function WaiterApp() {
   );
 }
 
-function OrderPad({ tableId }: { tableId: string }) {
+function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) {
   const cart = useCart(tableId);
   const settings = useRestaurantSettings();
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
@@ -135,6 +131,8 @@ function OrderPad({ tableId }: { tableId: string }) {
   const [q, setQ] = useState("");
   const [choosing, setChoosing] = useState<MenuItem | null>(null);
   const [sending, setSending] = useState(false);
+  // Phones show one pane at a time; tablets show both side by side.
+  const [pane, setPane] = useState<"menu" | "order">("menu");
 
   const categories = useMemo(() => orderCategories(menu.map((m) => m.category), settings.categoryOrder), [menu, settings.categoryOrder]);
   const activeCat = cat || categories[0] || "";
@@ -167,9 +165,18 @@ function OrderPad({ tableId }: { tableId: string }) {
     toast.success(`Table ${table?.label ?? tableId} asked for the bill`);
   };
 
+  const count = cart.lines.reduce((s, l) => s + l.qty, 0);
   return (
-    <div className="flex min-w-0 flex-1">
-      <section className="flex min-w-0 flex-1 flex-col bg-secondary/40" aria-label="Menu">
+    <div className="flex min-w-0 flex-1 flex-col md:flex-row">
+      <div className="flex items-center gap-2 border-b border-border px-2 py-1.5 md:hidden">
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold text-primary"><ArrowLeft className="size-4" />Tables</button>
+        <span className="text-lg font-extrabold">{table?.label ?? tableId}</span>
+        <div className="ml-auto flex rounded-lg bg-secondary p-0.5 text-sm font-semibold" role="tablist" aria-label="Show">
+          <button type="button" role="tab" aria-selected={pane === "menu"} onClick={() => setPane("menu")} className={`rounded-md px-3 py-1.5 ${pane === "menu" ? "bg-card shadow-sm" : "text-muted-foreground"}`}>Menu</button>
+          <button type="button" role="tab" aria-selected={pane === "order"} onClick={() => setPane("order")} className={`rounded-md px-3 py-1.5 ${pane === "order" ? "bg-card shadow-sm" : "text-muted-foreground"}`}>Order{count ? ` (${count})` : ""}</button>
+        </div>
+      </div>
+      <section className={`${pane === "menu" ? "flex" : "hidden"} min-h-0 min-w-0 flex-1 flex-col bg-secondary/40 md:flex`} aria-label="Menu">
         <div className="space-y-2 p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -200,9 +207,16 @@ function OrderPad({ tableId }: { tableId: string }) {
           })}
           {items.length === 0 ? <p className="col-span-full py-10 text-center text-sm text-muted-foreground">{term ? `No dishes match "${q}"` : "No dishes in this section"}</p> : null}
         </div>
+        {unsent || cancels ? (
+          <div className="border-t border-border p-2 md:hidden">
+            <button type="button" onClick={() => setPane("order")} className="flex h-12 w-full items-center justify-between rounded-xl bg-primary px-4 text-primary-foreground">
+              <span className="text-sm font-semibold">{unsent ? `${unsent} new` : `${cancels} to cancel`} · {formatINR(cart.totals.total, 0)}</span><span className="text-sm font-bold">Review & send →</span>
+            </button>
+          </div>
+        ) : null}
       </section>
 
-      <section className="flex w-80 shrink-0 flex-col border-l border-border xl:w-96" aria-label={`Order for table ${table?.label ?? tableId}`}>
+      <section className={`${pane === "order" ? "flex" : "hidden"} min-h-0 w-full shrink-0 flex-col border-border md:flex md:w-80 md:border-l xl:w-96`} aria-label={`Order for table ${table?.label ?? tableId}`}>
         <div className="flex items-end justify-between gap-2 px-4 pb-3 pt-4">
           <div>
             <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}` : "New order"}</div>

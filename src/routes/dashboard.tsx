@@ -6,14 +6,11 @@ import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Dropdown } from "@/components/Dropdown";
 import { getDb } from "@/lib/db";
 import { formatINR } from "@/lib/billing";
-import { useAccount, type AccountView } from "@/lib/use-account";
-import { accountState, STATUS_LABELS } from "@/lib/saas-logic";
 import { PRESET_LABELS, businessOverview, dashboardRange, liveStatus, salesByDay, type Preset } from "@/lib/dashboard-logic";
 import type { Range } from "@/lib/report-logic";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
 import { useStaff } from "@/lib/auth-context";
-import { PRIVATE_EDITION } from "@/lib/edition";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (search: Record<string, unknown>): { tab?: "overview" | "live" } => (search["tab"] === "live" ? { tab: "live" } : {}),
@@ -154,7 +151,6 @@ function Overview() {
         </div>
 
         <aside className="space-y-6">
-          {PRIVATE_EDITION ? null : <PlanCard />}
           <Card title="Sales breakup">
             <dl className="divide-y divide-border">
               <Line icon={Store} label="Billing counter" value={money(o?.breakup.pos ?? 0)} />
@@ -234,20 +230,6 @@ function Line({ icon: Icon, label, value }: { icon: typeof Store; label: string;
       <dt className="flex-1 text-sm font-medium">{label}</dt>
       <dd className="font-semibold tabular-nums">{value}</dd>
     </div>
-  );
-}
-
-function PlanCard() {
-  const view: AccountView | null | undefined = useAccount().data;
-  if (!view?.account) return null;
-  const state = accountState(view.account);
-  return (
-    <Link to="/account" className="block rounded-2xl bg-sidebar p-5 text-sidebar-foreground shadow-sm ring-1 ring-sidebar-border">
-      <p className="text-xs font-medium text-sidebar-foreground/60">Your plan</p>
-      <p className="mt-1 text-xl font-bold">{view.plan?.name ?? "—"}</p>
-      <p className="mt-0.5 text-sm text-sidebar-foreground/80">{STATUS_LABELS[view.account.status]}{state.label ? `, ${state.label.charAt(0).toLowerCase()}${state.label.slice(1)}` : ""}</p>
-      <p className="mt-4 text-xs text-sidebar-foreground/60">{view.outlets.length} outlet{view.outlets.length === 1 ? "" : "s"} · up to {view.plan?.max_staff ?? "—"} staff</p>
-    </Link>
   );
 }
 

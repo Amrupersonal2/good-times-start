@@ -50,3 +50,32 @@ export async function sendTemplate(keys: { token: string; phoneId: string }, inp
   const retry = response.status === 429 || response.status >= 500 || code === 130429 || code === 131056;
   return { ok: false, error: (json?.error?.message ?? `WhatsApp said ${response.status}`).slice(0, 200), retry };
 }
+
+/**
+ * Send a one-time password with an approved Authentication template (WhatsApp
+ * requires the code in the body and in the template's copy-code button).
+ */
+export async function sendAuthCode(keys: { token: string; phoneId: string }, input: { to: string; template: string; language: string; code: string }): Promise<SendResult> {
+  try {
+    const response = await fetch(`${GRAPH}/${encodeURIComponent(keys.phoneId)}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${keys.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp", to: input.to, type: "template",
+        template: {
+          name: input.template, language: { code: input.language },
+          components: [
+            { type: "body", parameters: [{ type: "text", text: input.code }] },
+            { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: input.code }] },
+          ],
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const json = await response.json().catch(() => null) as { messages?: { id: string }[]; error?: { message?: string } } | null;
+    if (response.ok && json?.messages?.[0]?.id) return { ok: true, id: json.messages[0].id };
+    return { ok: false, error: (json?.error?.message ?? `WhatsApp said ${response.status}`).slice(0, 200), retry: response.status >= 500 };
+  } catch {
+    return { ok: false, error: "Couldn't reach WhatsApp", retry: true };
+  }
+}

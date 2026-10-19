@@ -248,3 +248,44 @@ Every design has the logo in the middle of the code (high error correction) and 
   - the file is safe to re-run
 
 **Safety net.** A test fails if any screen imports an icon the live build doesn't have, so a misspelt icon can't break the app.
+
+## Round 8 (October 2026) — `revamp-8`: three apps, three internal logins
+
+**One outlet, three apps.** Orders still flow live between them.
+
+| App | Login | For | Opens at |
+|---|---|---|---|
+| POS Business Manager | `admin@xtsy.pos` (Admin, owner role) | iPhone, Android, Mac, Windows; phone, tablet, desktop | `/manager` |
+| Restro POS by XTSY | `billdesk@xtsy.pos` (Reception, cashier role) | Windows or Mac computer | `/?app=pos` |
+| POS Waiter | `waiter@xtsy.pos` (Waiter, captain role) | Android phone or tablet | `/waiter?app=waiter` |
+
+- Each app has its own install manifest, name and icon. Install links with QR codes are in Settings → Logins.
+- A window remembers which app it is, so Restro POS and Business Manager can sit side by side on one computer.
+- The menu shows only that app's screens.
+- The admin can open every app. Reception can only use Restro POS; Waiter can only use POS Waiter.
+- Devices are limited per login (set in Settings → Logins). The admin is never locked out.
+- POS Waiter now works on phones (tables → menu ⇄ order) as well as tablets.
+
+**Logins (migration `0010_internal_logins.sql`; run after 0009).**
+- `xtsy.pos` isn't a real domain, so no email is ever sent. On the first sign-in, the server creates the three accounts already confirmed, with the first password, and links them to the restaurant with their roles.
+- It never changes an existing password. The first password lives on the server only (`XTSY_INITIAL_PASSWORD` overrides it).
+- Short names work at sign-in ("admin").
+- Switching a login off removes its access in the database at once, even on devices still signed in. The admin login can't be switched off.
+
+**Passwords.**
+- The admin sets a new password for any login in Settings → Logins (two taps).
+- "Forgot password?" sends a 6-digit WhatsApp code to the number the admin set (admin: +91 88373 17070).
+- Codes are stored only as hashes, last 10 minutes, allow 5 tries, and at most 3 can be sent per hour.
+- Codes need the WhatsApp keys plus an approved Authentication template named in `WHATSAPP_OTP_TEMPLATE`. Until then the screen says to ask the admin.
+
+**Removed.**
+- Staff invites and "set up your login".
+- Business/Outlets/plans pages and the platform Admin page.
+- Outlet switching and plan banners.
+- The invite step in setup, which now shows the three logins.
+
+**Tests.**
+- Login rules (apps, devices, input).
+- Server code against an in-memory database and user admin: creates once, never overwrites passwords, only admin resets, code expiry and limits.
+- 0010 on Postgres 16: switch-off removes access, admin can't be switched off, columns locked, codes unreadable.
+- Icons safety test.
