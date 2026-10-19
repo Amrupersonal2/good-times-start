@@ -37,7 +37,7 @@ const ROLE_HELP: Record<StaffRole, string> = {
   manager: "Billing, menu, reports and inviting staff",
   cashier: "Billing, tables and settling bills",
   captain: "Taking orders and sending KOTs",
-  kitchen: "Kitchen display",
+  kitchen: "Kitchen",
 };
 const INVITE_ROLES: StaffRole[] = ["manager", "cashier", "captain", "kitchen", "owner"];
 
@@ -268,7 +268,7 @@ function PrintingSettings() {
   };
 
   return (
-    <Section title="This device's printer" description="Set up separately on each counter and kitchen screen.">
+    <Section title="This device's printer" description="Set up separately on each counter and kitchen printer.">
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Paper width">
@@ -282,7 +282,7 @@ function PrintingSettings() {
           </Field>
         </div>
         <Toggle label="Print KOTs sent from this device" checked={form.printKotOnSend} onChange={(v) => patch({ printKotOnSend: v })} />
-        <Toggle label="Print KOTs sent from other devices" hint="For a station with its own printer. Keep the Kitchen screen open."
+        <Toggle label="Print KOTs sent from other devices" hint="For a station with its own printer. Keep this app open on that device."
           checked={form.printIncomingKots} onChange={(v) => patch({ printIncomingKots: v })} />
         <Toggle label="Print the bill as soon as it's settled" checked={form.autoPrintBill} onChange={(v) => patch({ autoPrintBill: v })} />
         <Toggle label="Large item text on KOTs" checked={form.largeKotText} onChange={(v) => patch({ largeKotText: v })} />

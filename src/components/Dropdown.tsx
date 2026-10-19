@@ -35,7 +35,7 @@ export function Dropdown<V extends string | number>({ value, onChange, options, 
   if (long) return <SearchDropdown {...{ value, onChange, options, placeholder, ariaLabel, disabled, className: cn(height, className) }} />;
   const groups = dropdownGroups(options);
   return (
-    <Select value={encode(value)} disabled={disabled} onValueChange={(raw) => {
+    <Select value={encode(value)} disabled={disabled ?? false} onValueChange={(raw) => {
       const picked = options.find((o) => encode(o.value) === raw);
       if (picked) onChange(picked.value);
     }}>

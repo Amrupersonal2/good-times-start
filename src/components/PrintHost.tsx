@@ -1,7 +1,8 @@
-import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { getPrintConfig, usePrintConfig } from "@/lib/print-config";
 import { kotPrintGroups, kotsForDevice, printCss, withCopies } from "@/lib/print-logic";
-import { getSettings } from "@/lib/db";
+import { getDb, getSettings } from "@/lib/db";
 import type { Kot, Order } from "@/lib/types";
 import { KotTicket, Receipt } from "./Receipt";
 
@@ -55,6 +56,31 @@ export async function printKots(kots: Kot[], source: "sent" | "incoming" | "repr
 /** Mark KOTs as already handled on this device (e.g. ones present when a screen opens). */
 export function markKotsSeen(kots: Kot[]): void {
   for (const k of kots) if (k.uid) printedKots.add(k.uid);
+}
+
+/**
+ * Prints tickets that arrive from other billing devices while this app is open,
+ * when "Print KOTs sent from other devices" is on. This used to live on the
+ * Kitchen display; it now runs app-wide so station printers work without a
+ * kitchen screen.
+ */
+export function IncomingKotWatcher() {
+  const since = Date.now() - 12 * 60 * 60 * 1000;
+  const kots = useLiveQuery(() => getDb().kots.where("createdAt").aboveOrEqual(since).toArray(), [Math.floor(since / 60000)], []);
+  const seen = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    const ids = new Set(kots.map((k) => k.uid ?? String(k.id)));
+    if (seen.current) {
+      const fresh = kots.filter((k) => k.status === "new" && !seen.current?.has(k.uid ?? String(k.id)));
+      if (fresh.length) void printKots(fresh, "incoming");
+    } else {
+      markKotsSeen(kots);
+    }
+    seen.current = ids;
+  }, [kots]);
+
+  return null;
 }
 
 export function PrintHost() {

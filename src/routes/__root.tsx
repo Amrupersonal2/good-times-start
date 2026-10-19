@@ -14,7 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { LiveSync } from "@/components/LiveSync";
-import { PrintHost } from "@/components/PrintHost";
+import { PrintHost, IncomingKotWatcher } from "@/components/PrintHost";
 import { AppInstall } from "@/components/AppInstall";
 import { PersistentFrame } from "@/components/AppShell";
 import { PreloadScreens } from "@/components/PreloadScreens";
@@ -154,6 +154,7 @@ function RootComponent() {
       <AuthProvider>
         <LiveSync />
         <PrintHost />
+        <IncomingKotWatcher />
         <AppInstall />
         <PreloadScreens />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
