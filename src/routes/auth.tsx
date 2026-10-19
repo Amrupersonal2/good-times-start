@@ -4,6 +4,7 @@ import { ArrowLeft, Check, LayoutDashboard, Send, Store, Tablet } from "lucide-r
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { setAppMode, syncAppModeFromUrl, useChosenApp } from "@/lib/app-mode";
+import { useStaff } from "@/lib/auth-context";
 import { APPS, LOGINS, appsFor, emailFromInput, loginForEmail, passwordProblem, type AppKind, type LoginId } from "@/lib/staff-login-logic";
 import { confirmResetCode, ensureInternalLogins, requestResetCode } from "@/lib/staff-logins.functions";
 import { cn } from "@/lib/utils";
@@ -25,8 +26,18 @@ const input = "mt-1 w-full rounded-xl border border-input bg-card px-3.5 py-3 te
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { user, loading, refresh } = useStaff();
   useEffect(() => { syncAppModeFromUrl(); }, []);
   const chosen = useChosenApp();
+  const [submitting, setSubmitting] = useState(false);
+  // Already signed in on this device: go straight to the app instead of asking again.
+  useEffect(() => {
+    if (loading || !user || submitting) return;
+    const own = appsFor(user.login, user.role === "unknown" ? null : user.role);
+    const target: AppKind = chosen && own.includes(chosen) ? chosen : own[0] ?? chosen ?? "manager";
+    setAppMode(target);
+    void navigate({ to: APPS[target].home, replace: true });
+  }, [loading, user, submitting, chosen, navigate]);
   const app: AppKind | null = chosen;
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -44,6 +55,7 @@ function AuthPage() {
     const email = emailFromInput(login);
     if (!email || !password) return;
     setBusy(true);
+    setSubmitting(true);
     setMessage("");
     try {
       let result = await supabase.auth.signInWithPassword({ email, password });
@@ -65,9 +77,12 @@ function AuthPage() {
       }
       const target = app ?? (internal ? LOGINS[internal].app : "manager");
       setAppMode(target);
+      // Know who signed in before opening the app, so it opens on the first try.
+      await refresh();
       await navigate({ to: APPS[target].home, replace: true });
     } finally {
       setBusy(false);
+      setSubmitting(false);
     }
   };
 
