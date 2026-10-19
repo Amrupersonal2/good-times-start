@@ -130,10 +130,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) setUser(null);
         return;
       }
+      // A fresh sign-in: hold staff screens on "loading" until we know who this is,
+      // so they never mistake "signing in" for "signed out" and bounce back to the login page.
+      const cached = readCachedStaff(session.user.id);
+      if (event === "SIGNED_IN" && active) { if (cached) setUser(cached); else setLoading(true); }
       void resolveStaff(session.user.id, session.user.email ?? "").then((resolved) => {
         writeCachedStaff(resolved);
         if (active) setUser(resolved);
-      }).catch(() => { /* offline: keep what we have */ });
+      }).catch(() => {
+        // Offline: keep what we have, or a minimal signed-in person.
+        if (active && !cached) setUser((u) => u ?? { id: session.user.id, email: session.user.email ?? "", displayName: session.user.email?.split("@")[0] ?? "Staff", role: "unknown", restaurantId: null, restaurantName: "", memberships: [], login: loginForEmail(session.user.email), loginRow: null });
+      }).finally(() => { if (active) setLoading(false); });
     });
     void load().catch(() => { if (active) setLoading(false); });
     return () => {
