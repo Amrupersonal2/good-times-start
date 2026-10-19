@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { loginForEmail, type LoginId, type LoginRow } from "./staff-login-logic";
 
 export type StaffRole = Database["public"]["Enums"]["restaurant_role"];
 
@@ -27,6 +28,10 @@ export interface SignedInStaff {
   restaurantId: string | null;
   restaurantName: string;
   memberships: Membership[];
+  /** admin, billdesk or waiter; null for any other account (such as the owner's own). */
+  login: LoginId | null;
+  /** That login's switch, devices and WhatsApp number, as the admin set them. */
+  loginRow: LoginRow | null;
 }
 
 interface AuthState {
@@ -34,17 +39,6 @@ interface AuthState {
   /** True until the first session check finishes. */
   loading: boolean;
   refresh: () => Promise<void>;
-  createRestaurant: (name: string) => Promise<void>;
-  switchRestaurant: (restaurantId: string) => void;
-}
-
-const ACTIVE_KEY = "xtsy-pos-active-restaurant";
-
-function readActive(): string | null {
-  try { return window.localStorage.getItem(ACTIVE_KEY); } catch { return null; }
-}
-function writeActive(id: string) {
-  try { window.localStorage.setItem(ACTIVE_KEY, id); } catch { /* storage unavailable */ }
 }
 
 /*
@@ -71,11 +65,10 @@ function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
 }
 
 async function resolveStaff(id: string, email: string): Promise<SignedInStaff> {
-  // Joining is automatic: any invite sent to this email becomes a membership.
-  await supabase.rpc("accept_restaurant_invites");
-  const [profile, members] = await Promise.all([
+  const [profile, members, loginQuery] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", id).maybeSingle(),
     supabase.from("restaurant_members").select("restaurant_id, role, restaurants(name)").eq("user_id", id),
+    (supabase as unknown as { from: (t: string) => any }).from("staff_logins").select("login, active, devices, whatsapp, display_name").eq("user_id", id).maybeSingle(), // eslint-disable-line @typescript-eslint/no-explicit-any
   ]);
   // Never mistake "couldn't reach the cloud" for "belongs to no restaurant".
   if (members.error) throw members.error;
@@ -84,12 +77,15 @@ async function resolveStaff(id: string, email: string): Promise<SignedInStaff> {
     restaurantName: row.restaurants?.name ?? "Restaurant",
     role: row.role,
   }));
-  const preferred = readActive();
-  const active = memberships.find((m) => m.restaurantId === preferred) ?? memberships[0];
+  // One outlet: the restaurant this person belongs to.
+  const active = memberships[0];
+  const loginRow = ((loginQuery as { data: LoginRow | null }).data ?? null);
   return {
     id,
     email,
-    displayName: profile.data?.display_name || email.split("@")[0] || "Staff",
+    login: loginRow?.login ?? loginForEmail(email),
+    loginRow,
+    displayName: loginRow?.display_name || profile.data?.display_name || email.split("@")[0] || "Staff",
     role: active?.role ?? "unknown",
     restaurantId: active?.restaurantId ?? null,
     restaurantName: active?.restaurantName ?? "",
@@ -101,8 +97,6 @@ const AuthContext = createContext<AuthState>({
   user: null,
   loading: true,
   refresh: async () => {},
-  createRestaurant: async () => {},
-  switchRestaurant: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -122,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(fresh);
     } catch {
       // Offline or slow: keep the remembered role. A first sign-in on a new device needs the internet once.
-      if (!cached) setUser({ id: session.user.id, email: session.user.email ?? "", displayName: session.user.email?.split("@")[0] ?? "Staff", role: "unknown", restaurantId: null, restaurantName: "", memberships: [] });
+      if (!cached) setUser({ id: session.user.id, email: session.user.email ?? "", displayName: session.user.email?.split("@")[0] ?? "Staff", role: "unknown", restaurantId: null, restaurantName: "", memberships: [], login: loginForEmail(session.user.email), loginRow: null });
     }
     setLoading(false);
   }, []);
@@ -148,20 +142,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [load]);
 
-  const createRestaurant = useCallback(async (name: string) => {
-    const { data, error } = await supabase.rpc("create_restaurant", { _name: name });
-    if (error) throw error;
-    if (typeof data === "string") writeActive(data);
-    await load();
-  }, [load]);
-
-  const switchRestaurant = useCallback((restaurantId: string) => {
-    writeActive(restaurantId);
-    void load();
-  }, [load]);
-
   return (
-    <AuthContext.Provider value={{ user, loading, refresh: load, createRestaurant, switchRestaurant }}>
+    <AuthContext.Provider value={{ user, loading, refresh: load }}>
       {children}
     </AuthContext.Provider>
   );

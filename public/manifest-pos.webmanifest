@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "XTSY POS \u2014 Counter",
-  "short_name": "XTSY POS",
-  "description": "Restaurant billing, KOTs, tables, stock and reports. Works offline.",
-  "start_url": "/",
+  "name": "Restro POS by XTSY",
+  "short_name": "Restro POS",
+  "description": "TAB Bistro counter: billing, tables, KOTs and guest orders. Windows and Mac. Works offline.",
+  "start_url": "/?app=pos",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -42,7 +42,7 @@
   "shortcuts": [
     {
       "name": "Tables",
-      "url": "/tables",
+      "url": "/tables?app=pos",
       "icons": [
         {
           "src": "/icons/pos-192.png",
@@ -51,8 +51,8 @@
       ]
     },
     {
-      "name": "Reports",
-      "url": "/reports",
+      "name": "Close day",
+      "url": "/reports?app=pos",
       "icons": [
         {
           "src": "/icons/pos-192.png",

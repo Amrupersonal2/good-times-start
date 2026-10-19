@@ -17,7 +17,7 @@ import { Segmented } from "@/components/Segmented";
 export const Route = createFileRoute("/insights")({
   head: () => ({
     meta: [
-      { title: "XTSY Insights" },
+      { title: "Insights — POS Business Manager" },
       { name: "description", content: "Live sales, tables, kitchen and stock for restaurant owners." },
     ],
   }),
@@ -330,7 +330,7 @@ function Shell({ name, lastSync, children }: { name: string; lastSync?: number |
       <div className="mx-auto max-w-md space-y-4 px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top))]">
         <header className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-base font-extrabold">{name || "XTSY Insights"}</p>
+            <p className="truncate text-base font-extrabold">{name || "POS Business Manager"}</p>
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
               <RefreshCw className="size-3" aria-hidden="true" />
               {lastSync ? `Updated ${new Date(lastSync).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : "Waiting for first sync"}

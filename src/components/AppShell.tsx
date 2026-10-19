@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, Building2, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,8 @@ import { useRestaurantSettings } from "@/lib/use-settings";
 import { InstallButton } from "@/components/AppInstall";
 import { isLow } from "@/lib/stock-logic";
 import { GuestOrdersButton } from "@/components/GuestOrders";
-import { useAccount, usePlatformAdmin } from "@/lib/use-account";
-import { accountState } from "@/lib/saas-logic";
-import { PRIVATE_EDITION } from "@/lib/edition";
+import { currentDevice, setAppMode, syncAppModeFromUrl, useAppMode } from "@/lib/app-mode";
+import { APPS, APP_LINKS, accessProblem, appsFor, type AppKind } from "@/lib/staff-login-logic";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -29,27 +28,37 @@ const NAV = [
   { to: "/customers", label: "Guests", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/insights", label: "Insights", icon: LineChart },
+  { to: "/marketing", label: "Marketing", icon: Sparkles },
   { to: "/waiter", label: "Waiter", icon: Tablet },
-  { to: "/account", label: PRIVATE_EDITION ? "Outlets" : "Business", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
 
 type NavPath = (typeof NAV)[number]["to"];
 
-/** Screens each role works with. Signed-out devices (single-user mode) see everything. */
+/** Screens each role may open. */
 const ROLE_SCREENS: Record<string, NavPath[]> = {
+  owner: NAV.map((n) => n.to),
+  manager: NAV.map((n) => n.to),
   kitchen: ["/stock", "/settings"],
   captain: ["/waiter", "/", "/tables", "/menu", "/settings"],
-  cashier: ["/", "/tables", "/menu", "/stock", "/customers", "/reports", "/waiter", "/settings"],
+  cashier: ["/", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings"],
 };
 
-export function screensFor(role: string | undefined): readonly NavPath[] {
+/** Screens each app shows, in menu order. */
+const APP_SCREENS: Record<AppKind, NavPath[]> = {
+  manager: ["/dashboard", "/insights", "/", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
+  pos: ["/", "/tables", "/customers", "/menu", "/stock", "/reports", "/settings"],
+  waiter: ["/waiter"],
+};
+
+export function screensFor(role: string | undefined, app: AppKind = "manager"): readonly NavPath[] {
   // Signed out, or signed in without a restaurant yet: no screens.
   if (!role || role === "unknown") return [];
-  // Business (plan, outlets) is for owners and managers; Admin only shows for XTSY POS administrators.
-  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to).filter((to) => to !== "/admin" && ((to !== "/account" && to !== "/dashboard") || role === "owner" || role === "manager" || !role));
+  const allowed = ROLE_SCREENS[role] ?? [];
+  return APP_SCREENS[app].filter((to) => allowed.includes(to));
 }
+
+
 
 export { useRestaurantSettings } from "@/lib/use-settings";
 
@@ -168,60 +177,40 @@ function SyncChip() {
   </>;
 }
 
-/** Shown to a signed-in account that doesn't belong to a restaurant yet. */
-function RestaurantSetup() {
-  const { user, createRestaurant, refresh } = useStaff();
-  const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!name.trim()) return;
-    setBusy(true);
-    setMessage("");
-    try {
-      await createRestaurant(name.trim());
-      await navigate({ to: "/setup" });
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Couldn't create the restaurant. Check your connection and try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (PRIVATE_EDITION) {
-    // One owner's system: people join by invite only.
-    return (
-      <div className="mx-auto max-w-md p-4 py-12 text-center">
-        <Store className="mx-auto size-7 text-primary" />
-        <h1 className="mt-3 text-xl font-bold">Waiting for your invite</h1>
-        <p className="mt-1 text-sm text-muted-foreground">This is a private system. Ask the owner to invite <strong className="text-foreground">{user?.email}</strong> in Settings → Staff, then check again.</p>
-        <Button variant="outline" className="mt-5" onClick={() => void refresh()}><RefreshCw />Check for my invite</Button>
-      </div>
-    );
-  }
-
+/** Shown to a signed-in account that isn't part of the restaurant. */
+function NotLinked() {
+  const { user, refresh } = useStaff();
   return (
-    <div className="mx-auto grid max-w-3xl gap-6 p-4 py-10 lg:grid-cols-2 lg:p-8">
-      <section className="rounded-xl border border-border bg-card p-6">
-        <Store className="size-6 text-primary" />
-        <h1 className="mt-3 text-xl font-bold">Set up your restaurant</h1>
-        <p className="mt-1 text-sm text-muted-foreground">You'll be the owner, with a 14-day free trial. Setup takes about five minutes.</p>
-        <form className="mt-5 space-y-3" onSubmit={(event) => void submit(event)}>
-          <label className="block text-sm font-medium">Restaurant name
-            <input required maxLength={120} value={name} onChange={(event) => setName(event.target.value)} placeholder="TAB Bistro" className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5" />
-          </label>
-          {message ? <p role="alert" className="text-sm text-destructive">{message}</p> : null}
-          <Button type="submit" disabled={busy || !name.trim()} className="w-full">{busy ? "Creating…" : "Create restaurant"}</Button>
-        </form>
-      </section>
-      <section className="rounded-xl border border-dashed border-border p-6">
-        <h2 className="text-base font-semibold">Joining your team's restaurant?</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Ask the owner to invite <strong className="text-foreground">{user?.email}</strong> from Settings, then check again.</p>
-        <Button variant="outline" className="mt-4" onClick={() => void refresh()}><RefreshCw />Check for my invite</Button>
-      </section>
+    <div className="mx-auto max-w-md p-4 py-12 text-center">
+      <Store className="mx-auto size-7 text-primary" />
+      <h1 className="mt-3 text-xl font-bold">This login isn't linked to the restaurant</h1>
+      <p className="mt-1 text-sm text-muted-foreground"><strong className="text-foreground">{user?.email}</strong> has no access right now. Sign in as admin and check Settings → Logins.</p>
+      <Button variant="outline" className="mt-5" onClick={() => void refresh()}><RefreshCw />Check again</Button>
+    </div>
+  );
+}
+
+/** Wrong app, wrong device, or a login that's switched off. */
+function AccessBlocked({ problem, own }: { problem: string; own: AppKind | null }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    await navigate({ to: "/auth", replace: true });
+  };
+  return (
+    <div className="grid min-h-screen place-items-center bg-background p-6">
+      <div className="max-w-sm text-center">
+        <ShieldCheck className="mx-auto size-8 text-primary" />
+        <h1 className="mt-3 text-xl font-bold">Not available here</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{problem}</p>
+        <div className="mt-5 flex flex-col gap-2">
+          {own ? <Button onClick={() => { setAppMode(own); void navigate({ to: APPS[own].home }); }}><ArrowRightLeft />Open {APPS[own].name}</Button> : null}
+          <Button variant="outline" onClick={() => void signOut()}><LogOut />Sign in with another login</Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -231,7 +220,7 @@ const FrameContext = createContext<((tone: Tone) => void) | null>(null);
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /** Staff screens that share the persistent frame (sidebar, header, orders bell). */
-const FRAMED = ["/", "/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
+const FRAMED = ["/", "/dashboard", "/marketing", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings", "/setup"];
 export function isFramedPath(pathname: string): boolean {
   return FRAMED.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`)));
 }
@@ -248,6 +237,8 @@ export function PersistentFrame({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const framed = isFramedPath(pathname);
   const staffApp = framed || pathname === "/waiter" || pathname === "/insights";
+  const app = useAppMode(user);
+  useEffect(() => { syncAppModeFromUrl(); }, [pathname]);
   // Internal system: every staff screen needs a signed-in person.
   useEffect(() => {
     if (staffApp && !loading && !user) void navigate({ to: "/auth", replace: true });
@@ -259,6 +250,11 @@ export function PersistentFrame({ children }: { children: ReactNode }) {
       </div>
     );
   }
+  // Each login keeps to its own app and devices, as the admin set them.
+  const problem = staffApp && user && (user.login || user.role !== "unknown")
+    ? accessProblem({ login: user.login, role: user.role === "unknown" ? null : user.role, row: user.loginRow, app: pathname.startsWith("/waiter") ? "waiter" : app, device: currentDevice() })
+    : null;
+  if (problem && user) return <AccessBlocked problem={problem} own={appsFor(user.login, user.role)[0] ?? null} />;
   if (!framed) return <>{children}</>;
   return <FrameContext.Provider value={setTone}><Frame tone={tone}>{children}</Frame></FrameContext.Provider>;
 }
@@ -287,24 +283,21 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
     const [materials, levels] = await Promise.all([getDb().materials.toArray(), getMaterialLevels()]);
     return materials.filter((m) => !m.archived && isLow(m, levels.get(m.id) ?? 0)).length;
   }, [], 0);
-  const adminQuery = usePlatformAdmin();
-  const platformAdmin = !PRIVATE_EDITION && adminQuery.data === true;
-  const allowed = [...screensFor(user?.role), ...(platformAdmin ? ["/admin" as const] : [])];
-  const nav = NAV.filter((n) => allowed.includes(n.to));
-  const account = useAccount().data;
-  const plan = accountState(account?.account);
+  const app = useAppMode(user);
+  const allowed = screensFor(user?.role, app);
+  const nav = allowed.map((to) => NAV.find((n) => n.to === to)!).filter(Boolean);
+  const otherApps = (appsFor(user?.login ?? null, user?.role) as AppKind[]).filter((a) => a !== app && a !== "waiter");
   const current = NAV.find((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
   const blocked = !!current && !allowed.includes(current.to);
   const home = nav[0]?.to ?? "/";
   const needsDetails = isAdmin(user) && !settings.updatedAt && pathname !== "/settings" && pathname !== "/setup";
-  const planWarning = !PRIVATE_EDITION && isAdmin(user) && plan.warn && pathname !== "/account";
 
   return (
     <div className={`flex min-h-screen bg-background text-foreground ${tone === "dark" ? "dark" : ""}`}>
       <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar py-3 text-sidebar-foreground transition-[width] duration-200 lg:flex ${wide ? "w-60" : "w-[4.75rem]"}`}>
         <div className={`flex items-center gap-2.5 px-3 ${wide ? "" : "flex-col"}`}>
           <img src={logo} alt="XTSY POS" width={36} height={36} className="rounded-[10px]" />
-          {wide ? <span className="flex-1 truncate text-[15px] font-semibold tracking-tight">XTSY POS</span> : null}
+          {wide ? <span className="flex-1 truncate text-[15px] font-semibold tracking-tight">{APPS[app].short}</span> : null}
           <button type="button" onClick={toggleWide} aria-label={wide ? "Collapse menu" : "Expand menu"} aria-expanded={wide}
             className="grid size-8 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground">
             {wide ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
@@ -324,7 +317,17 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
             );
           })}
         </nav>
-        <div className="mt-auto px-3 pt-2 text-[10px] leading-tight text-sidebar-foreground/40">{wide ? "XTSY POS · works offline" : "XTSY"}</div>
+        {otherApps.length ? (
+          <div className="mt-auto flex flex-col gap-0.5 px-2 pt-2">
+            {otherApps.map((a) => (
+              <a key={a} href={APP_LINKS[a]} title={wide ? undefined : `Open ${APPS[a].name}`}
+                className={`flex items-center rounded-[10px] text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground ${wide ? "gap-3 px-3 py-2 text-xs" : "flex-col gap-1 px-1 py-2 text-[10px]"}`}>
+                <ArrowRightLeft className={wide ? "size-4 shrink-0" : "size-[1.1rem]"} /><span className="truncate">{wide ? `Open ${APPS[a].short}` : APPS[a].short.split(" ")[0]}</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
+        <div className={`${otherApps.length ? "" : "mt-auto "}px-3 pt-2 text-[10px] leading-tight text-sidebar-foreground/40`}>{wide ? `${APPS[app].name} · works offline` : "XTSY"}</div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -333,7 +336,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
             <img src={logo} alt="" width={28} height={28} className="rounded-[8px] lg:hidden" />
             <div className="min-w-0">
               <div className="truncate text-[15px] font-semibold tracking-tight">{restaurantName || "XTSY POS"}</div>
-              {restaurantName ? <div className="text-[11px] text-muted-foreground">XTSY POS</div> : null}
+              <div className="text-[11px] text-muted-foreground">{APPS[app].name}</div>
             </div>
           </div>
           <div className="flex items-center gap-2"><GuestOrdersButton /><InstallButton /><SyncChip /></div>
@@ -343,16 +346,11 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
             <AlertTriangle className="size-4 shrink-0" />Finish setting up: add your GSTIN, menu, tables and staff so bills carry your details.
           </Link>
         ) : null}
-        {planWarning && !needsDetails ? (
-          <Link to="/account" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
-            <AlertTriangle className="size-4 shrink-0" />{plan.label}.{plan.live ? " See your plan." : " Billing keeps working; guest ordering and new outlets are paused. Renew in Business."}
-          </Link>
-        ) : null}
         <main className="min-w-0 flex-1 pb-20 lg:pb-0">
-          {needsRestaurant ? <RestaurantSetup /> : blocked ? (
+          {needsRestaurant ? <NotLinked /> : blocked ? (
             <div className="mx-auto max-w-md p-8 text-center">
-              <p className="font-semibold">This screen isn't part of your role</p>
-              <p className="mt-1 text-sm text-muted-foreground">Ask the owner if you need access.</p>
+              <p className="font-semibold">This screen isn't part of {APPS[app].name}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{isAdmin(user) ? "Open it from Business Manager." : "Ask the admin if you need it."}</p>
               <Link to={home} className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Go to {NAV.find((n) => n.to === home)?.label}</Link>
             </div>
           ) : children}

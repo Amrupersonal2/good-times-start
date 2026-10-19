@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BellRing, Check, ChefHat, Clock, Phone, ShoppingBag, Smartphone, UtensilsCrossed, X } from "lucide-react";
+import { BellRing, Check, ChefHat, Clock, Phone, Send, ShoppingBag, Smartphone, UtensilsCrossed, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import { formatINR } from "@/lib/billing";
 import { acceptGuestOrder, isActiveGuestOrder, loadGuestOrders, setGuestOrderStatus } from "@/lib/guest-order-actions";
 import { sortGuestOrders, type GuestOrder } from "@/lib/guest-order-logic";
 import { Segmented } from "@/components/Segmented";
+import { fillTemplate, waLink } from "@/lib/marketing-logic";
+import { useRestaurantSettings } from "@/lib/use-settings";
+import { sendOrderReadyMessage } from "@/lib/whatsapp.functions";
 
 function chime(ctx: AudioContext) {
   const now = ctx.currentTime;
@@ -156,6 +159,18 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
     if (result.missing.length) toast.warning(`Not on this device's menu: ${result.missing.join(", ")}. Added at the guest's price; check the bill.`);
   });
   const status = (next: GuestOrder["status"], why = "") => run(() => setGuestOrderStatus(order, next, staff, why));
+  const restaurant = useRestaurantSettings().name;
+  const readyText = fillTemplate("Hi {first}, your order {offer} from {restaurant} is ready for pickup. See you soon!", { name: order.customer_name, offer: order.code, restaurant });
+  const markReady = () => run(async () => {
+    await setGuestOrderStatus(order, "ready", staff);
+    // Automatic WhatsApp, only if the owner switched it on and the guest said yes.
+    if (order.whatsapp_opt_in) {
+      try {
+        const sent = await sendOrderReadyMessage({ data: { guestOrderId: order.id } });
+        if (sent.sent) toast.success(`${order.customer_name || "Guest"} told on WhatsApp`);
+      } catch { /* the one-tap button below still works */ }
+    }
+  });
   const openBill = () => {
     onOpenBill();
     if (order.channel === "table" && order.table_id) void navigate({ to: "/", search: { table: order.table_id } });
@@ -180,7 +195,8 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
         </div>
       </header>
       {order.customer_name || order.customer_phone ? (
-        <p className="mt-2 text-sm"><span className="font-semibold">{order.customer_name}</span>{order.customer_phone ? <a href={`tel:${order.customer_phone}`} className="ml-2 inline-flex items-center gap-1 text-primary"><Phone className="size-3" />{order.customer_phone}</a> : null}</p>
+        <p className="mt-2 text-sm"><span className="font-semibold">{order.customer_name}</span>{order.customer_phone ? <a href={`tel:${order.customer_phone}`} className="ml-2 inline-flex items-center gap-1 text-primary"><Phone className="size-3" />{order.customer_phone}</a> : null}
+          {order.whatsapp_opt_in ? <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success"><Send className="size-3" />Offers OK</span> : null}</p>
       ) : null}
       <ul className="mt-2 space-y-1 text-sm">
         {order.lines.map((l, i) => (
@@ -203,7 +219,8 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
             <ConfirmButton id={`accept-${order.id}`} disabled={busy} onConfirm={accept} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm={<><ChefHat />Tap again to accept</>}><ChefHat />{busy ? "Accepting…" : "Accept & send KOT"}</ConfirmButton>
             <Button variant="ghost" className="text-destructive" disabled={busy} onClick={() => setRejecting(true)}><X />Reject</Button>
           </> : null}
-          {order.status === "accepted" && order.channel === "online" ? <ConfirmButton id={`ready-${order.id}`} disabled={busy} onConfirm={() => status("ready")} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again: tell guest it's ready"><Check />Ready for pickup</ConfirmButton> : null}
+          {order.status === "accepted" && order.channel === "online" ? <ConfirmButton id={`ready-${order.id}`} disabled={busy} onConfirm={markReady} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again: tell guest it's ready"><Check />Ready for pickup</ConfirmButton> : null}
+          {order.status === "ready" && order.customer_phone ? <Button variant="outline" asChild><a href={waLink(order.customer_phone, readyText)} target="_blank" rel="noreferrer"><Send />WhatsApp guest</a></Button> : null}
           {order.status === "accepted" && order.channel === "table" ? <ConfirmButton id={`served-${order.id}`} disabled={busy} onConfirm={() => status("completed")} className={buttonVariants({ variant: "secondary" })} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again"><Check />Served</ConfirmButton> : null}
           {order.status === "ready" ? <ConfirmButton id={`picked-${order.id}`} disabled={busy} onConfirm={() => status("completed")} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again"><Check />Picked up</ConfirmButton> : null}
           {order.status === "accepted" || order.status === "ready" ? <Button variant="outline" onClick={openBill}>Open bill</Button> : null}

@@ -14,7 +14,6 @@ import { saveOrderingConfig } from "@/lib/guest-order-actions";
 import { orderPageUrl } from "@/lib/guest-order-logic";
 import { hasFeature, slugError, type OrderingConfig } from "@/lib/saas-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
-import { PRIVATE_EDITION } from "@/lib/edition";
 
 const inputClass = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm disabled:bg-secondary disabled:text-muted-foreground";
 
@@ -111,12 +110,6 @@ export function OrderingSettings() {
 
   return (
     <div className="space-y-8 py-2">
-      {!PRIVATE_EDITION && (!qrAllowed || !onlineAllowed) ? (
-        <div className="rounded-xl border border-gold/50 bg-gold/10 p-4 text-sm">
-          <p className="font-semibold">{view.plan ? `Your ${view.plan.name} plan` : "Your plan"} doesn't include {!qrAllowed && !onlineAllowed ? "guest ordering" : !qrAllowed ? "QR ordering at tables" : "online ordering"}{view.account && view.account.status !== "active" ? " right now" : ""}.</p>
-          <Link to="/account" className="mt-1 inline-block font-semibold text-primary">See plans</Link>
-        </div>
-      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-[16rem_1fr]">
         <div>

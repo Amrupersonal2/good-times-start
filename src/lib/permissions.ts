@@ -15,8 +15,10 @@ export type Action =
   | "settings.restaurant" | "settings.billing" | "settings.ordering" | "settings.series" | "staff.manage" | "device.reset"
   // Seeing the numbers
   | "reports.view" | "reports.export" | "dashboard.view" | "outlets.manage"
+  // Branding, QR codes and WhatsApp campaigns
+  | "marketing.manage"
   // Everyday shift work
-  | "bill.create" | "bill.settle" | "kot.send" | "stock.wastage" | "guests.collectDue" | "counter.close" | "tables.status" | "guestOrders.handle";
+  | "bill.create" | "bill.settle" | "kot.send" | "stock.wastage" | "guests.collectDue" | "counter.close" | "tables.status" | "guestOrders.handle" | "guests.consent";
 
 type Role = StaffRole | "unknown";
 
@@ -29,9 +31,9 @@ const RULES: Record<Action, Role[]> = {
   "menu.edit": ADMIN, "menu.import": ADMIN, "tables.edit": ADMIN, "stock.setup": ADMIN, "stock.purchase": ADMIN, "stock.count": ADMIN,
   "bill.void": ADMIN, "bill.cancel": ADMIN, "bill.bigDiscount": ADMIN, "guests.points": ADMIN, "guests.export": ADMIN,
   "settings.restaurant": ADMIN, "settings.billing": ADMIN, "settings.ordering": ADMIN, "settings.series": ADMIN, "staff.manage": ADMIN, "device.reset": OWNER,
-  "reports.view": ADMIN, "reports.export": ADMIN, "dashboard.view": ADMIN, "outlets.manage": OWNER,
+  "reports.view": ADMIN, "reports.export": ADMIN, "dashboard.view": ADMIN, "outlets.manage": OWNER, "marketing.manage": ADMIN,
   "bill.create": FLOOR, "bill.settle": COUNTER, "kot.send": FLOOR, "stock.wastage": ["owner", "manager", "cashier", "kitchen"],
-  "guests.collectDue": COUNTER, "counter.close": COUNTER, "tables.status": FLOOR, "guestOrders.handle": FLOOR,
+  "guests.collectDue": COUNTER, "counter.close": COUNTER, "tables.status": FLOOR, "guestOrders.handle": FLOOR, "guests.consent": COUNTER,
 };
 
 /** May this person do this? Nobody signed in may do nothing. */
