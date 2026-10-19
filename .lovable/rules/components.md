@@ -20,6 +20,12 @@ import { AppShell } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302
 import { AuthProvider } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### BrandEditor
+
+```ts
+import { BrandEditor } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### Button
 
 ```ts
@@ -33,6 +39,12 @@ import { Button } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6
 | `variant` | default · destructive · outline · secondary · ghost · link | `default` |
 | `size` | default · sm · lg · icon | `default` |
 | `asChild` | boolean | `false` |
+
+### ConfirmButton
+
+```ts
+import { ConfirmButton } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
 
 ### Constants
 
@@ -150,6 +162,18 @@ import { KotTicket } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b230
 import { LiveSync } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### LoginsSettings
+
+```ts
+import { LoginsSettings } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### MarketingResults
+
+```ts
+import { MarketingResults } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### MenuExcel
 
 ```ts
@@ -172,6 +196,18 @@ import { PaymentPanel } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b
 
 ```ts
 import { PersistentFrame } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PinGate
+
+```ts
+import { PinGate } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### PolicySync
+
+```ts
+import { PolicySync } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
 ### Popover
@@ -210,6 +246,12 @@ import { PreloadScreens } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a
 import { PrintHost } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### QrKit
+
+```ts
+import { QrKit } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### ReasonPrompt
 
 ```ts
@@ -220,6 +262,18 @@ import { ReasonPrompt } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b
 
 ```ts
 import { Receipt } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### RolesSettings
+
+```ts
+import { RolesSettings } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### SalesSummary
+
+```ts
+import { SalesSummary } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
 ### Segmented
@@ -300,6 +354,12 @@ import { Switch } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6
 import { SyncScheduler } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### TerminalsSettings
+
+```ts
+import { TerminalsSettings } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### UpiPay
 
 ```ts
@@ -310,5 +370,11 @@ import { UpiPay } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6
 
 ```ts
 import { VegMark } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+### WhatsAppCenter
+
+```ts
+import { WhatsAppCenter } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
