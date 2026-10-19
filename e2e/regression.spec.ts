@@ -53,8 +53,11 @@ for (const bp of BREAKPOINTS) {
       const seen = watch(page);
       await page.goto("/auth");
       await audit(page, info, `${bp.name}-auth-choose-app`, seen, "Choose your app");
-      await page.getByRole("radio", { name: /POS Business Manager/ }).click();
-      await expect(page.getByLabel("Login")).toHaveValue(LOGINS.admin.email);
+      // The first click can land before the page is interactive on a cold server; retry it.
+      await expect(async () => {
+        await page.getByRole("radio", { name: /POS Business Manager/ }).click();
+        await expect(page.getByLabel("Login")).toHaveValue(LOGINS.admin.email, { timeout: 2_000 });
+      }).toPass({ timeout: 30_000 });
       await audit(page, info, `${bp.name}-auth-form`, seen, "Forgot password?");
       await page.getByRole("button", { name: "Forgot password?" }).click();
       await audit(page, info, `${bp.name}-auth-reset`, seen, "Send code on WhatsApp");

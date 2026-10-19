@@ -13,7 +13,7 @@ const walk = (suite, path) => {
     const last = t.results[t.results.length - 1] ?? {};
     all.push({ name, status: t.status, ms: last.duration });
     if (t.status === "expected" || t.status === "skipped") continue;
-    const errors = (last.errors ?? []).map((e) => clean(e.message).split("\n").slice(0, 6).join("\n"));
+    const errors = (last.errors ?? []).map((e) => clean(e.message).split("\n").slice(0, 14).join("\n"));
     const pngs = [];
     for (const a of last.attachments ?? []) {
       if (a.contentType !== "image/png" || !a.body || shots >= 80) continue;

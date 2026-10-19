@@ -30,7 +30,7 @@ export async function ready(page: Page) {
  */
 export async function audit(page: Page, info: TestInfo, label: string, seen: ReturnType<typeof watch>, expectText?: string | RegExp) {
   await ready(page);
-  if (expectText) await expect(page.getByText(expectText).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+  if (expectText) await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
   const layout = await page.evaluate(() => {
     const vw = window.innerWidth;
     const over = document.documentElement.scrollWidth - vw;
@@ -56,8 +56,9 @@ export async function audit(page: Page, info: TestInfo, label: string, seen: Ret
   await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
   info.annotations.push({ type: "layout", description: `${label}: sideways overflow ${Math.max(0, layout.over)}px; small tap targets ${layout.tinyTargets}` });
   expect.soft(layout.over, `${label}: the page scrolls sideways by ${layout.over}px. Widest: ${layout.offenders.join(" | ")}`).toBeLessThanOrEqual(1);
-  expect(seen.pageErrors, `${label}: the page crashed`).toEqual([]);
-  expect.soft(seen.consoleErrors, `${label}: console errors`).toEqual([]);
+  expect(seen.pageErrors.length, `${label}: the page crashed: ${seen.pageErrors.join(" || ")}`).toBe(0);
+  if (seen.consoleErrors.length) info.annotations.push({ type: "console", description: `${label}: ${seen.consoleErrors.join(" || ")}` });
+  expect.soft(seen.consoleErrors.length, `${label}: console errors: ${seen.consoleErrors.join(" || ")}`).toBe(0);
   seen.pageErrors.length = 0;
   seen.consoleErrors.length = 0;
 }
