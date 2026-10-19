@@ -13,6 +13,7 @@ import { ItemOptions } from "@/components/ItemOptions";
 import { InstallButton } from "@/components/AppInstall";
 import { printKots } from "@/components/PrintHost";
 import { useStaff } from "@/lib/auth-context";
+import { allow } from "@/lib/pin-gate";
 import { useCart } from "@/lib/cart-store";
 import { getDb, markDirty } from "@/lib/db";
 import { formatINR } from "@/lib/billing";
@@ -149,7 +150,9 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
     if (needsOptions(item)) setChoosing(item); else cart.addItem(item);
   };
 
+  const { user } = useStaff();
   const send = async () => {
+    if (!(await allow(user, "kot.send", "Send the KOT"))) return;
     setSending(true);
     try {
       const kots = await cart.sendKitchen();
@@ -160,6 +163,7 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
   };
 
   const askForBill = async () => {
+    if (!(await allow(user, "bill.print", "Ask the counter for the bill"))) return;
     await getDb().restTables.update(tableId, { status: "billed" });
     await markDirty(["table", tableId]);
     toast.success(`Table ${table?.label ?? tableId} asked for the bill`);
@@ -244,7 +248,11 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
                     </div>
                   </div>
                   <div className="flex items-center rounded-lg bg-secondary">
-                    <button aria-label={`Fewer ${l.name}`} onClick={() => cart.setQty(l.itemId, l.qty - 1)} className="p-2.5"><Minus className="size-4" /></button>
+                    <button aria-label={`Fewer ${l.name}`} onClick={() => {
+                      // Taking away something the kitchen already has is a KOT edit.
+                      if (l.qty - 1 < kitchenHas) void allow(user, "kot.edit", `Cancel one ${l.name} the kitchen has`).then((ok) => { if (ok) cart.setQty(l.itemId, l.qty - 1); });
+                      else cart.setQty(l.itemId, l.qty - 1);
+                    }} className="p-2.5"><Minus className="size-4" /></button>
                     <span className="w-6 text-center font-bold">{l.qty}</span>
                     <button aria-label={`More ${l.name}`} onClick={() => cart.setQty(l.itemId, l.qty + 1)} className="p-2.5"><Plus className="size-4" /></button>
                   </div>

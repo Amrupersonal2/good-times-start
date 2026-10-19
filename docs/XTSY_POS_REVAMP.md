@@ -289,3 +289,54 @@ Every design has the logo in the middle of the code (high error correction) and 
 - Server code against an in-memory database and user admin: creates once, never overwrites passwords, only admin resets, code expiry and limits.
 - 0010 on Postgres 16: switch-off removes access, admin can't be switched off, columns locked, codes unreadable.
 - Icons safety test.
+
+## Round 9 (October 2026) — `revamp-9`: roles, terminals, back-office settings, Sales Summary
+
+**Roles (Settings → Roles).**
+- The admin decides what Reception and Waiter may do. Owners and managers can always do everything.
+- **Screens (Reception):** Tables, Menu (view), Stock (wastage), Guests and Reports, each switched with Allow. Billing is always on.
+- **Actions**, each set to **Off / On / On with PIN**:
+  - dashboard, daily summary, Sales Summary, settings screen
+  - discount, NC (complimentary = 100% discount), service charge
+  - cancel bill, split bill, change table, settle
+  - send KOT, KOT edit, KOT reprint
+  - bill print, bill reprint, old bill reprint
+- **Admin PIN:**
+  - asked on the device for any "On with PIN" action
+  - stored only as a slow salted hash (PBKDF2), synced with the settings so it works offline
+  - 5 tries per prompt
+- **Defaults** match how the app already behaved, so nothing changes until the admin edits a role.
+- **Always admin, enforced by the database** and listed on the screen: menu, recipes and tables; stock set-up, purchases and counts; settings, logins, roles and terminals; voiding settled bills; full reports; marketing.
+- The policy lives in the restaurant settings, which only owners and managers can write (0008). Every screen re-reads it live.
+
+**Terminals (Settings → Terminals; migration `0011_terminals.sql`, run after 0010).**
+- Every device checks in on start, every 5 minutes and when it comes back online. It reports its bill series (key), app, device type and login.
+- The admin sees all terminals with last-seen times and can:
+  - rename a terminal
+  - block or unblock it (staff on a blocked device see a blocked screen; the admin can still sign in there)
+  - release it, which forgets a replaced device
+- Devices can't rename or unblock themselves.
+- Tested on Postgres 16.
+
+**Settings, back-office style.** A left menu grouped into:
+- **Outlet settings:** Terminals, Sections & Tables, Invoice & GST, Printing & KOT, Guest ordering, Restaurant details
+- **Staff and access:** Logins, Roles
+- **Marketing:** Brand & QR codes, WhatsApp
+- **This device**
+
+The overview shows each section as a card with an Update button. Staff see only Printing and This device.
+
+**Sales Summary (Reports → Sales Summary).**
+- **Filters:** bill no. or mobile, order type, payment type (including split), status, terminal (series).
+- **Toggles:** show items, tax breakup (CGST/SGST), split payment amounts.
+- **Totals strip:** sales, orders, discount, charges, tax, food sale. Cancelled bills are shown apart.
+- **Bill table:** tap a bill to see the receipt and reprint (old-bill reprint permission).
+- **Excel:** the columns follow the toggles.
+- Reception gets it only when the admin allows it.
+
+**Tests.**
+- Role policy (defaults, merge, admin unaffected, database-protected actions not grantable)
+- PIN hashing
+- Sales Summary totals, filters and Excel
+- Terminals SQL
+- Icon safety test
