@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, ChefHat, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, Building2, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, Building2, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/", label: "Billing", icon: ClipboardList },
   { to: "/tables", label: "Tables", icon: LayoutGrid },
-  { to: "/kitchen", label: "Kitchen", icon: ChefHat },
   { to: "/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
@@ -39,9 +38,9 @@ type NavPath = (typeof NAV)[number]["to"];
 
 /** Screens each role works with. Signed-out devices (single-user mode) see everything. */
 const ROLE_SCREENS: Record<string, NavPath[]> = {
-  kitchen: ["/kitchen", "/stock", "/settings"],
-  captain: ["/waiter", "/", "/tables", "/kitchen", "/menu", "/settings"],
-  cashier: ["/", "/tables", "/kitchen", "/menu", "/stock", "/customers", "/reports", "/waiter", "/settings"],
+  kitchen: ["/stock", "/settings"],
+  captain: ["/waiter", "/", "/tables", "/menu", "/settings"],
+  cashier: ["/", "/tables", "/menu", "/stock", "/customers", "/reports", "/waiter", "/settings"],
 };
 
 export function screensFor(role: string | undefined): readonly NavPath[] {
@@ -216,7 +215,7 @@ const FrameContext = createContext<((tone: Tone) => void) | null>(null);
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /** Staff screens that share the persistent frame (sidebar, header, orders bell). */
-const FRAMED = ["/", "/dashboard", "/tables", "/kitchen", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
+const FRAMED = ["/", "/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
 export function isFramedPath(pathname: string): boolean {
   return FRAMED.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`)));
 }
