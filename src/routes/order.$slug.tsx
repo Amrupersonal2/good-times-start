@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, ChefHat, Clock, MapPin, Minus, Phone, Plus, Search, ShoppingBag, Smartphone, Store, UtensilsCrossed, X } from "lucide-react";
+import { ArrowLeft, BadgePercent, Check, ChefHat, Clock, ExternalLink, MapPin, Minus, Phone, Plus, Search, Send, Share, ShoppingBag, Smartphone, Sparkles, Star, Store, UtensilsCrossed, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -15,13 +15,16 @@ import {
 } from "@/lib/guest-order-logic";
 import type { CartLine, MenuItem } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
+import { activeOffers, brandPalette, cleanSource, waLink, LINK_LABELS, type BrandLinks, type Offer } from "@/lib/marketing-logic";
+import { logScan, recordGuestChoice } from "@/lib/marketing-actions";
+import type { CSSProperties } from "react";
 
-interface OrderSearch { table?: string; o?: string; k?: string }
+interface OrderSearch { table?: string; o?: string; k?: string; s?: string }
 
 export const Route = createFileRoute("/order/$slug")({
   validateSearch: (search: Record<string, unknown>): OrderSearch => {
     const out: OrderSearch = {};
-    for (const key of ["table", "o", "k"] as const) if (typeof search[key] === "string" && search[key]) out[key] = search[key] as string;
+    for (const key of ["table", "o", "k", "s"] as const) if (typeof search[key] === "string" && search[key]) out[key] = search[key] as string;
     return out;
   },
   head: () => ({
@@ -59,6 +62,12 @@ function GuestOrderPage() {
     staleTime: 60_000,
   });
 
+  const scanSource = search.s ? cleanSource(search.s) : search.table ? cleanSource(search.table) : "direct";
+  const loadedSlug = store.data?.slug;
+  useEffect(() => {
+    if (loadedSlug && !(search.o && search.k)) void logScan(loadedSlug, scanSource);
+  }, [loadedSlug, scanSource, search.o, search.k]);
+
   if (store.isLoading) return <Frame><div className="space-y-3 p-5">{[0, 1, 2, 3].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-card" />)}</div></Frame>;
   if (store.isError) return <Frame><Notice icon={Store} title="Couldn't load the menu" body="Check your internet connection and try again." action={<Button onClick={() => void store.refetch()}>Try again</Button>} /></Frame>;
   const s = store.data;
@@ -74,23 +83,40 @@ function GuestOrderPage() {
     return <Frame store={s}><Notice icon={UtensilsCrossed} title={search.table ? "Table ordering is off" : "Scan the QR code on your table"}
       body={search.table ? "Please order with the staff." : "This restaurant takes orders from the QR code on each table."} /></Frame>;
   }
-  return <Frame store={s}><Menu store={s} channel={channel} tableId={table?.id} tableLabel={table?.label} /></Frame>;
+  return <Frame store={s}><Menu store={s} channel={channel} tableId={table?.id} tableLabel={table?.label} source={scanSource} /></Frame>;
 }
 
 /* ---------------- layout ---------------- */
 
 function Frame({ store, children }: { store?: Storefront; children: ReactNode }) {
+  const brand = store?.branding ?? {};
+  // The owner's brand colour becomes this page's accent; text stays readable (see brandPalette).
+  const palette = brandPalette(brand.color);
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" style={(palette ?? undefined) as CSSProperties | undefined}>
       <div className="mx-auto min-h-screen max-w-xl bg-background pb-28">
         {store ? (
-          <header className="relative overflow-hidden bg-sidebar px-5 pb-6 pt-7 text-sidebar-foreground">
-            <div aria-hidden="true" className="absolute -right-10 -top-10 size-40 rounded-full bg-gold/20" />
-            <div aria-hidden="true" className="absolute -bottom-16 right-16 size-32 rounded-full bg-sidebar-accent" />
-            <div className="relative">
-              <h1 className="text-2xl font-extrabold leading-tight text-white">{store.name}</h1>
-              {store.address ? <p className="mt-1 flex items-start gap-1.5 text-sm text-sidebar-foreground/80"><MapPin className="mt-0.5 size-3.5 shrink-0" />{store.address}</p> : null}
-              {store.phone ? <a href={`tel:${store.phone}`} className="mt-1 inline-flex items-center gap-1.5 text-sm text-sidebar-foreground/80"><Phone className="size-3.5" />{store.phone}</a> : null}
+          <header className="relative overflow-hidden bg-sidebar text-sidebar-foreground">
+            {brand.cover ? (
+              <img src={brand.cover} alt="" decoding="async" fetchPriority="high" className="absolute inset-0 size-full object-cover" />
+            ) : <>
+              <div aria-hidden="true" className="absolute -right-10 -top-10 size-40 rounded-full bg-primary/40" />
+              <div aria-hidden="true" className="absolute -bottom-16 right-16 size-32 rounded-full bg-sidebar-accent" />
+            </>}
+            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
+            <div className={`relative px-5 pb-6 ${brand.cover ? "pt-28" : "pt-7"}`}>
+              <div className="flex items-end gap-3">
+                {brand.logo ? <img src={brand.logo} alt={`${store.name} logo`} width={64} height={64} className="size-16 shrink-0 rounded-2xl bg-white object-contain p-1 shadow-lg ring-2 ring-white/70" /> : null}
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-extrabold leading-tight text-white drop-shadow">{store.name}</h1>
+                  {brand.tagline ? <p className="mt-0.5 text-sm font-medium text-white/90">{brand.tagline}</p> : null}
+                </div>
+              </div>
+              {store.address ? <p className="mt-3 flex items-start gap-1.5 text-sm text-white/80"><MapPin className="mt-0.5 size-3.5 shrink-0" />{store.address}</p> : null}
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                {store.phone ? <a href={`tel:${store.phone}`} className="inline-flex items-center gap-1.5 text-sm text-white/80"><Phone className="size-3.5" />{store.phone}</a> : null}
+                {brand.links?.instagram ? <a href={brand.links.instagram} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-white/80"><Share className="size-3.5" />Instagram</a> : null}
+              </div>
             </div>
           </header>
         ) : null}
@@ -117,7 +143,7 @@ function Notice({ icon: Icon, title, body, action }: { icon: typeof Store; title
 
 /* ---------------- menu and cart ---------------- */
 
-function Menu({ store, channel, tableId, tableLabel }: { store: Storefront; channel: GuestChannel; tableId?: string | undefined; tableLabel?: string | undefined }) {
+function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefront; channel: GuestChannel; tableId?: string | undefined; tableLabel?: string | undefined; source: string }) {
   const navigate = Route.useNavigate();
   const items = useMemo(() => store.menu.map(asMenuItem), [store.menu]);
   const categories = useMemo(() => orderCategories(items.map((i) => i.category), store.categoryOrder), [items, store.categoryOrder]);
@@ -128,6 +154,8 @@ function Menu({ store, channel, tableId, tableLabel }: { store: Storefront; chan
   const [checkout, setCheckout] = useState(false);
   const [placed, setPlaced] = useState<PlacedRef[]>([]);
   const sections = useRef<Record<string, HTMLElement | null>>({});
+  const offers = useMemo(() => activeOffers(store.branding?.offers, Date.now()), [store.branding?.offers]);
+  const [flash, setFlash] = useState("");
 
   useEffect(() => {
     setCart(readJson<GuestCartLine[]>(cartKey(store.slug, tableId), []));
@@ -153,6 +181,15 @@ function Menu({ store, channel, tableId, tableLabel }: { store: Storefront; chan
     setQ("");
     sections.current[c]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  const openOffer = (offer: Offer) => {
+    const dish = offer.itemId ? items.find((i) => i.id === offer.itemId) : undefined;
+    if (!dish) return;
+    setQ("");
+    setActive(dish.category);
+    setFlash(dish.id);
+    window.setTimeout(() => document.getElementById(`dish-${dish.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    window.setTimeout(() => setFlash(""), 2400);
+  };
 
   return (
     <>
@@ -166,6 +203,7 @@ function Menu({ store, channel, tableId, tableLabel }: { store: Storefront; chan
             </div>
           </div>
           {store.paused ? <p role="status" className="mt-3 rounded-lg bg-gold/20 px-3 py-2 text-xs font-semibold text-gold-foreground">The kitchen isn't taking orders here for a little while. You can still look at the menu.</p> : null}
+          {store.branding?.welcome ? <p className="mt-3 text-sm">{store.branding.welcome}</p> : null}
           {store.message ? <p className="mt-3 text-sm">{store.message}</p> : null}
           {placed.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -177,6 +215,25 @@ function Menu({ store, channel, tableId, tableLabel }: { store: Storefront; chan
           ) : null}
         </div>
       </div>
+
+      {offers.length ? (
+        <section aria-label="Offers" className="no-scrollbar mt-3 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1">
+          {offers.map((offer) => {
+            const linked = !!offer.itemId && items.some((i) => i.id === offer.itemId);
+            const Tag_ = linked ? "button" : "div";
+            return (
+              <Tag_ key={offer.id} {...(linked ? { type: "button" as const, onClick: () => openOffer(offer) } : {})}
+                className={`relative min-w-[78%] snap-start overflow-hidden rounded-2xl bg-primary p-4 text-left text-primary-foreground shadow-sm ${offers.length === 1 ? "min-w-full" : ""}`}>
+                <div aria-hidden="true" className="absolute -right-6 -top-6 size-24 rounded-full bg-primary-foreground/10" />
+                <p className="relative flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider opacity-85"><BadgePercent className="size-3.5" />Offer{offer.until ? ` · till ${new Date(`${offer.until}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}</p>
+                <p className="relative mt-1 text-lg font-extrabold leading-snug">{offer.title}</p>
+                {offer.detail ? <p className="relative mt-0.5 text-sm opacity-90">{offer.detail}</p> : null}
+                {linked ? <p className="relative mt-2 text-xs font-bold underline underline-offset-2">See the dish →</p> : null}
+              </Tag_>
+            );
+          })}
+        </section>
+      ) : null}
 
       <div className="sticky top-0 z-20 mt-3 bg-background/95 px-4 pb-2 pt-2 backdrop-blur">
         <div className="relative">
@@ -204,7 +261,7 @@ function Menu({ store, channel, tableId, tableLabel }: { store: Storefront; chan
                   const off = outsideHours(i);
                   const n = qtyOf(i.id);
                   return (
-                    <li key={i.id} className={`flex gap-3 p-3.5 ${off ? "opacity-60" : ""}`}>
+                    <li key={i.id} id={`dish-${i.id}`} className={`flex gap-3 p-3.5 transition-colors duration-700 ${off ? "opacity-60" : ""} ${flash === i.id ? "bg-primary-tint" : ""}`}>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start gap-2"><span className="mt-1"><VegMark veg={i.veg} /></span><span className="font-semibold leading-snug">{i.name}</span></div>
                         <p className="mt-0.5 pl-5 text-sm font-semibold text-primary">{priceLabel(i)}</p>
@@ -250,7 +307,7 @@ function Menu({ store, channel, tableId, tableLabel }: { store: Storefront; chan
 
       <Dialog open={checkout} onOpenChange={setCheckout}>
         <DialogContent className="max-h-[92vh] max-w-md overflow-y-auto">
-          {checkout ? <Checkout store={store} channel={channel} tableId={tableId} tableLabel={tableLabel} cart={cart} items={items} setCart={setCart}
+          {checkout ? <Checkout store={store} channel={channel} tableId={tableId} tableLabel={tableLabel} cart={cart} items={items} setCart={setCart} source={source}
             onPlaced={(ref) => {
               writeJson(placedKey(store.slug), [ref, ...readJson<PlacedRef[]>(placedKey(store.slug), [])].slice(0, 10));
               setCart([]);
@@ -270,11 +327,14 @@ function estimate(store: Storefront, lines: { itemId: string; price: number; qty
   return computeTotals(cartLines, 0, 0, { inclusive: store.pricesIncludeGst, exempt: store.gstMode !== "regular", roundToRupee: true });
 }
 
-function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, onPlaced }: {
-  store: Storefront; channel: GuestChannel; tableId?: string | undefined; tableLabel?: string | undefined; cart: GuestCartLine[]; items: MenuItem[];
+function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, onPlaced, source }: {
+  store: Storefront; channel: GuestChannel; tableId?: string | undefined; tableLabel?: string | undefined; cart: GuestCartLine[]; items: MenuItem[]; source: string;
   setCart: (update: (c: GuestCartLine[]) => GuestCartLine[]) => void; onPlaced: (ref: PlacedRef) => void;
 }) {
-  const saved = readJson<{ name?: string; phone?: string }>("xtsy-guest-contact", {});
+  const saved = readJson<{ name?: string; phone?: string; optIn?: boolean }>("xtsy-guest-contact", {});
+  const askOptIn = store.branding?.askOptIn !== false;
+  // Never pre-ticked: offers only go to guests who choose them.
+  const [optIn, setOptIn] = useState(false);
   const [name, setName] = useState(saved.name ?? "");
   const [phone, setPhone] = useState(saved.phone ?? "");
   const [note, setNote] = useState("");
@@ -286,12 +346,12 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
   const totals = estimate(store, cart, items);
   const digits = phone.replace(/\D/g, "");
   const short = channel === "online" && store.minOrder > 0 && totals.subtotal < store.minOrder;
-  const missing = channel === "online" && (name.trim().length < 2 || digits.length < 10);
+  const missing = (channel === "online" && (name.trim().length < 2 || digits.length < 10)) || (optIn && digits.length < 10);
 
   const place = async () => {
     setBusy(true);
     setError("");
-    writeJson("xtsy-guest-contact", { name: name.trim(), phone: phone.trim() });
+    writeJson("xtsy-guest-contact", { name: name.trim(), phone: phone.trim(), optIn });
     const { data, error: failure } = await supabase.rpc("place_guest_order", {
       _slug: store.slug, _channel: channel, _table_id: tableId ?? null, _name: name.trim(), _phone: phone.trim(), _note: note.trim(),
       _lines: guestOrderPayload(cart) as never, _payment: payment, _pickup_at: pickup || null,
@@ -299,6 +359,7 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
     setBusy(false);
     if (failure || !data) { setError(failure?.message ?? "Couldn't send your order. Please try again."); return; }
     const r = data as unknown as { id: string; token: string; code: string };
+    await recordGuestChoice(r.id, r.token, askOptIn && optIn, source);
     onPlaced({ id: r.id, token: r.token, code: r.code, at: Date.now() });
   };
 
@@ -331,6 +392,11 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
         <label className="block text-sm font-medium">{channel === "table" ? "Your name (optional)" : "Your name"}
           <input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} autoComplete="name" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
         </label>
+        {channel === "table" && askOptIn ? (
+          <label className="block text-sm font-medium">Mobile number {optIn ? "" : "(optional)"}
+            <input value={phone} maxLength={15} inputMode="tel" autoComplete="tel" onChange={(e) => setPhone(e.target.value.replace(/[^0-9+ ]/g, ""))} placeholder="98765 43210" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
+          </label>
+        ) : null}
         {channel === "online" ? <>
           <label className="block text-sm font-medium">Mobile number
             <input value={phone} maxLength={15} inputMode="tel" autoComplete="tel" onChange={(e) => setPhone(e.target.value.replace(/[^0-9+ ]/g, ""))} placeholder="98765 43210" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
@@ -341,6 +407,14 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
               options={slots.map((c) => ({ value: c.at ?? "", label: c.label }))} />
           </label>
         </> : null}
+        {askOptIn ? (
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 text-sm">
+            <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-primary" />
+            <span><span className="flex items-center gap-1.5 font-semibold"><Send className="size-4 text-success" />Get offers from {store.name} on WhatsApp</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">New dishes and deals, now and then. Reply STOP any time to stop.</span>
+              {optIn && digits.length < 10 ? <span className="mt-1 block text-xs font-semibold text-destructive">Add your mobile number above to get offers.</span> : null}</span>
+          </label>
+        ) : null}
         <label className="block text-sm font-medium">Anything the kitchen should know?
           <textarea value={note} maxLength={240} rows={2} onChange={(e) => setNote(e.target.value)} placeholder="Less spicy, no onion, allergies…" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm" />
         </label>
@@ -472,6 +546,7 @@ function OrderStatus({ store, id, token, table }: { store: Storefront; id: strin
       ) : null}
 
       {error ? <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p> : null}
+      {!ended ? <StayConnected store={store} code={o.code} /> : null}
       <div className="mt-4 flex flex-col gap-2">
         {o.status === "new" ? <Button variant="outline" className="text-destructive" onClick={() => void cancel()}><X />Cancel this order</Button> : null}
         {o.channel === "table" || ended ? <Button variant="secondary" onClick={backToMenu}><Plus />Order more</Button> : null}
@@ -480,5 +555,37 @@ function OrderStatus({ store, id, token, table }: { store: Storefront; id: strin
       <p className="mt-6 text-center text-xs text-muted-foreground">Keep this page open, or come back to it from the menu.</p>
       <Link to="/order/$slug" params={{ slug: store.slug }} search={table ? { table } : {}} className="sr-only">Back to the menu</Link>
     </div>
+  );
+}
+
+/* ---------------- after ordering: follow, review, chat ---------------- */
+
+const LINK_ICONS: Record<keyof BrandLinks, typeof Star> = { instagram: Share, googleReview: Star, website: ExternalLink, stays: MapPin, voyage: Sparkles };
+
+function StayConnected({ store, code }: { store: Storefront; code: string }) {
+  const brand = store.branding ?? {};
+  const links = (Object.keys(LINK_LABELS) as (keyof BrandLinks)[]).filter((k) => brand.links?.[k]);
+  if (!links.length && !brand.whatsapp) return null;
+  return (
+    <section className="mt-3 rounded-2xl border border-border bg-card p-5" aria-label="Stay connected">
+      <p className="font-bold">Enjoying {store.name}?</p>
+      <p className="mt-0.5 text-sm text-muted-foreground">While you wait, say hello.</p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {brand.whatsapp ? (
+          <a href={waLink(brand.whatsapp, `Hi ${store.name}! I just placed order ${code}.`)} target="_blank" rel="noreferrer"
+            className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-success px-3 py-3 text-sm font-semibold text-white"><Send className="size-4" />Chat with us on WhatsApp</a>
+        ) : null}
+        {links.map((k) => {
+          const Icon = LINK_ICONS[k];
+          return (
+            <a key={k} href={brand.links?.[k]} target="_blank" rel="noreferrer"
+              className={`flex items-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-semibold hover:border-primary ${k === "googleReview" ? "col-span-2 justify-center bg-primary-tint text-primary" : ""}`}>
+              <Icon className="size-4 shrink-0" /><span className="truncate">{k === "googleReview" ? "Loved it? Leave us a Google review" : LINK_LABELS[k]}</span>
+              {k === "googleReview" ? null : <ExternalLink className="ml-auto size-3.5 shrink-0 text-muted-foreground" />}
+            </a>
+          );
+        })}
+      </div>
+    </section>
   );
 }

@@ -29,6 +29,7 @@ const NAV = [
   { to: "/customers", label: "Guests", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/insights", label: "Insights", icon: LineChart },
+  { to: "/marketing", label: "Marketing", icon: Sparkles },
   { to: "/waiter", label: "Waiter", icon: Tablet },
   { to: "/account", label: PRIVATE_EDITION ? "Outlets" : "Business", icon: Building2 },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -48,7 +49,7 @@ export function screensFor(role: string | undefined): readonly NavPath[] {
   // Signed out, or signed in without a restaurant yet: no screens.
   if (!role || role === "unknown") return [];
   // Business (plan, outlets) is for owners and managers; Admin only shows for XTSY POS administrators.
-  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to).filter((to) => to !== "/admin" && ((to !== "/account" && to !== "/dashboard") || role === "owner" || role === "manager" || !role));
+  return (role && ROLE_SCREENS[role]) || NAV.map((n) => n.to).filter((to) => to !== "/admin" && ((to !== "/account" && to !== "/dashboard" && to !== "/marketing") || role === "owner" || role === "manager" || !role));
 }
 
 export { useRestaurantSettings } from "@/lib/use-settings";
@@ -231,7 +232,7 @@ const FrameContext = createContext<((tone: Tone) => void) | null>(null);
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /** Staff screens that share the persistent frame (sidebar, header, orders bell). */
-const FRAMED = ["/", "/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
+const FRAMED = ["/", "/dashboard", "/marketing", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings", "/account", "/admin", "/setup"];
 export function isFramedPath(pathname: string): boolean {
   return FRAMED.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`)));
 }

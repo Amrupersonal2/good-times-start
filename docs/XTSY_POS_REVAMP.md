@@ -190,3 +190,61 @@ and outlets appear once it has.
 - Now: refused rows are found one by one and dropped from the queue, and the cloud's copy is restored on the device. The sync window explains what was undone and why.
 - Network failures still retry; nothing is lost.
 - Covered by sync-simulation tests (cashier menu edit, settled-bill rewrite, offline retry); a mutation check confirms the tests fail on the old behaviour.
+
+## Round 7 (October 2026) — `revamp-7`: branded QR ordering and WhatsApp marketing
+
+New **Marketing** screen (owner and manager only) with four tabs.
+
+**Brand.** Logo, cover photo, brand colour, tagline, welcome note, up to 5 offers (with an end date and an optional dish), links (Instagram, Google review, website, stays, travel) and the restaurant's WhatsApp number. A live phone preview shows what guests see.
+- Pictures are compressed in the browser (WebP) so the guest page stays fast on mobile data.
+- Any brand colour is adjusted until white button text passes 4.5:1 contrast.
+
+**Guest QR page.**
+- Cover photo header with logo and tagline, plus a swipeable offers banner; an offer linked to a dish jumps to it.
+- At checkout, an opt-in for WhatsApp offers. It is never pre-ticked and requires a mobile number.
+- After ordering, a "stay connected" card: chat on WhatsApp, Google review, Instagram and the other links.
+- Every menu open is counted per QR source, once per visit.
+
+**QR kit.** Prints on A4:
+- table tents (fold in half, readable from both sides)
+- table stickers (6 per sheet)
+- an entrance poster (cover photo, offer, 1-2-3 steps)
+- a counter standee
+
+Every design has the logo in the middle of the code (high error correction) and is dark enough to scan. Each code carries its source (table or poster/insta/…) so Results can tell which ones work. A PNG download is available for Instagram, Google and WhatsApp status.
+
+**WhatsApp.**
+- **Audiences:**
+  - everyone who said yes
+  - visited in the last 30 days
+  - 45+ days away
+  - regulars
+  - top 20% spenders
+  - new guests
+  - QR/online orderers
+- **Messages:** starter messages with `{first}`, `{offer}`, `{link}` placeholders; "Reply STOP to stop offers." is always added.
+- **Who gets it:** only guests who said yes, never twice within the cool-down (default 3 days), and only valid numbers.
+- **One-tap sending** (free, works now): a queue that opens WhatsApp with each guest's message ready. Exports to .vcf contacts and .csv for WhatsApp Business broadcast lists.
+- **Automatic sending** (optional, WhatsApp Business Platform): approved templates, sent 25 at a time on the server. Nobody gets a campaign twice, even on retry.
+  - Needs the secrets `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`.
+  - Also sends "your order is ready" automatically to guests who said yes.
+- **Every campaign is recorded** with sent and failed counts.
+
+**Results.** Menu opens per day; opens, orders and conversion per QR code; WhatsApp yeses.
+
+**Guests screen.** Staff can record a guest's yes in person, filter by "WhatsApp yes", and open a chat. Consent is stored on the guest record and syncs to every device. Guest orders show "Offers OK", and a one-tap "WhatsApp guest" button appears when a pickup is ready.
+
+**Database (migration `0009_branding_whatsapp_marketing.sql`; run after 0008).**
+- Restaurants get `branding` (public, size-capped at 700 KB) and `marketing` (private).
+- Guest orders get the consent flag and scan source, recorded through `guest_order_marketing`, which needs the order's secret token.
+- New tables: `qr_scans` (counted through `log_qr_scan`), `marketing_campaigns` and `marketing_sends`. Only owners and managers can see them.
+- `public_storefront` now returns the branding.
+- Tested on Postgres 16:
+  - cashiers can't change branding or see campaigns
+  - guests can't read scans
+  - a wrong token changes nothing
+  - junk scan sources are cleaned
+  - oversize branding is refused
+  - the file is safe to re-run
+
+**Safety net.** A test fails if any screen imports an icon the live build doesn't have, so a misspelt icon can't break the app.
