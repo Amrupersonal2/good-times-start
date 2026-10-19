@@ -10,25 +10,34 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as InsightsRouteImport } from './routes/insights'
-import { Route as KitchenRouteImport } from './routes/kitchen'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as StockRouteImport } from './routes/stock'
 import { Route as TablesRouteImport } from './routes/tables'
 import { Route as WaiterRouteImport } from './routes/waiter'
-import { Route as AccountRouteImport } from './routes/account'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as SetupRouteImport } from './routes/setup'
 import { Route as OrderSlugRouteImport } from './routes/order.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -41,14 +50,14 @@ const CustomersRoute = CustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InsightsRoute = InsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KitchenRoute = KitchenRouteImport.update({
-  id: '/kitchen',
-  path: '/kitchen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MenuRoute = MenuRouteImport.update({
@@ -66,6 +75,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StockRoute = StockRouteImport.update({
   id: '/stock',
   path: '/stock',
@@ -81,26 +95,6 @@ const WaiterRoute = WaiterRouteImport.update({
   path: '/waiter',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountRoute = AccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupRoute = SetupRouteImport.update({
-  id: '/setup',
-  path: '/setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OrderSlugRoute = OrderSlugRouteImport.update({
   id: '/order/$slug',
   path: '/order/$slug',
@@ -108,143 +102,136 @@ const OrderSlugRoute = OrderSlugRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/dashboard': typeof DashboardRoute
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
+  '/dashboard': typeof DashboardRoute
   '/insights': typeof InsightsRoute
-  '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
-  '/setup': typeof SetupRoute
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesByTo {
-  '/dashboard': typeof DashboardRoute
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
+  '/dashboard': typeof DashboardRoute
   '/insights': typeof InsightsRoute
-  '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
-  '/setup': typeof SetupRoute
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesById {
-  '/dashboard': typeof DashboardRoute
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
+  '/dashboard': typeof DashboardRoute
   '/insights': typeof InsightsRoute
-  '/kitchen': typeof KitchenRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
-  '/setup': typeof SetupRoute
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
+    | '/admin'
     | '/auth'
     | '/customers'
+    | '/dashboard'
     | '/insights'
-    | '/kitchen'
     | '/menu'
     | '/reports'
     | '/settings'
+    | '/setup'
     | '/stock'
     | '/tables'
     | '/waiter'
-    | '/account'
-    | '/dashboard'
-    | '/admin'
-    | '/setup'
     | '/order/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
+    | '/admin'
     | '/auth'
     | '/customers'
+    | '/dashboard'
     | '/insights'
-    | '/kitchen'
     | '/menu'
     | '/reports'
     | '/settings'
+    | '/setup'
     | '/stock'
     | '/tables'
     | '/waiter'
-    | '/account'
-    | '/dashboard'
-    | '/admin'
-    | '/setup'
     | '/order/$slug'
   id:
     | '__root__'
     | '/'
+    | '/account'
+    | '/admin'
     | '/auth'
     | '/customers'
+    | '/dashboard'
     | '/insights'
-    | '/kitchen'
     | '/menu'
     | '/reports'
     | '/settings'
+    | '/setup'
     | '/stock'
     | '/tables'
     | '/waiter'
-    | '/account'
-    | '/dashboard'
-    | '/admin'
-    | '/setup'
     | '/order/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   CustomersRoute: typeof CustomersRoute
+  DashboardRoute: typeof DashboardRoute
   InsightsRoute: typeof InsightsRoute
-  KitchenRoute: typeof KitchenRoute
   MenuRoute: typeof MenuRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  SetupRoute: typeof SetupRoute
   StockRoute: typeof StockRoute
   TablesRoute: typeof TablesRoute
   WaiterRoute: typeof WaiterRoute
-  AccountRoute: typeof AccountRoute
-  DashboardRoute: typeof DashboardRoute
-  AdminRoute: typeof AdminRoute
-  SetupRoute: typeof SetupRoute
   OrderSlugRoute: typeof OrderSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -261,27 +248,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/setup': {
-      id: '/setup'
-      path: '/setup'
-      fullPath: '/setup'
-      preLoaderRoute: typeof SetupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/order/$slug': {
-      id: '/order/$slug'
-      path: '/order/$slug'
-      fullPath: '/order/$slug'
-      preLoaderRoute: typeof OrderSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -296,18 +262,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/insights': {
       id: '/insights'
       path: '/insights'
       fullPath: '/insights'
       preLoaderRoute: typeof InsightsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/kitchen': {
-      id: '/kitchen'
-      path: '/kitchen'
-      fullPath: '/kitchen'
-      preLoaderRoute: typeof KitchenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/menu': {
@@ -331,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stock': {
       id: '/stock'
       path: '/stock'
@@ -352,25 +325,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WaiterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/order/$slug': {
+      id: '/order/$slug'
+      path: '/order/$slug'
+      fullPath: '/order/$slug'
+      preLoaderRoute: typeof OrderSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
+  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   CustomersRoute: CustomersRoute,
+  DashboardRoute: DashboardRoute,
   InsightsRoute: InsightsRoute,
-  KitchenRoute: KitchenRoute,
   MenuRoute: MenuRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  SetupRoute: SetupRoute,
   StockRoute: StockRoute,
   TablesRoute: TablesRoute,
   WaiterRoute: WaiterRoute,
-  AccountRoute: AccountRoute,
-  DashboardRoute: DashboardRoute,
-  AdminRoute: AdminRoute,
-  SetupRoute: SetupRoute,
   OrderSlugRoute: OrderSlugRoute,
 }
 export const routeTree = rootRouteImport
