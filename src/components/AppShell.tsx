@@ -14,9 +14,12 @@ import logo from "@/assets/logo.png";
 import { getDb, getMaterialLevels } from "@/lib/db";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import { InstallButton } from "@/components/AppInstall";
+import { PinGate, PolicySync, usePolicy } from "@/components/PinGate";
+import { can, screenPermitted } from "@/lib/permissions";
 import { isLow } from "@/lib/stock-logic";
 import { GuestOrdersButton } from "@/components/GuestOrders";
 import { currentDevice, setAppMode, syncAppModeFromUrl, useAppMode } from "@/lib/app-mode";
+import { touchTerminal, useTerminalStatus } from "@/lib/terminal-actions";
 import { APPS, APP_LINKS, accessProblem, appsFor, type AppKind } from "@/lib/staff-login-logic";
 
 const NAV = [
@@ -41,13 +44,22 @@ const ROLE_SCREENS: Record<string, NavPath[]> = {
   manager: NAV.map((n) => n.to),
   kitchen: ["/stock", "/settings"],
   captain: ["/waiter", "/", "/tables", "/menu", "/settings"],
-  cashier: ["/", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings"],
+  cashier: ["/", "/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings"],
 };
+
+/** Reception's screens also follow Settings → Roles. */
+function policyAllows(role: string, to: NavPath): boolean {
+  if (role !== "cashier") return true;
+  if (to === "/dashboard") return can({ role }, "dashboard.view");
+  if (to === "/settings") return can({ role }, "settings.open");
+  if (to === "/tables" || to === "/menu" || to === "/stock" || to === "/customers" || to === "/reports") return screenPermitted(role, to);
+  return true;
+}
 
 /** Screens each app shows, in menu order. */
 const APP_SCREENS: Record<AppKind, NavPath[]> = {
   manager: ["/dashboard", "/insights", "/", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
-  pos: ["/", "/tables", "/customers", "/menu", "/stock", "/reports", "/settings"],
+  pos: ["/", "/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/settings"],
   waiter: ["/waiter"],
 };
 
@@ -55,7 +67,7 @@ export function screensFor(role: string | undefined, app: AppKind = "manager"): 
   // Signed out, or signed in without a restaurant yet: no screens.
   if (!role || role === "unknown") return [];
   const allowed = ROLE_SCREENS[role] ?? [];
-  return APP_SCREENS[app].filter((to) => allowed.includes(to));
+  return APP_SCREENS[app].filter((to) => allowed.includes(to) && policyAllows(role, to));
 }
 
 
@@ -239,6 +251,17 @@ export function PersistentFrame({ children }: { children: ReactNode }) {
   const staffApp = framed || pathname === "/waiter" || pathname === "/insights";
   const app = useAppMode(user);
   useEffect(() => { syncAppModeFromUrl(); }, [pathname]);
+  const terminal = useTerminalStatus();
+  // Check in on start, every 5 minutes and when the connection comes back.
+  const rid = user?.restaurantId ?? null;
+  useEffect(() => {
+    if (!rid) return;
+    const touch = () => { void touchTerminal(rid, app, currentDevice()); };
+    touch();
+    const timer = window.setInterval(touch, 5 * 60_000);
+    window.addEventListener("online", touch);
+    return () => { window.clearInterval(timer); window.removeEventListener("online", touch); };
+  }, [rid, app]);
   // Internal system: every staff screen needs a signed-in person.
   useEffect(() => {
     if (staffApp && !loading && !user) void navigate({ to: "/auth", replace: true });
@@ -250,13 +273,18 @@ export function PersistentFrame({ children }: { children: ReactNode }) {
       </div>
     );
   }
+  // A terminal the admin blocked stops working for staff; the admin can still sign in to fix it.
+  if (staffApp && user && terminal === "blocked" && !isAdmin(user)) {
+    return <AccessBlocked problem="This terminal is blocked by the admin. Ask the admin to release or unblock it in Settings → Terminals." own={null} />;
+  }
   // Each login keeps to its own app and devices, as the admin set them.
   const problem = staffApp && user && (user.login || user.role !== "unknown")
     ? accessProblem({ login: user.login, role: user.role === "unknown" ? null : user.role, row: user.loginRow, app: pathname.startsWith("/waiter") ? "waiter" : app, device: currentDevice() })
     : null;
   if (problem && user) return <AccessBlocked problem={problem} own={appsFor(user.login, user.role)[0] ?? null} />;
-  if (!framed) return <>{children}</>;
-  return <FrameContext.Provider value={setTone}><Frame tone={tone}>{children}</Frame></FrameContext.Provider>;
+  const gates = staffApp ? <><PolicySync /><PinGate /></> : null;
+  if (!framed) return <>{gates}{children}</>;
+  return <FrameContext.Provider value={setTone}>{gates}<Frame tone={tone}>{children}</Frame></FrameContext.Provider>;
 }
 
 /** Pages wrap themselves in AppShell; inside the persistent frame it only sets the page's tone. */
@@ -284,6 +312,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
     return materials.filter((m) => !m.archived && isLow(m, levels.get(m.id) ?? 0)).length;
   }, [], 0);
   const app = useAppMode(user);
+  usePolicy();
   const allowed = screensFor(user?.role, app);
   const nav = allowed.map((to) => NAV.find((n) => n.to === to)!).filter(Boolean);
   const otherApps = (appsFor(user?.login ?? null, user?.role) as AppKind[]).filter((a) => a !== app && a !== "waiter");

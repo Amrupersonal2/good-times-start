@@ -186,6 +186,10 @@ export interface RestaurantSettings {
   categoryOrder?: string[];
   /** Loyalty: % of each bill earned back as points (1 point = ₹1). 0 turns loyalty off. */
   loyaltyPct?: number;
+  /** What Reception and Waiter may do (Settings → Roles); missing parts use the defaults. */
+  rolePolicy?: import("./role-policy").SavedRolePolicy;
+  /** Admin PIN for "On with PIN" actions: a salted slow hash, never the PIN. */
+  adminPin?: import("./role-policy").PinHash;
   updatedAt?: number;
 }
 

@@ -10,6 +10,9 @@ import { reportsWorkbook } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import { Receipt } from "@/components/Receipt";
 import { printBill } from "@/components/PrintHost";
+import { allow } from "@/lib/pin-gate";
+import { usePolicy } from "@/components/PinGate";
+import { SalesSummary } from "@/components/SalesSummary";
 import { ReasonPrompt } from "@/components/PaymentDialogs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -40,7 +43,7 @@ export const Route = createFileRoute("/reports")({
 
 const PIE = ["var(--color-primary)", "var(--color-gold)", "var(--color-success)", "var(--color-destructive)", "var(--color-muted-foreground)", "var(--color-ring)"];
 type Preset = "today" | "yesterday" | "7d" | "month" | "custom";
-type Tab = "overview" | "items" | "gst" | "staff" | "bills" | "close";
+type Tab = "overview" | "summary" | "items" | "gst" | "staff" | "bills" | "close";
 const ORDER_TYPE_LABEL: Record<string, string> = { "dine-in": "Dine-in", takeaway: "Takeaway", delivery: "Delivery", swiggy: "Swiggy", zomato: "Zomato" };
 
 function download(name: string, csv: string) {
@@ -308,10 +311,21 @@ function ReportsPage() {
   const { user } = useStaff();
   // Sales figures are for the owner and managers; a cashier only closes their counter here.
   const full = can(user, "reports.view");
+  usePolicy();
+  // Reception sees what Settings → Roles allows: the daily summary and/or the Sales Summary.
+  const staffTabs: { v: Tab; l: string }[] = [
+    ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Close day" }] : []),
+    ...(can(user, "reports.summary") ? [{ v: "summary" as const, l: "Sales Summary" }] : []),
+  ];
   const [preset, setPreset] = useState<Preset>("today");
   const [custom, setCustom] = useState<Range>(() => presetRange("7d"));
-  const [chosenTab, setTab] = useState<Tab>("overview");
-  const tab: Tab = full ? chosenTab : "close";
+  const [chosenTab, setChosenTab] = useState<Tab>(full ? "overview" : staffTabs[0]?.v ?? "close");
+  const tab: Tab = full ? chosenTab : staffTabs.some((t) => t.v === chosenTab) ? chosenTab : staffTabs[0]?.v ?? "close";
+  const setTab = (t: Tab) => {
+    if (t === "summary" && !full) void allow(user, "reports.summary", "Open the Sales Summary").then((ok) => { if (ok) setChosenTab(t); });
+    else setChosenTab(t);
+  };
+  const showDates = full || tab === "summary";
   const range = preset === "custom" ? custom : presetRange(preset);
   const all = useLiveQuery(() => getDb().orders.where("createdAt").between(range.from, range.to, true, true).toArray(), [range.from, range.to], []);
   const orders = inRange(all, range);
@@ -326,19 +340,19 @@ function ReportsPage() {
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
   ];
   const tabs: { v: Tab; l: string }[] = full ? [
-    { v: "overview", l: "Overview" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Close day" },
-  ] : [{ v: "close", l: "Close day" }];
+    { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Close day" },
+  ] : staffTabs;
 
   return (
     <AppShell>
       <div className="p-4 lg:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{full ? "Reports" : "Close day"}</h1>
-            <p className="text-sm text-muted-foreground">{full ? "Bills from every device in the restaurant that has synced." : "Count the cash drawer and close your counter."}</p>
+            <h1 className="text-2xl font-bold">{full ? "Reports" : tab === "summary" ? "Sales Summary" : "Close day"}</h1>
+            <p className="text-sm text-muted-foreground">{full || tab === "summary" ? "Bills from every device in the restaurant that has synced." : "Count the cash drawer and close your counter."}</p>
           </div>
           {full && can(user, "reports.export") ? <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button> : null}
-          <div className={`flex flex-wrap items-center gap-1.5 ${full ? "" : "hidden"}`}>
+          <div className={`flex flex-wrap items-center gap-1.5 ${showDates ? "" : "hidden"}`}>
             {presets.map((p) => (
               <button key={p.v} onClick={() => setPreset(p.v)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${preset === p.v ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{p.l}</button>
             ))}
@@ -355,11 +369,13 @@ function ReportsPage() {
         {tabs.length > 1 ? <Segmented ariaLabel="Report" className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} /> : null}
 
         {tab === "overview" ? <Overview orders={orders} range={range} /> : null}
+        {tab === "summary" ? <SalesSummary orders={orders} range={range} restaurant={restaurant} canExport={full ? can(user, "reports.export") : true} /> : null}
         {tab === "items" ? <Items orders={orders} file={file} /> : null}
         {tab === "gst" ? <Gst orders={orders} file={file} /> : null}
         {tab === "staff" ? <Staff orders={orders} /> : null}
         {tab === "bills" ? <BillsList orders={orders} /> : null}
-        {tab === "close" ? <DayCloseTab /> : null}
+        {tab === "close" && (full || staffTabs.some((t) => t.v === "close")) ? <DayCloseTab /> : null}
+        {!full && !staffTabs.length ? <p className="py-10 text-center text-sm text-muted-foreground">Reports aren't switched on for this login. Ask the admin.</p> : null}
       </div>
     </AppShell>
   );
@@ -424,7 +440,7 @@ function BillsList({ orders }: { orders: Order[] }) {
             {live.status === "void" && live.voidReason ? <p className="-mt-2 text-sm text-destructive">Void: {live.voidReason}{live.closedBy ? `, by ${live.closedBy}` : ""}</p> : null}
             <Receipt order={live} />
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={() => void printBill(live)}><Printer />Reprint</Button>
+              <Button className="flex-1" onClick={() => void allow(user, "bill.reprintOld", `Reprint bill ${live.billNo}`).then((ok) => { if (ok) void printBill(live); })}><Printer />Reprint</Button>
               {canVoid && live.status === "settled" ? <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setVoiding(true)}>Void</Button> : null}
             </div>
           </> : null}

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
@@ -19,6 +19,9 @@ import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
 import type { PaymentMode, RestaurantSettings } from "@/lib/types";
 import { OrderingSettings } from "@/components/OrderingSettings";
 import { LoginsSettings } from "@/components/LoginsSettings";
+import { RolesSettings } from "@/components/RolesSettings";
+import { TerminalsSettings } from "@/components/TerminalsSettings";
+import { cn } from "@/lib/utils";
 import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
 import { can } from "@/lib/permissions";
@@ -368,35 +371,95 @@ function ThisDevice() {
   );
 }
 
-type Tab = "restaurant" | "billing" | "ordering" | "printing" | "logins" | "device";
-const TABS: { v: Tab; l: string }[] = [
-  { v: "restaurant", l: "Restaurant" },
-  { v: "billing", l: "Billing & GST" },
-  { v: "ordering", l: "Guest ordering" },
-  { v: "printing", l: "Printing" },
-  { v: "logins", l: "Logins" },
-  { v: "device", l: "This device" },
+type Tab = "restaurant" | "billing" | "ordering" | "printing" | "logins" | "roles" | "terminals" | "device";
+
+interface SettingCard { v: Tab | null; to?: string; hash?: string; l: string; d: string; group: string; staff?: boolean }
+
+/** Settings grouped like a back office: outlet, staff and access, marketing, this device. */
+const CARDS: SettingCard[] = [
+  { v: "terminals", l: "Terminals", d: "See, rename, block or release each device and its bill series", group: "Outlet settings" },
+  { v: null, to: "/tables", l: "Sections & Tables", d: "Manage the seating layout", group: "Outlet settings" },
+  { v: "billing", l: "Invoice & GST", d: "GST, payment modes, discounts, service charge, loyalty and bill footer", group: "Outlet settings" },
+  { v: "printing", l: "Printing & KOT", d: "Printers, KOT copies and kitchen stations", group: "Outlet settings", staff: true },
+  { v: "ordering", l: "Guest ordering", d: "QR table ordering, online pickup and web address", group: "Outlet settings" },
+  { v: "restaurant", l: "Restaurant details", d: "Name, address, GSTIN, FSSAI, UPI ID and contact", group: "Outlet settings" },
+  { v: "logins", l: "Logins", d: "Admin, Reception and Waiter: passwords, WhatsApp, devices, install links", group: "Staff and access" },
+  { v: "roles", l: "Roles", d: "What Reception and Waiter may do: Off, On or On with PIN", group: "Staff and access" },
+  { v: null, to: "/marketing", l: "Brand & QR codes", d: "Logo, colours, offers and printable QR cards", group: "Marketing" },
+  { v: null, to: "/marketing", hash: "whatsapp", l: "WhatsApp", d: "Campaigns, consent and automatic sending", group: "Marketing" },
+  { v: "device", l: "This device", d: "Bill series (reset bill number), sync and clearing this device", group: "This device", staff: true },
 ];
 
 function SettingsPage() {
-  const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window === "undefined") return "restaurant";
+  const { user } = useStaff();
+  const admin = isAdmin(user);
+  const cards = CARDS.filter((c) => admin || c.staff);
+  const [tab, setTab] = useState<Tab | null>(() => {
+    if (typeof window === "undefined") return null;
     const h = window.location.hash.slice(1) as Tab;
-    return TABS.some((t) => t.v === h) ? h : "restaurant";
+    return CARDS.some((c) => c.v === h) ? h : null;
   });
-  const choose = (t: Tab) => { setTab(t); try { window.history.replaceState(null, "", `#${t}`); } catch { /* ignore */ } };
+  const choose = (t: Tab | null) => {
+    setTab(t);
+    try { window.history.replaceState(null, "", t ? `#${t}` : window.location.pathname); } catch { /* ignore */ }
+    window.scrollTo({ top: 0 });
+  };
+  if (!can(user, "settings.open")) {
+    return <AppShell><p className="mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">Settings aren't available for this login. Ask the admin.</p></AppShell>;
+  }
+  const visibleTab = tab && cards.some((c) => c.v === tab) ? tab : null;
+  const groups = [...new Set(cards.map((c) => c.group))];
+  const current = cards.find((c) => c.v === visibleTab);
+
+  const link = (c: SettingCard, className: string, children: ReactNode) => c.v
+    ? <button type="button" onClick={() => choose(c.v)} aria-current={visibleTab === c.v ? "page" : undefined} className={className}>{children}</button>
+    : <Link to={c.to as "/tables"} {...(c.hash ? { search: { tab: c.hash } as never } : {})} className={className}>{children}</Link>;
+
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl p-4 lg:p-8">
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <Segmented ariaLabel="Settings section" className="mt-4" value={tab} onChange={choose} options={TABS.map((t) => ({ value: t.v, label: t.l }))} />
-        <div className="mt-4">
-          {tab === "restaurant" ? <RestaurantDetails /> : null}
-          {tab === "billing" ? <BillingSettings /> : null}
-          {tab === "ordering" ? <OrderingSettings /> : null}
-          {tab === "printing" ? <PrintingSettings /> : null}
-          {tab === "logins" ? <LoginsSettings /> : null}
-          {tab === "device" ? <ThisDevice /> : null}
+      <div className="flex min-h-full">
+        <aside className="sticky top-[57px] hidden h-[calc(100vh-57px)] w-64 shrink-0 overflow-y-auto border-r border-border bg-card py-5 lg:block" aria-label="Settings sections">
+          <button type="button" onClick={() => choose(null)} className={cn("mx-3 mb-3 block w-[calc(100%-1.5rem)] rounded-lg px-3 py-2 text-left text-sm font-semibold", !visibleTab ? "bg-secondary" : "hover:bg-secondary/60")}>All settings</button>
+          {groups.map((g) => (
+            <div key={g} className="mb-4">
+              <p className="px-6 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{g}</p>
+              {cards.filter((c) => c.group === g).map((c) => link(c,
+                cn("relative block w-full px-6 py-2 text-left text-sm", visibleTab && visibleTab === c.v ? "bg-primary-tint font-semibold text-primary" : "text-foreground/80 hover:bg-secondary/60"),
+                <>{visibleTab && visibleTab === c.v ? <span className="absolute inset-y-1 left-0 w-[3px] rounded-r bg-primary" aria-hidden="true" /> : null}{c.l}</>))}
+            </div>
+          ))}
+        </aside>
+        <div className="min-w-0 flex-1 p-4 lg:p-8">
+          {visibleTab && current ? <>
+            <button type="button" onClick={() => choose(null)} className="text-sm font-semibold text-primary lg:hidden">← All settings</button>
+            <h1 className="mt-1 text-2xl font-bold lg:mt-0">{current.l}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{current.d}</p>
+            <div className="mt-6 max-w-5xl">
+              {visibleTab === "restaurant" ? <RestaurantDetails /> : null}
+              {visibleTab === "billing" ? <BillingSettings /> : null}
+              {visibleTab === "ordering" ? <OrderingSettings /> : null}
+              {visibleTab === "printing" ? <PrintingSettings /> : null}
+              {visibleTab === "logins" ? <LoginsSettings /> : null}
+              {visibleTab === "roles" ? <RolesSettings /> : null}
+              {visibleTab === "terminals" ? <TerminalsSettings /> : null}
+              {visibleTab === "device" ? <ThisDevice /> : null}
+            </div>
+          </> : <>
+            <h1 className="text-2xl font-bold">Settings</h1>
+            {groups.map((g) => (
+              <section key={g} className="mt-7">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{g}</h2>
+                <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {cards.filter((c) => c.group === g).map((c) => (
+                    <article key={c.l} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                      <div className="flex-1 p-5"><h3 className="text-lg font-bold">{c.l}</h3><p className="mt-1 text-sm text-muted-foreground">{c.d}</p></div>
+                      {link(c, "block w-full bg-sidebar py-3 text-center text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent", "Update")}
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </>}
         </div>
       </div>
     </AppShell>

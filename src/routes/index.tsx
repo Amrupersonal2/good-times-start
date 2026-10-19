@@ -30,6 +30,8 @@ import { lineFor, sentGroups, shortCode, since } from "@/lib/bill-view-logic";
 import { moveTable } from "@/lib/table-actions";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
+import { allow } from "@/lib/pin-gate";
+import { usePolicy } from "@/components/PinGate";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string } => ({
@@ -124,9 +126,19 @@ function PosPage() {
   const activeId = cart.activeOrder?.id;
   const sentKots = useLiveQuery(async () => (activeId === undefined ? [] : getDb().kots.where("orderId").equals(activeId).toArray()), [activeId], [] as Kot[]);
   const sent = useMemo(() => sentGroups(sentKots), [sentKots]);
+  usePolicy();
   const maxDiscount = maxDiscountFor(user?.role ?? "unknown", settings.staffDiscountLimit ?? 10);
-  const discountChoices = [0, 5, 10, 15, 20, 25, 30, 50, 100].filter((d) => d <= maxDiscount || d === cart.discountPct);
+  const canDiscount = can(user, "bill.discount");
+  const canNc = can(user, "bill.nc");
+  const discountChoices = [0, 5, 10, 15, 20, 25, 30, 50, 100].filter((d) => d === cart.discountPct || d === 0 || (d === 100 ? canNc : canDiscount && d <= maxDiscount));
   const canCancel = can(user, "bill.cancel");
+  /** Discount goes through Settings → Roles: 100% is NC (complimentary). */
+  const chooseDiscount = async (pct: number) => {
+    if (pct === cart.discountPct) return;
+    if (pct === 0) { cart.setDiscountPct(0); return; }
+    const ok = pct >= 100 ? await allow(user, "bill.nc", "Make this bill NC (complimentary)") : await allow(user, "bill.discount", `Give ${pct}% discount`);
+    if (ok) cart.setDiscountPct(pct);
+  };
   const guestId = normalisePhone(cart.customer.phone);
   const guest = useLiveQuery(async () => {
     if (!guestId) return null;
@@ -154,6 +166,7 @@ function PosPage() {
   };
   const settleOptions = { autoKot: Boolean(settings.autoKotOnSettle), onKots: (k: Kot[]) => { void printKots(k, "sent"); } };
   const pay = async (mode: PaymentMode) => {
+    if (!(await allow(user, "bill.settle", "Settle this bill"))) return;
     if (mode === "upi" && settings.upiVpa) { setUpiOpen(true); return; }
     done(await cart.settle(mode, closedBy, settleOptions));
   };
@@ -164,6 +177,7 @@ function PosPage() {
   };
 
   const sendToKitchen = async () => {
+    if (!(await allow(user, "kot.send", "Send the KOT"))) return;
     const tickets = await cart.sendKitchen();
     if (tickets.length) void printKots(tickets, "sent");
   };
@@ -172,6 +186,7 @@ function PosPage() {
   const printRunningBill = async () => {
     const running = cart.activeOrder;
     if (!running) return;
+    if (!(await allow(user, "bill.print", "Print the bill"))) return;
     const preview: Order = { ...running, lines: cart.lines, ...cart.totals, discountPct: cart.discountPct, serviceChargePct: cart.serviceChargePct, status: "held" };
     void printBill(preview);
     if (cart.tableId) {
@@ -204,14 +219,16 @@ function PosPage() {
   /** Discount, service charge, guest and change table: the cashier's bill tools. */
   const billTools = (
     <div className="flex flex-wrap items-center gap-1.5">
-      {cart.tableId ? <ToolButton onClick={() => setMoveOpen(true)}><ArrowLeftRight className="size-3.5" />Change table</ToolButton> : null}
-      <span className="flex items-center gap-1.5 rounded-lg bg-card px-2 py-1 text-xs font-semibold ring-1 ring-border/70">
-        <BadgePercent className="size-3.5 text-muted-foreground" />Discount
-        <Dropdown<number> ariaLabel="Discount" size="sm" className="h-7 w-[4.75rem]" value={cart.discountPct} onChange={cart.setDiscountPct}
-          options={discountChoices.map((d) => ({ value: d, label: d ? `${d}%` : "None" }))} />
-      </span>
-      {(settings.serviceChargePct ?? 0) > 0 && cart.orderType === "dine-in" ? (
-        <ToolButton pressed={cart.serviceChargePct > 0} onClick={() => cart.setServiceChargePct(cart.serviceChargePct > 0 ? 0 : settings.serviceChargePct ?? 0)}>
+      {cart.tableId && can(user, "tables.move") ? <ToolButton onClick={() => void allow(user, "tables.move", "Change the table").then((ok) => { if (ok) setMoveOpen(true); })}><ArrowLeftRight className="size-3.5" />Change table</ToolButton> : null}
+      {canDiscount || canNc || cart.discountPct > 0 ? (
+        <span className="flex items-center gap-1.5 rounded-lg bg-card px-2 py-1 text-xs font-semibold ring-1 ring-border/70">
+          <BadgePercent className="size-3.5 text-muted-foreground" />Discount
+          <Dropdown<number> ariaLabel="Discount" size="sm" className="h-7 w-[4.75rem]" value={cart.discountPct} onChange={(v) => void chooseDiscount(v)}
+            options={discountChoices.map((d) => ({ value: d, label: d === 100 ? "NC" : d ? `${d}%` : "None" }))} />
+        </span>
+      ) : null}
+      {(settings.serviceChargePct ?? 0) > 0 && cart.orderType === "dine-in" && can(user, "bill.charges") ? (
+        <ToolButton pressed={cart.serviceChargePct > 0} onClick={() => void allow(user, "bill.charges", "Change the service charge").then((ok) => { if (ok) cart.setServiceChargePct(cart.serviceChargePct > 0 ? 0 : settings.serviceChargePct ?? 0); })}>
           <HandCoins className="size-3.5" />Service {settings.serviceChargePct}%
         </ToolButton>
       ) : null}
@@ -230,7 +247,7 @@ function PosPage() {
           <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}, opened ${since(cart.activeOrder.createdAt)}${since(cart.activeOrder.createdAt) === "just now" ? "" : " ago"}` : "New bill"}</div>
         </div>
         {cart.activeOrder && canCancel ? (
-          <button type="button" onClick={() => setCancelOpen(true)} aria-label="Cancel bill" title="Cancel bill" className="grid size-8 shrink-0 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="size-4" /></button>
+          <button type="button" onClick={() => void allow(user, "bill.cancel", "Cancel this bill").then((ok) => { if (ok) setCancelOpen(true); })} aria-label="Cancel bill" title="Cancel bill" className="grid size-8 shrink-0 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="size-4" /></button>
         ) : null}
       </div>
       {guest ? (
@@ -283,13 +300,13 @@ function PosPage() {
             ) : null}
             {[...sent].reverse().map((g) => (
               <BillGroup key={g.key} title={g.cancel ? `Cancelled after KOT ${g.number}` : `KOT ${g.number}`} tone={g.cancel ? "cancelled" : "sent"} note={`${since(g.at)}${since(g.at) === "just now" ? "" : " ago"} · ${g.station}`}
-                action={<button type="button" aria-label={`Print KOT ${g.number} again`} title="Print again" onClick={() => void printKots(g.kots, "reprint")} className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"><Printer className="size-3.5" /></button>}>
+                action={can(user, "kot.reprint") ? <button type="button" aria-label={`Print KOT ${g.number} again`} title="Print again" onClick={() => void allow(user, "kot.reprint", `Reprint KOT ${g.number}`).then((ok) => { if (ok) void printKots(g.kots, "reprint"); })} className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"><Printer className="size-3.5" /></button> : undefined}>
                 {g.lines.map((sl, i) => {
                   const line = g.cancel ? undefined : lineFor(cart.lines, sl.itemId, sl.name);
                   return (
                     <li key={`${sl.itemId ?? sl.name}-${i}`} className="flex items-center gap-2 px-4 py-1.5 text-[13px]">
-                      {line ? (
-                        <button type="button" aria-label={`Cancel one ${sl.name}`} title="Cancel one" onClick={() => cart.setQty(line.itemId, line.qty - 1)} className="grid size-6 shrink-0 place-items-center rounded-md text-destructive/80 hover:bg-destructive/10"><Minus className="size-3" /></button>
+                      {line && can(user, "kot.edit") ? (
+                        <button type="button" aria-label={`Cancel one ${sl.name}`} title="Cancel one" onClick={() => void allow(user, "kot.edit", `Cancel one ${sl.name} the kitchen has`).then((ok) => { if (ok) cart.setQty(line.itemId, line.qty - 1); })} className="grid size-6 shrink-0 place-items-center rounded-md text-destructive/80 hover:bg-destructive/10"><Minus className="size-3" /></button>
                       ) : <span className="size-6 shrink-0" />}
                       <span className={cn("min-w-0 flex-1 truncate", g.cancel && "text-muted-foreground line-through")}>{sl.name}{sl.note ? <span className="block truncate text-[11px] text-muted-foreground">{sl.note}</span> : null}</span>
                       <span className="w-6 text-center tabular-nums text-muted-foreground">{sl.qty}</span>
@@ -343,7 +360,7 @@ function PosPage() {
                 </ConfirmButton>
               )
             ))}
-            <button disabled={blocked} onClick={() => setPayOpen(true)}
+            <button disabled={blocked || !can(user, "bill.split")} onClick={() => void allow(user, "bill.split", "Split the bill or payment").then((ok) => { if (ok) setPayOpen(true); })}
               className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary-tint text-xs font-semibold text-primary transition-[background,transform] hover:bg-accent active:scale-[0.97] disabled:opacity-40">
               <Wallet className="size-4" />Split
             </button>
@@ -583,7 +600,7 @@ function PosPage() {
           <DialogTitle>Bill {receipt?.billNo} settled</DialogTitle>
           {receipt && receipt.payments.length > 1 ? <p className="-mt-2 text-sm text-muted-foreground">{receipt.payments.map((p) => `${p.mode.toUpperCase()} ${formatINR(p.amount, 0)}`).join(", ")}</p> : null}
           {receipt && <Receipt order={receipt} />}
-          <button onClick={() => { if (receipt) void printBill(receipt); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
+          <button onClick={() => { if (receipt) void allow(user, "bill.reprint", "Reprint the receipt").then((ok) => { if (ok) void printBill(receipt); }); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
             <Printer className="size-4" /> Print receipt
           </button>
           {receipt ? <FeedbackPrompt key={receipt.uid ?? receipt.billNo} order={receipt} /> : null}
