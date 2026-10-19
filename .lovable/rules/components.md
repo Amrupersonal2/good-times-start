@@ -126,6 +126,12 @@ import { Dropdown } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302
 import { GuestOrdersButton } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### IncomingKotWatcher
+
+```ts
+import { IncomingKotWatcher } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
 ### InstallButton
 
 ```ts
