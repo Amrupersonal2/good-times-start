@@ -10,6 +10,9 @@ concurrency:
   group: regression-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -34,7 +37,22 @@ jobs:
           XTSY_WAITER_PASSWORD: ${{ secrets.XTSY_WAITER_PASSWORD }}
       - name: Summary
         if: always()
-        run: node e2e/summary.mjs >> "$GITHUB_STEP_SUMMARY" || true
+        run: |
+          node e2e/summary.mjs > summary.md || echo "No results were produced." > summary.md
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+          node e2e/extract.mjs || true
+      - name: Publish results to a branch (readable without downloading artifacts)
+        if: always()
+        run: |
+          mkdir -p /tmp/out && cp summary.md /tmp/out/ && cp -r e2e-out/* /tmp/out/ 2>/dev/null || true
+          git config user.name "regression-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "regression/run-${GITHUB_RUN_ID}"
+          git rm -rf -q . && git clean -fdq -e node_modules
+          cp -r /tmp/out/* .
+          git add -A
+          git commit -qm "Regression results for ${GITHUB_SHA::7} (run ${GITHUB_RUN_ID})"
+          git push -q origin "regression/run-${GITHUB_RUN_ID}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
