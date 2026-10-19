@@ -5,7 +5,7 @@ const as = (role: "owner" | "manager" | "cashier" | "captain" | "kitchen" | "unk
 
 describe("permissions", () => {
   it("keeps every set-up, money and settings control with the owner and managers", () => {
-    for (const action of ["menu.edit", "menu.import", "tables.edit", "stock.setup", "stock.purchase", "bill.void", "bill.cancel", "settings.billing", "staff.manage", "reports.view", "reports.export", "dashboard.view", "guests.points"] as const) {
+    for (const action of ["menu.edit", "menu.import", "tables.edit", "stock.setup", "stock.purchase", "bill.void", "bill.cancel", "settings.billing", "staff.manage", "reports.view", "reports.export", "dashboard.view", "guests.points", "marketing.manage"] as const) {
       expect([action, can(as("owner"), action), can(as("manager"), action)]).toEqual([action, true, true]);
       for (const staff of ["cashier", "captain", "kitchen", "unknown"] as const) expect([action, staff, can(as(staff), action)]).toEqual([action, staff, false]);
     }

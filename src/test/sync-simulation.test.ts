@@ -192,6 +192,30 @@ describe("multi-device sync", () => {
     expect(await on("counter", () => db.getDb().outbox.count())).toBe(1);
   });
 
+  it("shares a guest's WhatsApp yes with every device, and campaigns only reach guests who said yes", async () => {
+    const marketing = await import("@/lib/marketing-actions");
+    const logic = await import("@/lib/marketing-logic");
+    await on("counter", async () => {
+      await marketing.setWhatsappConsent("+91 90000 00001", true, "in person", "Asha");
+      await db.getDb().customers.put({ id: "9000000002", phone: "9000000002", name: "Bina", createdAt: 1 });
+      await db.markDirty(["customer", "9000000002"]);
+    });
+    await syncNow("counter");
+    await syncNow("manager-phone");
+    const guests = await on("manager-phone", async () => logic.buildAudience(await db.getDb().customers.toArray(), []));
+    expect(guests.find((g) => g.id === "9000000001")?.optIn).toBe(true);
+    const { ready } = logic.pickRecipients(guests, "all", Date.now());
+    expect(ready.map((r) => r.name)).toEqual(["Asha"]);
+
+    // Messaging her records the time on every device, so she isn't messaged again too soon.
+    await on("manager-phone", () => marketing.markMessaged(["9000000001"]));
+    await syncNow("manager-phone");
+    await syncNow("counter");
+    const again = await on("counter", async () => logic.pickRecipients(logic.buildAudience(await db.getDb().customers.toArray(), []), "all", Date.now()));
+    expect(again.ready).toEqual([]);
+    expect(again.skipped.map((s) => s.reason).sort()).toEqual(["messaged recently", "no consent"]);
+  });
+
   it("won't mix two restaurants' data on one device", async () => {
     await syncNow("counter", "restaurant-1");
     await expect(syncNow("counter", "restaurant-2")).rejects.toThrow(/another restaurant/);

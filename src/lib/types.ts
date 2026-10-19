@@ -238,6 +238,8 @@ export interface Customer {
   duesPaid?: { id: string; amount: number; mode: PaymentMode; at: number; by?: string }[];
   note?: string;
   createdAt: number;
+  /** WhatsApp consent. Offers only ever go to guests with optIn true. */
+  whatsapp?: { optIn: boolean; at: number; source?: string; lastMessagedAt?: number };
 }
 
 /** One counter's cash drawer closed at the end of a day. Id is `${YYYY-MM-DD}:${series}`. */
