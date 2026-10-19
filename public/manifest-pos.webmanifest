@@ -51,16 +51,6 @@
       ]
     },
     {
-      "name": "Kitchen",
-      "url": "/kitchen",
-      "icons": [
-        {
-          "src": "/icons/pos-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
       "name": "Reports",
       "url": "/reports",
       "icons": [
