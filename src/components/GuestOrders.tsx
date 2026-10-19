@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellRing, Check, ChefHat, Clock, Phone, ShoppingBag, Smartphone, UtensilsCrossed, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VegMark } from "@/components/VegMark";
 import { printKots } from "@/components/PrintHost";
@@ -199,12 +200,12 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
           {order.status === "new" ? <>
-            <Button disabled={busy} onClick={() => void accept()}><ChefHat />{busy ? "Accepting…" : "Accept & send KOT"}</Button>
+            <ConfirmButton id={`accept-${order.id}`} disabled={busy} onConfirm={accept} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm={<><ChefHat />Tap again to accept</>}><ChefHat />{busy ? "Accepting…" : "Accept & send KOT"}</ConfirmButton>
             <Button variant="ghost" className="text-destructive" disabled={busy} onClick={() => setRejecting(true)}><X />Reject</Button>
           </> : null}
-          {order.status === "accepted" && order.channel === "online" ? <Button disabled={busy} onClick={() => void status("ready")}><Check />Ready for pickup</Button> : null}
-          {order.status === "accepted" && order.channel === "table" ? <Button variant="secondary" disabled={busy} onClick={() => void status("completed")}><Check />Served</Button> : null}
-          {order.status === "ready" ? <Button disabled={busy} onClick={() => void status("completed")}><Check />Picked up</Button> : null}
+          {order.status === "accepted" && order.channel === "online" ? <ConfirmButton id={`ready-${order.id}`} disabled={busy} onConfirm={() => status("ready")} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again: tell guest it's ready"><Check />Ready for pickup</ConfirmButton> : null}
+          {order.status === "accepted" && order.channel === "table" ? <ConfirmButton id={`served-${order.id}`} disabled={busy} onConfirm={() => status("completed")} className={buttonVariants({ variant: "secondary" })} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again"><Check />Served</ConfirmButton> : null}
+          {order.status === "ready" ? <ConfirmButton id={`picked-${order.id}`} disabled={busy} onConfirm={() => status("completed")} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again"><Check />Picked up</ConfirmButton> : null}
           {order.status === "accepted" || order.status === "ready" ? <Button variant="outline" onClick={openBill}>Open bill</Button> : null}
         </div>
       )}

@@ -159,3 +159,12 @@ and outlets appear once it has.
 - [x] Bill grouped like the kitchen sees it: New items (not sent), To cancel, then KOT 1, KOT 2… with how long ago and a reprint button; reduce a sent item from its KOT row
 - [x] Bottom: Tax / Items / Total, KOT and Print bill, then Cash, UPI, Card, Split
 - [x] Toolbar under the dishes: Change table, Discount, Service charge, Guest (name, phone, GSTIN)
+
+## Round 5 (October 2026) — `revamp-5`: two-tap safety and the private edition
+
+- [x] Two taps for everything that commits (`ConfirmButton`, `src/lib/two-step.ts`): the first tap turns the button into a clear "tap again" prompt for 4 seconds; a tap elsewhere, Esc or waiting cancels. No pop-ups.
+  - Cash / Card settle (shows the amount), Split / panel settle, KOT and cancellation sends (counter and waiter), F8 (press twice) and F1 with items on the bill
+  - Guest orders: accept, ready, served, picked up
+  - Mark table free, delete dish / table / supplier, record due payment, loyalty points, close counter, record purchase, wastage and stock count
+  - UPI with a QR already has its own second step ("Payment received"); cancelling a bill already asks for a reason
+- [x] Private edition (`src/lib/edition.ts`, `drizzle/migrations/0007_private_edition.sql`): no plans, trials, plan banners or admin console; strangers can't create restaurants (invite only); the owner's account gets an unlisted Owner plan (50 outlets, 500 staff, never expires); "Business" becomes "Outlets"

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { Minus, Plus, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { DialogTitle } from "@/components/ui/dialog";
 import { computeTotals, formatINR, upiLink, type TaxOptions } from "@/lib/billing";
 import { splitLines } from "@/lib/bill-splitting";
@@ -9,6 +9,8 @@ import { PAYMENT_MODES, paymentSummary, type Payment } from "@/lib/payment-logic
 import type { CartLine, PaymentMode } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { cn } from "@/lib/utils";
 
 /** Shows a UPI QR for the exact amount so the guest can pay from their phone. */
 export function UpiPay({ vpa, payee, amount, billNo, onPaid }: { vpa: string; payee: string; amount: number; billNo: string; onPaid: () => void }) {
@@ -137,10 +139,12 @@ export function PaymentPanel({ lines, discountPct, serviceChargePct, tax = {}, c
           : <PaymentRows total={total} entries={entries} setEntries={setEntries} pointsAvailable={pointsAvailable} hasCustomer={hasCustomer} {...(allowedModes ? { allowedModes } : {})} />}
       </div>
 
-      <Button className="mt-4 w-full" disabled={!summary.complete || !!paymentRuleError(entries, pointsAvailable, hasCustomer) || (tab === "split" && splitTotal.count === 0)}
-        onClick={() => (tab === "pay" ? onSettle(entries) : onSettlePart(quantities, entries))}>
+      <ConfirmButton id="settle-panel" className={cn(buttonVariants(), "mt-4 h-11 w-full")} armedClassName="!bg-gold !text-gold-foreground"
+        disabled={!summary.complete || !!paymentRuleError(entries, pointsAvailable, hasCustomer) || (tab === "split" && splitTotal.count === 0)}
+        onConfirm={() => (tab === "pay" ? onSettle(entries) : onSettlePart(quantities, entries))}
+        confirm={`Tap again to settle ${formatINR(total, 0)}`}>
         {tab === "pay" ? `Settle ${formatINR(total, 0)}` : `Settle ${splitTotal.count} item${splitTotal.count === 1 ? "" : "s"}, ${formatINR(total, 0)}`}
-      </Button>
+      </ConfirmButton>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { downloadXlsx } from "@/lib/xlsx";
 import { Receipt } from "@/components/Receipt";
 import { printBill } from "@/components/PrintHost";
 import { ReasonPrompt } from "@/components/PaymentDialogs";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getDb, getDeviceCode, markDirty } from "@/lib/db";
 import { formatINR } from "@/lib/billing";
@@ -24,6 +24,8 @@ import {
 import type { DayClose, Order } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -275,7 +277,7 @@ function DayCloseTab() {
           {difference !== null ? <div className={`flex justify-between font-bold ${difference === 0 ? "text-success" : "text-destructive"}`}><span>{difference === 0 ? "Matches" : difference > 0 ? "Extra cash" : "Short"}</span><span>{formatINR(Math.abs(difference))}</span></div> : null}
         </div>
         <label className="block text-sm font-medium">Note<input maxLength={160} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Gave ₹500 change float to the night shift…" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" /></label>
-        <Button type="submit" className="w-full">{already ? "Close again (replaces earlier close)" : "Close counter"}</Button>
+        <ConfirmButton id="close-counter" submit className={cn(buttonVariants(), "w-full")} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again to close the counter">{already ? "Close again (replaces earlier close)" : "Close counter"}</ConfirmButton>
       </form>
       <div className="card-elevated p-4">
         <h2 className="mb-2 text-sm font-semibold">Recent closes</h2>

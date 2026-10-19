@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound, ArrowLeftRight, BadgePercent, HandCoins, ChevronDown } from "lucide-react";
+import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound, ArrowLeftRight, BadgePercent, HandCoins, ChevronDown, Check } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { PaymentPanel, ReasonPrompt, UpiPay } from "@/components/PaymentDialogs";
 import { isAdmin, useStaff } from "@/lib/auth-context";
@@ -22,7 +22,8 @@ import type { Kot, MenuItem, Order, OrderType, PaymentMode } from "@/lib/types";
 import { buildLine, needsOptions, orderCategories, outsideHours, priceFor, stockLeft } from "@/lib/menu-logic";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { ConfirmButton, pressShortcut } from "@/components/ConfirmButton";
 import { Dropdown } from "@/components/Dropdown";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { lineFor, sentGroups, shortCode, since } from "@/lib/bill-view-logic";
@@ -181,8 +182,9 @@ function PosPage() {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === "F2" || e.key === "F4") { e.preventDefault(); searchRef.current?.focus(); }
-      if (e.key === "F1") { e.preventDefault(); cart.clear(); }
-      if (e.key === "F8" && canSettle) { e.preventDefault(); void pay("cash"); }
+      // Shortcuts that change a bill take two presses, like their buttons.
+      if (e.key === "F1") { e.preventDefault(); if (cart.lines.length) pressShortcut("new-bill", () => cart.clear()); else cart.clear(); }
+      if (e.key === "F8" && canSettle && !blocked) { e.preventDefault(); pressShortcut("settle-cash", () => pay("cash")); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
@@ -213,7 +215,7 @@ function PosPage() {
         </ToolButton>
       ) : null}
       <ToolButton pressed={!!(cart.customer.phone || cart.customer.name)} onClick={() => setCustomerOpen(true)}><UserRound className="size-3.5" />{cart.customer.name || cart.customer.phone || "Guest"}</ToolButton>
-      <span className="ml-auto hidden text-[11px] text-muted-foreground xl:inline">F4 search · F1 new bill · F8 cash</span>
+      <span className="ml-auto hidden text-[11px] text-muted-foreground xl:inline">F4 search · F1 new bill · F8 F8 cash</span>
     </div>
   );
 
@@ -315,18 +317,30 @@ function PosPage() {
           </p>
         ) : null}
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <Button variant="secondary" className="h-10" disabled={!unsentCount && !cancelCount} onClick={() => void sendToKitchen()}>
+          <ConfirmButton id="send-kot" onConfirm={sendToKitchen} disabled={!unsentCount && !cancelCount}
+            className={cn(buttonVariants({ variant: "secondary" }), "h-10")} armedClassName="!bg-gold !text-gold-foreground"
+            confirm={<><ChefHat className="size-4" />{cancelCount && !unsentCount ? "Tap to send cancel" : `Tap to send ${unsentCount}`}</>}>
             <ChefHat className="size-4" />{cancelCount && !unsentCount ? "Send cancel" : "KOT"}{unsentCount ? <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{unsentCount}</span> : null}
-          </Button>
+          </ConfirmButton>
           <Button variant="secondary" className="h-10" disabled={!cart.activeOrder || unsentCount > 0 || cancelCount > 0} onClick={() => void printRunningBill()}><Printer className="size-4" />Print bill</Button>
         </div>
         {canSettle ? (
           <div className="mt-2 grid grid-cols-4 gap-2">
             {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).filter(([m]) => !settings.paymentModes || settings.paymentModes.includes(m)).map(([m, l, Icon]) => (
-              <button key={m} disabled={blocked} onClick={() => void pay(m)}
-                className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-[background,transform] hover:bg-primary-hover active:scale-[0.97] disabled:opacity-40">
-                <Icon className="size-4" />{l}
-              </button>
+              m === "upi" && settings.upiVpa ? (
+                // UPI shows the QR first; "Payment received" there is the second step.
+                <button key={m} disabled={blocked} onClick={() => void pay(m)}
+                  className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-[background,transform] hover:bg-primary-hover active:scale-[0.97] disabled:opacity-40">
+                  <Icon className="size-4" />{l}
+                </button>
+              ) : (
+                <ConfirmButton key={m} id={`settle-${m}`} disabled={blocked} onConfirm={() => pay(m)}
+                  className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground transition-[background,transform] hover:bg-primary-hover active:scale-[0.97] disabled:opacity-40"
+                  armedClassName="!bg-gold !text-gold-foreground ring-2 ring-gold ring-offset-2 ring-offset-card"
+                  confirm={<><Check className="size-4" /><span className="leading-tight">Settle {formatINR(cart.totals.total, 0)}?</span></>}>
+                  <Icon className="size-4" />{l}
+                </ConfirmButton>
+              )
             ))}
             <button disabled={blocked} onClick={() => setPayOpen(true)}
               className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl bg-primary-tint text-xs font-semibold text-primary transition-[background,transform] hover:bg-accent active:scale-[0.97] disabled:opacity-40">
