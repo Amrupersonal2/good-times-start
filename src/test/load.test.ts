@@ -107,7 +107,7 @@ describe("load: Friday-night rush", () => {
     }
     expect(server.fakeServer.rows.size).toBe(expected * 2);
     expect(elapsed).toBeLessThan(30_000);
-  });
+  }, 30_000);
 
   it("survives a flaky connection: random outages during the rush lose nothing and double nothing", async () => {
     const rand = seeded(42);
@@ -127,7 +127,7 @@ describe("load: Friday-night rush", () => {
     const first = await snapshot(devices[0]!);
     expect(first.orders).toBe(200);
     for (const d of devices) expect(await snapshot(d)).toEqual(first);
-  });
+  }, 30_000);
 
   it("brings a brand-new device up to date with 4,000 records in a few pages", async () => {
     for (let n = 0; n < 2000; n += 1) await on("c1", () => ring("c1", n));

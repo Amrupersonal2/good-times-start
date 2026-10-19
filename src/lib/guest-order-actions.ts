@@ -7,6 +7,7 @@ import { latestHeldOrder } from "./table-actions";
 import { taxOptionsFor } from "./billing-config";
 import { withCustomerId } from "./customer-logic";
 import { rememberCustomer } from "./customer-actions";
+import { setWhatsappConsent } from "./marketing-actions";
 import { billWithGuestLines, cartLinesFromGuest, orderTypeFor, type GuestOrder, type GuestStatus } from "./guest-order-logic";
 
 const ACTIVE: GuestStatus[] = ["new", "accepted", "ready"];
@@ -97,6 +98,8 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
   }
   await markDirty(...changes);
   if (customer) await rememberCustomer(customer);
+  // A guest who ticked "send me offers on WhatsApp" is recorded as agreeing.
+  if (guest.whatsapp_opt_in && guest.customer_phone) await setWhatsappConsent(guest.customer_phone, true, guest.source || (guest.channel === "table" ? "qr" : "online"), guest.customer_name || undefined);
 
   await supabase.from("guest_orders").update({ order_uid: order.uid ?? null, bill_no: order.billNo }).eq("id", guest.id);
   return { order, kots, missing };

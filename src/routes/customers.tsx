@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { Download, Search, Star } from "lucide-react";
+import { Download, Search, Send, Star } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { setWhatsappConsent } from "@/lib/marketing-actions";
+import { waLink } from "@/lib/marketing-logic";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -28,7 +31,7 @@ export const Route = createFileRoute("/customers")({
   component: CustomersPage,
 });
 
-type Filter = "all" | "due" | "points" | "feedback";
+type Filter = "all" | "due" | "points" | "feedback" | "whatsapp";
 const inputClass = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm";
 
 function formatPhone(id: string) {
@@ -85,6 +88,8 @@ function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { custo
         </section>
       ) : null}
 
+      <WhatsappConsent customer={customer} />
+
       <form className="space-y-3" onSubmit={(event) => void saveDetails(event)}>
         <label className="block text-sm font-medium">Name<input maxLength={60} value={name} onChange={(e) => setName(e.target.value)} className={inputClass} /></label>
         <label className="block text-sm font-medium">Note<input maxLength={160} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Allergic to nuts, likes the window table…" className={inputClass} /></label>
@@ -118,6 +123,29 @@ function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { custo
   );
 }
 
+/** The guest's yes or no to WhatsApp offers. Staff record it only when the guest agrees. */
+function WhatsappConsent({ customer }: { customer: Customer }) {
+  const { user } = useStaff();
+  const [optIn, setOptIn] = useState(!!customer.whatsapp?.optIn);
+  const allowed = can(user, "guests.consent");
+  const change = async (value: boolean) => {
+    setOptIn(value);
+    await setWhatsappConsent(customer.phone, value, "in person");
+    toast.success(value ? "Recorded: happy to get offers on WhatsApp" : "Recorded: no WhatsApp offers");
+  };
+  const since = customer.whatsapp?.at ? new Date(customer.whatsapp.at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+  return (
+    <section className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm">
+      <Switch checked={optIn} disabled={!allowed} onCheckedChange={(v) => void change(v)} className="mt-0.5" aria-label="Agreed to WhatsApp offers" />
+      <div className="min-w-0 flex-1">
+        <p className="font-medium">Agreed to offers on WhatsApp</p>
+        <p className="text-xs text-muted-foreground">{customer.whatsapp ? `${optIn ? "Yes" : "No"} since ${since}${customer.whatsapp.source ? `, ${customer.whatsapp.source}` : ""}` : "Turn on only when the guest says yes."}</p>
+      </div>
+      <a href={waLink(customer.phone, `Hi ${(customer.name ?? "").split(" ")[0] || "there"}!`)} target="_blank" rel="noreferrer" className={buttonVariants({ size: "sm", variant: "outline" })}><Send />Chat</a>
+    </section>
+  );
+}
+
 function CustomersPage() {
   const settings = useRestaurantSettings();
   const loyaltyPct = settings.loyaltyPct ?? 0;
@@ -137,7 +165,7 @@ function CustomersPage() {
   const digits = term.replace(/\D/g, "");
   const shown = rows
     .filter(({ customer }) => !term || (customer.name ?? "").toLowerCase().includes(term) || (digits.length >= 3 && customer.id.includes(digits)))
-    .filter(({ stats }) => filter === "all" || (filter === "due" && stats.due > 0) || (filter === "points" && stats.points > 0) || (filter === "feedback" && stats.averageRating !== null))
+    .filter(({ customer, stats }) => filter === "all" || (filter === "due" && stats.due > 0) || (filter === "points" && stats.points > 0) || (filter === "feedback" && stats.averageRating !== null) || (filter === "whatsapp" && !!customer.whatsapp?.optIn))
     .sort((a, b) => (b.stats.lastVisit ?? 0) - (a.stats.lastVisit ?? 0));
   const totalDue = rows.reduce((s, r) => s + r.stats.due, 0);
   const rated = rows.filter((r) => r.stats.averageRating !== null);
@@ -147,6 +175,7 @@ function CustomersPage() {
     { v: "all", l: "All" },
     { v: "due", l: "Owe money" },
     ...(loyaltyPct > 0 ? [{ v: "points" as const, l: "Have points" }] : []),
+    { v: "whatsapp" as const, l: "WhatsApp yes" },
     { v: "feedback", l: "Gave feedback" },
   ];
 
@@ -191,6 +220,7 @@ function CustomersPage() {
                       {stats.lastVisit ? `, last ${new Date(stats.lastVisit).toLocaleDateString("en-IN")}` : ""}
                     </div>
                   </div>
+                  {customer.whatsapp?.optIn ? <span title="Agreed to WhatsApp offers" className="flex items-center gap-0.5 rounded bg-success/10 px-1.5 py-0.5 text-xs font-semibold text-success"><Send className="size-3" />WA</span> : null}
                   {stats.averageRating !== null ? <span className="flex items-center gap-0.5 text-xs font-semibold"><Star className="size-3.5 fill-gold text-gold" />{stats.averageRating}</span> : null}
                   {loyaltyPct > 0 && stats.points > 0 ? <span className="rounded bg-primary-tint px-1.5 py-0.5 text-xs font-semibold">{stats.points} pts</span> : null}
                   {stats.due > 0 ? <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive">{formatINR(stats.due, 0)} due</span> : null}

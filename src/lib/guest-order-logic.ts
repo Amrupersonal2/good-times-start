@@ -1,4 +1,5 @@
 /** Guest ordering (QR at the table, online pickup): shapes and pure helpers shared by the guest page and the POS. */
+import type { Branding } from "./marketing-logic";
 import type { CartLine, MenuItem, Order, OrderType } from "./types";
 import { buildLine } from "./menu-logic";
 import { computeTotals } from "./billing";
@@ -43,6 +44,8 @@ export interface GuestOrder {
   handled_by: string;
   created_at: string;
   updated_at: string;
+  whatsapp_opt_in?: boolean;
+  source?: string;
 }
 
 /** A dish on the public menu (recipes and costs removed by the database). */
@@ -70,6 +73,7 @@ export interface Storefront {
   live: boolean;
   menu: StorefrontItem[];
   tables: { id: string; label: string; section: string }[];
+  branding?: Branding;
 }
 
 export const GUEST_STATUS_LABEL: Record<GuestStatus, string> = {
@@ -164,9 +168,10 @@ export function cartLinesFromGuest(lines: GuestLine[], menu: MenuItem[], channel
   return { lines: out, missing };
 }
 
-export function orderPageUrl(origin: string, slug: string, tableId?: string): string {
+export function orderPageUrl(origin: string, slug: string, tableId?: string, source?: string): string {
   const base = `${origin.replace(/\/$/, "")}/order/${encodeURIComponent(slug)}`;
-  return tableId ? `${base}?table=${encodeURIComponent(tableId)}` : base;
+  const query = [tableId ? `table=${encodeURIComponent(tableId)}` : "", source ? `s=${encodeURIComponent(source)}` : ""].filter(Boolean).join("&");
+  return query ? `${base}?${query}` : base;
 }
 
 /** Pickup times offered to the guest, from the kitchen's usual preparation time. */
