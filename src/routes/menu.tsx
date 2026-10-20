@@ -26,8 +26,7 @@ export const Route = createFileRoute("/menu")({
   head: () => ({
     meta: [
       { title: "Menu — XTSY POS" },
-      { name: "description", content: "Add dishes, portions, add-ons, prices, GST and stock. Changes reach every device." },
-    ],
+      { name: "description", content: "Add dishes, portions, add-ons, prices, GST and stock. Changes reach every device." }, { property: "og:title", content: "Menu — XTSY POS" }, { property: "og:description", content: "Add dishes, portions, add-ons, prices, GST and stock. Changes reach every device." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: MenuPage,
 });

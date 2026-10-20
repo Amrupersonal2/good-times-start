@@ -31,8 +31,7 @@ export const Route = createFileRoute("/order/$slug")({
     meta: [
       { title: "Order — XTSY POS" },
       { name: "description", content: "See the menu and order from your table or for pickup." },
-      { name: "robots", content: "noindex" },
-    ],
+      { name: "robots", content: "noindex" }, { property: "og:title", content: "Order — XTSY POS" }, { property: "og:description", content: "See the menu and order from your table or for pickup." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: GuestOrderPage,
 });

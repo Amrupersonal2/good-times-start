@@ -23,7 +23,7 @@ const TABS: { v: Tab; l: string }[] = [
 
 export const Route = createFileRoute("/marketing")({
   validateSearch: (search: Record<string, unknown>): { tab?: Tab } => (TABS.some((t) => t.v === search["tab"]) && search["tab"] !== "brand" ? { tab: search["tab"] as Tab } : {}),
-  head: () => ({ meta: [{ title: "Marketing — XTSY POS" }, { name: "description", content: "Your brand on the QR menu, printable QR codes and WhatsApp campaigns." }] }),
+  head: () => ({ meta: [{ title: "Marketing — XTSY POS" }, { name: "description", content: "Your brand on the QR menu, printable QR codes and WhatsApp campaigns." }, { property: "og:title", content: "Marketing — XTSY POS" }, { property: "og:description", content: "Your brand on the QR menu, printable QR codes and WhatsApp campaigns." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },] }),
   component: MarketingPage,
 });
 

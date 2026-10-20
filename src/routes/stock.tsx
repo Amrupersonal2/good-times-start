@@ -26,8 +26,7 @@ export const Route = createFileRoute("/stock")({
   head: () => ({
     meta: [
       { title: "Stock — XTSY POS" },
-      { name: "description", content: "Raw material stock, purchases, wastage and suppliers, shared across your devices." },
-    ],
+      { name: "description", content: "Raw material stock, purchases, wastage and suppliers, shared across your devices." }, { property: "og:title", content: "Stock — XTSY POS" }, { property: "og:description", content: "Raw material stock, purchases, wastage and suppliers, shared across your devices." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: StockPage,
 });

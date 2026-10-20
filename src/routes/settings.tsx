@@ -30,8 +30,7 @@ export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings — XTSY POS" },
-      { name: "description", content: "Restaurant details for GST bills, this device's bill series, and staff access." },
-    ],
+      { name: "description", content: "Restaurant details for GST bills, this device's bill series, and staff access." }, { property: "og:title", content: "Settings — XTSY POS" }, { property: "og:description", content: "Restaurant details for GST bills, this device's bill series, and staff access." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: SettingsPage,
 });
