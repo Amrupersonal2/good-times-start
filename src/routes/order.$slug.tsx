@@ -353,8 +353,8 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
     setError("");
     writeJson("xtsy-guest-contact", { name: name.trim(), phone: phone.trim(), optIn });
     const { data, error: failure } = await supabase.rpc("place_guest_order", {
-      _slug: store.slug, _channel: channel, _table_id: tableId ?? null, _name: name.trim(), _phone: phone.trim(), _note: note.trim(),
-      _lines: guestOrderPayload(cart) as never, _payment: payment, _pickup_at: pickup || null,
+      _slug: store.slug, _channel: channel, _table_id: tableId ?? "", _name: name.trim(), _phone: phone.trim(), _note: note.trim(),
+      _lines: guestOrderPayload(cart) as never, _payment: payment, ...(pickup ? { _pickup_at: pickup } : {}),
     });
     setBusy(false);
     if (failure || !data) { setError(failure?.message ?? "Couldn't send your order. Please try again."); return; }

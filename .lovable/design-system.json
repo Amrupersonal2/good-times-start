@@ -502,6 +502,19 @@
   },
   "components": [
     {
+      "name": "MenuAdvisor",
+      "file": "src/components/MenuAdvisor",
+      "import_path": "",
+      "usage": "Use on owner-only restaurant Insights surfaces to review sales and menu data before requesting recommendations. Requires authenticated owner membership and an internet connection.",
+      "examples": [{ "label": "Owner menu analysis", "code": "<MenuAdvisor restaurantId={user.restaurantId} from={range.from} to={range.to} />" }],
+      "antipatterns": ["Do not expose analysis to non-owner restaurant members.", "Never pass customer details or credentials in supplied sales data.", "Never automatically apply AI suggestions to menu prices or orders."],
+      "props": [
+        { "name": "restaurantId", "type": "string", "required": true },
+        { "name": "from", "type": "number", "required": true },
+        { "name": "to", "type": "number", "required": true }
+      ]
+    },
+    {
       "name": "AppInstall",
       "file": "src/components/AppInstall",
       "import_path": ""
