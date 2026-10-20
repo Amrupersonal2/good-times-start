@@ -35,8 +35,7 @@ export const Route = createFileRoute("/reports")({
   head: () => ({
     meta: [
       { title: "Reports — XTSY POS" },
-      { name: "description", content: "Sales, items, GST, staff and day-end cash for any period, with CSV export." },
-    ],
+      { name: "description", content: "Sales, items, GST, staff and day-end cash for any period, with CSV export." }, { property: "og:title", content: "Reports — XTSY POS" }, { property: "og:description", content: "Sales, items, GST, staff and day-end cash for any period, with CSV export." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: ReportsPage,
 });

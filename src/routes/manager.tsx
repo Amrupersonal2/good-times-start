@@ -6,7 +6,7 @@ import logo from "@/assets/logo.png";
 
 /** Where POS Business Manager opens: marks this window as Business Manager, then goes to the dashboard. */
 export const Route = createFileRoute("/manager")({
-  head: () => ({ meta: [{ title: "POS Business Manager — XTSY" }, { name: "description", content: "Sales, reports, menu, stock, marketing and settings for TAB Bistro." }] }),
+  head: () => ({ meta: [{ title: "POS Business Manager — XTSY" }, { name: "description", content: "Sales, reports, menu, stock, marketing and settings for TAB Bistro." }, { property: "og:title", content: "POS Business Manager — XTSY" }, { property: "og:description", content: "Sales, reports, menu, stock, marketing and settings for TAB Bistro." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },] }),
   component: ManagerStart,
 });
 

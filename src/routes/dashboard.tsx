@@ -14,7 +14,7 @@ import { useStaff } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (search: Record<string, unknown>): { tab?: "overview" | "live" } => (search["tab"] === "live" ? { tab: "live" } : {}),
-  head: () => ({ meta: [{ title: "Dashboard — XTSY POS" }, { name: "description", content: "Sales, leakage, payments and live tables at a glance." }] }),
+  head: () => ({ meta: [{ title: "Dashboard — XTSY POS" }, { name: "description", content: "Sales, leakage, payments and live tables at a glance." }, { property: "og:title", content: "Dashboard — XTSY POS" }, { property: "og:description", content: "Sales, leakage, payments and live tables at a glance." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },] }),
   component: DashboardPage,
 });
 

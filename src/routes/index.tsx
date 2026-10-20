@@ -43,8 +43,7 @@ export const Route = createFileRoute("/")({
       { title: "Billing — XTSY POS" },
       { name: "description", content: "Fast offline-first restaurant billing with GST invoices, UPI QR and KOT." },
       { property: "og:title", content: "XTSY POS — Restaurant Billing" },
-      { property: "og:description", content: "Restaurant billing with GST, UPI and kitchen tickets that keeps working offline." },
-    ],
+      { property: "og:description", content: "Restaurant billing with GST, UPI and kitchen tickets that keeps working offline." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: PosPage,
 });

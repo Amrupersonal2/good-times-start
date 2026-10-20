@@ -18,7 +18,7 @@ export async function prepareOutletSwitch(targetId: string): Promise<string | nu
 }
 
 export async function createOutlet(accountId: string, name: string, city: string, copyFrom: string | null): Promise<string> {
-  const { data, error } = await supabase.rpc("create_outlet", { _account: accountId, _name: name, _city: city, _copy_from: copyFrom });
+  const { data, error } = await supabase.rpc("create_outlet", { _account: accountId, _name: name, _city: city, ...(copyFrom ? { _copy_from: copyFrom } : {}) });
   if (error) throw new Error(error.message);
   return data as string;
 }

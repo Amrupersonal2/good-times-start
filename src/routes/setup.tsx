@@ -19,7 +19,7 @@ import type { RestaurantSettings } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 
 export const Route = createFileRoute("/setup")({
-  head: () => ({ meta: [{ title: "Set up — XTSY POS" }, { name: "description", content: "Set up your restaurant on XTSY POS in a few minutes." }] }),
+  head: () => ({ meta: [{ title: "Set up — XTSY POS" }, { name: "description", content: "Set up your restaurant on XTSY POS in a few minutes." }, { property: "og:title", content: "Set up — XTSY POS" }, { property: "og:description", content: "Set up your restaurant on XTSY POS in a few minutes." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },] }),
   component: SetupPage,
 });
 

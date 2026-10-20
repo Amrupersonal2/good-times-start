@@ -15,8 +15,7 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Sign in — XTSY POS" },
       { name: "description", content: "Internal sign-in for TAB Bistro by XTSY: Business Manager, Restro POS and POS Waiter." },
-      { name: "robots", content: "noindex" },
-    ],
+      { name: "robots", content: "noindex" }, { property: "og:title", content: "Sign in — XTSY POS" }, { property: "og:description", content: "Internal sign-in for TAB Bistro by XTSY: Business Manager, Restro POS and POS Waiter." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: AuthPage,
 });

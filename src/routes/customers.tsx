@@ -25,8 +25,7 @@ export const Route = createFileRoute("/customers")({
   head: () => ({
     meta: [
       { title: "Customers — XTSY POS" },
-      { name: "description", content: "Guests, visits, loyalty points, dues and feedback from every bill." },
-    ],
+      { name: "description", content: "Guests, visits, loyalty points, dues and feedback from every bill." }, { property: "og:title", content: "Customers — XTSY POS" }, { property: "og:description", content: "Guests, visits, loyalty points, dues and feedback from every bill." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: CustomersPage,
 });

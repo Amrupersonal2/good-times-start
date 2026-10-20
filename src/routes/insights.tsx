@@ -13,12 +13,17 @@ import { isLow } from "@/lib/stock-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import type { Order } from "@/lib/types";
 import { Segmented } from "@/components/Segmented";
+import { MenuAdvisor } from "@/components/MenuAdvisor";
 
 export const Route = createFileRoute("/insights")({
   head: () => ({
     meta: [
       { title: "Insights — POS Business Manager" },
       { name: "description", content: "Live sales, tables, kitchen and stock for restaurant owners." },
+      { property: "og:title", content: "Restaurant Insights & Menu Advisor — XTSY POS" },
+      { property: "og:description", content: "Review restaurant sales and get evidence-based menu recommendations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: InsightsApp,
@@ -208,6 +213,8 @@ function InsightsApp() {
   return (
     <Shell name={settings.name} lastSync={data.lastSync}>
       <Segmented ariaLabel="Period" stretch value={period} onChange={setPeriod} options={PERIODS.map((x) => ({ value: x.v, label: x.l }))} />
+
+      {user?.role === "owner" && user.restaurantId ? <MenuAdvisor key={user.restaurantId} restaurantId={user.restaurantId} from={current.from} to={current.to} /> : null}
 
       <section className="pt-2">
         <p className="text-sm text-muted-foreground">Net sales{period === "today" ? " so far today" : ""}</p>

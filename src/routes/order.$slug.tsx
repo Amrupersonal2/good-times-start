@@ -31,8 +31,7 @@ export const Route = createFileRoute("/order/$slug")({
     meta: [
       { title: "Order — XTSY POS" },
       { name: "description", content: "See the menu and order from your table or for pickup." },
-      { name: "robots", content: "noindex" },
-    ],
+      { name: "robots", content: "noindex" }, { property: "og:title", content: "Order — XTSY POS" }, { property: "og:description", content: "See the menu and order from your table or for pickup." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: GuestOrderPage,
 });
@@ -353,8 +352,8 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
     setError("");
     writeJson("xtsy-guest-contact", { name: name.trim(), phone: phone.trim(), optIn });
     const { data, error: failure } = await supabase.rpc("place_guest_order", {
-      _slug: store.slug, _channel: channel, _table_id: tableId ?? null, _name: name.trim(), _phone: phone.trim(), _note: note.trim(),
-      _lines: guestOrderPayload(cart) as never, _payment: payment, _pickup_at: pickup || null,
+      _slug: store.slug, _channel: channel, _table_id: tableId ?? "", _name: name.trim(), _phone: phone.trim(), _note: note.trim(),
+      _lines: guestOrderPayload(cart) as never, _payment: payment, ...(pickup ? { _pickup_at: pickup } : {}),
     });
     setBusy(false);
     if (failure || !data) { setError(failure?.message ?? "Couldn't send your order. Please try again."); return; }

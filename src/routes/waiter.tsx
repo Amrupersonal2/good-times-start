@@ -26,8 +26,7 @@ export const Route = createFileRoute("/waiter")({
   head: () => ({
     meta: [
       { title: "POS Waiter" },
-      { name: "description", content: "Take table orders on a tablet and send them straight to the kitchen." },
-    ],
+      { name: "description", content: "Take table orders on a tablet and send them straight to the kitchen." }, { property: "og:title", content: "POS Waiter" }, { property: "og:description", content: "Take table orders on a tablet and send them straight to the kitchen." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: WaiterApp,
 });
