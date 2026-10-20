@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_events: {
+        Row: {
+          account_id: string
+          amount: number | null
+          by_user: string | null
+          created_at: string
+          detail: Json
+          id: number
+          kind: string
+        }
+        Insert: {
+          account_id: string
+          amount?: number | null
+          by_user?: string | null
+          created_at?: string
+          detail?: Json
+          id?: number
+          kind: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number | null
+          by_user?: string | null
+          created_at?: string
+          detail?: Json
+          id?: number
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_events_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounts: {
+        Row: {
+          billing_email: string
+          billing_gstin: string
+          billing_phone: string
+          created_at: string
+          id: string
+          name: string
+          notes: string
+          owner_id: string | null
+          paid_until: string | null
+          plan_id: string
+          status: string
+          trial_ends_at: string | null
+        }
+        Insert: {
+          billing_email?: string
+          billing_gstin?: string
+          billing_phone?: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string
+          owner_id?: string | null
+          paid_until?: string | null
+          plan_id?: string
+          status?: string
+          trial_ends_at?: string | null
+        }
+        Update: {
+          billing_email?: string
+          billing_gstin?: string
+          billing_phone?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string
+          owner_id?: string | null
+          paid_until?: string | null
+          plan_id?: string
+          status?: string
+          trial_ends_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cloud_orders: {
         Row: {
           bill_no: string
@@ -37,6 +128,98 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      guest_orders: {
+        Row: {
+          bill_no: string | null
+          channel: string
+          code: string
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          handled_by: string
+          id: string
+          lines: Json
+          note: string
+          opt_in_at: string | null
+          order_uid: string | null
+          payment: string
+          pickup_at: string | null
+          reason: string
+          restaurant_id: string
+          source: string
+          status: string
+          subtotal: number
+          table_id: string | null
+          table_label: string | null
+          token: string
+          updated_at: string
+          upi_ref: string
+          whatsapp_opt_in: boolean
+        }
+        Insert: {
+          bill_no?: string | null
+          channel: string
+          code: string
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          handled_by?: string
+          id?: string
+          lines: Json
+          note?: string
+          opt_in_at?: string | null
+          order_uid?: string | null
+          payment?: string
+          pickup_at?: string | null
+          reason?: string
+          restaurant_id: string
+          source?: string
+          status?: string
+          subtotal?: number
+          table_id?: string | null
+          table_label?: string | null
+          token?: string
+          updated_at?: string
+          upi_ref?: string
+          whatsapp_opt_in?: boolean
+        }
+        Update: {
+          bill_no?: string | null
+          channel?: string
+          code?: string
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          handled_by?: string
+          id?: string
+          lines?: Json
+          note?: string
+          opt_in_at?: string | null
+          order_uid?: string | null
+          payment?: string
+          pickup_at?: string | null
+          reason?: string
+          restaurant_id?: string
+          source?: string
+          status?: string
+          subtotal?: number
+          table_id?: string | null
+          table_label?: string | null
+          token?: string
+          updated_at?: string
+          upi_ref?: string
+          whatsapp_opt_in?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_items: {
         Row: {
@@ -71,6 +254,193 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_campaigns: {
+        Row: {
+          audience: string
+          created_at: string
+          created_by: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          message: string
+          mode: string
+          name: string
+          recipients: number
+          restaurant_id: string
+          sent: number
+          template: string
+        }
+        Insert: {
+          audience?: string
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          message?: string
+          mode?: string
+          name: string
+          recipients?: number
+          restaurant_id: string
+          sent?: number
+          template?: string
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          message?: string
+          mode?: string
+          name?: string
+          recipients?: number
+          restaurant_id?: string
+          sent?: number
+          template?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_sends: {
+        Row: {
+          at: string
+          campaign_id: string
+          error: string
+          name: string
+          phone: string
+          restaurant_id: string
+          status: string
+        }
+        Insert: {
+          at?: string
+          campaign_id: string
+          error?: string
+          name?: string
+          phone: string
+          restaurant_id: string
+          status?: string
+        }
+        Update: {
+          at?: string
+          campaign_id?: string
+          error?: string
+          name?: string
+          phone?: string
+          restaurant_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_sends_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      password_reset_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          expires_at: string
+          login: string
+          sent_in_window: number
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          expires_at: string
+          login: string
+          sent_in_window?: number
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          expires_at?: string
+          login?: string
+          sent_in_window?: number
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_reset_codes_login_fkey"
+            columns: ["login"]
+            isOneToOne: true
+            referencedRelation: "staff_logins"
+            referencedColumns: ["login"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          active: boolean
+          features: Json
+          id: string
+          max_outlets: number
+          max_staff: number
+          monthly_price: number
+          name: string
+          sort: number
+          yearly_price: number
+        }
+        Insert: {
+          active?: boolean
+          features?: Json
+          id: string
+          max_outlets?: number
+          max_staff?: number
+          monthly_price?: number
+          name: string
+          sort?: number
+          yearly_price?: number
+        }
+        Update: {
+          active?: boolean
+          features?: Json
+          id?: string
+          max_outlets?: number
+          max_staff?: number
+          monthly_price?: number
+          name?: string
+          sort?: number
+          yearly_price?: number
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -91,6 +461,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      qr_scans: {
+        Row: {
+          day: string
+          restaurant_id: string
+          scans: number
+          source: string
+        }
+        Insert: {
+          day: string
+          restaurant_id: string
+          scans?: number
+          source: string
+        }
+        Update: {
+          day?: string
+          restaurant_id?: string
+          scans?: number
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_scans_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurant_invites: {
         Row: {
@@ -202,24 +601,147 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          account_id: string | null
+          branding: Json
+          city: string
           created_at: string
           created_by: string | null
           id: string
+          marketing: Json
           name: string
+          ordering: Json
+          slug: string | null
         }
         Insert: {
+          account_id?: string | null
+          branding?: Json
+          city?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          marketing?: Json
           name: string
+          ordering?: Json
+          slug?: string | null
         }
         Update: {
+          account_id?: string | null
+          branding?: Json
+          city?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          marketing?: Json
           name?: string
+          ordering?: Json
+          slug?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_logins: {
+        Row: {
+          active: boolean
+          devices: string[]
+          display_name: string
+          email: string
+          login: string
+          restaurant_id: string | null
+          role: Database["public"]["Enums"]["restaurant_role"]
+          updated_at: string
+          user_id: string | null
+          whatsapp: string
+        }
+        Insert: {
+          active?: boolean
+          devices?: string[]
+          display_name: string
+          email: string
+          login: string
+          restaurant_id?: string | null
+          role: Database["public"]["Enums"]["restaurant_role"]
+          updated_at?: string
+          user_id?: string | null
+          whatsapp?: string
+        }
+        Update: {
+          active?: boolean
+          devices?: string[]
+          display_name?: string
+          email?: string
+          login?: string
+          restaurant_id?: string | null
+          role?: Database["public"]["Enums"]["restaurant_role"]
+          updated_at?: string
+          user_id?: string | null
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_logins_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      terminals: {
+        Row: {
+          app: string
+          description: string
+          device_id: string
+          device_kind: string
+          first_seen: string
+          last_seen: string
+          login_email: string
+          restaurant_id: string
+          series: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          app?: string
+          description?: string
+          device_id: string
+          device_kind?: string
+          first_seen?: string
+          last_seen?: string
+          login_email?: string
+          restaurant_id: string
+          series?: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          app?: string
+          description?: string
+          device_id?: string
+          device_kind?: string
+          first_seen?: string
+          last_seen?: string
+          login_email?: string
+          restaurant_id?: string
+          series?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terminals_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -245,7 +767,77 @@ export type Database = {
     }
     Functions: {
       accept_restaurant_invites: { Args: never; Returns: undefined }
+      account_feature: {
+        Args: { _account: string; _feature: string }
+        Returns: boolean
+      }
+      account_is_live: { Args: { _account: string }; Returns: boolean }
+      admin_accounts: { Args: never; Returns: Json }
+      admin_record_payment: {
+        Args: {
+          _amount: number
+          _id: string
+          _months: number
+          _reference: string
+        }
+        Returns: string
+      }
+      admin_save_plan: {
+        Args: {
+          _active: boolean
+          _features: Json
+          _id: string
+          _max_outlets: number
+          _max_staff: number
+          _monthly: number
+          _name: string
+          _yearly: number
+        }
+        Returns: undefined
+      }
+      admin_update_account: {
+        Args: {
+          _id: string
+          _notes: string
+          _paid_until: string
+          _plan: string
+          _status: string
+          _trial_ends_at: string
+        }
+        Returns: undefined
+      }
+      create_outlet: {
+        Args: {
+          _account: string
+          _city?: string
+          _copy_from?: string
+          _name: string
+        }
+        Returns: string
+      }
       create_restaurant: { Args: { _name: string }; Returns: string }
+      guest_order_marketing: {
+        Args: {
+          _id: string
+          _opt_in: boolean
+          _source?: string
+          _token: string
+        }
+        Returns: boolean
+      }
+      guest_order_status: {
+        Args: { _id: string; _token: string }
+        Returns: Json
+      }
+      guest_order_update: {
+        Args: {
+          _cancel?: boolean
+          _id: string
+          _token: string
+          _upi_ref?: string
+        }
+        Returns: string
+      }
       has_restaurant_role: {
         Args: {
           _rid: string
@@ -254,15 +846,54 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_account_member: { Args: { _account: string }; Returns: boolean }
+      is_account_owner: { Args: { _account: string }; Returns: boolean }
       is_member: { Args: { _rid: string; _uid: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
       is_restaurant_admin: {
         Args: { _restaurant_id: string }
         Returns: boolean
       }
+      is_restaurant_admin_of: { Args: { _rid: string }; Returns: boolean }
       is_restaurant_member: {
         Args: { _restaurant_id: string }
         Returns: boolean
       }
+      log_qr_scan: {
+        Args: { _slug: string; _source?: string }
+        Returns: undefined
+      }
+      outlet_sales: {
+        Args: { _from: string; _outlets: string[]; _to: string }
+        Returns: {
+          aggregator: number
+          bills: number
+          day: string
+          delivery: number
+          dine_in: number
+          guest_ordered: number
+          net: number
+          restaurant_id: string
+          takeaway: number
+          tax: number
+        }[]
+      }
+      place_guest_order: {
+        Args: {
+          _channel: string
+          _lines: Json
+          _name: string
+          _note: string
+          _payment?: string
+          _phone: string
+          _pickup_at?: string
+          _slug: string
+          _table_id: string
+        }
+        Returns: Json
+      }
+      public_storefront: { Args: { _slug: string }; Returns: Json }
+      push_menu: { Args: { _from: string; _to: string[] }; Returns: number }
       remove_member: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: undefined
@@ -276,6 +907,28 @@ export type Database = {
           _restaurant_id: string
           _role: Database["public"]["Enums"]["restaurant_role"]
           _user_id: string
+        }
+        Returns: undefined
+      }
+      slugify: { Args: { _text: string }; Returns: string }
+      touch_terminal: {
+        Args: {
+          _app: string
+          _device: string
+          _kind: string
+          _restaurant: string
+          _series: string
+        }
+        Returns: string
+      }
+      unique_slug: { Args: { _text: string }; Returns: string }
+      update_account_billing: {
+        Args: {
+          _account: string
+          _email: string
+          _gstin: string
+          _name: string
+          _phone: string
         }
         Returns: undefined
       }

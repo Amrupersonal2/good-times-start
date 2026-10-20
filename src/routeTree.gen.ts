@@ -13,9 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as MarketingRouteImport } from './routes/marketing'
-import { Route as ManagerRouteImport } from './routes/manager'
 import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as ManagerRouteImport } from './routes/manager'
+import { Route as MarketingRouteImport } from './routes/marketing'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -45,9 +45,9 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MarketingRoute = MarketingRouteImport.update({
-  id: '/marketing',
-  path: '/marketing',
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManagerRoute = ManagerRouteImport.update({
@@ -55,9 +55,9 @@ const ManagerRoute = ManagerRouteImport.update({
   path: '/manager',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InsightsRoute = InsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
+const MarketingRoute = MarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MenuRoute = MenuRouteImport.update({
@@ -106,9 +106,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/marketing': typeof MarketingRoute
-  '/manager': typeof ManagerRoute
   '/insights': typeof InsightsRoute
+  '/manager': typeof ManagerRoute
+  '/marketing': typeof MarketingRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -123,9 +123,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/marketing': typeof MarketingRoute
-  '/manager': typeof ManagerRoute
   '/insights': typeof InsightsRoute
+  '/manager': typeof ManagerRoute
+  '/marketing': typeof MarketingRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -141,9 +141,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/marketing': typeof MarketingRoute
-  '/manager': typeof ManagerRoute
   '/insights': typeof InsightsRoute
+  '/manager': typeof ManagerRoute
+  '/marketing': typeof MarketingRoute
   '/menu': typeof MenuRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -160,9 +160,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/customers'
     | '/dashboard'
-    | '/marketing'
-    | '/manager'
     | '/insights'
+    | '/manager'
+    | '/marketing'
     | '/menu'
     | '/reports'
     | '/settings'
@@ -177,9 +177,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/customers'
     | '/dashboard'
-    | '/marketing'
-    | '/manager'
     | '/insights'
+    | '/manager'
+    | '/marketing'
     | '/menu'
     | '/reports'
     | '/settings'
@@ -194,9 +194,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/customers'
     | '/dashboard'
-    | '/marketing'
-    | '/manager'
     | '/insights'
+    | '/manager'
+    | '/marketing'
     | '/menu'
     | '/reports'
     | '/settings'
@@ -212,9 +212,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CustomersRoute: typeof CustomersRoute
   DashboardRoute: typeof DashboardRoute
-  MarketingRoute: typeof MarketingRoute
-  ManagerRoute: typeof ManagerRoute
   InsightsRoute: typeof InsightsRoute
+  ManagerRoute: typeof ManagerRoute
+  MarketingRoute: typeof MarketingRoute
   MenuRoute: typeof MenuRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
@@ -255,11 +255,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/marketing': {
-      id: '/marketing'
-      path: '/marketing'
-      fullPath: '/marketing'
-      preLoaderRoute: typeof MarketingRouteImport
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manager': {
@@ -269,11 +269,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/insights': {
-      id: '/insights'
-      path: '/insights'
-      fullPath: '/insights'
-      preLoaderRoute: typeof InsightsRouteImport
+    '/marketing': {
+      id: '/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof MarketingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/menu': {
@@ -340,9 +340,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CustomersRoute: CustomersRoute,
   DashboardRoute: DashboardRoute,
-  MarketingRoute: MarketingRoute,
-  ManagerRoute: ManagerRoute,
   InsightsRoute: InsightsRoute,
+  ManagerRoute: ManagerRoute,
+  MarketingRoute: MarketingRoute,
   MenuRoute: MenuRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
