@@ -174,6 +174,35 @@ import { LoginsSettings } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a
 import { MarketingResults } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+### MenuAdvisor
+
+```ts
+import { MenuAdvisor } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
+```
+
+Use on owner-only restaurant Insights surfaces to review sales and menu data before requesting recommendations. Requires authenticated owner membership and an internet connection.
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `restaurantId` | string | `—` |
+| `from` | number | `—` |
+| `to` | number | `—` |
+
+**Examples:**
+
+_Owner menu analysis_
+```tsx
+<MenuAdvisor restaurantId={user.restaurantId} from={range.from} to={range.to} />
+```
+
+**Avoid:**
+
+- Do not expose analysis to non-owner restaurant members.
+- Never pass customer details or credentials in supplied sales data.
+- Never automatically apply AI suggestions to menu prices or orders.
+
 ### MenuExcel
 
 ```ts

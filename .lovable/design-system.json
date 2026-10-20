@@ -2,7 +2,7 @@
   "meta": {
     "name": "Good Times Start",
     "package": "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d",
-    "version": "3.2.0",
+    "version": "3.3.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -11,7 +11,7 @@
     ],
     "source_type": "local",
     "source_manifest": {
-      "#enrichment": "fddc2b5296f8ecb525e8bf427785012a27962ea6ef09517efc322c8f039ace4e",
+      "#enrichment": "7e182745a759f91b099fb56d505ea8ddeb0767541739c1947a487164e6109f7b",
       ".gitignore": "6d9e901a692b46a83707c245fb03bc91",
       ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
       ".lovable/plan/table-first-pos-kitchen-tickets-and-sync-recovery-2026-10-16.md": "7956f6185a7718331d049c136f03c7d4",
@@ -19,7 +19,7 @@
       ".lovable/sources.yaml": "ee6247f6fe77fe1387244cd3c757e6a3",
       ".prettierignore": "7279a476f196a2da5f7edd18db568dc6",
       ".prettierrc": "185ef0234746ab738ac1ab6cec5e2bd9",
-      "AGENTS.md": "42a62217941dd6a93ded872be8e2b7ab",
+      "AGENTS.md": "f10cc5121473d37d414e32cf388217cd",
       "README.md": "e9c1c6685644ec8321ce8276fcd7dc5f",
       "bunfig.toml": "89115995d9de72fdfc894e16b1e75297",
       "components.json": "30d3d035361ce807021f5c54620962e9",
@@ -46,7 +46,7 @@
       "drizzle/migrations/meta/_journal.json": "151f6178b2a8d5a9359ec584115420f7",
       "drizzle/schema.ts": "a60267d05d7dd11572f02686241f37c6",
       "eslint.config.js": "345bdd57e188e0e4525edcd00e5003f5",
-      "package.json": "4b824f79645b72774d17c40b7c9ce157",
+      "package.json": "6d60642bfabc7d9bdc64aea3e8405a48",
       "public/favicon.png": "15ceaa4b6c98561f2c87120acde69e63",
       "public/icons/insights-192.png": "af342c4675ad2d6f82880a36fca24f29",
       "public/icons/insights-512.png": "0b1634e71da76400e0d9ee3a68081afa",
@@ -70,7 +70,8 @@
       "public/manifest-waiter.webmanifest": "88e386fab8ccc2989dc5ae5142a895a2",
       "public/robots.txt": "f9dff89adf98833e676de2205921996a",
       "public/sw.js": "d1993cda878f5821d1dedce61202b712",
-      "roadmap.md": "988a43a090c7d5cf5b9be856ed250066",
+      "roadmap.md": "83a07c415f602477560107578632b808",
+      "src/ai-gateway.types.ts": "052c89f386ce8f08143cd377e5f3f7fc",
       "src/assets/logo.png": "a03e4eedebddbee2a4e1008fc0de1621",
       "src/components/AppInstall.tsx": "9c9ea72ffe6c1b07d8d77e5e532ecd41",
       "src/components/AppShell.tsx": "f404a46f056fa4ed5e142e63955abe2b",
@@ -80,6 +81,7 @@
       "src/components/ItemOptions.tsx": "d1d857cef3facb0a9b81dd4bc4ef33bc",
       "src/components/LiveSync.tsx": "fac92412a9dd89d9d0b3c8c5472059bf",
       "src/components/LoginsSettings.tsx": "b07522148d23d99473e98977fe7d03a3",
+      "src/components/MenuAdvisor.tsx": "03c759b7dfff1b8f14a6affa55a74b47",
       "src/components/MenuExcel.tsx": "207ab10b433578d5402205c928852b5d",
       "src/components/OrderingSettings.tsx": "c235f66eae4131d9c04003ba84120232",
       "src/components/PaymentDialogs.tsx": "6fca8e292c65364dd041a626bbe7bd30",
@@ -144,8 +146,10 @@
       "src/components/ui/tooltip.tsx": "67d71db5a1ab935695d1def497f5b8a6",
       "src/data/tab-bistro.test.ts": "e451ddd5be0425949e08601fc0e77858",
       "src/data/tab-bistro.ts": "378dc4bdde66d2a08b74673a371220f7",
+      "src/generated/ai-gateway/models.d.cts": "1efb1b89b544365722c7c1fc3cca891b",
+      "src/generated/ai-gateway/models.d.ts": "1efb1b89b544365722c7c1fc3cca891b",
       "src/hooks/use-mobile.tsx": "c0a0bdd4638c391a1dd06ac82074e60b",
-      "src/index.ts": "a4df4a6a97005302aa9dab82b3c17493",
+      "src/index.ts": "bcd8dc4ae50a2ce07f2831592308d507",
       "src/integrations/lovable/index.ts": "e9cf6e6968dd0392b2222ee0745ecece",
       "src/integrations/supabase/auth-attacher.ts": "dad043cda134d909e52de0346c16625e",
       "src/integrations/supabase/auth-middleware.ts": "eabaf8c8ba32205717921ce5f255185e",
@@ -153,7 +157,7 @@
       "src/integrations/supabase/client.ts": "2e72a87ed578e0084537f2646f2d7e6a",
       "src/integrations/supabase/cron-auth.ts": "6c04781ff98ada5977945fae55d39385",
       "src/integrations/supabase/previewAuthStorage.ts": "bb74f08a89d367e3a4a18880dad1050f",
-      "src/integrations/supabase/types.ts": "8e80240efd1cc678cffbe064f213c243",
+      "src/integrations/supabase/types.ts": "b9e055b64073bee1a239e81e939a2be5",
       "src/lib/ai-gateway/responses.server.ts": "6df55c548d40f91cd29e065314c45c7c",
       "src/lib/ai-gateway/run-id.ts": "4652f725587a5a8e4a60bd56d9042234",
       "src/lib/app-mode.ts": "0a6c8aeefe292077bfbcbdde8bb6310e",
@@ -195,11 +199,15 @@
       "src/lib/marketing-logic.test.ts": "669ed001498dca1b0cd3b6100ff9b622",
       "src/lib/marketing-logic.ts": "0629819c13936f2cbc716bb7a43d0867",
       "src/lib/menu-actions.ts": "efcb3b68c8896ff880262855c9315746",
+      "src/lib/menu-advisor.functions.ts": "0aef54ead4941a257840de065a364478",
+      "src/lib/menu-advisor.server.ts": "4028188b0cd9806a7fdd5c91276327a4",
+      "src/lib/menu-advisor.test.ts": "aafe76f4ec14352005bdac7c0366d15c",
+      "src/lib/menu-advisor.ts": "71ce3c40da8f9c871f5bd74a964c1a44",
       "src/lib/menu-excel.test.ts": "d462fb906507bc55301f27d8d0fcd626",
       "src/lib/menu-excel.ts": "08067e5408f56c9fd95e9c033e4c1e5e",
       "src/lib/menu-logic.test.ts": "5f2e637dc01098116f011fa8480c3363",
       "src/lib/menu-logic.ts": "3fae87105935cb6fdae647ef70a5fb72",
-      "src/lib/outlet-actions.ts": "fda7007e64a1737992401e822937c86e",
+      "src/lib/outlet-actions.ts": "984cc178d8e359a27afe3772fdda38f7",
       "src/lib/payment-logic.test.ts": "6b35698a7916fad7beb4a3ca1af37563",
       "src/lib/payment-logic.ts": "02d999b8f5179769b9525b47b8563055",
       "src/lib/permissions.test.ts": "702348d6263e1011e97b961f08cddab4",
@@ -249,25 +257,25 @@
       "src/lib/whatsapp/cloud-api.server.ts": "a8842c7c6cc1a2922bb6d8458fe75a60",
       "src/lib/xlsx.test.ts": "d866886cb38abcc32b279510242c1979",
       "src/lib/xlsx.ts": "d90a88f879b6294e9c6e0b70607306fb",
-      "src/routeTree.gen.ts": "13b9310f645afa31a34db7a3a4128f3b",
+      "src/routeTree.gen.ts": "0a0d60553c3ba5ad630c628554d0f2d0",
       "src/router.tsx": "9c9169c28c5de8a189c3960a6c3354a3",
       "src/routes/README.md": "b3a2f259b66fd1a11f54b6d5ac83bf57",
       "src/routes/__root.tsx": "aae10cd8353c975baace44de2f674c4d",
-      "src/routes/auth.tsx": "0b3b59e1171e79d9c8d7f5d17569543e",
-      "src/routes/customers.tsx": "08edce0c57713836543c3246399b4d9f",
-      "src/routes/dashboard.tsx": "a78dd21ad9dbe6705889e92fa977e1ed",
-      "src/routes/index.tsx": "78eacf8a02bce3622dc7629ca05369f7",
-      "src/routes/insights.tsx": "53ddb37879b63eb6d25b985c0d3506b8",
-      "src/routes/manager.tsx": "67bd56ba9cd01f80516f5c88944274db",
-      "src/routes/marketing.tsx": "098f548d553cb74112f1c3f41e8d978f",
-      "src/routes/menu.tsx": "e16fdac8b5fea01d2b6f60c44df4ab96",
-      "src/routes/order.$slug.tsx": "c87b843d0e0ab705a6d426189773c177",
-      "src/routes/reports.tsx": "e1c5acfae5d76a3142edb456a1c2d187",
-      "src/routes/settings.tsx": "a6319d390a29f9709d1dd46c375269cf",
-      "src/routes/setup.tsx": "a6c919369748f598e63ad22823fa4aa7",
-      "src/routes/stock.tsx": "b35f31b896a25738b2842a22b96b9161",
-      "src/routes/tables.tsx": "8987783e2a052d1c55aed803d212fd8e",
-      "src/routes/waiter.tsx": "7615b16a848443dd51d7dc5385124c1a",
+      "src/routes/auth.tsx": "5f1f88bdd8354b99b19f4eda1970fdbf",
+      "src/routes/customers.tsx": "af6632001f5c1f41af79a548f4776674",
+      "src/routes/dashboard.tsx": "411fcb84cc40422818014aa458590ba9",
+      "src/routes/index.tsx": "60d267d1e4e393484c9ec9f4ba745eb4",
+      "src/routes/insights.tsx": "f70555204dfbb1c542abee7fa8ae7118",
+      "src/routes/manager.tsx": "4e7fa5b610d1ed0210b7fd9c4c81fe62",
+      "src/routes/marketing.tsx": "af3bfe5d4324d2e8d11b5d4d6be105c9",
+      "src/routes/menu.tsx": "6f97d252d73ea6a3f8cf4e707d4bf4fa",
+      "src/routes/order.$slug.tsx": "f8550d003d49ef7abfc20f449f7f2cda",
+      "src/routes/reports.tsx": "95e54e749c43f978c2946f0b3d5705cc",
+      "src/routes/settings.tsx": "bc14cf0b296d23343aadaf85467cdb3a",
+      "src/routes/setup.tsx": "1cbfda76e415da788bfc93c720366a8e",
+      "src/routes/stock.tsx": "5344dde30fcc608728e5def8311b74d4",
+      "src/routes/tables.tsx": "0b528f32dd28369b8529b2c4d31b77d5",
+      "src/routes/waiter.tsx": "4531ea282241f2f7d48b917b2285c07b",
       "src/server.ts": "c7bbc49bb70e318af618d92775ee0f27",
       "src/start.ts": "d77c1c12904be5077c6955d9b30071af",
       "src/styles.css": "ae48272dcc5ea505b7eeb107c68d7b0d",
@@ -502,19 +510,6 @@
   },
   "components": [
     {
-      "name": "MenuAdvisor",
-      "file": "src/components/MenuAdvisor",
-      "import_path": "",
-      "usage": "Use on owner-only restaurant Insights surfaces to review sales and menu data before requesting recommendations. Requires authenticated owner membership and an internet connection.",
-      "examples": [{ "label": "Owner menu analysis", "code": "<MenuAdvisor restaurantId={user.restaurantId} from={range.from} to={range.to} />" }],
-      "antipatterns": ["Do not expose analysis to non-owner restaurant members.", "Never pass customer details or credentials in supplied sales data.", "Never automatically apply AI suggestions to menu prices or orders."],
-      "props": [
-        { "name": "restaurantId", "type": "string", "required": true },
-        { "name": "from", "type": "number", "required": true },
-        { "name": "to", "type": "number", "required": true }
-      ]
-    },
-    {
       "name": "AppInstall",
       "file": "src/components/AppInstall",
       "import_path": ""
@@ -606,6 +601,40 @@
       "name": "LoginsSettings",
       "file": "src/components/LoginsSettings",
       "import_path": ""
+    },
+    {
+      "name": "MenuAdvisor",
+      "file": "src/components/MenuAdvisor",
+      "import_path": "",
+      "props": [
+        {
+          "name": "restaurantId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "from",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "to",
+          "type": "number",
+          "required": true
+        }
+      ],
+      "usage": "Use on owner-only restaurant Insights surfaces to review sales and menu data before requesting recommendations. Requires authenticated owner membership and an internet connection.",
+      "examples": [
+        {
+          "label": "Owner menu analysis",
+          "code": "\u003cMenuAdvisor restaurantId={user.restaurantId} from={range.from} to={range.to} /\u003e"
+        }
+      ],
+      "antipatterns": [
+        "Do not expose analysis to non-owner restaurant members.",
+        "Never pass customer details or credentials in supplied sales data.",
+        "Never automatically apply AI suggestions to menu prices or orders."
+      ]
     },
     {
       "name": "MenuExcel",
