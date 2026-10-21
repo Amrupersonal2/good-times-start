@@ -56,7 +56,9 @@ async function printTableCards(restaurant: string, cards: { label: string; secti
   win.document.close();
 }
 
-export interface OrderingSettingsProps extends React.HTMLAttributes<HTMLDivElement> {}
+export interface OrderingSettingsProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
 
 export function OrderingSettings({ className, ref, ...props }: OrderingSettingsProps) {
   const { user } = useStaff();
