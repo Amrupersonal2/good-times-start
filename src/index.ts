@@ -9,3 +9,5 @@ export { Dialog, DialogPortal, DialogOverlay, DialogTrigger, DialogClose, Dialog
 export { Constants } from "./integrations/supabase/types"
 export { AuthProvider } from "./lib/auth-context"
 export { MenuAdvisor, type MenuAdvisorProps } from "./components/MenuAdvisor"
+
+export { OrderingSettings, type OrderingSettingsProps } from "./components/OrderingSettings"
