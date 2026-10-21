@@ -644,7 +644,10 @@
     {
       "name": "OrderingSettings",
       "file": "src/components/OrderingSettings",
-      "import_path": ""
+      "import_path": "",
+      "usage": "Use in the signed-in Business Manager to configure guest channels, inspect cloud menu/table readiness, and generate public table QR codes.",
+      "examples": [{ "label": "Guest ordering settings", "code": "<OrderingSettings className=\"max-w-5xl\" />" }],
+      "antipatterns": ["Do not mount without the app account, auth and query providers.", "Never generate printed QR links from an editor or localhost origin.", "Do not interpret UPI references as verified payment."]
     },
     {
       "name": "UpiPay",

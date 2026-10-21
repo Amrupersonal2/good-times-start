@@ -1,5 +1,11 @@
 # POS expansion
 
+## QR ordering refresh
+- [ ] Modernize the guest menu with category browsing, search, dietary filters, and clear table context.
+- [ ] Repair cart restoration and submission recovery without changing offline POS storage.
+- [ ] Add QR readiness checks, live-site links, individual table QR downloads, and admin access to branding.
+- [ ] Verify guest ordering, saved admin settings, regression tests, and preview build.
+
 ## Owner sales and menu advisor
 - [ ] Add editable sales/menu input and a current-period POS summary in Insights.
 - [ ] Add owner-authorized AI Gateway analysis with safe failure handling.

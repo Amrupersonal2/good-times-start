@@ -380,7 +380,7 @@ const CARDS: SettingCard[] = [
   { v: null, to: "/tables", l: "Sections & Tables", d: "Manage the seating layout", group: "Outlet settings" },
   { v: "billing", l: "Invoice & GST", d: "GST, payment modes, discounts, service charge, loyalty and bill footer", group: "Outlet settings" },
   { v: "printing", l: "Printing & KOT", d: "Printers, KOT copies and kitchen stations", group: "Outlet settings", staff: true },
-  { v: "ordering", l: "Guest ordering", d: "QR table ordering, online pickup and web address", group: "Outlet settings" },
+  { v: "ordering", l: "QR & guest ordering", d: "Table menus, pickup, readiness and printable QR codes", group: "Outlet settings" },
   { v: "restaurant", l: "Restaurant details", d: "Name, address, GSTIN, FSSAI, UPI ID and contact", group: "Outlet settings" },
   { v: "logins", l: "Logins", d: "Admin, Reception and Waiter: passwords, WhatsApp, devices, install links", group: "Staff and access" },
   { v: "roles", l: "Roles", d: "What Reception and Waiter may do: Off, On or On with PIN", group: "Staff and access" },

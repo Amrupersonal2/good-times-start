@@ -9,6 +9,7 @@ import { withCustomerId } from "./customer-logic";
 import { rememberCustomer } from "./customer-actions";
 import { setWhatsappConsent } from "./marketing-actions";
 import { billWithGuestLines, cartLinesFromGuest, orderTypeFor, type GuestOrder, type GuestStatus } from "./guest-order-logic";
+import { orderingSaveError } from "./qr-ordering";
 
 const ACTIVE: GuestStatus[] = ["new", "accepted", "ready"];
 
@@ -114,9 +115,6 @@ export async function setGuestOrderStatus(guest: GuestOrder, status: GuestStatus
 
 /** Owner or manager: change the outlet's guest ordering switches and web address. */
 export async function saveOrderingConfig(restaurantId: string, changes: { ordering?: Record<string, unknown>; slug?: string }): Promise<string | null> {
-  const { error } = await supabase.from("restaurants").update(changes as never).eq("id", restaurantId);
-  if (!error) return null;
-  if (error.code === "23505") return "That web address is taken. Try another.";
-  if (error.code === "23514") return "Use lower-case letters, numbers and dashes for the web address.";
-  return error.message;
+  const { data, error } = await supabase.from("restaurants").update(changes as never).eq("id", restaurantId).select("id");
+  return orderingSaveError(error, data);
 }

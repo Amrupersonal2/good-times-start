@@ -14,6 +14,9 @@ import {
   type GuestCartLine, type GuestChannel, type GuestLine, type GuestStatus, type Storefront,
 } from "@/lib/guest-order-logic";
 import type { CartLine, MenuItem } from "@/lib/types";
+import menuCover from "@/assets/photography/bistro-menu.jpg";
+import { filterGuestMenu, type GuestDiet } from "@/lib/qr-ordering";
+import { Segmented } from "@/components/Segmented";
 import { Dropdown } from "@/components/Dropdown";
 import { activeOffers, brandPalette, cleanSource, waLink, LINK_LABELS, type BrandLinks, type Offer } from "@/lib/marketing-logic";
 import { logScan, recordGuestChoice } from "@/lib/marketing-actions";
@@ -93,28 +96,23 @@ function Frame({ store, children }: { store?: Storefront; children: ReactNode })
   const palette = brandPalette(brand.color);
   return (
     <div className="min-h-screen bg-background text-foreground" style={(palette ?? undefined) as CSSProperties | undefined}>
-      <div className="mx-auto min-h-screen max-w-xl bg-background pb-28">
+      <div className="mx-auto min-h-screen max-w-3xl bg-background pb-28">
         {store ? (
           <header className="relative overflow-hidden bg-sidebar text-sidebar-foreground">
-            {brand.cover ? (
-              <img src={brand.cover} alt="" decoding="async" fetchPriority="high" className="absolute inset-0 size-full object-cover" />
-            ) : <>
-              <div aria-hidden="true" className="absolute -right-10 -top-10 size-40 rounded-full bg-primary/40" />
-              <div aria-hidden="true" className="absolute -bottom-16 right-16 size-32 rounded-full bg-sidebar-accent" />
-            </>}
-            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
-            <div className={`relative px-5 pb-6 ${brand.cover ? "pt-28" : "pt-7"}`}>
-              <div className="flex items-end gap-3">
+            <img src={brand.cover || menuCover} alt="" decoding="async" fetchPriority="high" width={1536} height={768} className="absolute inset-0 size-full object-cover" />
+            <div aria-hidden="true" className="absolute inset-0 bg-sidebar/65" />
+            <div className="relative px-5 pb-6 pt-24">
+            <div className="flex items-end gap-3">
                 {brand.logo ? <img src={brand.logo} alt={`${store.name} logo`} width={64} height={64} className="size-16 shrink-0 rounded-2xl bg-white object-contain p-1 shadow-lg ring-2 ring-white/70" /> : null}
                 <div className="min-w-0">
-                  <h1 className="text-2xl font-extrabold leading-tight text-white drop-shadow">{store.name}</h1>
-                  {brand.tagline ? <p className="mt-0.5 text-sm font-medium text-white/90">{brand.tagline}</p> : null}
+                  <h1 className="text-3xl font-extrabold leading-tight text-sidebar-foreground">{store.name}</h1>
+                  {brand.tagline ? <p className="mt-0.5 text-sm font-medium text-sidebar-foreground/90">{brand.tagline}</p> : null}
                 </div>
               </div>
-              {store.address ? <p className="mt-3 flex items-start gap-1.5 text-sm text-white/80"><MapPin className="mt-0.5 size-3.5 shrink-0" />{store.address}</p> : null}
+              {store.address ? <p className="mt-3 flex items-start gap-1.5 text-sm text-sidebar-foreground/80"><MapPin className="mt-0.5 size-3.5 shrink-0" />{store.address}</p> : null}
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                {store.phone ? <a href={`tel:${store.phone}`} className="inline-flex items-center gap-1.5 text-sm text-white/80"><Phone className="size-3.5" />{store.phone}</a> : null}
-                {brand.links?.instagram ? <a href={brand.links.instagram} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-white/80"><Share className="size-3.5" />Instagram</a> : null}
+                {store.phone ? <a href={`tel:${store.phone}`} className="inline-flex items-center gap-1.5 text-sm text-sidebar-foreground/80"><Phone className="size-3.5" />{store.phone}</a> : null}
+                {brand.links?.instagram ? <a href={brand.links.instagram} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-sidebar-foreground/80"><Share className="size-3.5" />Instagram</a> : null}
               </div>
             </div>
           </header>
@@ -148,6 +146,9 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
   const categories = useMemo(() => orderCategories(items.map((i) => i.category), store.categoryOrder), [items, store.categoryOrder]);
   const [cart, setCart] = useState<GuestCartLine[]>([]);
   const [q, setQ] = useState("");
+  const [diet, setDiet] = useState<GuestDiet>("all");
+  const [browse, setBrowse] = useState(false);
+  const [restored, setRestored] = useState(false);
   const [active, setActive] = useState(categories[0] ?? "");
   const [choosing, setChoosing] = useState<MenuItem | null>(null);
   const [checkout, setCheckout] = useState(false);
@@ -157,11 +158,13 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
   const [flash, setFlash] = useState("");
 
   useEffect(() => {
+    setRestored(false);
     setCart(readJson<GuestCartLine[]>(cartKey(store.slug, tableId), []));
+    setRestored(true);
     const day = Date.now() - 12 * 60 * 60 * 1000;
     setPlaced(readJson<PlacedRef[]>(placedKey(store.slug), []).filter((p) => p.at > day));
   }, [store.slug, tableId]);
-  useEffect(() => { writeJson(cartKey(store.slug, tableId), cart); }, [cart, store.slug, tableId]);
+  useEffect(() => { if (restored) writeJson(cartKey(store.slug, tableId), cart); }, [cart, store.slug, tableId, restored]);
 
   const qtyOf = (id: string) => cart.filter((l) => l.itemId === id).reduce((n, l) => n + l.qty, 0);
   const add = (item: MenuItem, variantId?: string, addonIds: string[] = []) => setCart((c) => addToGuestCart(c, guestLineFor(item, channel, variantId, addonIds)));
@@ -172,13 +175,16 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
   const count = cart.reduce((n, l) => n + l.qty, 0);
   const subtotal = guestSubtotal(cart);
   const s = q.trim().toLowerCase();
-  const visible = (i: MenuItem) => !s || i.name.toLowerCase().includes(s) || (i.description ?? "").toLowerCase().includes(s);
+  const filteredItems = useMemo(() => filterGuestMenu(items, q, diet), [items, q, diet]);
+  const visibleIds = new Set(filteredItems.map((i) => i.id));
+  const visible = (i: MenuItem) => visibleIds.has(i.id);
   const priceLabel = (i: MenuItem) => i.variants?.length ? `from ${formatINR(Math.min(...i.variants.map((v) => v.price)), 0)}` : formatINR(channel === "online" ? i.prices?.takeaway ?? i.price : i.price, 0);
 
   const jump = (c: string) => {
     setActive(c);
     setQ("");
-    sections.current[c]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setBrowse(false);
+    window.setTimeout(() => sections.current[c]?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }), 50);
   };
   const openOffer = (offer: Offer) => {
     const dish = offer.itemId ? items.find((i) => i.id === offer.itemId) : undefined;
@@ -192,8 +198,8 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
 
   return (
     <>
-      <div className="-mt-3 px-4">
-        <div className="relative rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="px-4">
+        <div className="relative border-b border-border bg-card px-4 py-4">
           <div className="flex items-center gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-tint text-primary">{channel === "table" ? <UtensilsCrossed className="size-5" /> : <ShoppingBag className="size-5" />}</span>
             <div className="min-w-0">
@@ -240,22 +246,37 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search the menu" aria-label="Search the menu"
             className="w-full rounded-xl border border-input bg-card py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring/30" />
         </div>
-        <nav className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Menu sections">
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <Segmented ariaLabel="Dietary preference" value={diet} onChange={setDiet} options={[{ value: "all", label: "All" }, { value: "veg", label: "Veg" }, { value: "nonveg", label: "Non-veg" }]} />
+          <Button variant="outline" size="sm" onClick={() => setBrowse(true)}><UtensilsCrossed />Sections</Button>
+        </div>
+        <nav className="no-scrollbar mt-3 flex gap-1 overflow-x-auto border-b border-border" aria-label="Menu sections">
           {categories.map((c) => (
-            <button key={c} type="button" onClick={() => jump(c)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${active === c && !s ? "bg-primary text-primary-foreground" : "bg-card text-foreground ring-1 ring-border"}`}>{c}</button>
+            <Button key={c} variant="ghost" size="sm" onClick={() => jump(c)} aria-current={active === c && !s ? "true" : undefined}
+              className={`h-10 shrink-0 rounded-none border-b-2 ${active === c && !s ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>{c}</Button>
           ))}
         </nav>
       </div>
+
+      <Dialog open={browse} onOpenChange={setBrowse}>
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+          <DialogTitle>Explore the menu</DialogTitle>
+          <div className="grid grid-cols-2 gap-2">
+            {categories.map((category) => <Button key={category} variant="outline" onClick={() => jump(category)} className="h-auto min-h-16 justify-start whitespace-normal px-3 py-3 text-left">
+              <span className="min-w-0 flex-1">{category}</span><span className="text-xs text-muted-foreground">{items.filter((item) => item.category === category).length}</span>
+            </Button>)}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="px-4">
         {categories.map((c) => {
           const dishes = items.filter((i) => i.category === c && visible(i));
           if (!dishes.length) return null;
           return (
-            <section key={c} ref={(el) => { sections.current[c] = el; }} className="scroll-mt-28 pt-5">
+            <section key={c} ref={(el) => { sections.current[c] = el; }} className="scroll-mt-44 pt-5">
               <h2 className="mb-2 text-base font-extrabold">{c}</h2>
-              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+              <ul className="divide-y divide-border bg-card">
                 {dishes.map((i) => {
                   const off = outsideHours(i);
                   const n = qtyOf(i.id);
@@ -263,6 +284,7 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
                     <li key={i.id} id={`dish-${i.id}`} className={`flex gap-3 p-3.5 transition-colors duration-700 ${off ? "opacity-60" : ""} ${flash === i.id ? "bg-primary-tint" : ""}`}>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start gap-2"><span className="mt-1"><VegMark veg={i.veg} /></span><span className="font-semibold leading-snug">{i.name}</span></div>
+                        {i.popular ? <span className="ml-5 mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-warning"><Star className="size-3" />Bistro favourite</span> : null}
                         <p className="mt-0.5 pl-5 text-sm font-semibold text-primary">{priceLabel(i)}</p>
                         {i.description ? <p className="mt-1 line-clamp-2 pl-5 text-xs text-muted-foreground">{i.description}</p> : null}
                         {off && i.hours ? <p className="mt-1 pl-5 text-[11px] font-semibold text-muted-foreground">Served {i.hours.from}–{i.hours.to}</p> : null}
@@ -285,15 +307,15 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
             </section>
           );
         })}
-        {s && !items.some(visible) ? <p className="py-10 text-center text-sm text-muted-foreground">No dishes match "{q}"</p> : null}
+        {!filteredItems.length ? <div className="py-10 text-center"><p className="text-sm text-muted-foreground">No dishes match your selection.</p><Button variant="link" onClick={() => { setQ(""); setDiet("all"); }}>Clear filters</Button></div> : null}
       </div>
 
-      {count > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-xl p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <button type="button" onClick={() => setCheckout(true)} className="flex w-full items-center justify-between rounded-2xl bg-primary px-5 py-4 text-primary-foreground shadow-xl">
+      {count > 0 && restored ? (
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-3xl p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <Button onClick={() => setCheckout(true)} className="flex h-14 w-full items-center justify-between rounded-lg px-5 shadow-xl">
             <span className="text-sm font-semibold">{count} item{count === 1 ? "" : "s"} · {formatINR(subtotal, 0)}</span>
-            <span className="text-sm font-bold">View order →</span>
-          </button>
+            <span className="text-sm font-bold">Review order →</span>
+          </Button>
         </div>
       ) : null}
 
@@ -341,6 +363,7 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
   const slots = useMemo(() => pickupChoices(new Date(), store.prepMinutes), [store.prepMinutes]);
   const [pickup, setPickup] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
   const [error, setError] = useState("");
   const totals = estimate(store, cart, items);
   const digits = phone.replace(/\D/g, "");
@@ -348,18 +371,28 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
   const missing = (channel === "online" && (name.trim().length < 2 || digits.length < 10)) || (optIn && digits.length < 10);
 
   const place = async () => {
+    if (submitting.current || !cart.length || short || missing || store.paused) return;
+    submitting.current = true;
     setBusy(true);
     setError("");
     writeJson("xtsy-guest-contact", { name: name.trim(), phone: phone.trim(), optIn });
-    const { data, error: failure } = await supabase.rpc("place_guest_order", {
-      _slug: store.slug, _channel: channel, _table_id: tableId ?? "", _name: name.trim(), _phone: phone.trim(), _note: note.trim(),
-      _lines: guestOrderPayload(cart) as never, _payment: payment, ...(pickup ? { _pickup_at: pickup } : {}),
-    });
-    setBusy(false);
-    if (failure || !data) { setError(failure?.message ?? "Couldn't send your order. Please try again."); return; }
-    const r = data as unknown as { id: string; token: string; code: string };
-    await recordGuestChoice(r.id, r.token, askOptIn && optIn, source);
-    onPlaced({ id: r.id, token: r.token, code: r.code, at: Date.now() });
+    try {
+      const { data, error: failure } = await supabase.rpc("place_guest_order", {
+        _slug: store.slug, _channel: channel, _table_id: tableId ?? "", _name: name.trim(), _phone: phone.trim(), _note: note.trim(),
+        _lines: guestOrderPayload(cart) as never, _payment: payment, ...(pickup ? { _pickup_at: pickup } : {}),
+      });
+      if (failure || !data) { setError(failure?.message ?? "Couldn't confirm your order. Check with the staff before trying again."); return; }
+      const r = data as unknown as { id: string; token: string; code: string };
+      // Confirmation is durable before optional consent recording; its failure must not encourage a duplicate order.
+      const ref = { id: r.id, token: r.token, code: r.code, at: Date.now() };
+      onPlaced(ref);
+      void recordGuestChoice(r.id, r.token, askOptIn && optIn, source).catch(() => {});
+    } catch {
+      setError("Couldn't confirm whether your order arrived. Your cart is saved; check with the staff before trying again.");
+    } finally {
+      submitting.current = false;
+      setBusy(false);
+    }
   };
 
   return (
@@ -472,6 +505,7 @@ function OrderStatus({ store, id, token, table }: { store: Storefront; id: strin
   const o: StatusView | null | undefined = status.data;
   const items = useMemo(() => store.menu.map(asMenuItem), [store.menu]);
   if (status.isLoading) return <div className="p-5"><div className="h-40 animate-pulse rounded-2xl bg-card" /></div>;
+  if (status.isError) return <Notice icon={Clock} title="Order updates are unavailable" body="Your order may still be with the restaurant. Check your connection; do not place it again." action={<Button onClick={() => void status.refetch()}>Refresh status</Button>} />;
   if (!o) return <Notice icon={Store} title="Order not found" body="This order link has expired. Please ask the staff." />;
 
   const totals = estimate(store, o.lines, items);

@@ -1,12 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import QRCode from "qrcode";
-import { Copy, ExternalLink, Printer, QrCode } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Copy, ExternalLink, Printer, QrCode, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
+import { GUEST_ORDER_ORIGIN } from "@/lib/qr-ordering";
+import { cn } from "@/lib/utils";
 import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { useAccount } from "@/lib/use-account";
@@ -53,7 +56,11 @@ async function printTableCards(restaurant: string, cards: { label: string; secti
   win.document.close();
 }
 
-export function OrderingSettings() {
+export interface OrderingSettingsProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+export function OrderingSettings({ className, ref, ...props }: OrderingSettingsProps) {
   const { user } = useStaff();
   const settings = useRestaurantSettings();
   const query = useAccount();
@@ -64,8 +71,20 @@ export function OrderingSettings() {
   const [slug, setSlug] = useState("");
   const [busy, setBusy] = useState(false);
   const [qr, setQr] = useState("");
+  const [selectedTable, setSelectedTable] = useState("");
   const canEdit = isAdmin(user);
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  const origin = GUEST_ORDER_ORIGIN;
+  const readiness = useQuery({
+    queryKey: ["qr-readiness", user?.restaurantId],
+    enabled: !!user?.restaurantId && canEdit,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("restaurant_records").select("kind, record_id")
+        .eq("restaurant_id", user?.restaurantId ?? "").in("kind", ["menu", "table"]).eq("deleted", false);
+      if (error) throw error;
+      return { menu: data.filter((row) => row.kind === "menu").length, tables: new Set(data.filter((row) => row.kind === "table").map((row) => row.record_id)) };
+    },
+  });
 
   useEffect(() => {
     if (!view) return;
@@ -73,11 +92,12 @@ export function OrderingSettings() {
     setSlug(view.outlet.slug ?? "");
   }, [view]);
   const savedSlug = view?.outlet.slug ?? "";
-  const onlineUrl = savedSlug ? orderPageUrl(origin, savedSlug) : "";
+  
+  const qrUrl = savedSlug ? orderPageUrl(origin, savedSlug, selectedTable || undefined) : "";
   useEffect(() => {
-    if (!onlineUrl) { setQr(""); return; }
-    QRCode.toDataURL(onlineUrl, { width: 280, margin: 1 }).then(setQr).catch(() => setQr(""));
-  }, [onlineUrl]);
+    if (!qrUrl) { setQr(""); return; }
+    QRCode.toDataURL(qrUrl, { width: 280, margin: 1 }).then(setQr).catch(() => setQr(""));
+  }, [qrUrl]);
 
   if (!user?.restaurantId) return <p className="py-8 text-sm text-muted-foreground">Sign in and join a restaurant to take orders from tables and online.</p>;
   if (query.isLoading) return <p className="py-8 text-sm text-muted-foreground">Loading…</p>;
@@ -98,18 +118,41 @@ export function OrderingSettings() {
       minOrder: Math.max(0, Math.round(Number(form.minOrder ?? 0))),
       message: (form.message ?? "").trim().slice(0, 160),
     };
+    try {
     const error = await saveOrderingConfig(view.outlet.id, { ordering: clean as Record<string, unknown>, ...(slug !== savedSlug ? { slug } : {}) });
     setBusy(false);
     if (error) { toast.error(error); return; }
     toast.success("Guest ordering saved");
-    void queryClient.invalidateQueries({ queryKey: ["account"] });
+    await queryClient.invalidateQueries({ queryKey: ["account"] });
+    void queryClient.invalidateQueries({ queryKey: ["storefront", slug] });
+    void readiness.refetch();
+    } catch { toast.error("Couldn't save guest ordering. Check your connection and try again."); }
+    finally { setBusy(false); }
   };
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); toast.success("Link copied"); } catch { toast.error("Couldn't copy. Select the link and copy it."); }
   };
 
   return (
-    <div className="space-y-8 py-2">
+    <div ref={ref} {...props} className={cn("space-y-8 py-2", className)}>
+      <section className="border-b border-border pb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><p className="text-xs font-semibold uppercase text-muted-foreground">Guest experience</p><h2 className="mt-1 text-xl font-bold">Your menu. Every table. One link.</h2></div>
+          <Button variant="outline" size="sm" disabled={readiness.isFetching} onClick={() => void readiness.refetch()}><RefreshCw />Check readiness</Button>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {[
+            { ok: !!view.outlet.ordering?.table, label: "Table ordering", detail: view.outlet.ordering?.table ? "Enabled" : "Off — enable below" },
+            { ok: !!readiness.data?.menu, label: "Published dishes", detail: readiness.isError ? "Unable to check" : readiness.data ? `${readiness.data.menu} dishes in cloud` : "Checking…" },
+            { ok: !!readiness.data?.tables.size, label: "Synced tables", detail: readiness.data ? `${readiness.data.tables.size} tables in cloud` : "Checking…" },
+          ].map((check) => <div key={check.label} className="border-l-2 border-border pl-3"><p className="flex items-center gap-2 text-sm font-semibold">{check.ok ? <CheckCircle2 className="size-4 text-success" /> : <AlertTriangle className="size-4 text-warning" />}{check.label}</p><p className="mt-1 text-xs text-muted-foreground">{check.detail}</p></div>)}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild><Link to="/marketing">Brand, cover & offers<ExternalLink /></Link></Button>
+          <Button variant="ghost" size="sm" asChild><Link to="/menu">Manage dishes</Link></Button>
+          <Button variant="ghost" size="sm" asChild><Link to="/tables">Manage tables</Link></Button>
+        </div>
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-[16rem_1fr]">
         <div>
@@ -159,14 +202,20 @@ export function OrderingSettings() {
             <p className="mt-1 text-sm text-muted-foreground">Print a card for each table, and share the pickup link anywhere.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
-            {qr ? <img src={qr} alt="QR code for online ordering" width={140} height={140} className="rounded-lg border border-border bg-white p-1" /> : <QrCode className="size-20 text-muted-foreground" />}
+            {qr ? <img src={qr} alt={selectedTable ? "QR code for selected table" : "QR code for pickup ordering"} width={140} height={140} className="rounded-lg border border-border bg-white p-1" /> : <QrCode className="size-20 text-muted-foreground" />}
             <div className="min-w-0 space-y-2">
-              <p className="text-sm font-semibold">Online ordering link</p>
-              <p className="break-all rounded-lg bg-secondary px-3 py-2 text-xs">{onlineUrl}</p>
+              <label className="block text-sm font-semibold">QR destination
+                <select aria-label="QR destination" value={selectedTable} onChange={(event) => setSelectedTable(event.target.value)} className={inputClass}>
+                  <option value="">Pickup ordering</option>
+                  {tables.map((table) => <option key={table.id} value={table.id}>Table {table.label} · {table.section}</option>)}
+                </select>
+              </label>
+              <p className="break-all rounded-lg bg-secondary px-3 py-2 text-xs">{qrUrl}</p>
+              <p className="text-xs text-muted-foreground">{selectedTable ? "Table-specific QR · Pay at the restaurant" : "Public pickup link"}</p>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => void copy(onlineUrl)}><Copy />Copy link</Button>
-                <Button size="sm" variant="outline" asChild><a href={onlineUrl} target="_blank" rel="noreferrer"><ExternalLink />Open</a></Button>
-                {qr ? <Button size="sm" variant="outline" asChild><a href={qr} download={`${savedSlug}-order-qr.png`}><QrCode />Download QR</a></Button> : null}
+                <Button size="sm" variant="outline" onClick={() => void copy(qrUrl)}><Copy />Copy link</Button>
+                <Button size="sm" variant="outline" asChild><a href={qrUrl} target="_blank" rel="noreferrer"><ExternalLink />Open</a></Button>
+                {qr ? <Button size="sm" variant="outline" asChild><a href={qr} download={`${savedSlug}-${selectedTable || "pickup"}-qr.png`}><QrCode />Download QR</a></Button> : null}
               </div>
             </div>
             <div className="sm:col-span-2">
@@ -178,10 +227,10 @@ export function OrderingSettings() {
               </div>
               {tables.length ? (
                 <ul className="mt-2 flex flex-wrap gap-1.5">
-                  {tables.map((t) => <li key={t.id}><a href={orderPageUrl(origin, savedSlug, t.id)} target="_blank" rel="noreferrer" className="inline-block rounded-md border border-border px-2 py-1 text-xs font-semibold hover:border-primary">{t.label}</a></li>)}
+                  {tables.map((t) => <li key={t.id}><Button size="sm" variant={selectedTable === t.id ? "default" : "outline"} onClick={() => setSelectedTable(t.id)}>{t.label}{readiness.data && !readiness.data.tables.has(t.id) ? <AlertTriangle className="size-3 text-warning" /> : null}</Button></li>)}
                 </ul>
               ) : <p className="mt-1 text-sm text-muted-foreground">Add tables in Tables first.</p>}
-              <p className="mt-2 text-xs text-muted-foreground">Each card opens that table's menu. Tap a table above to try it as a guest.</p>
+              <p className="mt-2 text-xs text-muted-foreground">Select a table to preview or download its QR. Cards use your live site, never this preview.</p>
             </div>
           </div>
         </section>
