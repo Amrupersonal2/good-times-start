@@ -2,7 +2,7 @@
   "meta": {
     "name": "Good Times Start",
     "package": "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d",
-    "version": "3.3.0",
+    "version": "3.4.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -11,7 +11,7 @@
     ],
     "source_type": "local",
     "source_manifest": {
-      "#enrichment": "7e182745a759f91b099fb56d505ea8ddeb0767541739c1947a487164e6109f7b",
+      "#enrichment": "76a3f89e52c4bfb033c9fb905d02ec943af593fb00cb1b4b6c145050ffaa9c17",
       ".gitignore": "6d9e901a692b46a83707c245fb03bc91",
       ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
       ".lovable/plan/table-first-pos-kitchen-tickets-and-sync-recovery-2026-10-16.md": "7956f6185a7718331d049c136f03c7d4",
@@ -19,7 +19,7 @@
       ".lovable/sources.yaml": "ee6247f6fe77fe1387244cd3c757e6a3",
       ".prettierignore": "7279a476f196a2da5f7edd18db568dc6",
       ".prettierrc": "185ef0234746ab738ac1ab6cec5e2bd9",
-      "AGENTS.md": "f10cc5121473d37d414e32cf388217cd",
+      "AGENTS.md": "4e53dfbbbd9d5dacd819580fc3bc0723",
       "README.md": "e9c1c6685644ec8321ce8276fcd7dc5f",
       "bunfig.toml": "89115995d9de72fdfc894e16b1e75297",
       "components.json": "30d3d035361ce807021f5c54620962e9",
@@ -70,9 +70,10 @@
       "public/manifest-waiter.webmanifest": "88e386fab8ccc2989dc5ae5142a895a2",
       "public/robots.txt": "f9dff89adf98833e676de2205921996a",
       "public/sw.js": "d1993cda878f5821d1dedce61202b712",
-      "roadmap.md": "83a07c415f602477560107578632b808",
+      "roadmap.md": "a783b003ff64cf88e6bc9c63cd709eb8",
       "src/ai-gateway.types.ts": "052c89f386ce8f08143cd377e5f3f7fc",
       "src/assets/logo.png": "a03e4eedebddbee2a4e1008fc0de1621",
+      "src/assets/photography/bistro-menu.jpg": "ce39f47441577462e12e5ecb9797740e",
       "src/components/AppInstall.tsx": "9c9ea72ffe6c1b07d8d77e5e532ecd41",
       "src/components/AppShell.tsx": "f404a46f056fa4ed5e142e63955abe2b",
       "src/components/ConfirmButton.tsx": "f6339ee1011f56d9f878d2632a3ee728",
@@ -83,7 +84,7 @@
       "src/components/LoginsSettings.tsx": "b07522148d23d99473e98977fe7d03a3",
       "src/components/MenuAdvisor.tsx": "03c759b7dfff1b8f14a6affa55a74b47",
       "src/components/MenuExcel.tsx": "207ab10b433578d5402205c928852b5d",
-      "src/components/OrderingSettings.tsx": "c235f66eae4131d9c04003ba84120232",
+      "src/components/OrderingSettings.tsx": "b7a1c5cb6655b2dc585ef8014842f15a",
       "src/components/PaymentDialogs.tsx": "6fca8e292c65364dd041a626bbe7bd30",
       "src/components/PinGate.tsx": "ebb725bbdd09028b849ebcd66345f90d",
       "src/components/PreloadScreens.tsx": "f8f79874963a515aec539fabe68f43cf",
@@ -149,14 +150,14 @@
       "src/generated/ai-gateway/models.d.cts": "1efb1b89b544365722c7c1fc3cca891b",
       "src/generated/ai-gateway/models.d.ts": "1efb1b89b544365722c7c1fc3cca891b",
       "src/hooks/use-mobile.tsx": "c0a0bdd4638c391a1dd06ac82074e60b",
-      "src/index.ts": "bcd8dc4ae50a2ce07f2831592308d507",
+      "src/index.ts": "c2751dcf5f7c74b1445cbe5919e44d08",
       "src/integrations/lovable/index.ts": "e9cf6e6968dd0392b2222ee0745ecece",
       "src/integrations/supabase/auth-attacher.ts": "dad043cda134d909e52de0346c16625e",
       "src/integrations/supabase/auth-middleware.ts": "eabaf8c8ba32205717921ce5f255185e",
       "src/integrations/supabase/client.server.ts": "23f838ab7633e0a97e695f3c500d91aa",
       "src/integrations/supabase/client.ts": "2e72a87ed578e0084537f2646f2d7e6a",
       "src/integrations/supabase/cron-auth.ts": "6c04781ff98ada5977945fae55d39385",
-      "src/integrations/supabase/previewAuthStorage.ts": "bb74f08a89d367e3a4a18880dad1050f",
+      "src/integrations/supabase/previewAuthStorage.ts": "315e4ae3473d92766e0d6d4d83945aef",
       "src/integrations/supabase/types.ts": "b9e055b64073bee1a239e81e939a2be5",
       "src/lib/ai-gateway/responses.server.ts": "6df55c548d40f91cd29e065314c45c7c",
       "src/lib/ai-gateway/run-id.ts": "4652f725587a5a8e4a60bd56d9042234",
@@ -185,7 +186,7 @@
       "src/lib/error-page.ts": "8da0ddd7569bac2676b9a5c8edff8a36",
       "src/lib/gstr1.test.ts": "f6b884a6a7b1e51808865443cba4e7f7",
       "src/lib/gstr1.ts": "7d7dac1c422d35c47c80bacf1cb1dfd8",
-      "src/lib/guest-order-actions.ts": "26387d64b5868b35ac3e790e73a52d10",
+      "src/lib/guest-order-actions.ts": "1d551ed50b9cf0df4589f7718b334a75",
       "src/lib/guest-order-logic.test.ts": "5af5b9d57b9b13edad00daf4d717f041",
       "src/lib/guest-order-logic.ts": "f1cec49721952dfbda85f87bc626e518",
       "src/lib/insights-logic.test.ts": "7b2d88259c8facde6ec3224678cf92ed",
@@ -216,6 +217,8 @@
       "src/lib/print-config.ts": "be13e2e08a9252d6d59ab7e54b18a1e2",
       "src/lib/print-logic.test.ts": "fda071a319d9739ce524dc65822a8983",
       "src/lib/print-logic.ts": "066346d2bd760a1086f2ef678b6f3bdc",
+      "src/lib/qr-ordering.test.ts": "e0e50a04c486c9bbbaf0dd33438d06e1",
+      "src/lib/qr-ordering.ts": "08522ea8648c42a8980e19266d03b692",
       "src/lib/qr-print.test.ts": "127bfa2084b45919e462e915319af132",
       "src/lib/qr-print.ts": "3504d22229757986c843d7a8abbe884c",
       "src/lib/report-excel.test.ts": "f630caab42218dbf36afb347f2d742b5",
@@ -269,9 +272,9 @@
       "src/routes/manager.tsx": "4e7fa5b610d1ed0210b7fd9c4c81fe62",
       "src/routes/marketing.tsx": "af3bfe5d4324d2e8d11b5d4d6be105c9",
       "src/routes/menu.tsx": "6f97d252d73ea6a3f8cf4e707d4bf4fa",
-      "src/routes/order.$slug.tsx": "f8550d003d49ef7abfc20f449f7f2cda",
+      "src/routes/order.$slug.tsx": "32daf561bdd4656b5c28fe1ac7d3dfcf",
       "src/routes/reports.tsx": "95e54e749c43f978c2946f0b3d5705cc",
-      "src/routes/settings.tsx": "bc14cf0b296d23343aadaf85467cdb3a",
+      "src/routes/settings.tsx": "812a4d1dd1d8c21dd9092bf9651727cb",
       "src/routes/setup.tsx": "1cbfda76e415da788bfc93c720366a8e",
       "src/routes/stock.tsx": "5344dde30fcc608728e5def8311b74d4",
       "src/routes/tables.tsx": "0b528f32dd28369b8529b2c4d31b77d5",
@@ -645,9 +648,24 @@
       "name": "OrderingSettings",
       "file": "src/components/OrderingSettings",
       "import_path": "",
+      "props": [
+        {
+          "name": "ref",
+          "type": "any"
+        }
+      ],
       "usage": "Use in the signed-in Business Manager to configure guest channels, inspect cloud menu/table readiness, and generate public table QR codes.",
-      "examples": [{ "label": "Guest ordering settings", "code": "<OrderingSettings className=\"max-w-5xl\" />" }],
-      "antipatterns": ["Do not mount without the app account, auth and query providers.", "Never generate printed QR links from an editor or localhost origin.", "Do not interpret UPI references as verified payment."]
+      "examples": [
+        {
+          "label": "Guest ordering settings",
+          "code": "\u003cOrderingSettings className=\"max-w-5xl\" /\u003e"
+        }
+      ],
+      "antipatterns": [
+        "Do not mount without the app account, auth and query providers.",
+        "Never generate printed QR links from an editor or localhost origin.",
+        "Do not interpret UPI references as verified payment."
+      ]
     },
     {
       "name": "UpiPay",
@@ -926,6 +944,11 @@
       "file": "src/assets/logo.png",
       "kind": "logo",
       "format": "png"
+    },
+    {
+      "file": "src/assets/photography/bistro-menu.jpg",
+      "kind": "photography",
+      "format": "jpg"
     }
   ]
 }

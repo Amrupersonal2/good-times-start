@@ -215,6 +215,27 @@ import { MenuExcel } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b230
 import { OrderingSettings } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+Use in the signed-in Business Manager to configure guest channels, inspect cloud menu/table readiness, and generate public table QR codes.
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `ref` | any | `—` |
+
+**Examples:**
+
+_Guest ordering settings_
+```tsx
+<OrderingSettings className="max-w-5xl" />
+```
+
+**Avoid:**
+
+- Do not mount without the app account, auth and query providers.
+- Never generate printed QR links from an editor or localhost origin.
+- Do not interpret UPI references as verified payment.
+
 ### PaymentPanel
 
 ```ts

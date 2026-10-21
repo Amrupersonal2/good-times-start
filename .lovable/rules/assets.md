@@ -13,3 +13,7 @@ The full machine-readable catalog lives in this library's `design-system.json` (
 
 - `@/design-system/{slug}/assets/logo.png` (png)
 
+## Photography
+
+- `@/design-system/{slug}/assets/photography/bistro-menu.jpg` (jpg)
+
