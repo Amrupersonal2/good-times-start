@@ -16,7 +16,7 @@ import { SalesSummary } from "@/components/SalesSummary";
 import { ReasonPrompt } from "@/components/PaymentDialogs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { getDb, getDeviceCode, markDirty } from "@/lib/db";
+import { getDb, markDirty } from "@/lib/db";
 import { formatINR } from "@/lib/billing";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { voidSettledBill } from "@/lib/bill-actions";
@@ -30,6 +30,7 @@ import { Segmented } from "@/components/Segmented";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
+import { useDeviceCode } from "@/lib/use-device-code";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -229,7 +230,7 @@ function Staff({ orders }: { orders: Order[] }) {
 function DayCloseTab() {
   const { user } = useStaff();
   const today = dayKey(Date.now());
-  const myCode = useLiveQuery(async () => { await getDb().meta.get("deviceCode"); return getDeviceCode(); }, [], "");
+  const myCode = useDeviceCode();
   const todays = useLiveQuery(() => getDb().orders.where("createdAt").aboveOrEqual(presetRange("today").from).toArray(), [], []);
   const closes = useLiveQuery(() => getDb().dayCloses.orderBy("day").reverse().limit(30).toArray(), [], []);
   const seriesToday = [...new Set(todays.map((o) => seriesOf(o.billNo)).filter(Boolean))];

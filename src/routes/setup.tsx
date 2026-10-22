@@ -7,7 +7,7 @@ import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABELS, isAdmin, useStaff, type StaffRole } from "@/lib/auth-context";
-import { getDb, getDeviceCode, loadSampleData, saveSettings, setDeviceCode } from "@/lib/db";
+import { getDb, loadSampleData, saveSettings, setDeviceCode } from "@/lib/db";
 import { GST_MODES } from "@/lib/billing-config";
 import { saveTable } from "@/lib/table-actions";
 import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
@@ -17,6 +17,7 @@ import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
 import { APPS, DEVICE_LABELS, LOGINS, type LoginId } from "@/lib/staff-login-logic";
 import type { RestaurantSettings } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
+import { useDeviceCode } from "@/lib/use-device-code";
 
 export const Route = createFileRoute("/setup")({
   head: () => ({ meta: [{ title: "Set up — XTSY POS" }, { name: "description", content: "Set up your restaurant on XTSY POS in a few minutes." }, { property: "og:title", content: "Set up — XTSY POS" }, { property: "og:description", content: "Set up your restaurant on XTSY POS in a few minutes." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },] }),
@@ -242,7 +243,7 @@ function TablesStep({ onNext }: { onNext: () => void }) {
 
 function DeviceStep({ onNext }: { onNext: () => void }) {
   const config = usePrintConfig();
-  const current = useLiveQuery(() => getDeviceCode(), [], "");
+  const current = useDeviceCode();
   const [code, setCode] = useState("");
   const [paper, setPaper] = useState<58 | 80>(config.paper);
   const [autoBill, setAutoBill] = useState(config.autoPrintBill);
