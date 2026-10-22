@@ -1,8 +1,8 @@
 {
   "id": "/insights",
-  "name": "XTSY Insights",
-  "short_name": "XTSY Insights",
-  "description": "Live sales, tables, kitchen and stock for owners, on your phone.",
+  "name": "XTSY Reports",
+  "short_name": "XTSY Reports",
+  "description": "Live daily sales, payment split, top items and GSTR-1 exports for TAB Bistro by XTSY.",
   "start_url": "/insights",
   "scope": "/insights",
   "display": "standalone",

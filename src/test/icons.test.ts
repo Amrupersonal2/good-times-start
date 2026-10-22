@@ -13,7 +13,7 @@ const KNOWN_ICONS = new Set([
   "LineChart", "LogIn", "LogOut", "MapPin", "Minus", "MoreHorizontal", "Package", "PanelLeft", "PanelLeftClose", "PanelLeftOpen", "Pencil",
   "Phone", "Plus", "Printer", "QrCode", "Receipt", "ReceiptText", "RefreshCw", "Search", "Send", "Settings", "Share", "ShieldCheck",
   "ShoppingBag", "Smartphone", "Sparkles", "Star", "Store", "Tablet", "Trash2", "Upload", "UserPlus", "UserRound", "Users",
-  "UtensilsCrossed", "Wallet", "Wifi", "WifiOff", "X", "XCircle",
+  "UtensilsCrossed", "Wallet", "Wifi", "WifiOff", "X", "XCircle", "LoaderCircle", "CheckCircle2",
 ]);
 
 interface Fs { readdirSync: (p: string) => string[]; readFileSync: (p: string, e: "utf8") => string; statSync: (p: string) => { isDirectory: () => boolean } }
