@@ -101,6 +101,14 @@ test("a waiter taking an order holds the table; others see it; emptying it frees
   const label = ((await freeTile.locator("span").first().textContent()) ?? "").trim();
   await freeTile.click();
   const dish = waiter.locator('section[aria-label="Menu"] button:not([disabled])').filter({ hasText: "₹" }).filter({ hasNotText: "Options" }).first();
+  try {
+    // A brand-new tablet shows dishes once its first sync brings the menu.
+    await expect(dish).toBeVisible({ timeout: 90_000 });
+  } catch (error) {
+    await shot(waiter, "h0-waiter-no-dishes");
+    info.annotations.push({ type: "hold", description: `Menu buttons on waiter: ${await waiter.locator('section[aria-label="Menu"] button').count()}` });
+    throw error;
+  }
   await dish.click();
   info.annotations.push({ type: "hold", description: `Waiter holds table ${label} with one dish (not sent)` });
   await shot(waiter, "h1-waiter-holding");
