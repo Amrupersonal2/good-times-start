@@ -4,6 +4,7 @@ import { Download, Share, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { syncAppModeFromUrl, useChosenApp } from "@/lib/app-mode";
 import type { AppKind } from "@/lib/staff-login-logic";
+import { allowAppWorker, installKind, type InstallKind } from "@/lib/app-install-logic";
 
 /**
  * Three installable apps from one codebase:
@@ -19,7 +20,8 @@ export function appForPath(pathname: string, chosen: AppKind | null): AppKind {
   return chosen ?? "pos";
 }
 
-const APP_META: Record<AppKind, { title: string; theme: string }> = {
+const APP_META: Record<InstallKind, { title: string; theme: string }> = {
+  insights: { title: "XTSY Reports", theme: "#000000" },
   manager: { title: "Business Manager", theme: "#000000" },
   pos: { title: "Restro POS", theme: "#F2F2F7" },
   waiter: { title: "POS Waiter", theme: "#000000" },
@@ -35,9 +37,7 @@ const emit = () => { for (const l of listeners) l(); };
 function shouldRegisterServiceWorker(): boolean {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return false;
   if (window.location.protocol !== "https:") return false;
-  // Not inside the Lovable editor preview (an iframe) or preview builds, so editing never serves a stale copy.
-  if (window.self !== window.top) return false;
-  return !/(^|\.)id-preview--|lovableproject\.com$/.test(window.location.hostname);
+  return allowAppWorker(import.meta.env.PROD, window.location.hostname, window.self !== window.top, window.location.search);
 }
 
 export function useInstallPrompt() {
@@ -69,7 +69,7 @@ export function AppInstall() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const chosen = useChosenApp();
   useEffect(() => { syncAppModeFromUrl(); }, [pathname]);
-  const app = appForPath(pathname, chosen);
+  const app = installKind(pathname, chosen);
   const meta = APP_META[app];
 
   useEffect(() => {
@@ -79,6 +79,11 @@ export function AppInstall() {
     window.addEventListener("appinstalled", onInstalled);
     if (shouldRegisterServiceWorker()) {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => { /* offline support is a bonus, never a blocker */ });
+    } else if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker.getRegistrations().then((registrations) => Promise.all(registrations.filter((r) => {
+        const worker = r.active ?? r.waiting ?? r.installing;
+        return worker && new URL(worker.scriptURL).pathname === "/sw.js";
+      }).map((r) => r.unregister()))).catch(() => {});
     }
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
@@ -117,7 +122,7 @@ export function InstallButton({ label = "Install app", className = "" }: { label
       <Button size="sm" variant="outline" className={className} onClick={() => setIosHelp(true)}><Download />{label}</Button>
       {iosHelp ? (
         <div role="dialog" aria-label="Add to Home Screen" className="fixed inset-x-3 bottom-3 z-50 rounded-2xl bg-card p-4 text-card-foreground shadow-2xl ring-1 ring-border">
-          <button aria-label="Close" className="absolute right-3 top-3" onClick={() => setIosHelp(false)}><X className="size-4" /></button>
+          <Button variant="ghost" size="icon" aria-label="Close" className="absolute right-3 top-3" onClick={() => setIosHelp(false)}><X className="size-4" /></Button>
           <p className="font-semibold">Add to your Home Screen</p>
           <p className="mt-1 text-sm text-muted-foreground">In Safari, tap <Share className="inline size-4 align-text-bottom" /> Share, then <strong>Add to Home Screen</strong>. It opens full screen like any app.</p>
         </div>

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChefHat, LogIn, Package, RefreshCw, Users } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChefHat, Download, LogIn, Package, RefreshCw, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InstallButton } from "@/components/AppInstall";
 import { isAdmin, useStaff } from "@/lib/auth-context";
@@ -14,12 +14,16 @@ import { useRestaurantSettings } from "@/lib/use-settings";
 import type { Order } from "@/lib/types";
 import { Segmented } from "@/components/Segmented";
 import { MenuAdvisor } from "@/components/MenuAdvisor";
+import { reportsWorkbook, rangeLabel } from "@/lib/report-excel";
+import { gstr1Workbook } from "@/lib/gstr1";
+import { downloadXlsx } from "@/lib/xlsx";
+import { syncCloudData } from "@/lib/cloud-sync";
 
 export const Route = createFileRoute("/insights")({
   head: () => ({
     meta: [
-      { title: "Insights — POS Business Manager" },
-      { name: "description", content: "Live sales, tables, kitchen and stock for restaurant owners." },
+      { title: "XTSY Reports — Live Restaurant Sales" },
+      { name: "description", content: "Daily sales, payment split, top items and GSTR-1 Excel exports from your live restaurant POS." },
       { property: "og:title", content: "Restaurant Insights & Menu Advisor — XTSY POS" },
       { property: "og:description", content: "Review restaurant sales and get evidence-based menu recommendations." },
       { property: "og:type", content: "website" },
@@ -163,6 +167,8 @@ function InsightsApp() {
   const settings = useRestaurantSettings();
   const [period, setPeriod] = useState<Period>("today");
   const [now, setNow] = useState(() => Date.now());
+  const [refreshing, setRefreshing] = useState(false);
+  const [syncError, setSyncError] = useState("");
   useEffect(() => { const t = window.setInterval(() => setNow(Date.now()), 60_000); return () => window.clearInterval(t); }, []);
   const minute = Math.floor(now / 60_000);
   const { current, previous, label } = useMemo(() => periodRanges(period, minute * 60_000), [period, minute]);
@@ -209,10 +215,35 @@ function InsightsApp() {
   const topMax = Math.max(1, ...top.map((t) => t.qty));
   const staff = staffSales(data.cur).slice(0, 6);
   const weeksOfData = Math.min(4, Math.max(1, Math.ceil((now - Math.min(now, ...data.month.map((o: Order) => o.createdAt))) / (7 * DAY))));
+  const refresh = async () => {
+    if (!user?.restaurantId || refreshing) return;
+    setRefreshing(true);
+    setSyncError("");
+    try { await syncCloudData(user.restaurantId); setNow(Date.now()); }
+    catch { setSyncError("Couldn't update live sales. Showing the last saved figures."); }
+    finally { setRefreshing(false); }
+  };
+  const exportSales = async () => {
+    const db = getDb();
+    const menu = await db.menu.toArray();
+    downloadXlsx(`sales-${new Date(current.from).toISOString().slice(0, 10)}`, reportsWorkbook(data.cur, menu, [], current, settings.name));
+  };
+  const exportGst = () => {
+    const { sheets } = gstr1Workbook(data.cur, settings, rangeLabel(current));
+    downloadXlsx(`GSTR-1-${new Date(current.from).toISOString().slice(0, 10)}`, sheets);
+  };
 
   return (
     <Shell name={settings.name} lastSync={data.lastSync}>
       <Segmented ariaLabel="Period" stretch value={period} onChange={setPeriod} options={PERIODS.map((x) => ({ value: x.v, label: x.l }))} />
+
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" disabled={refreshing} onClick={() => void refresh()}><RefreshCw className={refreshing ? "animate-spin" : ""} />Refresh</Button>
+        <Button variant="outline" size="sm" onClick={() => void exportSales()}><Download />Sales Excel</Button>
+        <Button variant="outline" size="sm" disabled={!s.bills} onClick={exportGst}><Download />GSTR-1</Button>
+      </div>
+      {syncError ? <p role="alert" className="text-sm text-destructive">{syncError}</p> : null}
+      <p className="text-xs text-muted-foreground">{rangeLabel(current)}</p>
 
       {user?.role === "owner" && user.restaurantId ? <MenuAdvisor key={user.restaurantId} restaurantId={user.restaurantId} from={current.from} to={current.to} /> : null}
 
