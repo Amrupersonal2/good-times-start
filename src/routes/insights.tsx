@@ -245,8 +245,6 @@ function InsightsApp() {
       {syncError ? <p role="alert" className="text-sm text-destructive">{syncError}</p> : null}
       <p className="text-xs text-muted-foreground">{rangeLabel(current)}</p>
 
-      {user?.role === "owner" && user.restaurantId ? <MenuAdvisor key={user.restaurantId} restaurantId={user.restaurantId} from={current.from} to={current.to} /> : null}
-
       <section className="pt-2">
         <p className="text-sm text-muted-foreground">Net sales{period === "today" ? " so far today" : ""}</p>
         <p className="text-5xl font-extrabold leading-tight tracking-tight tabular-nums">{formatINR(s.net, 0)}</p>
@@ -341,6 +339,7 @@ function InsightsApp() {
           </ul>
         </Card>
       ) : null}
+      {user?.role === "owner" && user.restaurantId ? <MenuAdvisor key={user.restaurantId} restaurantId={user.restaurantId} from={current.from} to={current.to} /> : null}
     </Shell>
   );
 }
