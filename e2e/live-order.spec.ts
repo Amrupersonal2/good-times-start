@@ -100,7 +100,9 @@ test("a waiter taking an order holds the table; others see it; emptying it frees
   await expect(freeTile).toBeVisible({ timeout: 60_000 });
   const label = ((await freeTile.locator("span").first().textContent()) ?? "").trim();
   await freeTile.click();
-  const dish = waiter.locator('section[aria-label="Menu"] button:not([disabled])').filter({ hasText: "₹" }).filter({ hasNotText: "Options" }).first();
+  // A dish with no portions or add-ons, so one tap adds it.
+  await waiter.getByPlaceholder("Find a dish").fill("Virgin Mojito");
+  const dish = waiter.locator('section[aria-label="Menu"] button:not([disabled])').filter({ hasText: "Virgin Mojito" }).first();
   try {
     // A brand-new tablet shows dishes once its first sync brings the menu.
     await expect(dish).toBeVisible({ timeout: 90_000 });

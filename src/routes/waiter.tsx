@@ -200,7 +200,7 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
             </div>
           ) : null}
         </div>
-        <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2.5 overflow-y-auto px-3 pb-3 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2.5 overflow-y-auto px-3 pb-3 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {items.map((m) => {
             const off = outsideHours(m);
             const left = stockLeft(m.id, inventory);
