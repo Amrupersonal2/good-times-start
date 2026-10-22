@@ -21,6 +21,7 @@ import { GuestOrdersButton } from "@/components/GuestOrders";
 import { currentDevice, setAppMode, syncAppModeFromUrl, useAppMode } from "@/lib/app-mode";
 import { touchTerminal, useTerminalStatus } from "@/lib/terminal-actions";
 import { APPS, APP_LINKS, accessProblem, appsFor, type AppKind } from "@/lib/staff-login-logic";
+import { isTestBrowser } from "@/lib/test-browser";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -257,7 +258,7 @@ export function PersistentFrame({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!rid) return;
     // Automated regression browsers don't register as terminals.
-    try { if (window.localStorage.getItem("xtsy-regression") === "1") return; } catch { /* storage unavailable */ }
+    if (isTestBrowser()) return;
     const touch = () => { void touchTerminal(rid, app, currentDevice()); };
     touch();
     const timer = window.setInterval(touch, 5 * 60_000);

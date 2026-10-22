@@ -18,6 +18,7 @@ import { PrintHost, IncomingKotWatcher } from "@/components/PrintHost";
 import { AppInstall } from "@/components/AppInstall";
 import { PersistentFrame } from "@/components/AppShell";
 import { PreloadScreens } from "@/components/PreloadScreens";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -157,6 +158,7 @@ function RootComponent() {
         <IncomingKotWatcher />
         <AppInstall />
         <PreloadScreens />
+        <Toaster position="top-center" richColors closeButton />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <PersistentFrame><Outlet /></PersistentFrame>
       </AuthProvider>

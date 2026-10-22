@@ -3,6 +3,7 @@ import { getDb, markDirty } from "./db";
 import { normalisePhone } from "./customer-logic";
 import { sanitizeBranding, cleanSource, type Branding, type ScanRow } from "./marketing-logic";
 import type { Customer } from "./types";
+import { isTestBrowser } from "./test-browser";
 
 /* Branding, consent, scans and campaigns. Branding and campaigns live in the
    cloud (the guest page and WhatsApp need the internet anyway); a guest's
@@ -124,6 +125,7 @@ export async function markMessaged(customerIds: string[], at = Date.now()): Prom
 
 /** Count a menu open, once per browser session per source. Never blocks the page. */
 export async function logScan(slug: string, source: string): Promise<void> {
+  if (isTestBrowser()) return;
   const clean = cleanSource(source) || "direct";
   const key = `xtsy-scan:${slug}:${clean}`;
   try { if (window.sessionStorage.getItem(key)) return; window.sessionStorage.setItem(key, "1"); } catch { /* private mode: count anyway */ }
