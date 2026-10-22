@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
@@ -16,6 +16,9 @@ import { withCustomerId } from "./customer-logic";
 import { useRestaurantSettings } from "./use-settings";
 import { taxOptionsFor } from "./billing-config";
 import type { TaxOptions } from "./billing";
+import { useStaff } from "./auth-context";
+import { getDeviceId } from "./terminal-actions";
+import { heldTable, holdByOther, withoutHold, type HeldBy } from "./table-hold";
 
 function kotGroups(lines: CartLine[]) {
   const groups = new Map<string, CartLine[]>();
@@ -46,6 +49,10 @@ export function useCart(initialTableId?: string) {
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const settings = useRestaurantSettings();
+  const { user } = useStaff();
+  const staffName = user?.displayName ?? "";
+  const [myDevice, setMyDevice] = useState("");
+  useEffect(() => { void getDeviceId().then(setMyDevice).catch(() => setMyDevice("")); }, []);
   // A running bill keeps the tax rules it started with; new bills follow current settings.
   const tax: TaxOptions = activeOrder?.tax ?? taxOptionsFor(settings, orderType);
   const taxKey = JSON.stringify(tax);
@@ -78,15 +85,47 @@ export function useCart(initialTableId?: string) {
       if (tableId && lines.length) {
         const total = computeTotals(lines, discountPct, serviceChargePct, tax).total;
         void getDb().restTables.get(tableId).then(async (table) => {
-          if (!table || (table.status === "occupied" && table.runningTotal === total)) return;
-          await getDb().restTables.update(tableId, { status: "occupied", runningTotal: total, since: table.since ?? Date.now() });
+          if (!table) return;
+          const now = Date.now();
+          // Someone else is taking this table's first order: leave their hold alone.
+          if (holdByOther(table, myDevice, !!activeOrder, now)) return;
+          let next: typeof table;
+          if (activeOrder) next = withoutHold({ ...table, status: table.status === "billed" ? "billed" : "occupied", runningTotal: total, since: table.since ?? now });
+          else if (myDevice) next = heldTable(table, myDevice, staffName, total, table.heldDevice === myDevice && table.runningTotal === total ? table.heldAt ?? now : now);
+          else next = { ...table, status: "occupied", runningTotal: total, since: table.since ?? now };
+          if (JSON.stringify(next) === JSON.stringify(table)) return;
+          await getDb().restTables.put(next);
+          await markDirty(["table", tableId]);
+        });
+      } else if (tableId && !activeOrder && myDevice) {
+        // The first order was emptied before reaching the kitchen: free the table again.
+        void getDb().restTables.get(tableId).then(async (table) => {
+          if (!table || table.heldDevice !== myDevice || table.status !== "occupied") return;
+          await getDb().restTables.put({ ...withoutHold(table), status: "free", runningTotal: 0, since: undefined });
           await markDirty(["table", tableId]);
         });
       }
     }, 150);
     return () => window.clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- tax is tracked by taxKey
-  }, [draftReady, tableId, lines, discountPct, serviceChargePct, activeOrder?.uid, taxKey]);
+  }, [draftReady, tableId, lines, discountPct, serviceChargePct, activeOrder?.uid, taxKey, myDevice, staffName]);
+
+  // Who else is taking this table's first order, if anyone.
+  const liveTable = useLiveQuery(async () => (tableId ? getDb().restTables.get(tableId) : undefined), [tableId]);
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => { const t = window.setInterval(() => setClock(Date.now()), 30_000); return () => window.clearInterval(t); }, []);
+  const hold: HeldBy | null = holdByOther(liveTable, myDevice, !!activeOrder, clock);
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
+  /** Take over a table someone else is holding (their unsent order stays on their device). */
+  const takeOver = useCallback(async () => {
+    if (!tableId || !myDevice) return;
+    const table = await getDb().restTables.get(tableId);
+    if (!table) return;
+    await getDb().restTables.put(heldTable(table, myDevice, staffName, table.runningTotal, Date.now()));
+    await markDirty(["table", tableId]);
+    setClock(Date.now());
+  }, [tableId, myDevice, staffName]);
 
   // Follow the shared copy of the running order: another device may add items or settle it.
   const activeUid = activeOrder?.uid;
@@ -117,6 +156,8 @@ export function useCart(initialTableId?: string) {
 
   /** Add one of a dish, with an optional portion and add-ons, priced for the current order type. */
   const addItem = useCallback((item: MenuItem, variantId?: string, addonIds: string[] = []) => {
+    const held = holdRef.current;
+    if (held) { toast.error(`${held.by} is taking this table's order. It opens for everyone once it reaches the kitchen.`); return; }
     const line = buildLine(item, orderType, variantId, addonIds);
     setLines((prev) => {
       const index = prev.findIndex((existing) => existing.itemId === line.itemId);
@@ -183,7 +224,7 @@ export function useCart(initialTableId?: string) {
   const clear = useCallback(() => {
     void getDb().drafts.delete(tableId ?? "walkin");
     if (tableId && !activeOrder) {
-      void getDb().restTables.update(tableId, { status: "free", runningTotal: 0, since: undefined })
+      void getDb().restTables.update(tableId, { status: "free", runningTotal: 0, since: undefined, heldBy: undefined, heldDevice: undefined, heldAt: undefined })
         .then(() => markDirty(["table", tableId]));
     }
     setLines([]);
@@ -204,7 +245,7 @@ export function useCart(initialTableId?: string) {
   const finishTable = useCallback(async (changes: [RecordKind, string][]) => {
     const db = getDb();
     if (tableId) {
-      await db.restTables.update(tableId, { status: "free", runningTotal: 0, since: undefined });
+      await db.restTables.update(tableId, { status: "free", runningTotal: 0, since: undefined, heldBy: undefined, heldDevice: undefined, heldAt: undefined });
       changes.push(["table", tableId]);
     }
     await db.drafts.delete(tableId ?? "walkin");
@@ -405,5 +446,6 @@ export function useCart(initialTableId?: string) {
     lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct, tax,
     serviceChargePct, setServiceChargePct, customer, setCustomer, addItem, setQty, setNote, clear, totals,
     settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, pendingCancelLines, activeOrder, openOrder, restoreLine,
+    hold, takeOver,
   };
 }

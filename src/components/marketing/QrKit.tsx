@@ -12,6 +12,7 @@ import { SCAN_SOURCES, activeOffers, cleanSource, type Branding } from "@/lib/ma
 import { PRINT_DESIGNS, QR_LIGHT, buildPrintSheet, qrInk, type PrintCard, type PrintDesign } from "@/lib/qr-print";
 import type { OrderingConfig } from "@/lib/saas-logic";
 import { cn } from "@/lib/utils";
+import { GUEST_ORDER_ORIGIN } from "@/lib/qr-ordering";
 
 const input = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm";
 const HEADLINES: Record<PrintDesign, string> = { tent: "Scan to order", sticker: "Scan to order", poster: "Order from your phone", standee: "Order ahead, skip the queue" };
@@ -23,7 +24,8 @@ async function qrImage(url: string, brand: Branding, width = 720) {
 }
 
 export function QrKit({ slug, restaurantName, brand, ordering }: { slug: string; restaurantName: string; brand: Branding; ordering: OrderingConfig }) {
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  // Printed and shared links always use the live site, never the editor preview or this device.
+  const origin = GUEST_ORDER_ORIGIN;
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const sorted = useMemo(() => [...tables].sort((a, b) => a.section.localeCompare(b.section) || a.label.localeCompare(b.label, undefined, { numeric: true })), [tables]);
   const sections = useMemo(() => [...new Set(sorted.map((t) => t.section))], [sorted]);

@@ -25,7 +25,7 @@ import { isTestBrowser } from "@/lib/test-browser";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/", label: "Billing", icon: ClipboardList },
+  { to: "/", label: "Bill", icon: ClipboardList },
   { to: "/tables", label: "Tables", icon: LayoutGrid },
   { to: "/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/stock", label: "Stock", icon: Package },
@@ -53,14 +53,15 @@ function policyAllows(role: string, to: NavPath): boolean {
   if (role !== "cashier") return true;
   if (to === "/dashboard") return can({ role }, "dashboard.view");
   if (to === "/settings") return can({ role }, "settings.open");
-  if (to === "/tables" || to === "/menu" || to === "/stock" || to === "/customers" || to === "/reports") return screenPermitted(role, to);
+  if (to === "/tables" || to === "/") return true; // bills open from Tables, so Reception always has it
+  if (to === "/menu" || to === "/stock" || to === "/customers" || to === "/reports") return screenPermitted(role, to);
   return true;
 }
 
 /** Screens each app shows, in menu order. */
 const APP_SCREENS: Record<AppKind, NavPath[]> = {
-  manager: ["/dashboard", "/insights", "/", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
-  pos: ["/", "/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/settings"],
+  manager: ["/dashboard", "/insights", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
+  pos: ["/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/settings"],
   waiter: ["/waiter"],
 };
 
@@ -319,7 +320,8 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
   const allowed = screensFor(user?.role, app);
   const nav = allowed.map((to) => NAV.find((n) => n.to === to)!).filter(Boolean);
   const otherApps = (appsFor(user?.login ?? null, user?.role) as AppKind[]).filter((a) => a !== app && a !== "waiter");
-  const current = NAV.find((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
+  // A bill ("/") belongs to Tables: it only opens from a table or a counter order there.
+  const current = pathname === "/" ? NAV.find((n) => n.to === "/tables") : NAV.find((n) => n.to !== "/" && pathname.startsWith(n.to));
   const blocked = !!current && !allowed.includes(current.to);
   const home = nav[0]?.to ?? "/";
   const needsDetails = isAdmin(user) && !settings.updatedAt && pathname !== "/settings" && pathname !== "/setup";
@@ -337,7 +339,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
         </div>
         <nav className="no-scrollbar mt-4 flex w-full flex-col gap-0.5 overflow-y-auto px-2" aria-label="Main">
           {nav.map(({ to, label, icon: Icon }) => {
-            const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+            const active = to === "/tables" ? pathname === "/" || pathname.startsWith(to) : pathname.startsWith(to);
             return (
               <Link key={to} to={to} aria-current={active ? "page" : undefined} title={wide ? undefined : label}
                 className={`relative flex items-center rounded-[10px] font-medium transition-colors ${wide ? "gap-3 px-3 py-2.5 text-sm" : "flex-col gap-1 px-1 py-2 text-[10.5px]"} ${active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"}`}>
@@ -391,7 +393,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
 
       <nav className="glass no-scrollbar fixed inset-x-0 bottom-0 z-30 flex overflow-x-auto border-t border-border/70 pb-[env(safe-area-inset-bottom)] text-foreground lg:hidden" aria-label="Main">
         {nav.map(({ to, label, icon: Icon }) => {
-          const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          const active = to === "/tables" ? pathname === "/" || pathname.startsWith(to) : pathname.startsWith(to);
           return (
             <Link key={to} to={to} aria-current={active ? "page" : undefined}
               className={`flex min-h-14 min-w-[4.25rem] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>

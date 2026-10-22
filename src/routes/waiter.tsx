@@ -21,6 +21,7 @@ import { needsOptions, orderCategories, outsideHours, priceFor, stockLeft } from
 import { useRestaurantSettings } from "@/lib/use-settings";
 import type { MenuItem, RestaurantTable } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { holdLabel } from "@/lib/table-hold";
 
 export const Route = createFileRoute("/waiter")({
   head: () => ({
@@ -103,6 +104,7 @@ function WaiterApp() {
                       {t.status === "occupied" || t.status === "billed" ? `${formatINR(t.runningTotal, 0)} · ${minutes(t.since)}` : t.status === "reserved" ? "Reserved" : <><Users className="inline size-3" /> {t.seats}</>}
                     </span>
                     {t.status === "billed" ? <Bell className="absolute right-1.5 top-1.5 size-3.5" aria-label="Bill asked" /> : null}
+                    {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate px-1 text-[10px] font-semibold opacity-90">{holdLabel(t, Date.now())}</span> : null}
                   </button>
                 ))}
               </div>
@@ -180,6 +182,11 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
         </div>
       </div>
       <section className={`${pane === "menu" ? "flex" : "hidden"} min-h-0 min-w-0 flex-1 flex-col bg-secondary/40 md:flex`} aria-label="Menu">
+        {cart.hold ? (
+          <p role="status" className="m-3 mb-0 rounded-xl bg-gold/20 p-3 text-sm font-semibold text-foreground">
+            {cart.hold.by} is taking this table's order{cart.hold.minutes ? ` (${cart.hold.minutes} min)` : ""}. You can add to it once it reaches the kitchen.
+          </p>
+        ) : null}
         <div className="space-y-2 p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -198,7 +205,7 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
             const off = outsideHours(m);
             const left = stockLeft(m.id, inventory);
             return (
-              <button key={m.id} onClick={() => add(m)} disabled={left === 0}
+              <button key={m.id} onClick={() => add(m)} disabled={left === 0 || !!cart.hold}
                 className={`flex min-h-20 flex-col justify-between rounded-xl bg-card p-3 text-left ring-1 ring-border transition-transform active:scale-[0.97] disabled:opacity-40 ${off ? "opacity-60" : ""}`}>
                 <span className="flex items-start gap-2"><span className="mt-1"><VegMark veg={m.veg} /></span><span className="text-[15px] font-semibold leading-snug">{m.name}</span></span>
                 <span className="mt-1 flex items-center justify-between text-sm">

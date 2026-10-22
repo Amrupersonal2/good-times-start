@@ -47,7 +47,7 @@ export async function moveTable(fromId: string, toId: string): Promise<void> {
     changes.push(...await retargetKots(order.uid, to));
   }
   await db.restTables.update(toId, { status: "occupied", runningTotal: from.runningTotal, since: from.since ?? Date.now() });
-  await db.restTables.update(fromId, { status: "free", runningTotal: 0, since: undefined });
+  await db.restTables.update(fromId, { status: "free", runningTotal: 0, since: undefined, heldBy: undefined, heldDevice: undefined, heldAt: undefined });
   await moveDraft(fromId, toId);
   await markDirty(...changes);
 }
@@ -74,7 +74,7 @@ export async function mergeTables(fromId: string, intoId: string): Promise<void>
   if (fromOrder.uid) changes.push(["order", fromOrder.uid]);
   changes.push(...await retargetKots(fromOrder.uid, into, combined.uid));
   await db.restTables.update(intoId, { status: "occupied", runningTotal: combined.total, since: into.since ?? from.since ?? Date.now() });
-  await db.restTables.update(fromId, { status: "free", runningTotal: 0, since: undefined });
+  await db.restTables.update(fromId, { status: "free", runningTotal: 0, since: undefined, heldBy: undefined, heldDevice: undefined, heldAt: undefined });
   await db.drafts.delete(fromId);
   await markDirty(...changes);
 }
@@ -84,7 +84,7 @@ export async function setTableStatus(tableId: string, status: "free" | "reserved
   if (status === "free" && await latestHeldOrder(tableId)) {
     throw new Error("This table has a running bill. Settle it or move it first.");
   }
-  await getDb().restTables.update(tableId, { status, since: status === "free" ? undefined : Date.now(), ...(status === "free" ? { runningTotal: 0 } : {}) });
+  await getDb().restTables.update(tableId, { status, since: status === "free" ? undefined : Date.now(), heldBy: undefined, heldDevice: undefined, heldAt: undefined, ...(status === "free" ? { runningTotal: 0 } : {}) });
   await markDirty(["table", tableId]);
 }
 

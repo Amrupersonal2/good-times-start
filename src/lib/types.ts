@@ -131,6 +131,10 @@ export interface RestaurantTable {
   status: TableStatus;
   runningTotal: number;
   since?: number | undefined;
+  /** Who is taking this table's first order, on which device, since when (see table-hold.ts). */
+  heldBy?: string | undefined;
+  heldDevice?: string | undefined;
+  heldAt?: number | undefined;
 }
 
 export interface Kot {

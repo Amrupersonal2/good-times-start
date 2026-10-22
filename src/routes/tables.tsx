@@ -2,7 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { ArrowRightLeft, Combine, Pencil, Plus, ReceiptText, Trash2, Users } from "lucide-react";
+import { ArrowRightLeft, Combine, MoreHorizontal, Pencil, Plus, ReceiptText, ShoppingBag, Trash2, Users } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { COUNTER_TYPES } from "@/lib/bill-entry";
+import { holdLabel } from "@/lib/table-hold";
+import type { Order } from "@/lib/types";
 import { AppShell } from "@/components/AppShell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -132,7 +136,7 @@ function TableActions({ table, tables, onDone }: { table: RestaurantTable; table
 
   return (
     <div className="grid gap-2">
-      <Button className="justify-start" onClick={() => { onDone(); void navigate({ to: "/", search: { table: table.id } }); }}><ReceiptText />{busy ? "Open running bill" : "Start a bill"}</Button>
+      <Button className="justify-start" onClick={() => { onDone(); void navigate({ to: "/", search: { table: table.id } }); }}><ReceiptText />{busy ? "Open the bill" : "Start a bill"}</Button>
       {busy ? <>
         <Button variant="outline" className="justify-start" onClick={() => setMode("move")}><ArrowRightLeft />Move to another table</Button>
         <Button variant="outline" className="justify-start" onClick={() => setMode("merge")}><Combine />Merge into another table</Button>
@@ -145,9 +149,15 @@ function TableActions({ table, tables, onDone }: { table: RestaurantTable; table
 }
 
 function TablesPage() {
+  const navigate = useNavigate();
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
+  // Running bills with no table: takeaway, delivery, app and guest pickup orders.
+  const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
+    .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
   const { user } = useStaff();
   const canEdit = can(user, "tables.edit");
+  const canBill = can(user, "bill.create");
+  const openBill = (t: RestaurantTable) => void navigate({ to: "/", search: { table: t.id } });
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<RestaurantTable | null>(null);
   const [form, setForm] = useState<RestaurantTable | "new" | null>(null);
@@ -169,7 +179,7 @@ function TablesPage() {
       <div className="p-4 lg:p-6">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Floor</h1>
+            <h1 className="text-2xl font-bold">Tables</h1>
             <p className="text-sm text-muted-foreground">
               {counts.filter(([, n]) => n > 0).map(([s, n]) => `${n} ${STATUS[s].label.toLowerCase()}`).join(", ") || "No tables yet"}
             </p>
@@ -181,6 +191,25 @@ function TablesPage() {
             </div>
           ) : null}
         </div>
+
+        {canBill ? (
+          <section className="mb-7" aria-label="Counter orders">
+            <h2 className="mb-3 text-base font-bold">Counter orders</h2>
+            <div className="flex flex-wrap gap-2">
+              {COUNTER_TYPES.map((t) => (
+                <Button key={t.v} variant="outline" asChild><Link to="/" search={{ type: t.v }}><Plus />{t.l}</Link></Button>
+              ))}
+              {counterBills.map((o) => (
+                <Button key={o.uid ?? o.billNo} variant="secondary" asChild>
+                  <Link to="/" search={{ bill: o.uid ?? "" }} title={`Running bill ${o.billNo}`}>
+                    <ShoppingBag />{o.guestCodes?.[0] ?? o.billNo.split("/").pop()} {o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? ""}
+                    <span className="font-normal text-muted-foreground">{formatINR(o.total, 0)}</span>
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
@@ -194,15 +223,25 @@ function TablesPage() {
             <h2 className="mb-3 text-base font-bold">{sec}</h2>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
               {tables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })).map((t) => (
-                <button key={t.id} type="button" onClick={() => (editing ? setForm(t) : setSelected(t))}
-                  className={`relative flex aspect-square flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
+                <div key={t.id} className="relative">
+                <button type="button" aria-label={`Table ${t.label}${t.status === "free" ? "" : `, ${STATUS[t.status].label}`}`}
+                  onClick={() => (editing ? setForm(t) : canBill ? openBill(t) : setSelected(t))}
+                  className={`relative flex aspect-square w-full flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
                   <span className="text-2xl font-extrabold">{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
                   {t.status === "occupied" || t.status === "billed" ? (
                     <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
                   ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Reserved</span> : null}
+                  {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate text-[10px] font-semibold text-primary">{holdLabel(t, Date.now())}</span> : null}
                   {editing ? <Pencil className="absolute right-2 top-2 size-3.5 text-muted-foreground" /> : null}
                 </button>
+                {!editing ? (
+                  <button type="button" aria-label={`More for table ${t.label}`} title="Move, merge, reserve or free"
+                    onClick={() => setSelected(t)} className="absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <MoreHorizontal className="size-4" />
+                  </button>
+                ) : null}
+                </div>
               ))}
             </div>
           </section>

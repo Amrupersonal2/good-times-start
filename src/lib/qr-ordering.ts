@@ -1,6 +1,6 @@
 import type { MenuItem } from "./types";
 
-/** Public QR cards must never inherit an editor or localhost origin. */
+/** The live site. Every QR code, printed card, shared link and install link uses it, never an editor or localhost origin. */
 export const GUEST_ORDER_ORIGIN = "https://good-times-start.lovable.app";
 
 export type GuestDiet = "all" | "veg" | "nonveg";

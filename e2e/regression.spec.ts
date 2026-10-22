@@ -14,7 +14,7 @@ const MANAGER_SCREENS: [string, string, (string | RegExp)?][] = [
   ["dashboard", "/dashboard", "Business overview"],
   ["dashboard-live", "/dashboard?tab=live", "Live status"],
   ["insights", "/insights"],
-  ["billing", "/"],
+  ["bill-opens-from-tables", "/", "Counter orders"],
   ["tables", "/tables"],
   ["menu", "/menu"],
   ["stock", "/stock"],
@@ -38,7 +38,7 @@ const MANAGER_SCREENS: [string, string, (string | RegExp)?][] = [
 ];
 
 const POS_SCREENS: [string, string, (string | RegExp)?][] = [
-  ["pos-billing", "/?app=pos"],
+  ["pos-home-is-tables", "/?app=pos", "Counter orders"],
   ["pos-tables", "/tables?app=pos"],
   ["pos-guests", "/customers?app=pos"],
   ["pos-reports", "/reports?app=pos", /Close day|Sales Summary/],

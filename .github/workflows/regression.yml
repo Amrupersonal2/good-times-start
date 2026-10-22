@@ -27,7 +27,7 @@ jobs:
         run: bun install --frozen-lockfile || bun install
       - name: Install Playwright (test-only, not saved)
         run: |
-          bun add -d @playwright/test@1.56.0
+          bun add -d @playwright/test@1.56.0 jsqr@1.4.0 pngjs@7.0.0 @types/pngjs@6.0.5
           bunx playwright install --with-deps chromium
       - name: Production build
         run: bunx vite build

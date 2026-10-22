@@ -34,10 +34,9 @@ export const POLICY_ACTIONS: { id: PolicyAction; label: string; hint: string; ro
   { id: "oldBillReprint", label: "Old bill reprint", hint: "Reprint past bills from reports", roles: ["cashier"], group: "KOT and printing" },
 ];
 
-/** Screens Reception can be given besides Billing. */
+/** Screens Reception can be given besides Tables (where every bill opens), which it always has. */
 export type PolicyScreen = "/tables" | "/menu" | "/stock" | "/customers" | "/reports";
 export const POLICY_SCREENS: { path: PolicyScreen; label: string; hint: string }[] = [
-  { path: "/tables", label: "Tables", hint: "Floor plan and table status" },
   { path: "/menu", label: "Menu (view)", hint: "See dishes and mark sold out; editing stays admin-only" },
   { path: "/stock", label: "Stock (wastage)", hint: "Record wastage; set-up and purchases stay admin-only" },
   { path: "/customers", label: "Guests", hint: "Guest list, dues and WhatsApp consent" },

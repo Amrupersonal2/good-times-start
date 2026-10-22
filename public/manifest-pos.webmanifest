@@ -2,8 +2,8 @@
   "id": "/",
   "name": "Restro POS by XTSY",
   "short_name": "Restro POS",
-  "description": "TAB Bistro counter: billing, tables, KOTs and guest orders. Windows and Mac. Works offline.",
-  "start_url": "/?app=pos",
+  "description": "TAB Bistro counter: tables and their bills, KOTs and guest orders. Windows and Mac. Works offline.",
+  "start_url": "/tables?app=pos",
   "scope": "/",
   "display": "standalone",
   "display_override": [

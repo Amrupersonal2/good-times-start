@@ -9,7 +9,7 @@ import { allowAppWorker, installKind, type InstallKind } from "@/lib/app-install
 /**
  * Three installable apps from one codebase:
  *   /manager   POS Business Manager (admin: phone, tablet, computer)
- *   /?app=pos  Restro POS by XTSY (reception counter: Windows or Mac)
+^ *   /tables?app=pos  Restro POS by XTSY (reception counter: Windows or Mac)
  *   /waiter    POS Waiter (waiters: Android phone or tablet)
  * Each has its own manifest, icon and theme, chosen by the window's app.
  */

@@ -72,7 +72,7 @@ function SetupPage() {
           })}
         </ol>
         <div className="mt-6 rounded-2xl border border-border bg-card p-5 lg:p-7">
-          {done ? <Finished onBill={() => void navigate({ to: "/" })} />
+          {done ? <Finished onBill={() => void navigate({ to: "/tables" })} />
             : step === 0 ? <DetailsStep onNext={next} />
             : step === 1 ? <GstStep onNext={next} />
             : step === 2 ? <MenuStep onNext={next} />
@@ -309,7 +309,7 @@ function Finished({ onBill }: { onBill: () => void }) {
         <li><Link to="/waiter" className="block rounded-xl border border-border p-4 hover:border-primary"><p className="text-sm font-semibold">Waiter tablets</p><p className="mt-1 text-xs text-muted-foreground">Install POS Waiter on Android phones and tablets from Settings → Logins.</p></Link></li>
         <li><Link to="/marketing" className="block rounded-xl border border-border p-4 hover:border-primary"><p className="text-sm font-semibold">Brand and WhatsApp</p><p className="mt-1 text-xs text-muted-foreground">Your look on the QR menu, printable QR cards, WhatsApp offers.</p></Link></li>
       </ul>
-      <Button className="mt-6" onClick={onBill}>Start billing<ChevronRight /></Button>
+      <Button className="mt-6" onClick={onBill}>Go to tables<ChevronRight /></Button>
     </div>
   );
 }
