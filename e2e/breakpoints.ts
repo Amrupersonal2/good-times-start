@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 /** Screen sizes every app is checked at, from a small Android phone to a wide desktop. */
 export interface Breakpoint { name: string; width: number; height: number; touch: boolean; device: "android" | "desktop" }
 
@@ -31,3 +32,9 @@ export const LOGINS = {
 };
 export type LoginName = keyof typeof LOGINS;
 export const authFile = (login: LoginName) => `e2e/.auth/${login}.json`;
+
+/** Is this login allowed on this kind of device right now (as saved by global setup)? */
+export function allowedOn(login: LoginName, device: Breakpoint["device"]): boolean {
+  const saved = JSON.parse(readFileSync("e2e/.auth/devices.json", "utf8")) as Record<string, string[]>;
+  return (saved[login] ?? []).includes(device);
+}

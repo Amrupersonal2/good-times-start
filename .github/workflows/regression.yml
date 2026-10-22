@@ -3,8 +3,6 @@ name: Regression (all apps, all screen sizes)
 on:
   workflow_dispatch:
   pull_request:
-  push:
-    branches: [revamp-11]
 
 concurrency:
   group: regression-${{ github.ref }}

@@ -30,7 +30,14 @@ export async function ready(page: Page) {
  */
 export async function audit(page: Page, info: TestInfo, label: string, seen: ReturnType<typeof watch>, expectText?: string | RegExp) {
   await ready(page);
-  if (expectText) await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+  if (expectText) {
+    try {
+      await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+    } catch (error) {
+      await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      throw error;
+    }
+  }
   const layout = await page.evaluate(() => {
     const vw = window.innerWidth;
     const over = document.documentElement.scrollWidth - vw;

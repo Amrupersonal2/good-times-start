@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { BREAKPOINTS, LOGINS, authFile, contextFor } from "./breakpoints";
+import { BREAKPOINTS, LOGINS, allowedOn, authFile, contextFor } from "./breakpoints";
 import { audit, ready, watch } from "./helpers";
 
 /*
@@ -113,23 +113,33 @@ for (const bp of BREAKPOINTS) {
           await audit(page, info, `${bp.name}-pos-marketing-closed`, seen, /isn't part of|for the owner and managers/);
         });
       } else {
-        test("blocked on phones and tablets", async ({ page }, info) => {
+        test("phones and tablets follow Settings → Logins", async ({ page }, info) => {
           await page.addInitScript(quiet);
           const seen = watch(page);
           await page.goto("/?app=pos");
-          await audit(page, info, `${bp.name}-pos-blocked`, seen, "Not available here");
+          if (allowedOn("billdesk", bp.device)) {
+            info.annotations.push({ type: "access", description: `${bp.name}: Reception is allowed on ${bp.device} in Settings → Logins, so Restro POS opens` });
+            await audit(page, info, `${bp.name}-pos-allowed`, seen);
+            await expect(page.getByText("Not available here")).toHaveCount(0);
+          } else {
+            await audit(page, info, `${bp.name}-pos-blocked`, seen, "Not available here");
+          }
         });
       }
     });
 
     test.describe("POS Waiter (waiter)", () => {
       test.use({ storageState: authFile("waiter") });
-      test(bp.device === "android" ? "waiter screen" : "blocked on computers", async ({ page }, info) => {
+      test(bp.device === "android" ? "waiter screen" : "computers follow Settings → Logins", async ({ page }, info) => {
         await page.addInitScript(quiet);
         const seen = watch(page);
         await page.goto("/waiter?app=waiter");
-        if (bp.device === "android") await audit(page, info, `${bp.name}-waiter`, seen, /Tables|No tables yet|Pick a table/);
-        else await audit(page, info, `${bp.name}-waiter-blocked`, seen, "Not available here");
+        if (allowedOn("waiter", bp.device)) {
+          await audit(page, info, `${bp.name}-waiter`, seen, /Tables|No tables yet|Pick a table/);
+          await expect(page.getByText("Not available here")).toHaveCount(0);
+        } else {
+          await audit(page, info, `${bp.name}-waiter-blocked`, seen, "Not available here");
+        }
       });
     });
   });
