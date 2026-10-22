@@ -18,7 +18,9 @@ const listeners = new Set<() => void>();
 const emit = () => { for (const l of listeners) l(); };
 const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
 const snapshot = () => jobs;
-const serverSnapshot = (): ReactNode[] => [];
+const NOTHING: ReactNode[] = [];
+// Must return the same value every time, or React re-renders forever.
+const serverSnapshot = (): ReactNode[] => NOTHING;
 
 /** KOTs this device printed already, so a ticket that later syncs back isn't printed twice. */
 const printedKots = new Set<string>();
