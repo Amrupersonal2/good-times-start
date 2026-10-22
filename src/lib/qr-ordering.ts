@@ -5,6 +5,12 @@ export const GUEST_ORDER_ORIGIN = "https://good-times-start.lovable.app";
 
 export type GuestDiet = "all" | "veg" | "nonveg";
 
+/** Direct storefront visitors can choose a table; printed QR links retain their table. */
+export function guestChannel(qr: boolean, online: boolean, tableId?: string): "table" | "online" | null {
+  if (tableId) return qr ? "table" : null;
+  return online ? "online" : null;
+}
+
 /** Filters are combined; category names are searchable alongside dish names. */
 export function filterGuestMenu(items: MenuItem[], query: string, diet: GuestDiet): MenuItem[] {
   const term = query.trim().toLocaleLowerCase();

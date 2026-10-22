@@ -15,7 +15,7 @@ import {
 } from "@/lib/guest-order-logic";
 import type { CartLine, MenuItem } from "@/lib/types";
 import menuCover from "@/assets/photography/bistro-menu.jpg";
-import { filterGuestMenu, type GuestDiet } from "@/lib/qr-ordering";
+import { filterGuestMenu, guestChannel, type GuestDiet } from "@/lib/qr-ordering";
 import { Segmented } from "@/components/Segmented";
 import { Dropdown } from "@/components/Dropdown";
 import { activeOffers, brandPalette, cleanSource, waLink, LINK_LABELS, type BrandLinks, type Offer } from "@/lib/marketing-logic";
@@ -54,6 +54,7 @@ function writeJson(key: string, value: unknown) {
 function GuestOrderPage() {
   const { slug } = Route.useParams();
   const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const store = useQuery({
     queryKey: ["storefront", slug],
     queryFn: async () => {
@@ -78,10 +79,16 @@ function GuestOrderPage() {
   if (search.o && search.k) return <Frame><OrderStatus store={s} id={search.o} token={search.k} table={search.table} /></Frame>;
 
   const table = search.table ? s.tables.find((t) => t.id === search.table) : undefined;
-  const channel: GuestChannel | null = search.table ? (s.qr && table ? "table" : null) : s.online ? "online" : null;
+  const channel = guestChannel(s.qr, s.online, table?.id);
   if (!s.live || (!s.qr && !s.online)) return <Frame store={s}><Notice icon={Store} title="Ordering is off right now" body="Please order with the staff. Sorry for the trouble." /></Frame>;
   if (search.table && !table && s.qr) return <Frame store={s}><Notice icon={UtensilsCrossed} title="This QR code is out of date" body="Please ask the staff for help with your order." /></Frame>;
   if (!channel) {
+    if (!search.table && s.qr) return <Frame store={s}><section className="px-5 py-6">
+      <h2 className="text-xl font-bold">Choose your table</h2>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {s.tables.map((t) => <Button key={t.id} variant="outline" className="h-16" onClick={() => void navigate({ search: { ...search, table: t.id } })}><UtensilsCrossed />Table {t.label}</Button>)}
+      </div>
+    </section></Frame>;
     return <Frame store={s}><Notice icon={UtensilsCrossed} title={search.table ? "Table ordering is off" : "Scan the QR code on your table"}
       body={search.table ? "Please order with the staff." : "This restaurant takes orders from the QR code on each table."} /></Frame>;
   }
@@ -204,6 +211,12 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-tint text-primary">{channel === "table" ? <UtensilsCrossed className="size-5" /> : <ShoppingBag className="size-5" />}</span>
             <div className="min-w-0">
               <p className="text-sm font-bold">{channel === "table" ? `Ordering to table ${tableLabel ?? ""}` : "Order for pickup"}</p>
+              {store.qr ? <label className="mt-2 block text-xs font-medium">Table
+                <select aria-label="Select table" value={tableId ?? ""} onChange={(e) => void navigate({ search: { ...(e.target.value ? { table: e.target.value } : {}), s: source } })} className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm">
+                  {store.online ? <option value="">Pickup</option> : null}
+                  {store.tables.map((t) => <option key={t.id} value={t.id}>Table {t.label}</option>)}
+                </select>
+              </label> : null}
               <p className="text-xs text-muted-foreground">{channel === "table" ? "Your food comes to your table. Pay at the end." : `Usually ready in about ${store.prepMinutes} minutes.`}</p>
             </div>
           </div>
@@ -291,7 +304,7 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
                       </div>
                       <div className="flex shrink-0 items-center">
                         {off || store.paused ? null : n === 0 ? (
-                          <Button size="sm" variant="outline" className="min-w-20 border-primary font-bold text-primary" onClick={() => (needsOptions(i) ? setChoosing(i) : add(i))}>Add{needsOptions(i) ? " +" : ""}</Button>
+                          <Button size="sm" variant="outline" aria-label={`Add ${i.name}`} className="min-w-20 border-primary font-bold text-primary" onClick={() => (needsOptions(i) ? setChoosing(i) : add(i))}>Add{needsOptions(i) ? " +" : ""}</Button>
                         ) : (
                           <div className="flex items-center rounded-lg bg-primary text-primary-foreground">
                             <button type="button" aria-label={`One less ${i.name}`} className="p-2" onClick={() => removeOne(i)}><Minus className="size-4" /></button>

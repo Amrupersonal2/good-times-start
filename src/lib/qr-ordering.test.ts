@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterGuestMenu, GUEST_ORDER_ORIGIN, orderingSaveError } from "./qr-ordering";
+import { filterGuestMenu, GUEST_ORDER_ORIGIN, orderingSaveError, guestChannel } from "./qr-ordering";
 import { orderPageUrl } from "./guest-order-logic";
 import type { MenuItem } from "./types";
 
@@ -8,6 +8,12 @@ const menu: MenuItem[] = [
   { id: "chicken", name: "Chicken Tikka", category: "Appetizers", price: 300, veg: false, gstRate: 5, station: "Kitchen", available: true },
 ];
 describe("QR ordering", () => {
+  it("uses table service for a selected table and pickup only when enabled", () => {
+    expect(guestChannel(true, false, "t1")).toBe("table");
+    expect(guestChannel(true, false)).toBeNull();
+    expect(guestChannel(true, true)).toBe("online");
+    expect(guestChannel(false, true, "t1")).toBeNull();
+  });
   it("prints public table links rather than preview links", () => {
     expect(orderPageUrl(GUEST_ORDER_ORIGIN, "tab-bistro", "t1")).toBe("https://good-times-start.lovable.app/order/tab-bistro?table=t1");
   });
