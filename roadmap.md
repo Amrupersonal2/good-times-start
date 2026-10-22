@@ -1,5 +1,11 @@
 # POS expansion
 
+## Live app completion
+- [ ] Finish guest table selection and verify checkout reaches the signed-in POS and another device.
+- [ ] Add GSTR-1 and sales exports to the standalone live reports app.
+- [ ] Correct reports install identity while preserving counter and waiter install identities.
+- [ ] Run mobile/tablet/desktop checks and sales, guest-order, and sync regression tests.
+
 ## QR ordering refresh
 - [ ] Modernize the guest menu with category browsing, search, dietary filters, and clear table context.
 - [ ] Repair cart restoration and submission recovery without changing offline POS storage.
