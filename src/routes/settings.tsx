@@ -7,7 +7,7 @@ import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABELS, isAdmin, useStaff, type StaffRole } from "@/lib/auth-context";
-import { getDb, getDeviceCode, loadSampleData, resetDevice, saveSettings, setDeviceCode } from "@/lib/db";
+import { getDb, loadSampleData, resetDevice, saveSettings, setDeviceCode } from "@/lib/db";
 import { billNumber, computeTotals } from "@/lib/billing";
 import { ALL_PAYMENT_MODES, GST_MODES, RESTAURANT_SAC } from "@/lib/billing-config";
 import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
 import { can } from "@/lib/permissions";
+import { useDeviceCode } from "@/lib/use-device-code";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -315,10 +316,7 @@ function PrintingSettings() {
 
 function ThisDevice() {
   const { user } = useStaff();
-  const code = useLiveQuery(async () => {
-    await getDb().meta.get("deviceCode");
-    return getDeviceCode();
-  }, [], "");
+  const code = useDeviceCode();
   const seq = useLiveQuery(async () => (await getDb().meta.get("billSeq"))?.value, [], 0);
   const menuCount = useLiveQuery(() => getDb().menu.count(), [], 0);
   const [draft, setDraft] = useState("");
@@ -411,8 +409,8 @@ function SettingsPage() {
   const current = cards.find((c) => c.v === visibleTab);
 
   const link = (c: SettingCard, className: string, children: ReactNode) => c.v
-    ? <button type="button" onClick={() => choose(c.v)} aria-current={visibleTab === c.v ? "page" : undefined} className={className}>{children}</button>
-    : <Link to={c.to as "/tables"} {...(c.hash ? { search: { tab: c.hash } as never } : {})} className={className}>{children}</Link>;
+    ? <button key={c.l} type="button" onClick={() => choose(c.v)} aria-current={visibleTab === c.v ? "page" : undefined} className={className}>{children}</button>
+    : <Link key={c.l} to={c.to as "/tables"} {...(c.hash ? { search: { tab: c.hash } as never } : {})} className={className}>{children}</Link>;
 
   return (
     <AppShell>

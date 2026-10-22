@@ -256,6 +256,8 @@ export function PersistentFrame({ children }: { children: ReactNode }) {
   const rid = user?.restaurantId ?? null;
   useEffect(() => {
     if (!rid) return;
+    // Automated regression browsers don't register as terminals.
+    try { if (window.localStorage.getItem("xtsy-regression") === "1") return; } catch { /* storage unavailable */ }
     const touch = () => { void touchTerminal(rid, app, currentDevice()); };
     touch();
     const timer = window.setInterval(touch, 5 * 60_000);
