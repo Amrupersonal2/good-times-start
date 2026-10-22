@@ -17,6 +17,7 @@ import {
 import { createCampaign, loadCampaigns, loadSentPhones, markMessaged, recordSend, saveMarketingSettings, type MarketingSettings } from "@/lib/marketing-actions";
 import { sendWhatsappCampaign, whatsappStatus } from "@/lib/whatsapp.functions";
 import { cn } from "@/lib/utils";
+import { GUEST_ORDER_ORIGIN } from "@/lib/qr-ordering";
 
 const input = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm";
 
@@ -33,7 +34,8 @@ interface Running { id: string; name: string; message: string; mode: "manual" | 
 
 export function WhatsAppCenter({ restaurantId, restaurantName, slug, brand, settings }: { restaurantId: string; restaurantName: string; slug: string | null; brand: Branding; settings: MarketingSettings }) {
   const queryClient = useQueryClient();
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  // Printed and shared links always use the live site, never the editor preview or this device.
+  const origin = GUEST_ORDER_ORIGIN;
   const data = useLiveQuery(async () => {
     const d = getDb();
     const [customers, orders] = await Promise.all([d.customers.toArray(), d.orders.where("status").equals("settled").toArray()]);

@@ -18,14 +18,14 @@ export const LOGINS: Record<LoginId, { email: string; label: string; app: AppKin
   waiter: { email: `waiter@${LOGIN_DOMAIN}`, label: "Waiter", app: "waiter" },
 };
 
-export const APPS: Record<AppKind, { name: string; short: string; home: "/dashboard" | "/" | "/waiter"; for: string; login: LoginId }> = {
+export const APPS: Record<AppKind, { name: string; short: string; home: "/dashboard" | "/tables" | "/waiter"; for: string; login: LoginId }> = {
   manager: { name: "POS Business Manager", short: "Business Manager", home: "/dashboard", for: "Owner and admin · phone, tablet and computer", login: "admin" },
-  pos: { name: "Restro POS by XTSY", short: "Restro POS", home: "/", for: "Reception counter · Windows or Mac computer", login: "billdesk" },
+  pos: { name: "Restro POS by XTSY", short: "Restro POS", home: "/tables", for: "Reception counter · Windows or Mac computer", login: "billdesk" },
   waiter: { name: "POS Waiter", short: "POS Waiter", home: "/waiter", for: "Waiters · Android phone or tablet", login: "waiter" },
 };
 
 /** Where each app opens; the install links. */
-export const APP_LINKS: Record<AppKind, string> = { manager: "/manager", pos: "/?app=pos", waiter: "/waiter?app=waiter" };
+export const APP_LINKS: Record<AppKind, string> = { manager: "/manager", pos: "/tables?app=pos", waiter: "/waiter?app=waiter" };
 
 export const DEVICE_LABELS: Record<DeviceKind, string> = { android: "Android phone or tablet", ios: "iPhone or iPad", desktop: "Windows or Mac computer" };
 

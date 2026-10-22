@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound, ArrowLeftRight, BadgePercent, HandCoins, ChevronDown, Check } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound, ArrowLeftRight, BadgePercent, HandCoins, ArrowLeft, Check } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { PaymentPanel, ReasonPrompt, UpiPay } from "@/components/PaymentDialogs";
 import { isAdmin, useStaff } from "@/lib/auth-context";
@@ -25,22 +25,25 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmButton, pressShortcut } from "@/components/ConfirmButton";
 import { Dropdown } from "@/components/Dropdown";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { lineFor, sentGroups, shortCode, since } from "@/lib/bill-view-logic";
 import { moveTable } from "@/lib/table-actions";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
 import { allow } from "@/lib/pin-gate";
 import { usePolicy } from "@/components/PinGate";
+import { syncAppModeFromUrl } from "@/lib/app-mode";
+import { COUNTER_TYPES, isCounterType } from "@/lib/bill-entry";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string } => ({
+  // A bill opens only from Tables: a table, a running counter bill, or a new counter order.
+  validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string; type?: OrderType } => ({
     ...(typeof search["table"] === "string" ? { table: search["table"] } : {}),
     ...(typeof search["bill"] === "string" ? { bill: search["bill"] } : {}),
+    ...(isCounterType(search["type"]) ? { type: search["type"] } : {}),
   }),
   head: () => ({
     meta: [
-      { title: "Billing — XTSY POS" },
+      { title: "Bill — XTSY POS" },
       { name: "description", content: "Fast offline-first restaurant billing with GST invoices, UPI QR and KOT." },
       { property: "og:title", content: "XTSY POS — Restaurant Billing" },
       { property: "og:description", content: "Restaurant billing with GST, UPI and kitchen tickets that keeps working offline." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
@@ -48,22 +51,29 @@ export const Route = createFileRoute("/")({
   component: PosPage,
 });
 
-const ORDER_TYPES: { v: OrderType; l: string }[] = [
-  { v: "dine-in", l: "Dine-in" },
-  { v: "takeaway", l: "Takeaway" },
-  { v: "delivery", l: "Delivery" },
-  { v: "swiggy", l: "Swiggy" },
-  { v: "zomato", l: "Zomato" },
-];
+const ORDER_TYPES: { v: OrderType; l: string }[] = [{ v: "dine-in", l: "Dine-in" }, ...COUNTER_TYPES];
 
 function PosPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate();
+  const toFloor = () => void navigate({ to: "/tables" });
+  const entry = !!(search.table || search.bill || search.type);
+  // Nothing chosen: bills start on the floor.
+  useEffect(() => {
+    if (entry) return;
+    syncAppModeFromUrl();
+    void navigate({ to: "/tables", replace: true });
+  }, [entry, navigate]);
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const cart = useCart(search.table);
   // Running bills with no table: pickup and online orders, and takeaway bills sent to the kitchen.
   const openBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
     .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
+  useEffect(() => {
+    if (search.type && !search.table && !search.bill) cart.setOrderType(search.type);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set once per counter order
+  }, [search.type]);
   const openedBill = useRef<string | null>(null);
   useEffect(() => {
     if (!search.bill || openedBill.current === search.bill) return;
@@ -198,7 +208,7 @@ function PosPage() {
     const h = (e: KeyboardEvent) => {
       if (e.key === "F2" || e.key === "F4") { e.preventDefault(); searchRef.current?.focus(); }
       // Shortcuts that change a bill take two presses, like their buttons.
-      if (e.key === "F1") { e.preventDefault(); if (cart.lines.length) pressShortcut("new-bill", () => cart.clear()); else cart.clear(); }
+      if (e.key === "F1") { e.preventDefault(); toFloor(); }
       if (e.key === "F8" && canSettle && !blocked) { e.preventDefault(); pressShortcut("settle-cash", () => pay("cash")); }
     };
     window.addEventListener("keydown", h);
@@ -232,7 +242,7 @@ function PosPage() {
         </ToolButton>
       ) : null}
       <ToolButton pressed={!!(cart.customer.phone || cart.customer.name)} onClick={() => setCustomerOpen(true)}><UserRound className="size-3.5" />{cart.customer.name || cart.customer.phone || "Guest"}</ToolButton>
-      <span className="ml-auto hidden text-[11px] text-muted-foreground xl:inline">F4 search · F1 new bill · F8 F8 cash</span>
+      <span className="ml-auto hidden text-[11px] text-muted-foreground xl:inline">F4 search · F1 tables · F8 F8 cash</span>
     </div>
   );
 
@@ -249,6 +259,12 @@ function PosPage() {
           <button type="button" onClick={() => void allow(user, "bill.cancel", "Cancel this bill").then((ok) => { if (ok) setCancelOpen(true); })} aria-label="Cancel bill" title="Cancel bill" className="grid size-8 shrink-0 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="size-4" /></button>
         ) : null}
       </div>
+      {cart.hold ? (
+        <div role="status" className="flex items-center gap-2 border-b border-border bg-gold/20 px-4 py-2 text-xs font-semibold">
+          <span className="min-w-0 flex-1">{cart.hold.by} is taking this table's order{cart.hold.minutes ? ` (${cart.hold.minutes} min)` : ""}. It opens here once it reaches the kitchen.</span>
+          {canSettle ? <ConfirmButton id="take-over-table" onConfirm={() => cart.takeOver()} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 shrink-0")} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again: their unsent items stay on their device">Take over</ConfirmButton> : null}
+        </div>
+      ) : null}
       {guest ? (
         <p className="border-b border-border bg-primary-tint/50 px-4 py-1.5 text-[11px] text-foreground">
           {guest.customer.name ?? "Guest"}: {guest.stats.visits} visit{guest.stats.visits === 1 ? "" : "s"}
@@ -370,60 +386,21 @@ function PosPage() {
   );
 
   const sections = [...new Set(tables.map((t) => t.section))].sort((a, b) => a.localeCompare(b));
+  if (!entry) return <AppShell><div /></AppShell>;
 
   return (
     <AppShell>
       <div className="flex h-[calc(100vh-57px-5rem)] flex-col lg:h-[calc(100vh-57px)]">
-        {/* Order type and floor sections: one tap picks a section, a second picks the table */}
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto border-b border-border bg-card px-3 py-2">
-          {sections.length ? sections.map((section) => {
-            const inSection = tables.filter((t) => t.section === section).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
-            const here = cart.orderType === "dine-in" && currentTable?.section === section;
-            const busy = inSection.filter((t) => t.status !== "free").length;
-            return (
-              <Popover key={section}>
-                <PopoverTrigger asChild>
-                  <button type="button" className={cn("flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors", here ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-accent")}>
-                    {section}{here && currentTable ? <span className="rounded-md bg-primary-foreground/20 px-1.5">{currentTable.label}</span> : busy ? <span className="text-[11px] font-medium text-muted-foreground">{busy}/{inSection.length}</span> : null}
-                    <ChevronDown className="size-3.5 opacity-60" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-[min(26rem,92vw)] rounded-xl p-3">
-                  <p className="mb-2 text-xs font-semibold text-muted-foreground">{section}</p>
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                    {inSection.map((t) => (
-                      <button key={t.id} type="button" onClick={() => { cart.setOrderType("dine-in"); cart.setTableId(t.id); }}
-                        className={cn("flex min-h-14 flex-col items-center justify-center rounded-lg px-1 text-center ring-1 transition-colors",
-                          t.id === cart.tableId ? "bg-primary text-primary-foreground ring-primary"
-                            : t.status === "billed" ? "bg-gold/15 ring-gold/60" : t.status === "occupied" ? "bg-primary-tint ring-primary/40" : t.status === "reserved" ? "bg-card ring-gold/60 ring-dashed" : "bg-card ring-border hover:ring-primary/40")}>
-                        <span className="text-sm font-bold">{t.label}</span>
-                        <span className="text-[10px] opacity-75">{t.status === "free" ? `${t.seats} seats` : t.status === "reserved" ? "Reserved" : formatINR(t.runningTotal, 0)}</span>
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            );
-          }) : (
-            <button type="button" onClick={() => cart.setOrderType("dine-in")} className={cn("shrink-0 rounded-lg px-3 py-1.5 text-[13px] font-semibold", cart.orderType === "dine-in" ? "bg-primary text-primary-foreground" : "bg-secondary")}>Dine-in</button>
-          )}
-          <span className="mx-1 h-6 w-px shrink-0 bg-border" aria-hidden="true" />
-          {ORDER_TYPES.filter((o) => o.v !== "dine-in").map((o) => (
-            <button key={o.v} type="button" onClick={() => { if (cart.tableId) cart.setTableId(undefined); cart.setOrderType(o.v); }}
-              className={cn("shrink-0 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors", cart.orderType === o.v ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-accent")}>{o.l}</button>
-          ))}
-          {openBills.length ? <span className="mx-1 h-6 w-px shrink-0 bg-border" aria-hidden="true" /> : null}
-          {openBills.map((o) => {
-            const current = cart.activeOrder?.uid === o.uid;
-            return (
-              <button key={o.uid ?? o.billNo} type="button" onClick={() => cart.openOrder(o)} title={`Running bill ${o.billNo}`}
-                className={cn("flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ring-1", current ? "bg-primary-tint ring-primary" : "bg-card ring-border/70 hover:ring-primary/40")}>
-                <ShoppingBag className="size-3.5 text-primary" />{o.guestCodes?.[0] ?? o.billNo.split("/").pop()} {o.customer?.name ?? ""}<span className="font-normal text-muted-foreground">{formatINR(o.total, 0)}</span>
-              </button>
-            );
-          })}
+        {/* Every bill comes from Tables: a table, or a counter order (takeaway, delivery, apps). */}
+        <div className="flex items-center gap-2 border-b border-border bg-card px-3 py-2">
+          <Link to="/tables" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-secondary px-3 py-1.5 text-[13px] font-semibold text-foreground hover:bg-accent">
+            <ArrowLeft className="size-3.5" />Tables
+          </Link>
+          <span className="min-w-0 truncate text-sm font-semibold">
+            {currentTable ? `${currentTable.section} · Table ${currentTable.label}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l ?? ""}
+          </span>
+          {cart.activeOrder ? <span className="ml-auto shrink-0 text-xs text-muted-foreground">Bill {cart.activeOrder.billNo}</span> : null}
         </div>
-
         <div className="flex min-h-0 flex-1">
           {/* Category rail (desktop) */}
           <nav className="hidden w-48 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border bg-card p-2 lg:flex" aria-label="Menu sections">
@@ -461,7 +438,7 @@ function PosPage() {
               const low = remaining !== null && !!stock && remaining <= stock.lowStockThreshold;
               const offHours = outsideHours(i);
               return (
-                <button key={i.id} onClick={() => pick(i)} disabled={soldOut} title={offHours && i.hours ? `Served ${i.hours.from}–${i.hours.to}` : i.name}
+                <button key={i.id} onClick={() => pick(i)} disabled={soldOut || !!cart.hold} title={offHours && i.hours ? `Served ${i.hours.from}–${i.hours.to}` : i.name}
                   className={`relative flex min-h-[4.75rem] flex-col justify-between overflow-hidden rounded-lg border-l-[3px] bg-card py-2 pl-2.5 pr-2 text-left shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-border/70 transition-[transform,box-shadow] hover:shadow-md active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${i.veg ? "border-l-success" : "border-l-destructive"} ${offHours ? "opacity-60" : ""}`}>
                   {inCart ? <span className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">{inCart}</span> : null}
                   <span className="line-clamp-2 pr-5 text-[13px] font-semibold leading-snug">{i.name}</span>
@@ -540,7 +517,7 @@ function PosPage() {
         <DialogContent className="max-w-md">
           {cancelOpen ? <ReasonPrompt title={`Cancel bill ${cart.activeOrder?.billNo ?? ""}`}
             description="The kitchen already has these items. The bill is kept as cancelled with your reason."
-            confirmLabel="Cancel this bill" onConfirm={(reason) => { void cart.cancelOrder(reason, closedBy).then(() => setCancelOpen(false)); }} /> : null}
+            confirmLabel="Cancel this bill" onConfirm={(reason) => { void cart.cancelOrder(reason, closedBy).then(() => { setCancelOpen(false); toFloor(); }); }} /> : null}
         </DialogContent>
       </Dialog>
 
@@ -581,7 +558,7 @@ function PosPage() {
                         onClick={() => {
                           const from = cart.tableId;
                           if (!from) return;
-                          void moveTable(from, t.id).then(() => { cart.setTableId(t.id); setMoveOpen(false); toast.success(`Moved to ${t.label}`); })
+                          void moveTable(from, t.id).then(() => { cart.setTableId(t.id); setMoveOpen(false); void navigate({ to: "/", search: { table: t.id }, replace: true }); toast.success(`Moved to ${t.label}`); })
                             .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Couldn't move the table"));
                         }}>{t.label}</button>
                     ))}
@@ -594,7 +571,7 @@ function PosPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!receipt} onOpenChange={(o) => !o && setReceipt(null)}>
+      <Dialog open={!!receipt} onOpenChange={(o) => { if (!o) { setReceipt(null); if (!cart.lines.length) toFloor(); } }}>
         <DialogContent className="max-h-[90vh] max-w-sm overflow-y-auto">
           <DialogTitle>Bill {receipt?.billNo} settled</DialogTitle>
           {receipt && receipt.payments.length > 1 ? <p className="-mt-2 text-sm text-muted-foreground">{receipt.payments.map((p) => `${p.mode.toUpperCase()} ${formatINR(p.amount, 0)}`).join(", ")}</p> : null}

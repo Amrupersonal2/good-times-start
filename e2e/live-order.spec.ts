@@ -62,7 +62,7 @@ test("guest QR order reaches the POS, is accepted, and syncs to another device",
   // 2. Reception's Restro POS on a computer accepts it.
   const posCtx = await open(browser, desktop, "billdesk");
   const pos = await posCtx.newPage();
-  await pos.goto("/?app=pos");
+  await pos.goto("/tables?app=pos");
   const bell = pos.getByRole("button", { name: /^Guest orders: \d+ waiting/ });
   await expect(bell).toBeVisible({ timeout: 60_000 });
   await bell.click();
@@ -86,4 +86,49 @@ test("guest QR order reaches the POS, is accepted, and syncs to another device",
   await shot(mgr, "8-manager-sees-bill");
 
   await Promise.all([guestCtx.close(), posCtx.close(), mgrCtx.close()]);
+});
+
+test("a waiter taking an order holds the table; others see it; emptying it frees the table", async ({ browser }, info) => {
+  const shot = async (page: import("@playwright/test").Page, name: string) =>
+    info.attach(`${name}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+
+  // Waiter on a tablet picks a free table and adds one dish, without sending it.
+  const waiterCtx = await open(browser, tabletBp, "waiter");
+  const waiter = await waiterCtx.newPage();
+  await waiter.goto("/waiter?app=waiter");
+  const freeTile = waiter.locator('aside[aria-label="Tables"] button').filter({ hasNotText: "₹" }).filter({ hasNotText: "Reserved" }).first();
+  await expect(freeTile).toBeVisible({ timeout: 60_000 });
+  const label = ((await freeTile.locator("span").first().textContent()) ?? "").trim();
+  await freeTile.click();
+  // A dish with no portions or add-ons, so one tap adds it.
+  await waiter.getByPlaceholder("Find a dish").fill("Virgin Mojito");
+  const dish = waiter.locator('section[aria-label="Menu"] button:not([disabled])').filter({ hasText: "Virgin Mojito" }).first();
+  try {
+    // A brand-new tablet shows dishes once its first sync brings the menu.
+    await expect(dish).toBeVisible({ timeout: 90_000 });
+  } catch (error) {
+    await shot(waiter, "h0-waiter-no-dishes");
+    info.annotations.push({ type: "hold", description: `Menu buttons on waiter: ${await waiter.locator('section[aria-label="Menu"] button').count()}` });
+    throw error;
+  }
+  await dish.click();
+  info.annotations.push({ type: "hold", description: `Waiter holds table ${label} with one dish (not sent)` });
+  await shot(waiter, "h1-waiter-holding");
+
+  // Reception opens the same table on Restro POS: sees who holds it and can't add a second order.
+  const posCtx = await open(browser, desktop, "billdesk");
+  const pos = await posCtx.newPage();
+  await pos.goto("/tables?app=pos");
+  const tile = pos.getByRole("button", { name: new RegExp(`^Table ${label}(,|$)`) });
+  await expect(tile).toContainText("Taking order", { timeout: 60_000 });
+  await tile.click();
+  await expect(pos.getByRole("status").filter({ hasText: "is taking this table's order" })).toBeVisible({ timeout: 30_000 });
+  await shot(pos, "h2-counter-sees-hold");
+
+  // Waiter removes the dish: the table is free again everywhere.
+  await waiter.getByRole("button", { name: /^Fewer / }).first().click();
+  await pos.goto("/tables?app=pos");
+  await expect(pos.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 60_000 });
+  await shot(pos, "h3-table-free-again");
+  await Promise.all([waiterCtx.close(), posCtx.close()]);
 });

@@ -76,7 +76,7 @@ export function RolesSettings() {
 
           {role === "cashier" ? (
             <div className="overflow-hidden rounded-2xl border border-border bg-card">
-              <p className="border-b border-border bg-secondary/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Screens (Billing is always on)</p>
+              <p className="border-b border-border bg-secondary/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Screens (Tables and bills are always on)</p>
               <ul className="divide-y divide-border">
                 {POLICY_SCREENS.map((sc) => (
                   <li key={sc.path} className="flex items-center justify-between gap-3 px-4 py-3">

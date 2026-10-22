@@ -13,6 +13,7 @@ import { waNumber } from "@/lib/marketing-logic";
 import { APPS, APP_LINKS, DEVICE_LABELS, LOGINS, passwordProblem, type AppKind, type DeviceKind, type LoginId, type LoginRow } from "@/lib/staff-login-logic";
 import { ensureInternalLogins, resetLoginPassword } from "@/lib/staff-logins.functions";
 import { cn } from "@/lib/utils";
+import { GUEST_ORDER_ORIGIN } from "@/lib/qr-ordering";
 
 const input = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm";
 const ORDER: LoginId[] = ["admin", "billdesk", "waiter"];
@@ -113,7 +114,8 @@ function LoginCard({ row, onSaved }: { row: LoginRow; onSaved: () => void }) {
 }
 
 function InstallCard({ app }: { app: AppKind }) {
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  // Printed and shared links always use the live site, never the editor preview or this device.
+  const origin = GUEST_ORDER_ORIGIN;
   const url = `${origin}${APP_LINKS[app]}`;
   const [qr, setQr] = useState("");
   useEffect(() => { void QRCode.toDataURL(url, { width: 240, margin: 1 }).then(setQr).catch(() => setQr("")); }, [url]);
