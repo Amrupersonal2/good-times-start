@@ -101,9 +101,8 @@ test("a waiter taking an order holds the table; others see it; emptying it frees
   const label = ((await freeTile.locator("span").first().textContent()) ?? "").trim();
   await freeTile.click();
   const dish = waiter.locator('section[aria-label="Menu"] button:not([disabled])').filter({ hasText: "₹" }).filter({ hasNotText: "Options" }).first();
-  const dishName = ((await dish.locator("span").nth(2).textContent()) ?? "").trim();
   await dish.click();
-  info.annotations.push({ type: "hold", description: `Waiter holds table ${label} with ${dishName || "a dish"} (not sent)` });
+  info.annotations.push({ type: "hold", description: `Waiter holds table ${label} with one dish (not sent)` });
   await shot(waiter, "h1-waiter-holding");
 
   // Reception opens the same table on Restro POS: sees who holds it and can't add a second order.

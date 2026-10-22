@@ -59,8 +59,10 @@ test.describe("Launch check", () => {
       await ready(page);
       const select = page.getByLabel("QR destination");
       await expect(select).toBeVisible({ timeout: 30_000 });
-      const options = await select.locator("option").evaluateAll((els) => els.map((e) => (e as HTMLOptionElement).value).filter(Boolean));
-      expect(options.length, "tables to print QR codes for").toBeGreaterThan(0);
+      // A fresh device fills in the tables once its first sync finishes.
+      const tableOptions = () => select.locator("option").evaluateAll((els) => els.map((e) => (e as HTMLOptionElement).value).filter(Boolean));
+      await expect.poll(async () => (await tableOptions()).length, { message: "tables to print QR codes for", timeout: 60_000 }).toBeGreaterThan(0);
+      const options = await tableOptions();
       const table = options[0]!;
       await select.selectOption(table);
       const img = page.getByAltText("QR code for selected table");
@@ -73,6 +75,7 @@ test.describe("Launch check", () => {
       // Downloaded QR file is the same code.
       await page.goto("/settings?app=manager#ordering");
       await ready(page);
+      await expect.poll(async () => (await page.getByLabel("QR destination").locator("option").count()), { timeout: 60_000 }).toBeGreaterThan(1);
       await page.getByLabel("QR destination").selectOption(table);
       const file = await download(page, () => page.getByRole("link", { name: "Download QR" }).click());
       await expectGuestUrl(await decodeQr(file.data), `Downloaded ${file.name}`, info, table);
@@ -84,10 +87,14 @@ test.describe("Launch check", () => {
       await ready(page);
       const preview = page.getByAltText("QR code preview");
       await expect(preview).toBeVisible({ timeout: 30_000 });
-      await expectGuestUrl(await decodeQr(fromDataUrl((await preview.getAttribute("src"))!)), "QR kit preview", info);
+      await expect.poll(async () => (await preview.getAttribute("src"))?.length ?? 0, { timeout: 60_000 }).toBeGreaterThan(100);
+      await expectGuestUrl(await decodeQr(fromDataUrl((await preview.getAttribute("src"))!)), "QR kit table tent sample", info);
+      // Poster: the shareable PNG.
+      await page.getByRole("radio", { name: /Poster/ }).click();
       const png = await download(page, () => page.getByRole("button", { name: "PNG", exact: true }).click());
       await expectGuestUrl(await decodeQr(png.data), `QR kit ${png.name}`, info);
-      // Print sheet: decode each card as rendered, logo badge included.
+      // Table tents for every table: decode each card as printed, logo badge included.
+      await page.getByRole("radio", { name: /Table tent/ }).click();
       const [sheet] = await Promise.all([page.waitForEvent("popup"), page.getByRole("button", { name: /^Print / }).click()]);
       await sheet.waitForLoadState();
       const cards = sheet.locator(".qr");
@@ -154,7 +161,8 @@ test.describe("Launch check", () => {
 
       await page.getByRole("radio", { name: "Items" }).click();
       const items = await download(page, () => page.getByRole("button", { name: "CSV", exact: true }).click());
-      expect(readCsv(items.data.toString("utf8"))[0]).toEqual(["Item", "Category", "Quantity", "Sales before GST"]);
+      // The file starts with a byte-order mark so Excel shows ₹ and names correctly.
+      expect(readCsv(items.data.toString("utf8").replace(/^\uFEFF/, ""))[0]).toEqual(["Item", "Category", "Quantity", "Sales before GST"]);
 
       await page.getByRole("radio", { name: "Sales Summary" }).click();
       const summary = await download(page, () => page.getByRole("button", { name: "Download Excel" }).click());
