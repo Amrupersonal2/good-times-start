@@ -34,6 +34,7 @@ const MANAGER_SCREENS: [string, string, (string | RegExp)?][] = [
   ["settings-roles", "/settings#roles", "On with PIN"],
   ["settings-device", "/settings#device", "This device"],
   ["setup", "/setup"],
+  ["reports-app", "/insights", "How guests paid"],
 ];
 
 const POS_SCREENS: [string, string, (string | RegExp)?][] = [
@@ -67,6 +68,13 @@ for (const bp of BREAKPOINTS) {
       const seen = watch(page);
       await page.goto("/order/tab-bistro");
       await audit(page, info, `${bp.name}-guest-menu`, seen, /TAB Bistro|Ordering is off|Scan the QR code/);
+      // Choosing a table opens that table's menu (nothing is ordered).
+      const pick = page.getByRole("button", { name: /^Table / }).first();
+      if (await pick.isVisible().catch(() => false)) {
+        await pick.click();
+        await audit(page, info, `${bp.name}-guest-table-menu`, seen, /Ordering to table/);
+        await expect(page.getByRole("button", { name: /^Add / }).first()).toBeVisible();
+      }
       await page.goto("/order/tab-bistro?table=not-a-table&s=t9");
       await audit(page, info, `${bp.name}-guest-old-qr`, seen);
       await page.goto("/order/no-such-place");

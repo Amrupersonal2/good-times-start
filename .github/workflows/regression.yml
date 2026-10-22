@@ -2,6 +2,11 @@ name: Regression (all apps, all screen sizes)
 
 on:
   workflow_dispatch:
+    inputs:
+      live_order:
+        description: "Also place one clearly-marked test guest order on the live POS"
+        type: boolean
+        default: false
   pull_request:
 
 concurrency:
@@ -24,6 +29,8 @@ jobs:
         run: |
           bun add -d @playwright/test@1.56.0
           bunx playwright install --with-deps chromium
+      - name: Production build
+        run: bunx vite build
       - name: Unit and sync tests
         run: bunx vitest run --exclude "e2e/**" --exclude "src/test/app-routing.test.tsx"
         continue-on-error: true
@@ -33,6 +40,7 @@ jobs:
           XTSY_ADMIN_PASSWORD: ${{ secrets.XTSY_ADMIN_PASSWORD }}
           XTSY_BILLDESK_PASSWORD: ${{ secrets.XTSY_BILLDESK_PASSWORD }}
           XTSY_WAITER_PASSWORD: ${{ secrets.XTSY_WAITER_PASSWORD }}
+          LIVE_ORDER: ${{ inputs.live_order && '1' || '' }}
       - name: Summary
         if: always()
         run: |
