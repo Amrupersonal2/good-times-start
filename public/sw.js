@@ -6,7 +6,7 @@
  * - Icons, manifests, fonts: served from cache, refreshed in the background.
  * - Never touches API calls, server functions, Supabase or non-GET requests.
  */
-const VERSION = "xtsy-pos-v6";
+const VERSION = "xtsy-pos-v7";
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const STATIC = `${VERSION}-static`;
