@@ -10,6 +10,7 @@ import { rememberCustomer } from "./customer-actions";
 import { setWhatsappConsent } from "./marketing-actions";
 import { billWithGuestLines, cartLinesFromGuest, orderTypeFor, type GuestOrder, type GuestStatus } from "./guest-order-logic";
 import { orderingSaveError } from "./qr-ordering";
+import { syncCloudData } from "./cloud-sync";
 
 const ACTIVE: GuestStatus[] = ["new", "accepted", "ready"];
 
@@ -33,6 +34,7 @@ export function isActiveGuestOrder(order: GuestOrder): boolean {
  * and create the kitchen tickets. Returns the tickets to print.
  */
 export async function acceptGuestOrder(guest: GuestOrder, staffName: string): Promise<{ order: Order; kots: Kot[]; missing: string[] } | null> {
+  await ensureReadyForBilling(guest.restaurant_id);
   const { data: claimed, error } = await supabase.from("guest_orders")
     .update({ status: "accepted", handled_by: staffName })
     .eq("id", guest.id).eq("status", "new").select("id");
@@ -45,6 +47,18 @@ export async function acceptGuestOrder(guest: GuestOrder, staffName: string): Pr
     await supabase.from("guest_orders").update({ status: "new", handled_by: "" }).eq("id", guest.id);
     throw failure;
   }
+}
+
+/**
+ * A device that hasn't received the restaurant's menu and tax settings yet
+ * (fresh install, just cleared) would open a bill without GST. Catch up first,
+ * and refuse, without claiming the order, if it still isn't ready.
+ */
+async function ensureReadyForBilling(restaurantId: string): Promise<void> {
+  const ready = async () => (await getSettings()).name.trim() !== "" && (await getDb().menu.count()) > 0;
+  if (await ready()) return;
+  try { await syncCloudData(restaurantId); } catch { /* reported below */ }
+  if (!(await ready())) throw new Error("This device is still loading the menu and tax settings. Wait a moment and accept again.");
 }
 
 async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot[]; missing: string[] }> {
