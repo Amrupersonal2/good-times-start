@@ -279,6 +279,10 @@ export async function saveSettings(settings: RestaurantSettings, share = true): 
 /** Loads the sample menu and floor plan into an empty restaurant and shares it. */
 export async function loadSampleData(): Promise<void> {
   const db = getDb();
+  // A device that hasn't loaded the restaurant yet only looks empty; the sample would overwrite the real menu.
+  if (typeof (await db.meta.get("lastSyncAt"))?.value !== "number") {
+    throw new Error("This device is still loading your restaurant. Wait until it shows Live, then check again.");
+  }
   const changes: [RecordKind, string][] = [];
   if ((await db.menu.count()) === 0) {
     await db.menu.bulkPut(SEED_MENU);
