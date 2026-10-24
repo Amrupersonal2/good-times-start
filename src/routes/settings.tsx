@@ -26,6 +26,7 @@ import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
 import { can } from "@/lib/permissions";
 import { useDeviceCode } from "@/lib/use-device-code";
+import { useFirstSyncDone } from "@/lib/use-first-sync";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -335,9 +336,10 @@ function ThisDevice() {
     toast.success("This device has been cleared");
     window.location.reload();
   };
+  const synced = useFirstSyncDone();
   const loadSample = async () => {
-    await loadSampleData();
-    toast.success("Sample menu and tables added");
+    try { await loadSampleData(); toast.success("Sample menu and tables added"); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't add the sample menu."); }
   };
 
   return (
@@ -350,7 +352,7 @@ function ThisDevice() {
           {can(user, "settings.series") ? <Button variant="secondary" disabled={!next || next === code} onClick={() => void saveCode()}>Start new series</Button>
             : <p className="pb-2 text-xs text-muted-foreground">Only the owner or a manager can change it.</p>}
         </div>
-        {menuCount === 0 && can(user, "menu.edit") ? (
+        {menuCount === 0 && synced && can(user, "menu.edit") ? (
           <div className="rounded-lg border border-dashed border-border p-4">
             <p className="text-sm font-medium">Your menu is empty.</p>
             <p className="mt-1 text-sm text-muted-foreground">Start from a sample Indian menu and floor plan, then change prices and dishes in Menu.</p>

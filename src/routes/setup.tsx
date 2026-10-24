@@ -18,6 +18,7 @@ import { APPS, DEVICE_LABELS, LOGINS, type LoginId } from "@/lib/staff-login-log
 import type { RestaurantSettings } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { useDeviceCode } from "@/lib/use-device-code";
+import { useFirstSyncDone } from "@/lib/use-first-sync";
 
 export const Route = createFileRoute("/setup")({
   head: () => ({ meta: [{ title: "Set up — XTSY POS" }, { name: "description", content: "Set up your restaurant on XTSY POS in a few minutes." }, { property: "og:title", content: "Set up — XTSY POS" }, { property: "og:description", content: "Set up your restaurant on XTSY POS in a few minutes." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },] }),
@@ -176,21 +177,24 @@ function GstStep({ onNext }: { onNext: () => void }) {
 
 function MenuStep({ onNext }: { onNext: () => void }) {
   const count = useLiveQuery(() => getDb().menu.count(), [], 0);
+  const synced = useFirstSyncDone();
   const admin = isAdmin(useStaff().user);
   const [busy, setBusy] = useState(false);
   const run = async (work: () => Promise<unknown>, message: string) => {
     setBusy(true);
-    try { await work(); toast.success(message); } finally { setBusy(false); }
+    try { await work(); toast.success(message); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "That didn't work. Try again."); }
+    finally { setBusy(false); }
   };
   return (
     <div>
-      <p className="text-sm text-muted-foreground">{count ? `Your menu has ${count} dishes. You can change prices, portions and recipes any time in Menu.` : "Pick how to start your menu. Nothing here is final."}</p>
+      <p className="text-sm text-muted-foreground">{count ? `Your menu has ${count} dishes. You can change prices, portions and recipes any time in Menu.` : !synced ? "Loading your restaurant's menu on this device…" : "Pick how to start your menu. Nothing here is final."}</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <Link to="/menu" className="rounded-xl border border-border p-4 hover:border-primary">
           <FileSpreadsheet className="size-5 text-primary" /><p className="mt-2 text-sm font-semibold">Import from Excel</p>
           <p className="mt-1 text-xs text-muted-foreground">Download the template in Menu → Excel, fill in dishes, portions and recipes, then Import.</p>
         </Link>
-        <button type="button" disabled={busy} onClick={() => void run(loadSampleData, "Sample menu and tables added")} className="rounded-xl border border-border p-4 text-left hover:border-primary disabled:opacity-50">
+        <button type="button" disabled={busy || !synced || count > 0} onClick={() => void run(loadSampleData, "Sample menu and tables added")} className="rounded-xl border border-border p-4 text-left hover:border-primary disabled:opacity-50">
           <UtensilsCrossed className="size-5 text-primary" /><p className="mt-2 text-sm font-semibold">Start from a sample menu</p>
           <p className="mt-1 text-xs text-muted-foreground">A short Indian menu and floor plan to edit into your own.</p>
         </button>

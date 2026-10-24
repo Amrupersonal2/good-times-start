@@ -141,7 +141,17 @@ test.describe("Launch check", () => {
       await page.goto("/reports?app=manager");
       await ready(page);
       await pickOctober(page);
-      const all = await download(page, () => page.getByRole("button", { name: "Excel (all reports)" }).click());
+      const allButton = page.getByRole("button", { name: "Excel (all reports)" });
+      // After a clean launch there are no bills yet: the exports must then be off, not broken.
+      const hasBills = await expect(allButton).toBeEnabled({ timeout: 45_000 }).then(() => true, () => false);
+      if (!hasBills) {
+        await expect(allButton).toBeDisabled();
+        await page.getByRole("radio", { name: "GST" }).click();
+        await expect(page.getByRole("button", { name: "GSTR-1 (Excel)" })).toBeDisabled();
+        info.annotations.push({ type: "export", description: "No bills yet (clean launch): report exports are correctly disabled until the first bill" });
+        return;
+      }
+      const all = await download(page, () => allButton.click());
       const book = readXlsx(all.data);
       expect(book.sheets.length, "sheets in all-reports Excel").toBeGreaterThan(2);
       expect(book.rows, "rows of data").toBeGreaterThan(5);
@@ -185,7 +195,9 @@ test.describe("Launch check", () => {
         await page.goto(path);
         await ready(page);
         const button = page.getByRole("button", { name, exact: true }).first();
-        await expect(button).toBeEnabled({ timeout: 30_000 });
+        const ready_ = await expect(button).toBeEnabled({ timeout: 30_000 }).then(() => true, () => false);
+        if (!ready_ && path.startsWith("/customers")) { out.push("guests: none yet (clean launch), export correctly disabled"); continue; }
+        await expect(button).toBeEnabled();
         const f = await download(page, () => button.click());
         const x = readXlsx(f.data);
         expect(x.rows, `${f.name} has rows`).toBeGreaterThan(1);

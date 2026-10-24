@@ -33,6 +33,7 @@ import { allow } from "@/lib/pin-gate";
 import { usePolicy } from "@/components/PinGate";
 import { syncAppModeFromUrl } from "@/lib/app-mode";
 import { COUNTER_TYPES, isCounterType } from "@/lib/bill-entry";
+import { useFirstSyncDone } from "@/lib/use-first-sync";
 
 export const Route = createFileRoute("/")({
   // A bill opens only from Tables: a table, a running counter bill, or a new counter order.
@@ -65,6 +66,7 @@ function PosPage() {
     void navigate({ to: "/tables", replace: true });
   }, [entry, navigate]);
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
+  const firstSync = useFirstSyncDone();
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const cart = useCart(search.table);
   // Running bills with no table: pickup and online orders, and takeaway bills sent to the kitchen.
@@ -454,12 +456,12 @@ function PosPage() {
             })}
             {items.length === 0 && (menu.length === 0 ? (
               <div className="col-span-full rounded-xl border border-dashed border-border p-8 text-center">
-                <p className="font-semibold">No dishes yet</p>
-                <p className="mt-1 text-sm text-muted-foreground">Add dishes in Menu, or import them from Excel.</p>
-                <div className="mt-4 flex justify-center gap-2">
+                <p className="font-semibold">{firstSync ? "No dishes yet" : "Loading the menu…"}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{firstSync ? "Add dishes in Menu, or import them from Excel." : "This device is getting your restaurant's menu. It appears here in a moment."}</p>
+                {firstSync ? <div className="mt-4 flex justify-center gap-2">
                   <Link to="/menu" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Open Menu</Link>
                   <Link to="/setup" className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold">Setup</Link>
-                </div>
+                </div> : null}
               </div>
             ) : <p className="col-span-full py-10 text-center text-sm text-muted-foreground">{q ? `No dishes match "${q}"` : "Nothing available in this category"}</p>)}
           </div>
