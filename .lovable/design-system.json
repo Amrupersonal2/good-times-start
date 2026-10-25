@@ -2,7 +2,7 @@
   "meta": {
     "name": "Good Times Start",
     "package": "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d",
-    "version": "3.7.0",
+    "version": "3.8.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -11,16 +11,16 @@
     ],
     "source_type": "local",
     "source_manifest": {
-      "#enrichment": "76a3f89e52c4bfb033c9fb905d02ec943af593fb00cb1b4b6c145050ffaa9c17",
+      "#enrichment": "0899a79114116793e05bc6573fcda5f9d717468f48f0f6d24865afbd1ad618f4",
       ".github/workflows/regression.yml": "ee4525d5297f7da30ff169c74949ebd6",
       ".gitignore": "e772048e53476ce026dddb3a271b0f66",
       ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
       ".lovable/plan/table-first-pos-kitchen-tickets-and-sync-recovery-2026-10-16.md": "7956f6185a7718331d049c136f03c7d4",
       ".lovable/project.json": "8a614b0de0ec719c6a3c839b39ebb7b9",
-      ".lovable/sources.yaml": "ee6247f6fe77fe1387244cd3c757e6a3",
+      ".lovable/sources.yaml": "5fd6523c145638df3f2fcfd110718f4d",
       ".prettierignore": "7279a476f196a2da5f7edd18db568dc6",
       ".prettierrc": "185ef0234746ab738ac1ab6cec5e2bd9",
-      "AGENTS.md": "8cabee8dfcfe77260b909b18432fa720",
+      "AGENTS.md": "b247a5956db46d5a89b49a7b57e9cd72",
       "README.md": "e9c1c6685644ec8321ce8276fcd7dc5f",
       "bunfig.toml": "89115995d9de72fdfc894e16b1e75297",
       "components.json": "30d3d035361ce807021f5c54620962e9",
@@ -162,7 +162,7 @@
       "src/generated/ai-gateway/models.d.cts": "1efb1b89b544365722c7c1fc3cca891b",
       "src/generated/ai-gateway/models.d.ts": "1efb1b89b544365722c7c1fc3cca891b",
       "src/hooks/use-mobile.tsx": "c0a0bdd4638c391a1dd06ac82074e60b",
-      "src/index.ts": "c2751dcf5f7c74b1445cbe5919e44d08",
+      "src/index.ts": "c4b48a420691b2d0eec75f509371e4ef",
       "src/integrations/lovable/index.ts": "e9cf6e6968dd0392b2222ee0745ecece",
       "src/integrations/supabase/auth-attacher.ts": "dad043cda134d909e52de0346c16625e",
       "src/integrations/supabase/auth-middleware.ts": "eabaf8c8ba32205717921ce5f255185e",
@@ -535,13 +535,8 @@
   },
   "components": [
     {
-      "name": "AppInstall",
-      "file": "src/components/AppInstall",
-      "import_path": ""
-    },
-    {
-      "name": "InstallButton",
-      "file": "src/components/AppInstall",
+      "name": "AppShell",
+      "file": "src/components/AppShell",
       "import_path": ""
     },
     {
@@ -550,13 +545,13 @@
       "import_path": ""
     },
     {
-      "name": "AppShell",
-      "file": "src/components/AppShell",
+      "name": "AppInstall",
+      "file": "src/components/AppInstall",
       "import_path": ""
     },
     {
-      "name": "ConfirmButton",
-      "file": "src/components/ConfirmButton",
+      "name": "InstallButton",
+      "file": "src/components/AppInstall",
       "import_path": ""
     },
     {
@@ -613,81 +608,9 @@
       ]
     },
     {
-      "name": "GuestOrdersButton",
-      "file": "src/components/GuestOrders",
-      "import_path": ""
-    },
-    {
       "name": "LiveSync",
       "file": "src/components/LiveSync",
       "import_path": ""
-    },
-    {
-      "name": "LoginsSettings",
-      "file": "src/components/LoginsSettings",
-      "import_path": ""
-    },
-    {
-      "name": "MenuAdvisor",
-      "file": "src/components/MenuAdvisor",
-      "import_path": "",
-      "props": [
-        {
-          "name": "restaurantId",
-          "type": "string",
-          "required": true
-        },
-        {
-          "name": "from",
-          "type": "number",
-          "required": true
-        },
-        {
-          "name": "to",
-          "type": "number",
-          "required": true
-        }
-      ],
-      "usage": "Use on owner-only restaurant Insights surfaces to review sales and menu data before requesting recommendations. Requires authenticated owner membership and an internet connection.",
-      "examples": [
-        {
-          "label": "Owner menu analysis",
-          "code": "\u003cMenuAdvisor restaurantId={user.restaurantId} from={range.from} to={range.to} /\u003e"
-        }
-      ],
-      "antipatterns": [
-        "Do not expose analysis to non-owner restaurant members.",
-        "Never pass customer details or credentials in supplied sales data.",
-        "Never automatically apply AI suggestions to menu prices or orders."
-      ]
-    },
-    {
-      "name": "MenuExcel",
-      "file": "src/components/MenuExcel",
-      "import_path": ""
-    },
-    {
-      "name": "OrderingSettings",
-      "file": "src/components/OrderingSettings",
-      "import_path": "",
-      "props": [
-        {
-          "name": "ref",
-          "type": "any"
-        }
-      ],
-      "usage": "Use in the signed-in Business Manager to configure guest channels, inspect cloud menu/table readiness, and generate public table QR codes.",
-      "examples": [
-        {
-          "label": "Guest ordering settings",
-          "code": "\u003cOrderingSettings className=\"max-w-5xl\" /\u003e"
-        }
-      ],
-      "antipatterns": [
-        "Do not mount without the app account, auth and query providers.",
-        "Never generate printed QR links from an editor or localhost origin.",
-        "Do not interpret UPI references as verified payment."
-      ]
     },
     {
       "name": "UpiPay",
@@ -705,83 +628,13 @@
       "import_path": ""
     },
     {
-      "name": "PolicySync",
-      "file": "src/components/PinGate",
-      "import_path": ""
-    },
-    {
-      "name": "PinGate",
-      "file": "src/components/PinGate",
-      "import_path": ""
-    },
-    {
-      "name": "PreloadScreens",
-      "file": "src/components/PreloadScreens",
-      "import_path": ""
-    },
-    {
-      "name": "IncomingKotWatcher",
-      "file": "src/components/PrintHost",
-      "import_path": ""
-    },
-    {
-      "name": "PrintHost",
-      "file": "src/components/PrintHost",
-      "import_path": ""
-    },
-    {
       "name": "Receipt",
       "file": "src/components/Receipt",
       "import_path": ""
     },
     {
-      "name": "KotTicket",
-      "file": "src/components/Receipt",
-      "import_path": ""
-    },
-    {
-      "name": "RolesSettings",
-      "file": "src/components/RolesSettings",
-      "import_path": ""
-    },
-    {
-      "name": "SalesSummary",
-      "file": "src/components/SalesSummary",
-      "import_path": ""
-    },
-    {
-      "name": "Segmented",
-      "file": "src/components/Segmented",
-      "import_path": ""
-    },
-    {
-      "name": "TerminalsSettings",
-      "file": "src/components/TerminalsSettings",
-      "import_path": ""
-    },
-    {
       "name": "VegMark",
       "file": "src/components/VegMark",
-      "import_path": ""
-    },
-    {
-      "name": "BrandEditor",
-      "file": "src/components/marketing/BrandEditor",
-      "import_path": ""
-    },
-    {
-      "name": "MarketingResults",
-      "file": "src/components/marketing/MarketingResults",
-      "import_path": ""
-    },
-    {
-      "name": "QrKit",
-      "file": "src/components/marketing/QrKit",
-      "import_path": ""
-    },
-    {
-      "name": "WhatsAppCenter",
-      "file": "src/components/marketing/WhatsAppCenter",
       "import_path": ""
     },
     {
@@ -819,76 +672,6 @@
           "default": "false"
         }
       ]
-    },
-    {
-      "name": "Dialog",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogPortal",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogOverlay",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogTrigger",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogClose",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogContent",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogHeader",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogFooter",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogTitle",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "DialogDescription",
-      "file": "src/components/ui/dialog",
-      "import_path": ""
-    },
-    {
-      "name": "Popover",
-      "file": "src/components/ui/popover",
-      "import_path": ""
-    },
-    {
-      "name": "PopoverTrigger",
-      "file": "src/components/ui/popover",
-      "import_path": ""
-    },
-    {
-      "name": "PopoverContent",
-      "file": "src/components/ui/popover",
-      "import_path": ""
-    },
-    {
-      "name": "PopoverAnchor",
-      "file": "src/components/ui/popover",
-      "import_path": ""
     },
     {
       "name": "Select",
@@ -946,6 +729,56 @@
       "import_path": ""
     },
     {
+      "name": "Dialog",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogPortal",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogOverlay",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogTrigger",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogClose",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogContent",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogHeader",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogFooter",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogTitle",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogDescription",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
       "name": "Constants",
       "file": "src/integrations/supabase/types",
       "import_path": ""
@@ -956,9 +789,38 @@
       "import_path": ""
     },
     {
-      "name": "SyncScheduler",
-      "file": "src/lib/sync-scheduler",
-      "import_path": ""
+      "name": "MenuAdvisor",
+      "file": "src/components/MenuAdvisor",
+      "import_path": "",
+      "props": [
+        {
+          "name": "restaurantId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "from",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "to",
+          "type": "number",
+          "required": true
+        }
+      ],
+      "usage": "Use on owner-only restaurant Insights surfaces to review sales and menu data before requesting recommendations. Requires authenticated owner membership and an internet connection.",
+      "examples": [
+        {
+          "label": "Owner menu analysis",
+          "code": "\u003cMenuAdvisor restaurantId={user.restaurantId} from={range.from} to={range.to} /\u003e"
+        }
+      ],
+      "antipatterns": [
+        "Do not expose analysis to non-owner restaurant members.",
+        "Never pass customer details or credentials in supplied sales data.",
+        "Never automatically apply AI suggestions to menu prices or orders."
+      ]
     }
   ],
   "assets": [
