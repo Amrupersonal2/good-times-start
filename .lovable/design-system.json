@@ -2,7 +2,7 @@
   "meta": {
     "name": "Good Times Start",
     "package": "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d",
-    "version": "3.6.0",
+    "version": "3.7.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -57,7 +57,7 @@
       "e2e/regression.spec.ts": "8a03fa896f203d6d3cab642a824db9de",
       "e2e/summary.mjs": "5e50e287aa07b4e0eb663d9b32a5c6b9",
       "eslint.config.js": "345bdd57e188e0e4525edcd00e5003f5",
-      "package.json": "6d60642bfabc7d9bdc64aea3e8405a48",
+      "package.json": "e827f90979938c2671a3006a245608b0",
       "public/brand/xtsy-logo.png": "cd243719b721f7d30437f8f7c2f135c4",
       "public/favicon.png": "d745fd540d9c741d1ae8108c6899c251",
       "public/icons/insights-192.png": "f56fb481dacef05de0b2e6370f6433fe",
