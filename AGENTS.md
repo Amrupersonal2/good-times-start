@@ -17,3 +17,4 @@
 - Restore guest carts before enabling persistence and treat order placement success independently of optional marketing recording, so refresh and secondary failures cannot lose carts or invite duplicate orders.
 - Keep the reports installation on /insights with its own manifest and existing report calculations; this separates its installed identity without duplicating sales logic.
 - Resolve app installation identity with app-install-logic and exclude app workers from development and editor hosts; this prevents stale preview assets.
+- Keep library component extraction pointed at src/index.ts and export documented public controls there, so the published catalog matches the consumer entry point.

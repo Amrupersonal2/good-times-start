@@ -2,5 +2,5 @@ tokens:
     - file: src/styles.css
       operation: css-variables
 components:
-    - file: src/integrations/lovable/index.ts
+    - file: src/index.ts
       operation: ts-named-exports
