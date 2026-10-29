@@ -2,7 +2,7 @@
   "meta": {
     "name": "Good Times Start",
     "package": "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d",
-    "version": "3.8.0",
+    "version": "3.9.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -11,7 +11,7 @@
     ],
     "source_type": "local",
     "source_manifest": {
-      "#enrichment": "0899a79114116793e05bc6573fcda5f9d717468f48f0f6d24865afbd1ad618f4",
+      "#enrichment": "2912a6c8eb3132c63d9aa6a147bd42748f2269b5ab87ba7df838cf600e0b9ea0",
       ".github/workflows/regression.yml": "ee4525d5297f7da30ff169c74949ebd6",
       ".gitignore": "e772048e53476ce026dddb3a271b0f66",
       ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
@@ -57,7 +57,7 @@
       "e2e/regression.spec.ts": "8a03fa896f203d6d3cab642a824db9de",
       "e2e/summary.mjs": "5e50e287aa07b4e0eb663d9b32a5c6b9",
       "eslint.config.js": "345bdd57e188e0e4525edcd00e5003f5",
-      "package.json": "e827f90979938c2671a3006a245608b0",
+      "package.json": "497f64d5ed6575514331f8de649acbaf",
       "public/brand/xtsy-logo.png": "cd243719b721f7d30437f8f7c2f135c4",
       "public/favicon.png": "d745fd540d9c741d1ae8108c6899c251",
       "public/icons/insights-192.png": "f56fb481dacef05de0b2e6370f6433fe",
@@ -162,7 +162,7 @@
       "src/generated/ai-gateway/models.d.cts": "1efb1b89b544365722c7c1fc3cca891b",
       "src/generated/ai-gateway/models.d.ts": "1efb1b89b544365722c7c1fc3cca891b",
       "src/hooks/use-mobile.tsx": "c0a0bdd4638c391a1dd06ac82074e60b",
-      "src/index.ts": "c4b48a420691b2d0eec75f509371e4ef",
+      "src/index.ts": "47f39f12267f67dbc190576d08b43f74",
       "src/integrations/lovable/index.ts": "e9cf6e6968dd0392b2222ee0745ecece",
       "src/integrations/supabase/auth-attacher.ts": "dad043cda134d909e52de0346c16625e",
       "src/integrations/supabase/auth-middleware.ts": "eabaf8c8ba32205717921ce5f255185e",
@@ -535,26 +535,6 @@
   },
   "components": [
     {
-      "name": "AppShell",
-      "file": "src/components/AppShell",
-      "import_path": ""
-    },
-    {
-      "name": "PersistentFrame",
-      "file": "src/components/AppShell",
-      "import_path": ""
-    },
-    {
-      "name": "AppInstall",
-      "file": "src/components/AppInstall",
-      "import_path": ""
-    },
-    {
-      "name": "InstallButton",
-      "file": "src/components/AppInstall",
-      "import_path": ""
-    },
-    {
       "name": "Dropdown",
       "file": "src/components/Dropdown",
       "import_path": "",
@@ -606,31 +586,6 @@
           "default": "ml-2 text-xs opacity-60"
         }
       ]
-    },
-    {
-      "name": "LiveSync",
-      "file": "src/components/LiveSync",
-      "import_path": ""
-    },
-    {
-      "name": "UpiPay",
-      "file": "src/components/PaymentDialogs",
-      "import_path": ""
-    },
-    {
-      "name": "PaymentPanel",
-      "file": "src/components/PaymentDialogs",
-      "import_path": ""
-    },
-    {
-      "name": "ReasonPrompt",
-      "file": "src/components/PaymentDialogs",
-      "import_path": ""
-    },
-    {
-      "name": "Receipt",
-      "file": "src/components/Receipt",
-      "import_path": ""
     },
     {
       "name": "VegMark",
@@ -777,50 +732,6 @@
       "name": "DialogDescription",
       "file": "src/components/ui/dialog",
       "import_path": ""
-    },
-    {
-      "name": "Constants",
-      "file": "src/integrations/supabase/types",
-      "import_path": ""
-    },
-    {
-      "name": "AuthProvider",
-      "file": "src/lib/auth-context",
-      "import_path": ""
-    },
-    {
-      "name": "MenuAdvisor",
-      "file": "src/components/MenuAdvisor",
-      "import_path": "",
-      "props": [
-        {
-          "name": "restaurantId",
-          "type": "string",
-          "required": true
-        },
-        {
-          "name": "from",
-          "type": "number",
-          "required": true
-        },
-        {
-          "name": "to",
-          "type": "number",
-          "required": true
-        }
-      ],
-      "usage": "Use on owner-only restaurant Insights surfaces to review sales and menu data before requesting recommendations. Requires authenticated owner membership and an internet connection.",
-      "examples": [
-        {
-          "label": "Owner menu analysis",
-          "code": "\u003cMenuAdvisor restaurantId={user.restaurantId} from={range.from} to={range.to} /\u003e"
-        }
-      ],
-      "antipatterns": [
-        "Do not expose analysis to non-owner restaurant members.",
-        "Never pass customer details or credentials in supplied sales data.",
-        "Never automatically apply AI suggestions to menu prices or orders."
-      ]
     }
   ],
   "assets": [
