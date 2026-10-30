@@ -7,6 +7,14 @@ on:
         description: "Also place one clearly-marked test guest order on the live POS"
         type: boolean
         default: false
+      base_url:
+        description: "Test this site instead of a local build (e.g. https://good-times-start.lovable.app)"
+        type: string
+        default: ""
+      grep:
+        description: "Only run checks whose name matches (e.g. Sync window)"
+        type: string
+        default: ""
   pull_request:
 
 concurrency:
@@ -35,12 +43,13 @@ jobs:
         run: bunx vitest run --exclude "e2e/**" --exclude "src/test/app-routing.test.tsx"
         continue-on-error: true
       - name: Browser regression
-        run: bunx playwright test -c e2e/regression.config.ts
+        run: bunx playwright test -c e2e/regression.config.ts ${{ inputs.grep && format('--grep "{0}"', inputs.grep) || '' }}
         env:
           XTSY_ADMIN_PASSWORD: ${{ secrets.XTSY_ADMIN_PASSWORD }}
           XTSY_BILLDESK_PASSWORD: ${{ secrets.XTSY_BILLDESK_PASSWORD }}
           XTSY_WAITER_PASSWORD: ${{ secrets.XTSY_WAITER_PASSWORD }}
           LIVE_ORDER: ${{ inputs.live_order && '1' || '' }}
+          BASE_URL: ${{ inputs.base_url }}
       - name: Summary
         if: always()
         run: |

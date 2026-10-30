@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, X, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
+import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -162,12 +162,10 @@ function SyncChip() {
     </div>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <DialogTitle>Sync</DialogTitle>
-            <p className="mt-1 text-sm text-muted-foreground">Bills are saved on this device first, so billing never stops when the internet does.</p>
-          </div>
-          <Button variant="ghost" size="icon" aria-label="Close" onClick={() => setOpen(false)}><X /></Button>
+        {/* The dialog's own ✕ closes it; a second Close button sat on top of it. */}
+        <div className="pr-8">
+          <DialogTitle>Sync</DialogTitle>
+          <p className="mt-1 text-sm text-muted-foreground">Bills are saved on this device first, so billing never stops when the internet does.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-border p-3"><div className="text-xs text-muted-foreground">Bills waiting to upload</div><div className="mt-1 text-2xl font-bold">{snapshot.pendingOrders}</div></div>
