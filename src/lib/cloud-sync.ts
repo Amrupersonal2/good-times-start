@@ -79,7 +79,7 @@ async function upsert(rows: PushRow[]) {
 /** The cloud said no (a role rule), as opposed to "couldn't reach the cloud". */
 export function isRefusal(error: { code?: string; message?: string } | null | undefined): boolean {
   if (!error) return false;
-  return error.code === "42501" || /row-level security|only the owner or a manager/i.test(error.message ?? "");
+  return error.code === "42501" || /row-level security|only the owner or a manager|made before launch/i.test(error.message ?? "");
 }
 
 /**
@@ -87,22 +87,25 @@ export function isRefusal(error: { code?: string; message?: string } | null | un
  * menu change, a changed settled bill), find them one by one so every allowed
  * change still goes through. Returns the refused rows; throws on network errors.
  */
-async function upsertAllowed(rows: PushRow[]): Promise<PushRow[]> {
+type RefusedRow = PushRow & { prelaunch?: boolean };
+
+async function upsertAllowed(rows: PushRow[]): Promise<RefusedRow[]> {
   const error = await upsert(rows);
   if (!error) return [];
   if (!isRefusal(error)) throw error;
-  const refused: PushRow[] = [];
+  const refused: RefusedRow[] = [];
   for (const row of rows) {
     const one = await upsert([row]);
     if (!one) continue;
     if (!isRefusal(one)) throw one;
-    refused.push(row);
+    // The launch cut-off refuses bills and tickets made before the restaurant launched.
+    refused.push(/made before launch/i.test(one.message ?? "") ? { ...row, prelaunch: true } : row);
   }
   return refused;
 }
 
 /** Put this device back in line with the cloud for records the cloud refused. */
-async function restoreRefused(restaurantId: string, refused: PushRow[]): Promise<void> {
+async function restoreRefused(restaurantId: string, refused: RefusedRow[]): Promise<void> {
   const byKind = new Map<string, string[]>();
   for (const r of refused) byKind.set(r.kind, [...(byKind.get(r.kind) ?? []), r.record_id]);
   const rows: RemoteRow[] = [];
@@ -117,7 +120,8 @@ async function restoreRefused(restaurantId: string, refused: PushRow[]): Promise
   }
   await applyRemote(rows);
   const db = getDb();
-  await db.meta.put({ key: "syncNotice", value: JSON.stringify({ at: Date.now(), count: refused.length, kinds: [...byKind.keys()] }) });
+  const prelaunch = refused.filter((r) => r.prelaunch).length;
+  await db.meta.put({ key: "syncNotice", value: JSON.stringify({ at: Date.now(), count: refused.length - prelaunch, kinds: [...new Set(refused.filter((r) => !r.prelaunch).map((r) => r.kind))], prelaunch }) });
 }
 
 async function push(restaurantId: string): Promise<void> {
@@ -461,10 +465,14 @@ const KIND_WORDS: Record<string, string> = { settings: "restaurant details", men
 export function describeNotice(value: unknown): string {
   if (typeof value !== "string") return "";
   try {
-    const n = JSON.parse(value) as { count?: number; kinds?: string[] };
-    if (!n.count) return "";
-    const what = (n.kinds ?? []).map((k) => KIND_WORDS[k] ?? k).join(", ");
-    return `${n.count} change${n.count === 1 ? "" : "s"} to ${what || "records"} ${n.count === 1 ? "was" : "were"} undone: only the owner or a manager can make ${n.count === 1 ? "it" : "them"}. Everything else synced normally.`;
+    const n = JSON.parse(value) as { count?: number; kinds?: string[]; prelaunch?: number };
+    const parts: string[] = [];
+    if (n.prelaunch) parts.push(`${n.prelaunch} test record${n.prelaunch === 1 ? "" : "s"} from before launch (old bills or kitchen tickets) ${n.prelaunch === 1 ? "was" : "were"} removed from this device. They are not part of the restaurant's books.`);
+    if (n.count) {
+      const what = (n.kinds ?? []).map((k) => KIND_WORDS[k] ?? k).join(", ");
+      parts.push(`${n.count} change${n.count === 1 ? "" : "s"} to ${what || "records"} ${n.count === 1 ? "was" : "were"} undone: only the owner or a manager can make ${n.count === 1 ? "it" : "them"}.`);
+    }
+    return parts.length ? `${parts.join(" ")} Everything else synced normally.` : "";
   } catch { return ""; }
 }
 

@@ -1,5 +1,6 @@
 import { chromium, type FullConfig } from "@playwright/test";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { envValue } from "./env";
 import { BREAKPOINTS, LOGINS, authFile, contextFor, type LoginName } from "./breakpoints";
 
 /** Sign each login in once (through the real sign-in screen) and keep its session for the tests. */
@@ -29,14 +30,6 @@ export default async function globalSetup(config: FullConfig) {
     await context.close();
   }
   await browser.close();
-}
-
-/** Read from a project .env file (CI has no other copy of the public Supabase keys). */
-function envValue(key: string): string {
-  if (process.env[key]) return process.env[key]!;
-  if (!existsSync(".env")) return "";
-  const line = readFileSync(".env", "utf8").split("\n").find((l) => l.startsWith(`${key}=`));
-  return (line?.slice(key.length + 1) ?? "").trim().replace(/^"|"$/g, "");
 }
 
 /**

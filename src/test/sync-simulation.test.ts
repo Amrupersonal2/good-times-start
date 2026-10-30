@@ -168,6 +168,24 @@ describe("multi-device sync", () => {
     expect(sync.describeNotice(notice)).toMatch(/3 changes to restaurant details, menu were undone/);
   });
 
+  it("drops test bills a device held offline from before launch, and keeps everything made after", async () => {
+    // Offline since before launch, the counter holds an old test bill and its ticket.
+    await on("old-counter", () => addOrder(order("o-test", { status: "held", createdAt: Date.parse("2026-10-19T11:00:00Z") })));
+    server.fakeServer.launchedAt = Date.parse("2026-10-24T04:05:00Z");
+    // After launch it takes a real bill, then reconnects.
+    await on("old-counter", () => addOrder(order("o-real", { status: "settled", createdAt: Date.parse("2026-10-25T13:54:00Z") })));
+    await syncNow("old-counter");
+
+    const kept = [...server.fakeServer.rows.values()].filter((r) => r.kind === "order").map((r) => r.record_id);
+    expect(kept).toEqual(["o-real"]);
+    // The device no longer shows the old test bill, has nothing stuck waiting, and says why.
+    expect(await on("old-counter", () => db.getDb().orders.where("uid").equals("o-test").first())).toBeUndefined();
+    expect(await on("old-counter", () => db.getDb().outbox.count())).toBe(0);
+    const notice = await on("old-counter", async () => (await db.getDb().meta.get("syncNotice"))?.value);
+    expect(sync.describeNotice(notice)).toMatch(/1 test record from before launch .* was removed from this device/);
+    expect(sync.describeNotice(notice)).not.toMatch(/owner or a manager/);
+  });
+
   it("won't let staff rewrite a settled bill, and restores the original on their device", async () => {
     await on("counter", () => addOrder(order("o-6001", { status: "settled", total: 210 })));
     await syncNow("counter");
