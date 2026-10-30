@@ -12,7 +12,7 @@ const walk = (suite, path) => {
     const name = [...path, spec.title].filter(Boolean).slice(1).join(" › ");
     const last = t.results[t.results.length - 1] ?? {};
     all.push({ name, status: t.status, ms: last.duration });
-    const keepShots = /guest QR order|holds the table|Launch check|Sync window/.test(name) && t.status !== "skipped";
+    const keepShots = /guest QR order|holds the table|Launch check|Sync window|Live audit/.test(name) && t.status !== "skipped";
     if ((t.status === "expected" && !keepShots) || t.status === "skipped") continue;
     const errors = (last.errors ?? []).map((e) => clean(e.message).split("\n").slice(0, 14).join("\n"));
     const pngs = [];
