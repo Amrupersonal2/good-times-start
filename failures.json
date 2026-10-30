@@ -1,0 +1,208 @@
+[
+  {
+    "name": "Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "00-scanned-table-menu.png"
+    ],
+    "annotations": [
+      "Settings table QR → https://good-times-start.lovable.app/order/tab-bistro?table=N1",
+      "Downloaded tab-bistro-N1-qr.png → https://good-times-start.lovable.app/order/tab-bistro?table=N1"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › printed table cards scan, even with the logo on them",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "01-print-sheet.png"
+    ],
+    "annotations": [
+      "QR kit table tent sample → https://good-times-start.lovable.app/order/tab-bistro?s=poster",
+      "QR kit tab-bistro-qr-poster.png → https://good-times-start.lovable.app/order/tab-bistro?s=poster",
+      "Printed card 1 → https://good-times-start.lovable.app/order/tab-bistro?table=T1&s=t1",
+      "Printed card 2 → https://good-times-start.lovable.app/order/tab-bistro?table=T1&s=t1",
+      "Printed card 3 → https://good-times-start.lovable.app/order/tab-bistro?table=T2&s=t2",
+      "Printed card 4 → https://good-times-start.lovable.app/order/tab-bistro?table=T2&s=t2",
+      "Printed card 5 → https://good-times-start.lovable.app/order/tab-bistro?table=T3&s=t3",
+      "Printed card 6 → https://good-times-start.lovable.app/order/tab-bistro?table=T3&s=t3",
+      "Printed card 7 → https://good-times-start.lovable.app/order/tab-bistro?table=T4&s=t4",
+      "Printed card 8 → https://good-times-start.lovable.app/order/tab-bistro?table=T4&s=t4",
+      "Printed card 9 → https://good-times-start.lovable.app/order/tab-bistro?table=T5&s=t5",
+      "Printed card 10 → https://good-times-start.lovable.app/order/tab-bistro?table=T5&s=t5",
+      "Printed card 11 → https://good-times-start.lovable.app/order/tab-bistro?table=T6&s=t6",
+      "Printed card 12 → https://good-times-start.lovable.app/order/tab-bistro?table=T6&s=t6",
+      "Printed card 13 → https://good-times-start.lovable.app/order/tab-bistro?table=N1&s=n1",
+      "Printed card 14 → https://good-times-start.lovable.app/order/tab-bistro?table=N1&s=n1",
+      "Printed card 15 → https://good-times-start.lovable.app/order/tab-bistro?table=N2&s=n2",
+      "Printed card 16 → https://good-times-start.lovable.app/order/tab-bistro?table=N2&s=n2",
+      "Printed card 17 → https://good-times-start.lovable.app/order/tab-bistro?table=N3&s=n3",
+      "Printed card 18 → https://good-times-start.lovable.app/order/tab-bistro?table=N3&s=n3",
+      "Printed card 19 → https://good-times-start.lovable.app/order/tab-bistro?table=N4&s=n4",
+      "Printed card 20 → https://good-times-start.lovable.app/order/tab-bistro?table=N4&s=n4",
+      "Printed card 21 → https://good-times-start.lovable.app/order/tab-bistro?table=R1&s=r1",
+      "Printed card 22 → https://good-times-start.lovable.app/order/tab-bistro?table=R1&s=r1",
+      "Printed card 23 → https://good-times-start.lovable.app/order/tab-bistro?table=R2&s=r2",
+      "Printed card 24 → https://good-times-start.lovable.app/order/tab-bistro?table=R2&s=r2",
+      "Printed card 25 → https://good-times-start.lovable.app/order/tab-bistro?table=R3&s=r3",
+      "Printed card 26 → https://good-times-start.lovable.app/order/tab-bistro?table=R3&s=r3"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › install QR codes for the three apps open the live apps",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Install links: https://good-times-start.lovable.app/manager, https://good-times-start.lovable.app/tables?app=pos, https://good-times-start.lovable.app/waiter?app=waiter"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › WhatsApp ordering link points at the live menu",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Launch check › Excel and CSV exports (admin, desktop) › Reports: all-reports Excel, GSTR-1, GST CSV, bills CSV, items CSV, Sales Summary",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "reports-xtsy-pos-2026-10-01-to-2026-10-30.xlsx: Summary, Bills, Bill items, Dishes, Categories, Payments, Order types, GST by rate, Staff, Day closes (61 rows)",
+      "GSTR-1-xtsy-pos-2026-10-01-to-2026-10-30.xlsx: Summary, b2b, b2cs, hsn(b2b), hsn(b2c), docs, eco 9(5)",
+      "GST CSV off (no GST on bills yet), xtsy-pos-2026-10-01-to-2026-10-30-bills.csv: 2 bills",
+      "xtsy-pos-2026-10-01-to-2026-10-30-items.csv, sales-summary-2026-10-01.xlsx"
+    ]
+  },
+  {
+    "name": "Launch check › Excel and CSV exports (admin, desktop) › Reports app, Guests, Stock and Menu Excel",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "sales-2026-10-30.xlsx, GSTR-1-2026-10-01.xlsx, guests-2026-10-30.xlsx (5 rows), stock-2026-10-30.xlsx (111 rows), TAB Bistro by XTSY-menu-2026-10-30.xlsx (1431 rows)"
+    ]
+  },
+  {
+    "name": "Launch check › External links › every link on the guest menu works",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "https://instagram.com/tabbistrobyxtsy → 429 (site blocks automated checks; page exists)"
+    ]
+  },
+  {
+    "name": "Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "02-takeaway-bill.png",
+      "03-table-bill.png"
+    ],
+    "annotations": []
+  },
+  {
+    "name": "Launch check › Bills open only from Tables › Business Manager (admin, phone) › / goes to Tables, and the bottom menu has no Billing",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Live audit · security (public key only) › private tables are unreadable without signing in",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "restaurant_records: 200 0 rows · staff_logins: 401 0 rows · password_reset_codes: 401 0 rows · guest_orders: 200 0 rows · terminals: 401 0 rows · restaurant_members: 200 0 rows · profiles: 200 0 rows · marketing_campaigns: 200 0 rows · qr_scans: 200 0 rows · accounts: 200 0 rows · platform_admins: 200 0 rows"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › the public can't write bills, menu or tables, or change the restaurant",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "insert 401, restaurant update changed 0 rows, guest order delete 204"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › admin and staff functions refuse the public",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "admin_accounts: 401 · set_member_role: 401 · create_restaurant: 401 · push_menu: 401 · touch_terminal: 401"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › the guest menu shares only what guests need",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "storefront: 44855 chars, no recipes, costs, logins or phone numbers"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › guests can't set their own prices or order missing dishes",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "fake table 400: {\"code\":\"P0001\",\"details\":null,\"hint\":null,\"message\":\"This table QR code is out of date. P · unknown dish 400 · order status without token: nothing returned"
+    ]
+  },
+  {
+    "name": "Sync window · Business Manager · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "04-desktop-1440-sync-open.png",
+      "05-desktop-1440-sync-closed.png"
+    ],
+    "annotations": [
+      "Business Manager desktop-1440 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Business Manager · phone-412 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "06-phone-412-sync-open.png",
+      "07-phone-412-sync-closed.png"
+    ],
+    "annotations": [
+      "Business Manager phone-412 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Restro POS · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "08-desktop-1440-sync-open.png",
+      "09-desktop-1440-sync-closed.png"
+    ],
+    "annotations": [
+      "Restro POS desktop-1440 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Restro POS · laptop-1280 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "10-laptop-1280-sync-open.png",
+      "11-laptop-1280-sync-closed.png"
+    ],
+    "annotations": [
+      "Restro POS laptop-1280 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  }
+]
