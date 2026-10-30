@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
 import { format } from "date-fns";
@@ -79,6 +79,8 @@ export { useRestaurantSettings } from "@/lib/use-settings";
 function SyncChip() {
   const [online, setOnline] = useState(true);
   const [open, setOpen] = useState(false);
+  // Closing the Sync window always hands focus back to the status button, however it was closed.
+  const statusButton = useRef<HTMLButtonElement>(null);
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
@@ -150,7 +152,7 @@ function SyncChip() {
         <span className="block font-semibold">{staff.displayName}</span>
         <span className="text-muted-foreground">{staff.role === "unknown" ? "No restaurant yet" : ROLE_LABELS[staff.role]}</span>
       </span> : null}
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)} className={`gap-1.5 ${tone}`} aria-label={`Sync status: ${label}`}>
+      <Button ref={statusButton} size="sm" variant="outline" onClick={() => setOpen(true)} className={`gap-1.5 ${tone}`} aria-label={`Sync status: ${label}`}>
         {online ? (live === "live" && !snapshot.error && !pending ? <span className="size-2 rounded-full bg-success" aria-hidden="true" /> : <Wifi className="size-3.5" />) : <WifiOff className="size-3.5" />}
         <span className="hidden sm:inline">{label}</span>
         {busy ? <RefreshCw className="size-3 animate-spin" /> : null}
@@ -161,7 +163,7 @@ function SyncChip() {
         : <Button size="sm" variant="ghost" onClick={() => void navigate({ to: "/auth" })}><LogIn />Sign in</Button>}
     </div>
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); statusButton.current?.focus(); }}>
         {/* The dialog's own ✕ closes it; a second Close button sat on top of it. */}
         <div className="pr-8">
           <DialogTitle>Sync</DialogTitle>

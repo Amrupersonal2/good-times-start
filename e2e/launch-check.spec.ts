@@ -162,12 +162,20 @@ test.describe("Launch check", () => {
       const g = readXlsx(gstr.data);
       expect(g.sheets.join(" ").toLowerCase()).toMatch(/b2cs|hsn|summary|docs/);
       info.annotations.push({ type: "export", description: `${gstr.name}: ${g.sheets.join(", ")}` });
-      const gstCsv = await download(page, () => page.getByRole("button", { name: "GST CSV" }).click());
-      expect(readCsv(gstCsv.data.toString("utf8")).length).toBeGreaterThan(1);
+      // GST CSV lists taxed bills only; until the GSTIN is set, bills carry no GST and the button stays off.
+      const gstButton = page.getByRole("button", { name: "GST CSV" });
+      let gstCsvName = "GST CSV off (no GST on bills yet)";
+      if (await gstButton.isEnabled()) {
+        const gstCsv = await download(page, () => gstButton.click());
+        expect(readCsv(gstCsv.data.toString("utf8")).length).toBeGreaterThan(1);
+        gstCsvName = gstCsv.name;
+      } else {
+        await expect(gstButton).toBeDisabled();
+      }
       const bills = await download(page, () => page.getByRole("button", { name: "All bills CSV" }).click());
       const billRows = readCsv(bills.data.toString("utf8"));
       expect(billRows.length, "bills in CSV").toBeGreaterThan(1);
-      info.annotations.push({ type: "export", description: `${gstCsv.name}, ${bills.name}: ${billRows.length - 1} bills` });
+      info.annotations.push({ type: "export", description: `${gstCsvName}, ${bills.name}: ${billRows.length - 1} bills` });
 
       await page.getByRole("radio", { name: "Items" }).click();
       const items = await download(page, () => page.getByRole("button", { name: "CSV", exact: true }).click());
