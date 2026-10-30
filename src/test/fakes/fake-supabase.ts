@@ -24,6 +24,8 @@ export const fakeServer = {
   offline: false,
   /** Devices whose role can't change restaurant settings (cashier, captain, kitchen). */
   staffOnly: new Set<string>(),
+  /** Like migration 0012: bills, tickets and stock made before this moment are refused. */
+  launchedAt: null as number | null,
   requests: { upsert: 0, select: 0, rowsReturned: 0 },
   reset() {
     this.rows.clear();
@@ -31,6 +33,7 @@ export const fakeServer = {
     this.stepMs = 1000;
     this.offline = false;
     this.staffOnly.clear();
+    this.launchedAt = null;
     this.requests = { upsert: 0, select: 0, rowsReturned: 0 };
   },
   /** Write a row directly with a chosen timestamp (e.g. one that committed late). */
@@ -86,6 +89,9 @@ export const supabase = {
         if (fakeServer.staffOnly.has(fakeDevices.current) && rows.some((r) => refusedForStaff(r))) {
           return { error: { message: 'new row violates row-level security policy for table "restaurant_records"', code: "42501" } };
         }
+        const prelaunch = rows.find((r) => fakeServer.launchedAt !== null && !r.deleted && ["order", "kot", "stock_entry", "day_close"].includes(r.kind) &&
+          Number((r.payload as Record<string, unknown>)?.["createdAt"] ?? (r.payload as Record<string, unknown>)?.["at"] ?? Infinity) < fakeServer.launchedAt);
+        if (prelaunch) return { error: { message: `Made before launch: ${prelaunch.kind} ${prelaunch.record_id} is a pre-launch record and is not kept.`, code: "42501" } };
         for (const r of rows) {
           fakeServer.now += fakeServer.stepMs;
           fakeServer.rows.set(`${r.restaurant_id}|${r.kind}|${r.record_id}`, { ...structuredClone(r), updated_at: new Date(fakeServer.now).toISOString() });
