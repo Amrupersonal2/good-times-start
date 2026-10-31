@@ -385,6 +385,8 @@ test.describe("Hard test · two-way sync on the live POS", () => {
     await desk.page.getByRole("button", { name: "Order entered by mistake" }).click();
     await desk.page.getByRole("button", { name: "Cancel this bill" }).click();
     await expect(desk.page.getByRole("heading", { name: "Counter orders" })).toBeVisible({ timeout: 30_000 });
+    // Like a real device, stay open until the cancellation has uploaded.
+    await expect(desk.page.getByRole("button", { name: /^Sync status: (Live|Synced)/ })).toBeVisible({ timeout: 60_000 });
     await desk.context.close();
     await expect(counter.page.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 90_000 });
     await owner.page.goto("/dashboard?app=manager&tab=live");
