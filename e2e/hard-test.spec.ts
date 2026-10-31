@@ -51,8 +51,12 @@ test.describe("Hard test · billing and reports, offline", () => {
       await page.goto("/reports?app=manager");
       await synced(page);
       const before = { net: rupees(await valueUnder(page, "Net sales").textContent()), bills: Number(await valueUnder(page, "Bills").textContent()) };
+      // A counter starts its day on Tables; that screen and the bill are then on the device.
+      await page.goto("/tables?app=manager");
+      await ready(page);
       await page.goto("/dashboard?app=manager");
       await ready(page);
+      await page.waitForTimeout(8_000); // the other screens load in the background
       const dashBefore = rupees(await valueUnder(page, "Total sales").textContent());
 
       // The internet goes down; billing carries on.
@@ -79,7 +83,7 @@ test.describe("Hard test · billing and reports, offline", () => {
       await expect(totals.getByText("4", { exact: true })).toBeVisible();
 
       // 10% discount, then GST as set up for the outlet (none until the GSTIN is added), rounded to the rupee.
-      await page.getByLabel("Discount").click();
+      await page.getByRole("combobox", { name: "Discount" }).filter({ visible: true }).first().click();
       await page.getByRole("option", { name: "10%" }).click();
       const tax = rupees(await valueUnder(page, "Tax").textContent());
       const expected = Math.round(subtotal * 0.9 + tax);
@@ -260,9 +264,15 @@ test.describe("Hard test · scrolling", () => {
             const s = getComputedStyle(el);
             return /(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 2;
           })];
-          for (const el of scrollers) el.scrollTop = el.scrollHeight;
-          window.scrollTo(0, document.documentElement.scrollHeight);
-          await new Promise((r) => setTimeout(r, 400));
+          // Keep going until the page stops growing (pictures and QR codes fill in as they load).
+          for (let round = 0, last = -1; round < 8; round++) {
+            for (const el of scrollers) el.scrollTop = el.scrollHeight;
+            window.scrollTo(0, document.documentElement.scrollHeight);
+            await new Promise((r) => setTimeout(r, 500));
+            const h = document.documentElement.scrollHeight + scrollers.reduce((t, el) => t + el.scrollHeight, 0);
+            if (h === last) break;
+            last = h;
+          }
           const bar = [...document.querySelectorAll('nav[aria-label="Main"]')].find((n) => getComputedStyle(n).position === "fixed" && n.getBoundingClientRect().height > 0);
           const barTop = bar ? bar.getBoundingClientRect().top : window.innerHeight;
           const reachedEnd = scrollers.every((el) => el === document.scrollingElement

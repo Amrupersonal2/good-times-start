@@ -191,7 +191,7 @@ export function BrandEditor({ restaurantId, restaurantName, saved }: { restauran
           </label>
         </Section>
 
-        <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-3 border-t border-border bg-card/95 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
+        <div className="sticky bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom))] -mx-4 lg:bottom-0 flex flex-wrap items-center gap-3 border-t border-border bg-card/95 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
           <Button disabled={!dirty || busy || size > 690_000} onClick={() => void save()}>{busy ? "Saving…" : "Save brand"}</Button>
           {dirty ? <Button variant="ghost" onClick={() => setForm(saved)}>Undo changes</Button> : <span className="text-sm text-muted-foreground">All changes saved</span>}
           {size > 690_000 ? <span className="text-sm text-destructive">The pictures are too large together. Use a smaller cover photo.</span> : null}
