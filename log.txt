@@ -1,0 +1,40 @@
+
+Running 4 tests using 4 workers
+
+  ✓  2 e2e/live-audit.spec.ts:90:3 › Live audit · published site › install files, icons, logo and offline worker are current (11.2s)
+  ✓  3 e2e/live-order.spec.ts:91:1 › a waiter taking an order holds the table; others see it; emptying it frees the table (10.9s)
+  ✓  1 e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device (16.2s)
+  ✘  4 e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere (33.4s)
+
+
+  1) e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
+
+    TimeoutError: locator.click: Timeout 20000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Cancel bill' })[22m
+
+
+      370 |     // Counter cancels the bill with a reason: the table frees on the waiter's tablet and leaves the owner's live board.
+      371 |     await counter.page.getByRole("button", { name: new RegExp(`^Table ${label},`) }).click();
+    > 372 |     await counter.page.getByRole("button", { name: "Cancel bill" }).click();
+          |                                                                     ^
+      373 |     await counter.page.getByRole("button", { name: "Order entered by mistake" }).click();
+      374 |     await counter.page.getByRole("button", { name: "Cancel this bill" }).click();
+      375 |     await expect(counter.page.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 30_000 });
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:372:69
+
+    Error Context: test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
+  3 passed (53.6s)
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere,line=372,col=69::  1) e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere %0A    TimeoutError: locator.click: Timeout 20000ms exceeded.%0A    Call log:%0A      - waiting for getByRole('button', { name: 'Cancel bill' })%0A%0A%0A      370 |     // Counter cancels the bill with a reason: the table frees on the waiter's tablet and leaves the owner's live board.%0A      371 |     await counter.page.getByRole("button", { name: new RegExp(`^Table ${label},`) }).click();%0A    > 372 |     await counter.page.getByRole("button", { name: "Cancel bill" }).click();%0A          |                                                                     ^%0A      373 |     await counter.page.getByRole("button", { name: "Order entered by mistake" }).click();%0A      374 |     await counter.page.getByRole("button", { name: "Cancel this bill" }).click();%0A      375 |     await expect(counter.page.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 30_000 });%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:372:69
+::notice title=🎭 Playwright Run Summary::  1 failed%0A    e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere %0A  3 passed (53.6s)

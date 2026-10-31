@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere",
+    "status": "unexpected",
+    "errors": [
+      "TimeoutError: locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Cancel bill' })\n\n\n  370 |     // Counter cancels the bill with a reason: the table frees on the waiter's tablet and leaves the owner's live board.\n  371 |     await counter.page.getByRole(\"button\", { name: new RegExp(`^Table ${label},`) }).click();\n> 372 |     await counter.page.getByRole(\"button\", { name: \"Cancel bill\" }).click();\n      |                                                                     ^\n  373 |     await counter.page.getByRole(\"button\", { name: \"Order entered by mistake\" }).click();\n  374 |     await counter.page.getByRole(\"button\", { name: \"Cancel this bill\" }).click();\n  375 |     await expect(counter.page.getByRole(\"button\", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 30_000 });\n    at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:372:69"
+    ],
+    "screenshots": [
+      "00-s1-counter-sent.png",
+      "01-s2-waiter-added.png",
+      "02-s3-owner-live.png"
+    ],
+    "annotations": [
+      "Live sync test bill 65C/26-27/0001 on table R1 (cancelled at the end; clean up)"
+    ]
+  },
+  {
+    "name": "Live audit · published site › install files, icons, logo and offline worker are current",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Restro POS by XTSY: /tables?app=pos, 3 icons · POS Waiter: /waiter?app=waiter, 3 icons · POS Business Manager: /manager?app=manager, 3 icons · worker v9 · logo and favicon OK · 5 pages load · Reports app retired"
+    ]
+  },
+  {
+    "name": "guest QR order reaches the POS, is accepted, and syncs to another device",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "03-1-choose-table.png",
+      "04-2-menu-with-cart.png",
+      "05-3-checkout.png",
+      "06-4-order-sent.png",
+      "07-5-pos-incoming.png",
+      "08-6-pos-accepted.png",
+      "09-7-guest-preparing.png",
+      "10-8-manager-sees-bill.png"
+    ],
+    "annotations": [
+      "Guest order Q-3237: Awesome Shillong at table R3 (R3)"
+    ]
+  },
+  {
+    "name": "a waiter taking an order holds the table; others see it; emptying it frees the table",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "11-h1-waiter-holding.png",
+      "12-h2-counter-sees-hold.png",
+      "13-h3-table-free-again.png"
+    ],
+    "annotations": [
+      "Waiter holds table N1 with one dish (not sent)"
+    ]
+  }
+]
