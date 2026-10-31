@@ -1,0 +1,45 @@
+
+Running 2 tests using 2 workers
+
+  ✓  1 e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere (26.6s)
+  ✘  2 e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device (54.6s)
+
+
+  1) e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('QR bill · Room 9D').first()
+    Expected: visible
+    Timeout: 30000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 30000ms[22m
+    [2m  - waiting for getByText('QR bill · Room 9D').first()[22m
+
+
+      89 |   await qrBill.click();
+      90 |   try {
+    > 91 |     await expect(mgr.getByText(`QR bill · ${tableLabel}`).first()).toBeVisible({ timeout: 30_000 });
+         |                                                                    ^
+      92 |   } catch (error) {
+      93 |     await shot(mgr, "8-qr-bill-not-open");
+      94 |     throw error;
+        at /home/runner/work/good-times-start/good-times-start/e2e/live-order.spec.ts:91:68
+
+    Error Context: test-results/live-order-guest-QR-order--912a4-and-syncs-to-another-device/error-context.md
+
+    attachment #10: trace (application/zip) ────────────────────────────────────────────────────────
+    test-results/live-order-guest-QR-order--912a4-and-syncs-to-another-device/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/live-order-guest-QR-order--912a4-and-syncs-to-another-device/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device 
+  1 passed (1.3m)
+::error file=e2e/live-order.spec.ts,title=e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device,line=91,col=68::  1) e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device %0A    Error: expect(locator).toBeVisible() failed%0A%0A    Locator: getByText('QR bill · Room 9D').first()%0A    Expected: visible%0A    Timeout: 30000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - Expect "toBeVisible" with timeout 30000ms%0A      - waiting for getByText('QR bill · Room 9D').first()%0A%0A%0A      89 |   await qrBill.click();%0A      90 |   try {%0A    > 91 |     await expect(mgr.getByText(`QR bill · ${tableLabel}`).first()).toBeVisible({ timeout: 30_000 });%0A         |                                                                    ^%0A      92 |   } catch (error) {%0A      93 |     await shot(mgr, "8-qr-bill-not-open");%0A      94 |     throw error;%0A        at /home/runner/work/good-times-start/good-times-start/e2e/live-order.spec.ts:91:68
+::notice title=🎭 Playwright Run Summary::  1 failed%0A    e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device %0A  1 passed (1.3m)

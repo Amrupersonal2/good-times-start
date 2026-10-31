@@ -1,0 +1,1 @@
+[{"name":"Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere","status":"expected","ms":26602},{"name":"guest QR order reaches the POS, is accepted, and syncs to another device","status":"unexpected","ms":54609}]

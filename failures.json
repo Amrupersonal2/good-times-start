@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "00-s1-counter-sent.png",
+      "01-s2-waiter-added.png",
+      "02-s3-owner-live.png",
+      "03-s4-counter-reopened.png",
+      "04-s4-waiter-free-again.png"
+    ],
+    "annotations": [
+      "Live sync test bill 75F/26-27/0001 on table Hut 1 (cancelled at the end; clean up)"
+    ]
+  },
+  {
+    "name": "guest QR order reaches the POS, is accepted, and syncs to another device",
+    "status": "unexpected",
+    "errors": [
+      "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('QR bill · Room 9D').first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 30000ms\n  - waiting for getByText('QR bill · Room 9D').first()\n\n\n  89 |   await qrBill.click();\n  90 |   try {"
+    ],
+    "screenshots": [
+      "05-1-choose-table.png",
+      "06-2-menu-with-cart.png",
+      "07-3-checkout.png",
+      "08-4-order-sent.png",
+      "09-5-pos-incoming.png",
+      "10-6-pos-accepted.png",
+      "11-7-guest-preparing.png",
+      "12-8-qr-bill-not-open.png"
+    ],
+    "annotations": [
+      "Guest order Q-2218: Awesome Shillong at table Room 9D (ROOM-9D)"
+    ]
+  }
+]
