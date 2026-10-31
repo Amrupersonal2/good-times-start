@@ -4,12 +4,16 @@ import { getPrintConfig, usePrintConfig } from "@/lib/print-config";
 import { kotPrintGroups, kotsForDevice, printCss, withCopies } from "@/lib/print-logic";
 import { getDb, getSettings } from "@/lib/db";
 import type { Kot, Order } from "@/lib/types";
-import { KotTicket, Receipt } from "./Receipt";
+import QRCode from "qrcode";
+import { upiLink } from "@/lib/billing";
+import { billSlip, escPos, kotSlip, rawbtIntent } from "@/lib/slip";
+import { SlipView } from "./Slip";
 
 /**
- * One place every screen prints through. Documents render into a hidden
- * #print-root, one per page at this device's paper width, then the browser
- * print dialog opens. Printing never blocks billing: if it fails, nothing
+ * One place every screen prints through. Bills and KOTs are thermal slips
+ * (see slip.ts). With "browser" printing they render into a hidden #print-root,
+ * one per page at this device's paper width, and Chrome prints them (silently when
+ * the app runs with --kiosk-printing); with "rawbt" they go straight to the RawBT app. Printing never blocks billing: if it fails, nothing
  * else changes.
  */
 
@@ -31,10 +35,25 @@ export function printDocuments(docs: ReactNode[]): void {
   emit();
 }
 
-/** Print bill copies per this device's settings. */
+/** Send ready-made printer commands to RawBT (Android): it prints at once, with no preview or printer choice. */
+function sendToRawbt(chunks: Uint8Array[]): void {
+  const size = chunks.reduce((t, c) => t + c.length, 0);
+  const all = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) { all.set(c, at); at += c.length; }
+  try { window.location.href = rawbtIntent(all); } catch { /* RawBT missing: the bill is already saved */ }
+}
+
+/** Print bill copies per this device's settings, in the thermal slip layout. */
 export async function printBill(order: Order): Promise<void> {
-  const config = await getPrintConfig();
-  printDocuments(withCopies([order], Math.max(1, config.billCopies)).map((o, i) => <Receipt key={`${o.billNo}-${i}`} order={o} />));
+  const [config, settings] = await Promise.all([getPrintConfig(), getSettings()]);
+  const slip = billSlip(order, settings, config.paper);
+  const copies = Math.max(1, config.billCopies);
+  const due = order.status === "held" ? order.total : order.payments.filter((p) => p.mode === "credit").reduce((s, p) => s + p.amount, 0);
+  const link = slip.qr && settings.upiVpa ? upiLink({ vpa: settings.upiVpa, name: settings.name || "Restaurant", amount: due, billNo: order.billNo }) : undefined;
+  if (config.method === "rawbt") { sendToRawbt([escPos(slip, { copies, ...(link ? { upiLink: link } : {}) })]); return; }
+  const qr = link ? await QRCode.toDataURL(link, { width: 240, margin: 0 }).catch(() => undefined) : undefined;
+  printDocuments(Array.from({ length: copies }, (_, i) => <SlipView key={`${order.billNo}-${i}`} slip={slip} qrDataUrl={qr} />));
 }
 
 /**
@@ -52,7 +71,9 @@ export async function printKots(kots: Kot[], source: "sent" | "incoming" | "repr
   if (!mine.length) return;
   const settings = await getSettings();
   const groups = withCopies(kotPrintGroups(mine, settings.kotByStation ?? true), Math.max(1, config.kotCopies));
-  printDocuments(groups.map((g, i) => <KotTicket key={`${g[0]?.uid ?? i}-${i}`} kots={g} large={config.largeKotText} />));
+  const slips = groups.map((g) => kotSlip(g, config.paper, settings.kotHeader ?? "", config.largeKotText));
+  if (config.method === "rawbt") { sendToRawbt(slips.map((slip) => escPos(slip))); return; }
+  printDocuments(slips.map((slip, i) => <SlipView key={`${groups[i]?.[0]?.uid ?? i}-${i}`} slip={slip} />));
 }
 
 /** Mark KOTs as already handled on this device (e.g. ones present when a screen opens). */

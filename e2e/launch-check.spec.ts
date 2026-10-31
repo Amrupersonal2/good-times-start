@@ -269,7 +269,7 @@ test.describe("Launch check", () => {
         // Table options (move, merge, reserve) are on the tile's own button.
         await page.goto("/tables?app=pos");
         await ready(page);
-        await page.getByRole("button", { name: `More for table ${label}` }).click();
+        await page.getByRole("button", { name: `More for table ${label}`, exact: true }).click();
         await expect(page.getByRole("dialog").getByText(placeName(label))).toBeVisible();
       });
     });

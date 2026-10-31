@@ -14,7 +14,7 @@ import { gstinError } from "@/lib/validation";
 import { printBill, printKots } from "@/components/PrintHost";
 import { usePrintConfig } from "@/lib/print-config";
 import { VegMark } from "@/components/VegMark";
-import { Receipt } from "@/components/Receipt";
+import { BillSlipPreview } from "@/components/Slip";
 import { getDb, markDirty } from "@/lib/db";
 import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
@@ -580,7 +580,7 @@ function PosPage() {
         <DialogContent className="max-h-[90vh] max-w-sm overflow-y-auto">
           <DialogTitle>Bill {receipt?.billNo} settled</DialogTitle>
           {receipt && receipt.payments.length > 1 ? <p className="-mt-2 text-sm text-muted-foreground">{receipt.payments.map((p) => `${p.mode.toUpperCase()} ${formatINR(p.amount, 0)}`).join(", ")}</p> : null}
-          {receipt && <Receipt order={receipt} />}
+          {receipt && <BillSlipPreview order={receipt} />}
           <button onClick={() => { if (receipt) void allow(user, "bill.reprint", "Reprint the receipt").then((ok) => { if (ok) void printBill(receipt); }); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
             <Printer className="size-4" /> Print receipt
           </button>
