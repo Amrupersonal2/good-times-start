@@ -94,6 +94,13 @@ test.describe("Hard test · billing and reports, offline", () => {
       await page.getByRole("button", { name: /^Tap to send/ }).click();
       await page.getByRole("button", { name: /^Cash$/ }).click();
       await page.getByRole("button", { name: new RegExp(`Settle ₹${expected.toLocaleString("en-IN")}\\?`) }).click();
+      // The receipt opens; closing it returns to the floor.
+      const receipt = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /^Bill \S+ settled$/ }) });
+      await expect(receipt).toBeVisible({ timeout: 30_000 });
+      await expect(receipt).toContainText(`₹${expected.toLocaleString("en-IN")}`);
+      info.annotations.push({ type: "bill", description: `${name}: ${(await receipt.getByRole("heading").first().textContent())?.trim()} offline` });
+      await info.attach(`receipt-${name}.png`, { body: await page.screenshot(), contentType: "image/png" });
+      await page.keyboard.press("Escape");
       await expect(page.getByRole("heading", { name: "Counter orders" })).toBeVisible({ timeout: 30_000 });
       await expect(page.getByRole("button", { name: /^Sync status: Offline/ })).toBeVisible();
 
