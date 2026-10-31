@@ -330,6 +330,8 @@ test.describe("Hard test · two-way sync on the live POS", () => {
     const free = freeTables.nth((await freeTables.count()) - 2);
     const label = ((await free.getAttribute("aria-label")) ?? "").replace(/^Table /, "");
     await free.click();
+    // Safety: only a table with no running bill. A real guest's bill is never touched.
+    await expect(counter.page.getByText("New bill", { exact: true })).toBeVisible({ timeout: 30_000 });
     const search = counter.page.getByPlaceholder("Search dishes or codes (F4)");
     await search.fill("Virgin Mojito");
     await counter.page.locator('button[title="Virgin Mojito"]').first().click();

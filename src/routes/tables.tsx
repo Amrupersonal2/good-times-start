@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { withOpenBills } from "@/lib/table-logic";
 import { toast } from "sonner";
 import { ArrowRightLeft, Combine, MoreHorizontal, Pencil, Plus, ReceiptText, ShoppingBag, Trash2, Users } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -150,7 +151,7 @@ function TableActions({ table, tables, onDone }: { table: RestaurantTable; table
 
 function TablesPage() {
   const navigate = useNavigate();
-  const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
+  const tables = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
   const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
     .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);

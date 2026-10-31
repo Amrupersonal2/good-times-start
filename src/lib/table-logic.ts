@@ -1,6 +1,21 @@
 import { computeTotals } from "./billing";
 import { mergeSentLines } from "./sync-core";
-import type { Order } from "./types";
+import type { Order, RestaurantTable } from "./types";
+
+/**
+ * The floor as it really is: a table with a running bill is taken, even if its own
+ * status record missed an update (a device that went offline mid-change, an old copy).
+ * Tables are never shown free while a bill is open on them.
+ */
+export function withOpenBills(tables: RestaurantTable[], held: Order[]): RestaurantTable[] {
+  const open = new Map<string, Order>();
+  for (const o of held) if (o.status === "held" && o.tableId && o.lines.length && !open.has(o.tableId)) open.set(o.tableId, o);
+  return tables.map((t) => {
+    const bill = open.get(t.id);
+    if (!bill || t.status === "occupied" || t.status === "billed") return t;
+    return { ...t, status: "occupied", runningTotal: bill.total, since: bill.createdAt };
+  });
+}
 
 /** Combine one table's running order into another's: items, kitchen-sent counts and totals. */
 export function combineOrders(into: Order, from: Order): Order {
