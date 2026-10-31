@@ -1,0 +1,407 @@
+[
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "00-receipt-desktop-1440.png",
+      "01-bill-desktop-1440.png"
+    ],
+    "annotations": [
+      "desktop-1440: subtotal ₹600, 10% off, tax ₹0 → ₹540",
+      "desktop-1440: Bill QL8/26-27/0001 settled offline"
+    ]
+  },
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "02-receipt-laptop-1280.png",
+      "03-bill-laptop-1280.png"
+    ],
+    "annotations": [
+      "laptop-1280: subtotal ₹600, 10% off, tax ₹0 → ₹540",
+      "laptop-1280: Bill YM3/26-27/0001 settled offline"
+    ]
+  },
+  {
+    "name": "Hard test · KPI forecast › forecast waits for history, then projects today and the month exactly as worked by hand",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "04-forecast.png"
+    ],
+    "annotations": [
+      "Live data: Forecast The forecast starts after 7 days of sales. 0 of 7 days so far, from the last 28 days.",
+      "Injected 14 days: today ₹3,500 (2 bills, avg ₹1,750, +17% vs usual Saturday), month ₹45500 (₹43500 so far, 0 days left); earlier live card correctly waited for history"
+    ]
+  },
+  {
+    "name": "Hard test · selections › every dashboard period, report tab and menu section opens without a fault, and totals stay consistent",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Today ₹0, Yesterday ₹0, This week ₹0, Last week ₹0, Last 15 days ₹0, This month ₹0, Last month ₹0",
+      "24 menu sections opened"
+    ]
+  },
+  {
+    "name": "Hard test · selections › Insights is gone from Business Manager",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "05-scroll-phone-360.png"
+    ],
+    "annotations": [
+      "phone-360: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "06-scroll-phone-412.png"
+    ],
+    "annotations": [
+      "phone-412: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-768)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "07-scroll-tablet-768.png"
+    ],
+    "annotations": [
+      "tablet-768: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-1024-landscape)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "08-scroll-tablet-1024-landscape.png"
+    ],
+    "annotations": [
+      "tablet-1024-landscape: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (laptop-1280)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "09-scroll-laptop-1280.png"
+    ],
+    "annotations": [
+      "laptop-1280: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "10-scanned-table-menu.png"
+    ],
+    "annotations": [
+      "Settings table QR → https://good-times-start.lovable.app/order/tab-bistro?table=BONFIRE-1",
+      "Downloaded tab-bistro-BONFIRE-1-qr.png → https://good-times-start.lovable.app/order/tab-bistro?table=BONFIRE-1"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › printed table cards scan, even with the logo on them",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "11-print-sheet.png"
+    ],
+    "annotations": [
+      "QR kit table tent sample → https://good-times-start.lovable.app/order/tab-bistro?s=poster",
+      "QR kit tab-bistro-qr-poster.png → https://good-times-start.lovable.app/order/tab-bistro?s=poster",
+      "Printed card 1 → https://good-times-start.lovable.app/order/tab-bistro?table=BONFIRE-1&s=bonfire-1",
+      "Printed card 2 → https://good-times-start.lovable.app/order/tab-bistro?table=BONFIRE-1&s=bonfire-1",
+      "Printed card 3 → https://good-times-start.lovable.app/order/tab-bistro?table=BONFIRE-2&s=bonfire-2",
+      "Printed card 4 → https://good-times-start.lovable.app/order/tab-bistro?table=BONFIRE-2&s=bonfire-2",
+      "Printed card 5 → https://good-times-start.lovable.app/order/tab-bistro?table=D1&s=d1",
+      "Printed card 6 → https://good-times-start.lovable.app/order/tab-bistro?table=D1&s=d1",
+      "Printed card 7 → https://good-times-start.lovable.app/order/tab-bistro?table=D2&s=d2",
+      "Printed card 8 → https://good-times-start.lovable.app/order/tab-bistro?table=D2&s=d2",
+      "Printed card 9 → https://good-times-start.lovable.app/order/tab-bistro?table=FAMILY-TABLE&s=family-table",
+      "Printed card 10 → https://good-times-start.lovable.app/order/tab-bistro?table=FAMILY-TABLE&s=family-table",
+      "Printed card 11 → https://good-times-start.lovable.app/order/tab-bistro?table=HUT-1&s=hut-1",
+      "Printed card 12 → https://good-times-start.lovable.app/order/tab-bistro?table=HUT-1&s=hut-1",
+      "Printed card 13 → https://good-times-start.lovable.app/order/tab-bistro?table=HUT-2&s=hut-2",
+      "Printed card 14 → https://good-times-start.lovable.app/order/tab-bistro?table=HUT-2&s=hut-2",
+      "Printed card 15 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-1&s=room-1",
+      "Printed card 16 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-1&s=room-1",
+      "Printed card 17 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2A&s=room-2a",
+      "Printed card 18 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2A&s=room-2a",
+      "Printed card 19 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2B&s=room-2b",
+      "Printed card 20 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2B&s=room-2b",
+      "Printed card 21 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2C&s=room-2c",
+      "Printed card 22 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2C&s=room-2c",
+      "Printed card 23 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2D&s=room-2d",
+      "Printed card 24 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2D&s=room-2d",
+      "Printed card 25 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2E&s=room-2e",
+      "Printed card 26 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2E&s=room-2e",
+      "Printed card 27 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2F&s=room-2f",
+      "Printed card 28 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-2F&s=room-2f",
+      "Printed card 29 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3A&s=room-3a",
+      "Printed card 30 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3A&s=room-3a",
+      "Printed card 31 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3B&s=room-3b",
+      "Printed card 32 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3B&s=room-3b",
+      "Printed card 33 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3C&s=room-3c",
+      "Printed card 34 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3C&s=room-3c",
+      "Printed card 35 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3D&s=room-3d",
+      "Printed card 36 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3D&s=room-3d",
+      "Printed card 37 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3E&s=room-3e",
+      "Printed card 38 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3E&s=room-3e",
+      "Printed card 39 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3F&s=room-3f",
+      "Printed card 40 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-3F&s=room-3f",
+      "Printed card 41 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4A&s=room-4a",
+      "Printed card 42 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4A&s=room-4a",
+      "Printed card 43 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4B&s=room-4b",
+      "Printed card 44 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4B&s=room-4b",
+      "Printed card 45 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4C&s=room-4c",
+      "Printed card 46 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4C&s=room-4c",
+      "Printed card 47 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4D&s=room-4d",
+      "Printed card 48 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4D&s=room-4d",
+      "Printed card 49 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4E&s=room-4e",
+      "Printed card 50 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4E&s=room-4e",
+      "Printed card 51 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4F&s=room-4f",
+      "Printed card 52 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-4F&s=room-4f",
+      "Printed card 53 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5A&s=room-5a",
+      "Printed card 54 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5A&s=room-5a",
+      "Printed card 55 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5B&s=room-5b",
+      "Printed card 56 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5B&s=room-5b",
+      "Printed card 57 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5C&s=room-5c",
+      "Printed card 58 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5C&s=room-5c",
+      "Printed card 59 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5D&s=room-5d",
+      "Printed card 60 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5D&s=room-5d",
+      "Printed card 61 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5E&s=room-5e",
+      "Printed card 62 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5E&s=room-5e",
+      "Printed card 63 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5F&s=room-5f",
+      "Printed card 64 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-5F&s=room-5f",
+      "Printed card 65 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-6&s=room-6",
+      "Printed card 66 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-6&s=room-6",
+      "Printed card 67 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7A&s=room-7a",
+      "Printed card 68 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7A&s=room-7a",
+      "Printed card 69 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7B&s=room-7b",
+      "Printed card 70 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7B&s=room-7b",
+      "Printed card 71 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7C&s=room-7c",
+      "Printed card 72 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7C&s=room-7c",
+      "Printed card 73 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7D&s=room-7d",
+      "Printed card 74 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7D&s=room-7d",
+      "Printed card 75 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7E&s=room-7e",
+      "Printed card 76 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7E&s=room-7e",
+      "Printed card 77 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7F&s=room-7f",
+      "Printed card 78 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-7F&s=room-7f",
+      "Printed card 79 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8A&s=room-8a",
+      "Printed card 80 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8A&s=room-8a",
+      "Printed card 81 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8B&s=room-8b",
+      "Printed card 82 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8B&s=room-8b",
+      "Printed card 83 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8C&s=room-8c",
+      "Printed card 84 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8C&s=room-8c",
+      "Printed card 85 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8D&s=room-8d",
+      "Printed card 86 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8D&s=room-8d",
+      "Printed card 87 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8E&s=room-8e",
+      "Printed card 88 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8E&s=room-8e",
+      "Printed card 89 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8F&s=room-8f",
+      "Printed card 90 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8F&s=room-8f",
+      "Printed card 91 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8G&s=room-8g",
+      "Printed card 92 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8G&s=room-8g",
+      "Printed card 93 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8H&s=room-8h",
+      "Printed card 94 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-8H&s=room-8h",
+      "Printed card 95 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9A&s=room-9a",
+      "Printed card 96 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9A&s=room-9a",
+      "Printed card 97 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9B&s=room-9b",
+      "Printed card 98 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9B&s=room-9b",
+      "Printed card 99 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9C&s=room-9c",
+      "Printed card 100 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9C&s=room-9c",
+      "Printed card 101 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9D&s=room-9d",
+      "Printed card 102 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-9D&s=room-9d",
+      "Printed card 103 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10A&s=room-10a",
+      "Printed card 104 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10A&s=room-10a",
+      "Printed card 105 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10B&s=room-10b",
+      "Printed card 106 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10B&s=room-10b",
+      "Printed card 107 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10C&s=room-10c",
+      "Printed card 108 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10C&s=room-10c",
+      "Printed card 109 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10D&s=room-10d",
+      "Printed card 110 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-10D&s=room-10d",
+      "Printed card 111 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-11&s=room-11",
+      "Printed card 112 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-11&s=room-11",
+      "Printed card 113 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-12&s=room-12",
+      "Printed card 114 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-12&s=room-12",
+      "Printed card 115 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-666&s=room-666",
+      "Printed card 116 → https://good-times-start.lovable.app/order/tab-bistro?table=ROOM-666&s=room-666"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › install QR codes for the three apps open the live apps",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Install links: https://good-times-start.lovable.app/manager, https://good-times-start.lovable.app/tables?app=pos, https://good-times-start.lovable.app/waiter?app=waiter"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › WhatsApp ordering link points at the live menu",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Launch check › Excel and CSV exports (admin, desktop) › Reports: all-reports Excel, GSTR-1, GST CSV, bills CSV, items CSV, Sales Summary",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "No bills yet (clean launch): report exports are correctly disabled until the first bill"
+    ]
+  },
+  {
+    "name": "Launch check › Excel and CSV exports (admin, desktop) › Guests, Stock and Menu Excel",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "guests: none yet (clean launch), export correctly disabled, stock-2026-10-31.xlsx (105 rows), TAB Bistro by XTSY-menu-2026-10-31.xlsx (1431 rows)"
+    ]
+  },
+  {
+    "name": "Launch check › External links › every link on the guest menu works",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "https://instagram.com/tabbistrobyxtsy → 429 (site blocks automated checks; page exists)"
+    ]
+  },
+  {
+    "name": "Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills",
+    "status": "unexpected",
+    "errors": [
+      "Error: locator.click: Error: strict mode violation: getByRole('button', { name: 'More for table Room 1' }) resolved to 7 elements:\n    1) <button type=\"button\" aria-label=\"More for table Room 1\" title=\"Move, merge, reserve or free\" data-tsd-source=\"/src/routes/tables.tsx:254:19\" class=\"absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground\">…</button> aka getByRole('button', { name: 'More for table Room 1', exact: true })\n    2) <button type=\"button\" aria-label=\"More for table Room 10A\" title=\"Move, merge, reserve or free\" data-tsd-source=\"/src/routes/tables.tsx:254:19\" class=\"absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground\">…</button> aka getByRole('button', { name: 'More for table Room 10A' })\n    3) <button type=\"button\" aria-label=\"More for table Room 10B\" title=\"Move, merge, reserve or free\" data-tsd-source=\"/src/routes/tables.tsx:254:19\" class=\"absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground\">…</button> aka getByRole('button', { name: 'More for table Room 10B' })\n    4) <button type=\"button\" aria-label=\"More for table Room 10C\" title=\"Move, merge, reserve or free\" data-tsd-source=\"/src/routes/tables.tsx:254:19\" class=\"absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground\">…</button> aka getByRole('button', { name: 'More for table Room 10C' })\n    5) <button type=\"button\" aria-label=\"More for table Room 10D\" title=\"Move, merge, reserve or free\" data-tsd-source=\"/src/routes/tables.tsx:254:19\" class=\"absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground\">…</button> aka getByRole('button', { name: 'More for table Room 10D' })\n    6) <button type=\"button\" aria-label=\"More for table Room 11\" title=\"Move, merge, reserve or free\" data-tsd-source=\"/src/routes/tables.tsx:254:19\" class=\"absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground\">…</button> aka getByRole('button', { name: 'More for table Room 11' })\n    7) <button type=\"button\" aria-label=\"More for table Room 12\" title=\"Move, merge, reserve or free\" data-tsd-source=\"/src/routes/tables.tsx:254:19\" class=\"absolute right-1 top-1 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground\">…</button> aka getByRole('button', { name: 'More for table Room 12' })\n\nCall log:\n  - waiting for getByRole('button', { name: 'More for table Room 1' })\n\n\n  270 |         await page.goto(\"/tables?app=pos\");"
+    ],
+    "screenshots": [
+      "12-takeaway-bill.png",
+      "13-table-bill.png"
+    ],
+    "annotations": []
+  },
+  {
+    "name": "Launch check › Bills open only from Tables › Business Manager (admin, phone) › / goes to Tables, and the bottom menu has no Billing",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Live audit · security (public key only) › private tables are unreadable without signing in",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "restaurant_records: 200 0 rows · staff_logins: 401 0 rows · password_reset_codes: 401 0 rows · guest_orders: 200 0 rows · terminals: 401 0 rows · restaurant_members: 200 0 rows · profiles: 200 0 rows · marketing_campaigns: 200 0 rows · qr_scans: 200 0 rows · accounts: 200 0 rows · platform_admins: 200 0 rows"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › the public can't write bills, menu or tables, or change the restaurant",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "insert 401, restaurant update changed 0 rows, guest order delete 204"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › admin and staff functions refuse the public",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "admin_accounts: 401 · set_member_role: 401 · create_restaurant: 401 · push_menu: 401 · touch_terminal: 401"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › the guest menu shares only what guests need",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "storefront: 47388 chars, no recipes, costs, logins or phone numbers"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › guests can't set their own prices or order missing dishes",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "fake table 400: {\"code\":\"P0001\",\"details\":null,\"hint\":null,\"message\":\"This table QR code is out of date. P · unknown dish 400 · order status without token: nothing returned"
+    ]
+  },
+  {
+    "name": "Sync window · Business Manager · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "14-desktop-1440-sync-open.png",
+      "15-desktop-1440-sync-closed.png"
+    ],
+    "annotations": [
+      "Business Manager desktop-1440 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Business Manager · phone-412 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "16-phone-412-sync-open.png",
+      "17-phone-412-sync-closed.png"
+    ],
+    "annotations": [
+      "Business Manager phone-412 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Restro POS · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "18-desktop-1440-sync-open.png",
+      "19-desktop-1440-sync-closed.png"
+    ],
+    "annotations": [
+      "Restro POS desktop-1440 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Restro POS · laptop-1280 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "20-laptop-1280-sync-open.png",
+      "21-laptop-1280-sync-closed.png"
+    ],
+    "annotations": [
+      "Restro POS laptop-1280 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  }
+]
