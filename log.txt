@@ -1,0 +1,8 @@
+
+Running 2 tests using 2 workers
+
+  ✓  2 e2e/live-order.spec.ts:91:1 › a waiter taking an order holds the table; others see it; emptying it frees the table (12.0s)
+  ✓  1 e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device (21.4s)
+
+  2 passed (38.1s)
+::notice title=🎭 Playwright Run Summary::  2 passed (38.1s)

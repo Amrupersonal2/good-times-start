@@ -1,0 +1,33 @@
+[
+  {
+    "name": "guest QR order reaches the POS, is accepted, and syncs to another device",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "00-1-choose-table.png",
+      "01-2-menu-with-cart.png",
+      "02-3-checkout.png",
+      "03-4-order-sent.png",
+      "04-5-pos-incoming.png",
+      "05-6-pos-accepted.png",
+      "06-7-guest-preparing.png",
+      "07-8-manager-sees-bill.png"
+    ],
+    "annotations": [
+      "Guest order Q-8293: Awesome Shillong at table R3 (R3)"
+    ]
+  },
+  {
+    "name": "a waiter taking an order holds the table; others see it; emptying it frees the table",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "08-h1-waiter-holding.png",
+      "09-h2-counter-sees-hold.png",
+      "10-h3-table-free-again.png"
+    ],
+    "annotations": [
+      "Waiter holds table N1 with one dish (not sent)"
+    ]
+  }
+]

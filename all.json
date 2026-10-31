@@ -1,0 +1,1 @@
+[{"name":"guest QR order reaches the POS, is accepted, and syncs to another device","status":"expected","ms":21423},{"name":"a waiter taking an order holds the table; others see it; emptying it frees the table","status":"expected","ms":12031}]
