@@ -1,0 +1,114 @@
+[
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440)",
+    "status": "unexpected",
+    "errors": [
+      "Error: expect(locator).toHaveText(expected) failed\n\nLocator:  locator('//*[normalize-space(text())=\"Bills\" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')\nExpected: \"NaN\"\nReceived: \"Close day\"\nTimeout:  20000ms\n\nCall log:\n  - Expect \"toHaveText\" with timeout 20000ms\n  - waiting for locator('//*[normalize-space(text())=\"Bills\" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')\n    24 × locator resolved to <button role=\"radio\" type=\"button\" aria-checked=\"false\" data-tsd-source=\"/src/components/Segmented.tsx:23:11\" class=\"shrink-0 whitespace-nowrap rounded-[8px] font-semibold transition-[background,box-shadow,color] duration-150 px-3.5 py-1.5 text-[13px] text-muted-foreground hover:text-foreground\">Close day</button>\n       - unexpected value \"Close day\"\n\n"
+    ],
+    "screenshots": [
+      "00-receipt-desktop-1440.png"
+    ],
+    "annotations": [
+      "desktop-1440: subtotal ₹600, 10% off, tax ₹0 → ₹540",
+      "desktop-1440: Bill 9SH/26-27/0001 settled offline"
+    ]
+  },
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280)",
+    "status": "unexpected",
+    "errors": [
+      "Error: expect(locator).toHaveText(expected) failed\n\nLocator:  locator('//*[normalize-space(text())=\"Bills\" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')\nExpected: \"NaN\"\nReceived: \"Close day\"\nTimeout:  20000ms\n\nCall log:\n  - Expect \"toHaveText\" with timeout 20000ms\n  - waiting for locator('//*[normalize-space(text())=\"Bills\" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')\n    24 × locator resolved to <button role=\"radio\" type=\"button\" aria-checked=\"false\" data-tsd-source=\"/src/components/Segmented.tsx:23:11\" class=\"shrink-0 whitespace-nowrap rounded-[8px] font-semibold transition-[background,box-shadow,color] duration-150 px-3.5 py-1.5 text-[13px] text-muted-foreground hover:text-foreground\">Close day</button>\n       - unexpected value \"Close day\"\n\n"
+    ],
+    "screenshots": [
+      "01-receipt-laptop-1280.png"
+    ],
+    "annotations": [
+      "laptop-1280: subtotal ₹600, 10% off, tax ₹0 → ₹540",
+      "laptop-1280: Bill HXD/26-27/0001 settled offline"
+    ]
+  },
+  {
+    "name": "Hard test · KPI forecast › forecast waits for history, then projects today and the month exactly as worked by hand",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "02-forecast.png"
+    ],
+    "annotations": [
+      "Live data: Forecast The forecast starts after 7 days of sales. 0 of 7 days so far, from the last 28 days.",
+      "Injected 14 days: today ₹3,500 (2 bills, avg ₹1,750, +17% vs usual Saturday), month ₹45500 (₹43500 so far, 0 days left); earlier live card correctly waited for history"
+    ]
+  },
+  {
+    "name": "Hard test · selections › every dashboard period, report tab and menu section opens without a fault, and totals stay consistent",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Today ₹0, Yesterday ₹0, This week ₹0, Last week ₹260, Last 15 days ₹260, This month ₹260, Last month ₹0",
+      "24 menu sections opened"
+    ]
+  },
+  {
+    "name": "Hard test · selections › Insights is gone from Business Manager",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "03-scroll-phone-360.png"
+    ],
+    "annotations": [
+      "phone-360: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "04-scroll-phone-412.png"
+    ],
+    "annotations": [
+      "phone-412: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-768)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "05-scroll-tablet-768.png"
+    ],
+    "annotations": [
+      "tablet-768: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-1024-landscape)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "06-scroll-tablet-1024-landscape.png"
+    ],
+    "annotations": [
+      "tablet-1024-landscape: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (laptop-1280)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "07-scroll-laptop-1280.png"
+    ],
+    "annotations": [
+      "laptop-1280: 8 screens, all reach the end with content above the tab bar"
+    ]
+  }
+]

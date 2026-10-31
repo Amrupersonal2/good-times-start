@@ -1,0 +1,137 @@
+[WebServer] [33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[WebServer] [2m8:31:13 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts:12:34 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts[39m
+[WebServer] [2m8:31:13 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m8:31:13 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m8:31:13 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m8:31:14 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m8:31:14 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m8:31:14 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m8:31:20 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts:12:34 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts[39m
+[WebServer] [2m8:31:20 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m8:31:20 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m8:31:20 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m8:31:21 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m8:31:21 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m8:31:21 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+
+Running 11 tests using 4 workers
+
+  ✓   1 e2e/hard-test.spec.ts:129:3 › Hard test · KPI forecast › forecast waits for history, then projects today and the month exactly as worked by hand (19.0s)
+  ✓   5 e2e/hard-test.spec.ts:246:3 › Hard test · selections › Insights is gone from Business Manager (6.4s)
+  ✓   3 e2e/hard-test.spec.ts:203:3 › Hard test · selections › every dashboard period, report tab and menu section opens without a fault, and totals stay consistent (34.8s)
+  ✘   2 e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) (59.1s)
+  ✓   6 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360) (36.5s)
+  ✘   4 e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) (60.0s)
+  ✓   7 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412) (33.5s)
+  -  11 e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere
+  ✓   8 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-1024-landscape) (31.8s)
+  ✓   9 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-768) (31.5s)
+  ✓  10 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (laptop-1280) (31.8s)
+
+
+  1) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')
+    Expected: [32m"NaN"[39m
+    Received: [31m"Close day"[39m
+    Timeout:  20000ms
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 20000ms[22m
+    [2m  - waiting for locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')[22m
+    [2m    24 × locator resolved to <button role="radio" type="button" aria-checked="false" data-tsd-source="/src/components/Segmented.tsx:23:11" class="shrink-0 whitespace-nowrap rounded-[8px] font-semibold transition-[background,box-shadow,color] duration-150 px-3.5 py-1.5 text-[13px] text-muted-foreground hover:text-foreground">Close day</button>[22m
+    [2m       - unexpected value "Close day"[22m
+
+
+      108 |       await nav(page, "Reports");
+      109 |       await expect(valueUnder(page, "Net sales")).toHaveText(new RegExp(`₹${(before.net + expected).toLocaleString("en-IN")}$`));
+    > 110 |       await expect(valueUnder(page, "Bills")).toHaveText(String(before.bills + 1));
+          |                                               ^
+      111 |       await page.getByRole("radio", { name: "GST" }).click();
+      112 |       const csv = await download(page, () => page.getByRole("button", { name: "All bills CSV" }).click());
+      113 |       const rows = readCsv(csv.data.toString("utf8").replace(/^﻿/, ""));
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:110:47
+
+    Error Context: test-results/hard-test-Hard-test-·-bill-247ed-and-Dashboard-desktop-1440-/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-bill-247ed-and-Dashboard-desktop-1440-/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-bill-247ed-and-Dashboard-desktop-1440-/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')
+    Expected: [32m"NaN"[39m
+    Received: [31m"Close day"[39m
+    Timeout:  20000ms
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 20000ms[22m
+    [2m  - waiting for locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')[22m
+    [2m    24 × locator resolved to <button role="radio" type="button" aria-checked="false" data-tsd-source="/src/components/Segmented.tsx:23:11" class="shrink-0 whitespace-nowrap rounded-[8px] font-semibold transition-[background,box-shadow,color] duration-150 px-3.5 py-1.5 text-[13px] text-muted-foreground hover:text-foreground">Close day</button>[22m
+    [2m       - unexpected value "Close day"[22m
+
+
+      108 |       await nav(page, "Reports");
+      109 |       await expect(valueUnder(page, "Net sales")).toHaveText(new RegExp(`₹${(before.net + expected).toLocaleString("en-IN")}$`));
+    > 110 |       await expect(valueUnder(page, "Bills")).toHaveText(String(before.bills + 1));
+          |                                               ^
+      111 |       await page.getByRole("radio", { name: "GST" }).click();
+      112 |       const csv = await download(page, () => page.getByRole("button", { name: "All bills CSV" }).click());
+      113 |       const rows = readCsv(csv.data.toString("utf8").replace(/^﻿/, ""));
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:110:47
+
+    Error Context: test-results/hard-test-Hard-test-·-bill-8956c--and-Dashboard-laptop-1280-/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-bill-8956c--and-Dashboard-laptop-1280-/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-bill-8956c--and-Dashboard-laptop-1280-/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) 
+    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) 
+  1 skipped
+  8 passed (2.0m)
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440),line=110,col=47::  1) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) %0A    Error: expect(locator).toHaveText(expected) failed%0A%0A    Locator:  locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')%0A    Expected: "NaN"%0A    Received: "Close day"%0A    Timeout:  20000ms%0A%0A    Call log:%0A      - Expect "toHaveText" with timeout 20000ms%0A      - waiting for locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')%0A        24 × locator resolved to <button role="radio" type="button" aria-checked="false" data-tsd-source="/src/components/Segmented.tsx:23:11" class="shrink-0 whitespace-nowrap rounded-[8px] font-semibold transition-[background,box-shadow,color] duration-150 px-3.5 py-1.5 text-[13px] text-muted-foreground hover:text-foreground">Close day</button>%0A           - unexpected value "Close day"%0A%0A%0A      108 |       await nav(page, "Reports");%0A      109 |       await expect(valueUnder(page, "Net sales")).toHaveText(new RegExp(`₹${(before.net + expected).toLocaleString("en-IN")}$`));%0A    > 110 |       await expect(valueUnder(page, "Bills")).toHaveText(String(before.bills + 1));%0A          |                                               ^%0A      111 |       await page.getByRole("radio", { name: "GST" }).click();%0A      112 |       const csv = await download(page, () => page.getByRole("button", { name: "All bills CSV" }).click());%0A      113 |       const rows = readCsv(csv.data.toString("utf8").replace(/^﻿/, ""));%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:110:47
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280),line=110,col=47::  2) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) %0A    Error: expect(locator).toHaveText(expected) failed%0A%0A    Locator:  locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')%0A    Expected: "NaN"%0A    Received: "Close day"%0A    Timeout:  20000ms%0A%0A    Call log:%0A      - Expect "toHaveText" with timeout 20000ms%0A      - waiting for locator('//*[normalize-space(text())="Bills" and following-sibling::*]').filter({ visible: true }).first().locator('xpath=following-sibling::*[1]')%0A        24 × locator resolved to <button role="radio" type="button" aria-checked="false" data-tsd-source="/src/components/Segmented.tsx:23:11" class="shrink-0 whitespace-nowrap rounded-[8px] font-semibold transition-[background,box-shadow,color] duration-150 px-3.5 py-1.5 text-[13px] text-muted-foreground hover:text-foreground">Close day</button>%0A           - unexpected value "Close day"%0A%0A%0A      108 |       await nav(page, "Reports");%0A      109 |       await expect(valueUnder(page, "Net sales")).toHaveText(new RegExp(`₹${(before.net + expected).toLocaleString("en-IN")}$`));%0A    > 110 |       await expect(valueUnder(page, "Bills")).toHaveText(String(before.bills + 1));%0A          |                                               ^%0A      111 |       await page.getByRole("radio", { name: "GST" }).click();%0A      112 |       const csv = await download(page, () => page.getByRole("button", { name: "All bills CSV" }).click());%0A      113 |       const rows = readCsv(csv.data.toString("utf8").replace(/^﻿/, ""));%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:110:47
+::notice title=🎭 Playwright Run Summary::  2 failed%0A    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) %0A    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) %0A  1 skipped%0A  8 passed (2.0m)
