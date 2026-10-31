@@ -57,11 +57,15 @@ export function useCart(initialTableId?: string) {
   const tax: TaxOptions = activeOrder?.tax ?? taxOptionsFor(settings, orderType);
   const taxKey = JSON.stringify(tax);
 
+  // Each load (a table's draft, or a bill opened by hand) takes a ticket; a slower, older load never overwrites a newer one.
+  const loadTicket = useRef(0);
   const restoreDraft = useCallback(async (id: string | undefined) => {
+    const ticket = ++loadTicket.current;
     setDraftReady(false);
     setActiveOrder(null);
     const stored = await getDb().drafts.get(id ?? "walkin");
     const openOrder = id ? await latestHeldOrder(id) : null;
+    if (ticket !== loadTicket.current) return;
     // A draft built on a bill that has since been settled, cancelled or replaced elsewhere is stale:
     // its "sent" items would look unsent and could reach the kitchen twice.
     const draft = stored && (!stored.orderUid || stored.orderUid === openOrder?.uid) ? stored : undefined;
@@ -214,6 +218,7 @@ export function useCart(initialTableId?: string) {
   const openOrder = useCallback((order: Order) => {
     // A table's QR bill opens on its own, like a pickup order, so it never mixes with the staff bill.
     if (order.tableId && order.source !== "qr") { setTableId(order.tableId); return; }
+    loadTicket.current += 1;
     setTableIdState(undefined);
     setActiveOrder(order);
     setLines(order.lines);

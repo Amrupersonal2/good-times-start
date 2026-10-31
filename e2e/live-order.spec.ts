@@ -87,7 +87,12 @@ test("guest QR order reaches the POS, is accepted, and syncs to another device",
   const qrBill = mgr.getByLabel("QR bills").getByRole("link", { name: new RegExp(`^${tableLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`) });
   await expect(qrBill).toBeVisible({ timeout: 90_000 });
   await qrBill.click();
-  await expect(mgr.getByText(`QR bill · ${tableLabel}`).first()).toBeVisible({ timeout: 30_000 });
+  try {
+    await expect(mgr.getByText(`QR bill · ${tableLabel}`).first()).toBeVisible({ timeout: 30_000 });
+  } catch (error) {
+    await shot(mgr, "8-qr-bill-not-open");
+    throw error;
+  }
   await expect(mgr.getByText(dish).filter({ visible: true }).first()).toBeVisible({ timeout: 30_000 });
   // The table's staff bill stays separate: opening the table itself starts with no guest items.
   await mgr.goto(`/?app=manager&table=${encodeURIComponent(tableId)}`);

@@ -330,6 +330,8 @@ test.describe("Hard test · two-way sync on the live POS", () => {
     const free = freeTables.nth((await freeTables.count()) - 2);
     const label = ((await free.getAttribute("aria-label")) ?? "").replace(/^Table /, "");
     await free.click();
+    await expect(counter.page).toHaveURL(/table=/, { timeout: 30_000 });
+    const tableId = new URL(counter.page.url()).searchParams.get("table") ?? label;
     // Safety: only a table with no running bill. A real guest's bill is never touched.
     await expect(counter.page.getByText("New bill", { exact: true })).toBeVisible({ timeout: 30_000 });
     const search = counter.page.getByPlaceholder("Search dishes or codes (F4)");
@@ -378,7 +380,7 @@ test.describe("Hard test · two-way sync on the live POS", () => {
 
     // The owner cancels the bill with a reason (Reception isn't allowed to): the table frees everywhere.
     const desk = await device(browser, baseURL, bp("desktop-1440"), "admin");
-    await desk.page.goto(`/?app=manager&table=${encodeURIComponent(label)}`);
+    await desk.page.goto(`/?app=manager&table=${encodeURIComponent(tableId)}`);
     await ready(desk.page);
     await expect(desk.page.getByText("Passion Fruit Mojito").first()).toBeVisible({ timeout: 60_000 });
     await desk.page.getByRole("button", { name: "Cancel bill" }).click();
