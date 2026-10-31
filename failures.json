@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "00-s1-counter-sent.png",
+      "01-s2-waiter-added.png",
+      "02-s3-owner-live.png",
+      "03-s4-counter-reopened.png",
+      "04-s4-waiter-free-again.png"
+    ],
+    "annotations": [
+      "Live sync test bill N6C/26-27/0001 on table R1 (cancelled at the end; clean up)"
+    ]
+  }
+]

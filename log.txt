@@ -1,0 +1,7 @@
+
+Running 1 test using 1 worker
+
+  ✓  1 e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere (16.3s)
+
+  1 passed (32.1s)
+::notice title=🎭 Playwright Run Summary::  1 passed (32.1s)
