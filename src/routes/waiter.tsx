@@ -16,7 +16,8 @@ import { useStaff } from "@/lib/auth-context";
 import { allow } from "@/lib/pin-gate";
 import { useCart } from "@/lib/cart-store";
 import { getDb, markDirty } from "@/lib/db";
-import { withOpenBills } from "@/lib/table-logic";
+import { placeName, withOpenBills } from "@/lib/table-logic";
+import { SyncChip } from "@/components/AppShell";
 import { formatINR } from "@/lib/billing";
 import { needsOptions, orderCategories, outsideHours, priceFor, stockLeft } from "@/lib/menu-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
@@ -68,7 +69,7 @@ function WaiterApp() {
   useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30_000); return () => window.clearInterval(t); }, []);
 
   const tables = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
-  const sections = useMemo(() => [...new Set(tables.map((t) => t.section))], [tables]);
+  const sections = useMemo(() => { const used = [...new Set(tables.map((t) => t.section))]; return [...["Rooms", "Dine-in"].filter((s) => used.includes(s)), ...used.filter((s) => s !== "Rooms" && s !== "Dine-in").sort()]; }, [tables]);
 
   const signOut = async () => {
     await queryClient.cancelQueries();
@@ -86,6 +87,7 @@ function WaiterApp() {
         </div>
         <div className="flex items-center gap-2">
           <InstallButton />
+          {user ? <SyncChip statusOnly /> : null}
           {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>
@@ -99,10 +101,10 @@ function WaiterApp() {
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-2">
                 {tables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })).map((t) => (
                   <button key={t.id} onClick={() => setTableIdState(t.id)} aria-pressed={tableId === t.id}
-                    className={`relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 ${STATUS_STYLE[t.status]} ${tableId === t.id ? "outline outline-2 outline-offset-2 outline-foreground" : ""}`}>
-                    <span className="text-lg font-extrabold leading-none">{t.label}</span>
+                    className={`relative flex min-h-16 flex-col items-center justify-center rounded-xl px-1 py-1.5 transition-transform active:scale-95 ${STATUS_STYLE[t.status]} ${tableId === t.id ? "outline outline-2 outline-offset-2 outline-foreground" : ""}`}>
+                    <span className={`${t.label.length > 6 ? "text-sm" : "text-lg"} max-w-full break-words text-center font-extrabold leading-tight`}>{t.label}</span>
                     <span className="mt-1 text-[11px] font-semibold opacity-80">
-                      {t.status === "occupied" || t.status === "billed" ? `${formatINR(t.runningTotal, 0)} · ${minutes(t.since)}` : t.status === "reserved" ? "Reserved" : <><Users className="inline size-3" /> {t.seats}</>}
+                      {(t.status === "occupied" || t.status === "billed") && t.qrTotal && !t.runningTotal ? `QR ${formatINR(t.qrTotal, 0)} · ${minutes(t.since)}` : t.status === "occupied" || t.status === "billed" ? `${formatINR(t.runningTotal, 0)}${t.qrTotal ? ` + QR ${formatINR(t.qrTotal, 0)}` : ""} · ${minutes(t.since)}` : t.status === "reserved" ? "Reserved" : <><Users className="inline size-3" /> {t.seats}</>}
                     </span>
                     {t.status === "billed" ? <Bell className="absolute right-1.5 top-1.5 size-3.5" aria-label="Bill asked" /> : null}
                     {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate px-1 text-[10px] font-semibold opacity-90">{holdLabel(t, Date.now())}</span> : null}
@@ -168,7 +170,7 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
     if (!(await allow(user, "bill.print", "Ask the counter for the bill"))) return;
     await getDb().restTables.update(tableId, { status: "billed" });
     await markDirty(["table", tableId]);
-    toast.success(`Table ${table?.label ?? tableId} asked for the bill`);
+    toast.success(`${placeName(table?.label ?? tableId)} asked for the bill`);
   };
 
   const count = cart.lines.reduce((s, l) => s + l.qty, 0);

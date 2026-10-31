@@ -109,7 +109,7 @@ export function liveStatus(orders: Order[]): { cards: LiveCard[]; total: number 
     const pickupName = o.guestCodes?.[0] ? `${o.guestCodes[0]}${o.customer?.name ? ` ${o.customer.name}` : ""}` : o.customer?.name;
     return {
       key: o.uid ?? o.billNo,
-      title: o.tableId ? `Table ${o.tableLabel ?? o.tableId}` : pickupName ?? (o.orderType === "takeaway" ? "Takeaway" : o.orderType === "delivery" ? "Delivery" : o.orderType),
+      title: o.tableId ? `${o.tableLabel ?? o.tableId}${o.source === "qr" ? " · QR bill" : ""}` : pickupName ?? (o.orderType === "takeaway" ? "Takeaway" : o.orderType === "delivery" ? "Delivery" : o.orderType),
       kind: o.tableId ? "table" : "pickup",
       since: o.createdAt,
       ...(o.customer?.name ? { guestName: o.customer.name } : {}),

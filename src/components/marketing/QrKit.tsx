@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { placeName } from "@/lib/table-logic";
 import { Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import QRCode from "qrcode";
@@ -67,7 +68,7 @@ export function QrKit({ slug, restaurantName, brand, ordering }: { slug: string;
   const print = async () => {
     setBusy(true);
     try {
-      const targets = meta.perTable ? chosen.map((t) => ({ label: `Table ${t.label}`, url: linkFor(t.id) })) : Array.from({ length: meta.perSheet }, () => ({ label: "", url: shareUrl }));
+      const targets = meta.perTable ? chosen.map((t) => ({ label: placeName(t.label), url: linkFor(t.id) })) : Array.from({ length: meta.perSheet }, () => ({ label: "", url: shareUrl }));
       if (!targets.length) { toast.error("Choose at least one table"); return; }
       const cards: PrintCard[] = await Promise.all(targets.map(async (t) => ({ ...t, qr: await qrImage(t.url, brand) })));
       const html = buildPrintSheet(design, cards, { restaurant: restaurantName, brand, headline: headline.trim() || HEADLINES[design], subline: subline.trim(), ...(offer ? { offer } : {}) });
@@ -173,7 +174,7 @@ export function QrKit({ slug, restaurantName, brand, ordering }: { slug: string;
         </div>
 
         <aside className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-sm font-semibold">{meta.perTable ? `Sample: Table ${chosen[0]?.label ?? ""}` : "Code for sharing"}</p>
+          <p className="text-sm font-semibold">{meta.perTable ? `Sample: ${placeName(chosen[0]?.label ?? "")}` : "Code for sharing"}</p>
           <div className="relative mx-auto mt-3 w-44">
             {preview ? <img src={preview} alt="QR code preview" className="w-44 rounded-lg border border-border bg-white p-1" /> : <div className="h-44 rounded-lg bg-secondary" />}
             {brand.logo && preview ? <span className="absolute left-1/2 top-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 rounded-md bg-white p-0.5"><img src={brand.logo} alt="" className="size-full object-contain" /></span> : null}

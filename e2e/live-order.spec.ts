@@ -36,13 +36,15 @@ test("guest QR order reaches the POS, is accepted, and syncs to another device",
   await guest.goto("/order/tab-bistro?s=e2e");
   await expect(guest.getByRole("heading", { name: "Choose your table" })).toBeVisible({ timeout: 60_000 });
   await shot(guest, "1-choose-table");
-  const tables = guest.getByRole("button", { name: /^Table / });
+  // Places are named as guests see them: "Room 3A", "Bonfire 1", or "Table D1" for short codes.
+  const tables = guest.locator("section").filter({ has: guest.getByRole("heading", { name: "Choose your table" }) }).getByRole("button");
   const tableButton = tables.last();
-  const tableLabel = ((await tableButton.textContent()) ?? "").replace(/^\s*Table\s*/, "").trim();
+  const placeName = ((await tableButton.textContent()) ?? "").trim();
+  const tableLabel = placeName.replace(/^Table\s+/, "");
   await tableButton.click();
   await expect(guest).toHaveURL(/table=/);
   const tableId = new URL(guest.url()).searchParams.get("table")!;
-  await expect(guest.getByText(`Ordering to table ${tableLabel}`)).toBeVisible({ timeout: 30_000 });
+  await expect(guest.getByText(`Ordering to ${placeName}`)).toBeVisible({ timeout: 30_000 });
 
   const add = guest.getByRole("button", { name: /^Add / }).filter({ hasText: /^Add$/ }).first();
   const dish = ((await add.getAttribute("aria-label")) ?? "").replace(/^Add /, "");
@@ -78,11 +80,18 @@ test("guest QR order reaches the POS, is accepted, and syncs to another device",
   await expect(guest.getByText("The kitchen has your order.")).toBeVisible({ timeout: 45_000 });
   await shot(guest, "7-guest-preparing");
 
-  // 4. The admin's Business Manager on a tablet sees the same running bill.
+  // 4. The admin's Business Manager on a tablet finds it as the table's own QR bill, apart from any staff bill.
   const mgrCtx = await open(browser, tabletBp, "admin");
   const mgr = await mgrCtx.newPage();
+  await mgr.goto("/tables?app=manager");
+  const qrBill = mgr.getByLabel("QR bills").getByRole("link", { name: new RegExp(`^${tableLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`) });
+  await expect(qrBill).toBeVisible({ timeout: 90_000 });
+  await qrBill.click();
+  await expect(mgr.getByText(`QR bill · ${tableLabel}`).first()).toBeVisible({ timeout: 30_000 });
+  await expect(mgr.getByText(dish).filter({ visible: true }).first()).toBeVisible({ timeout: 30_000 });
+  // The table's staff bill stays separate: opening the table itself starts with no guest items.
   await mgr.goto(`/?app=manager&table=${encodeURIComponent(tableId)}`);
-  await expect(mgr.getByText(dish).filter({ visible: true }).first()).toBeVisible({ timeout: 90_000 });
+  await expect(mgr.getByText("New bill", { exact: true })).toBeVisible({ timeout: 30_000 });
   await shot(mgr, "8-manager-sees-bill");
 
   await Promise.all([guestCtx.close(), posCtx.close(), mgrCtx.close()]);

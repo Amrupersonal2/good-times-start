@@ -141,7 +141,7 @@ for (const bp of BREAKPOINTS) {
         const seen = watch(page);
         await page.goto("/waiter?app=waiter");
         if (allowedOn("waiter", bp.device)) {
-          await audit(page, info, `${bp.name}-waiter`, seen, /Pick a table|No tables yet|Rooftop|Non-AC/);
+          await audit(page, info, `${bp.name}-waiter`, seen, /Pick a table|No tables yet|Rooms|Dine-in/);
           await expect(page.getByText("Not available here")).toHaveCount(0);
         } else {
           await audit(page, info, `${bp.name}-waiter-blocked`, seen, "Not available here");

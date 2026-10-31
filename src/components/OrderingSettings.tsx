@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { placeName } from "@/lib/table-logic";
 import { Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,7 +41,7 @@ async function printTableCards(restaurant: string, cards: { label: string; secti
     <div class="card">
       <div class="name">${escapeHtml(restaurant)}</div>
       <img src="${images[i]}" alt="" />
-      <div class="table">Table ${escapeHtml(c.label)}</div>
+      <div class="table">${escapeHtml(placeName(c.label))}</div>
       <div class="hint">Scan to see the menu and order</div>
     </div>`).join("");
   win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Table QR codes</title><style>
@@ -207,7 +208,7 @@ export function OrderingSettings({ className, ref, ...props }: OrderingSettingsP
               <label className="block text-sm font-semibold">QR destination
                 <select aria-label="QR destination" value={selectedTable} onChange={(event) => setSelectedTable(event.target.value)} className={inputClass}>
                   <option value="">Pickup ordering</option>
-                  {tables.map((table) => <option key={table.id} value={table.id}>Table {table.label} · {table.section}</option>)}
+                  {tables.map((table) => <option key={table.id} value={table.id}>{placeName(table.label)} · {table.section}</option>)}
                 </select>
               </label>
               <p className="break-all rounded-lg bg-secondary px-3 py-2 text-xs">{qrUrl}</p>

@@ -68,7 +68,8 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
   const { lines, missing } = cartLinesFromGuest(guest.lines, menu, guest.channel);
   const now = Date.now();
   const tableId = guest.channel === "table" ? guest.table_id ?? undefined : undefined;
-  const base = tableId ? await latestHeldOrder(tableId) : null;
+  // QR orders from a table go on that table's QR bill, never on the waiter's or counter's bill.
+  const base = tableId ? await latestHeldOrder(tableId, "qr") : null;
   const table = tableId ? await db.restTables.get(tableId) : undefined;
   const customer = guest.customer_name || guest.customer_phone
     ? { ...(guest.customer_name ? { name: guest.customer_name } : {}), ...(guest.customer_phone ? { phone: guest.customer_phone } : {}) }
@@ -107,10 +108,7 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     await db.kots.bulkAdd(kots);
   });
   const changes: [RecordKind, string][] = [["order", order.uid ?? ""], ...kots.map((k): [RecordKind, string] => ["kot", k.uid ?? ""])];
-  if (tableId && table) {
-    await db.restTables.update(tableId, { status: "occupied", runningTotal: order.total, since: table.since ?? now });
-    changes.push(["table", tableId]);
-  }
+  // The table's own record belongs to the staff bill; the floor shows the QR bill from the bill itself.
   await markDirty(...changes);
   if (customer) await rememberCustomer(customer);
   // A guest who ticked "send me offers on WhatsApp" is recorded as agreeing.

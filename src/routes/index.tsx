@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { placeName } from "@/lib/table-logic";
 import { useLiveQuery } from "dexie-react-hooks";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound, ArrowLeftRight, BadgePercent, HandCoins, ArrowLeft, Check } from "lucide-react";
@@ -71,7 +72,7 @@ function PosPage() {
   const cart = useCart(search.table);
   // Running bills with no table: pickup and online orders, and takeaway bills sent to the kitchen.
   const openBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
-    .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
+    .filter((o) => !o.tableId || o.source === "qr").sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
   useEffect(() => {
     if (search.type && !search.table && !search.bill) cart.setOrderType(search.type);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- set once per counter order
@@ -225,6 +226,8 @@ function PosPage() {
   const blocked = !cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0));
   const tax = cart.totals.cgst + cart.totals.sgst;
   const currentTable = tables.find((t) => t.id === cart.tableId);
+  /** A table's QR bill, opened on its own: guests' scanned orders, settled apart from the staff bill. */
+  const qrBillOpen = !cart.tableId && cart.activeOrder?.source === "qr";
   const pendingById = new Map(cart.pendingKitchenLines.map((l) => [l.itemId, l.qty]));
 
   /** Discount, service charge, guest and change table: the cashier's bill tools. */
@@ -253,7 +256,7 @@ function PosPage() {
       <div className="flex items-start justify-between gap-3 border-b border-border bg-card px-4 py-3">
         <div className="min-w-0">
           <div className="truncate text-xl font-bold tracking-tight">
-            {cart.orderType === "dine-in" ? (currentTable ? `${currentTable.section} · ${currentTable.label}` : "Choose a table") : cart.customer.name && cart.activeOrder?.guestCodes ? `${cart.activeOrder.guestCodes[0]} ${cart.customer.name}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
+            {qrBillOpen ? `QR bill · ${cart.activeOrder?.tableLabel ?? cart.activeOrder?.tableId ?? ""}` : cart.orderType === "dine-in" ? (currentTable ? `${currentTable.section} · ${currentTable.label}` : "Choose a table") : cart.customer.name && cart.activeOrder?.guestCodes ? `${cart.activeOrder.guestCodes[0]} ${cart.customer.name}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
           </div>
           <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}, opened ${since(cart.activeOrder.createdAt)}${since(cart.activeOrder.createdAt) === "just now" ? "" : " ago"}` : "New bill"}</div>
         </div>
@@ -399,7 +402,7 @@ function PosPage() {
             <ArrowLeft className="size-3.5" />Tables
           </Link>
           <span className="min-w-0 truncate text-sm font-semibold">
-            {currentTable ? `${currentTable.section} · Table ${currentTable.label}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l ?? ""}
+            {qrBillOpen ? `QR bill · ${cart.activeOrder?.tableLabel ?? ""}` : currentTable ? `${currentTable.section} · ${placeName(currentTable.label)}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l ?? ""}
           </span>
           {cart.activeOrder ? <span className="ml-auto shrink-0 text-xs text-muted-foreground">Bill {cart.activeOrder.billNo}</span> : null}
         </div>
