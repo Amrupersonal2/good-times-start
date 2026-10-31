@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere",
+    "status": "unexpected",
+    "errors": [
+      "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Table R1', exact: true })\nExpected: visible\nTimeout: 90000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 90000ms\n  - waiting for getByRole('button', { name: 'Table R1', exact: true })\n\n\n  387 |     await expect(desk.page.getByRole(\"heading\", { name: \"Counter orders\" })).toBeVisible({ timeout: 30_000 });\n  388 |     await desk.context.close();"
+    ],
+    "screenshots": [
+      "00-s1-counter-sent.png",
+      "01-s2-waiter-added.png",
+      "02-s3-owner-live.png",
+      "03-s4-counter-reopened.png"
+    ],
+    "annotations": [
+      "Live sync test bill FQ5/26-27/0001 on table R1 (cancelled at the end; clean up)"
+    ]
+  }
+]

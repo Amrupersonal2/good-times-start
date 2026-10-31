@@ -1,0 +1,43 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere (1.7m)
+
+
+  1) e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: 'Table R1', exact: true })
+    Expected: visible
+    Timeout: 90000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 90000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Table R1', exact: true })[22m
+
+
+      387 |     await expect(desk.page.getByRole("heading", { name: "Counter orders" })).toBeVisible({ timeout: 30_000 });
+      388 |     await desk.context.close();
+    > 389 |     await expect(counter.page.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 90_000 });
+          |                                                                                             ^
+      390 |     await owner.page.goto("/dashboard?app=manager&tab=live");
+      391 |     await ready(owner.page);
+      392 |     await expect(tile).not.toContainText("₹", { timeout: 90_000 });
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:389:93
+
+    Error Context: test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/error-context.md
+
+    attachment #6: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere,line=389,col=93::  1) e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere %0A    Error: expect(locator).toBeVisible() failed%0A%0A    Locator: getByRole('button', { name: 'Table R1', exact: true })%0A    Expected: visible%0A    Timeout: 90000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - Expect "toBeVisible" with timeout 90000ms%0A      - waiting for getByRole('button', { name: 'Table R1', exact: true })%0A%0A%0A      387 |     await expect(desk.page.getByRole("heading", { name: "Counter orders" })).toBeVisible({ timeout: 30_000 });%0A      388 |     await desk.context.close();%0A    > 389 |     await expect(counter.page.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 90_000 });%0A          |                                                                                             ^%0A      390 |     await owner.page.goto("/dashboard?app=manager&tab=live");%0A      391 |     await ready(owner.page);%0A      392 |     await expect(tile).not.toContainText("₹", { timeout: 90_000 });%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:389:93
+::notice title=🎭 Playwright Run Summary::  1 failed%0A    e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
