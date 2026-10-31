@@ -75,7 +75,8 @@ export function screensFor(role: string | undefined, app: AppKind = "manager"): 
 
 export { useRestaurantSettings } from "@/lib/use-settings";
 
-function SyncChip() {
+/** Sync status chip and Sync window. `statusOnly` leaves out the staff name and sign-out (POS Waiter has its own). */
+export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) {
   const [online, setOnline] = useState(true);
   const [open, setOpen] = useState(false);
   // Closing the Sync window always hands focus back to the status button, however it was closed.
@@ -147,7 +148,7 @@ function SyncChip() {
 
   return <>
     <div className="flex items-center gap-2">
-      {staff ? <span className="hidden text-right text-xs leading-tight sm:block">
+      {staff && !statusOnly ? <span className="hidden text-right text-xs leading-tight sm:block">
         <span className="block font-semibold">{staff.displayName}</span>
         <span className="text-muted-foreground">{staff.role === "unknown" ? "No restaurant yet" : ROLE_LABELS[staff.role]}</span>
       </span> : null}
@@ -157,7 +158,7 @@ function SyncChip() {
         {busy ? <RefreshCw className="size-3 animate-spin" /> : null}
         {snapshot.error ? <AlertTriangle className="size-3.5" /> : null}
       </Button>
-      {staff
+      {statusOnly ? null : staff
         ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button>
         : <Button size="sm" variant="ghost" onClick={() => void navigate({ to: "/auth" })}><LogIn />Sign in</Button>}
     </div>

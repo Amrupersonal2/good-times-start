@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { placeName } from "@/lib/table-logic";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellRing, Check, ChefHat, Clock, Phone, Send, ShoppingBag, Smartphone, UtensilsCrossed, X } from "lucide-react";
@@ -184,7 +185,7 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
           <div className="flex items-center gap-2">
             <span className="text-lg font-extrabold">{order.code}</span>
             <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
-              {order.channel === "table" ? <><UtensilsCrossed className="size-3" />Table {order.table_label}</> : <><ShoppingBag className="size-3" />Pickup{order.pickup_at ? ` ${timeOf(order.pickup_at)}` : " ASAP"}</>}
+              {order.channel === "table" ? <><UtensilsCrossed className="size-3" />{placeName(order.table_label ?? "")}</> : <><ShoppingBag className="size-3" />Pickup{order.pickup_at ? ` ${timeOf(order.pickup_at)}` : " ASAP"}</>}
             </span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground"><Clock className="mr-1 inline size-3" />{minutesAgo(order.created_at)} min ago{order.handled_by ? ` · ${order.handled_by}` : ""}{order.bill_no ? ` · Bill ${order.bill_no}` : ""}</p>

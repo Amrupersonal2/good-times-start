@@ -11,6 +11,7 @@ import { getDb, loadSampleData, resetDevice, saveSettings, setDeviceCode } from 
 import { billNumber, computeTotals } from "@/lib/billing";
 import { ALL_PAYMENT_MODES, GST_MODES, RESTAURANT_SAC } from "@/lib/billing-config";
 import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
+import { PrinterMethod } from "@/components/PrinterMethod";
 import type { PrintConfig } from "@/lib/print-logic";
 import { printKots } from "@/components/PrintHost";
 import { Switch } from "@/components/ui/switch";
@@ -266,11 +267,7 @@ function PrintingSettings() {
   const patch = (p: Partial<PrintConfig>) => setForm((prev) => ({ ...prev, ...p }));
   const dirty = JSON.stringify(form) !== savedJson;
 
-  const testPrint = () => {
-    const now = Date.now();
-    void printKots([{ uid: `test-${now}`, orderId: 0, billNo: "TEST/0001", station: form.stations[0] ?? stations[0] ?? "Kitchen", kind: "order", tableLabel: "T1",
-      lines: [{ name: "Test dish", qty: 2, note: "Printer check" }], status: "new", createdAt: now }], "reprint");
-  };
+  const appPath = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("app") === "manager" ? "/manager?app=manager" : "/tables?app=pos";
 
   return (
     <Section title="This device's printer" description="Set up separately on each counter and kitchen printer.">
@@ -305,10 +302,9 @@ function PrintingSettings() {
             </div>
           </fieldset>
         ) : null}
-        <p className="text-xs text-muted-foreground">For printing without a dialog, make the thermal printer the default and start Chrome with --kiosk-printing.</p>
+        <PrinterMethod form={form} patch={patch} appPath={appPath} station={form.stations[0] ?? stations[0] ?? "Kitchen"} />
         <div className="flex flex-wrap gap-2">
           <Button disabled={!dirty} onClick={() => { void savePrintConfig(form).then(() => toast.success("Printer settings saved on this device")); }}>Save printer settings</Button>
-          <Button variant="outline" onClick={testPrint}>Print a test KOT</Button>
         </div>
       </div>
     </Section>

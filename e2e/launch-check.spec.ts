@@ -4,6 +4,9 @@ import { BREAKPOINTS, authFile, contextFor } from "./breakpoints";
 import { readCsv, readXlsx } from "./files";
 import { ready } from "./helpers";
 
+/** Same naming as the app: short codes read "Table D1", named places stand alone. */
+const placeName = (label: string) => (/^[A-Za-z]{0,2}\d/.test(label) ? `Table ${label}` : label);
+
 /*
  * Final launch check, read-only: every QR code is decoded and opened, every
  * Excel/CSV export is downloaded and opened, every external link is checked,
@@ -70,7 +73,7 @@ test.describe("Launch check", () => {
       const u = await expectGuestUrl(await decodeQr(fromDataUrl((await img.getAttribute("src"))!)), "Settings table QR", info, table);
       // Scanning it opens that table's menu.
       await page.goto(`${u.pathname}${u.search}`);
-      await expect(page.getByText(/Ordering to table/).first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/Ordering to /).first()).toBeVisible({ timeout: 30_000 });
       await info.attach("scanned-table-menu.png", { body: await page.screenshot(), contentType: "image/png" });
       // Downloaded QR file is the same code.
       await page.goto("/settings?app=manager#ordering");
@@ -215,9 +218,9 @@ test.describe("Launch check", () => {
     test("every link on the guest menu works", async ({ page, request }, info) => {
       await page.goto(`/order/${SLUG}`);
       await ready(page);
-      const tableButton = page.getByRole("button", { name: /^Table / }).first();
+      const tableButton = page.locator("section").filter({ has: page.getByRole("heading", { name: "Choose your table" }) }).getByRole("button").first();
       if (await tableButton.isVisible().catch(() => false)) await tableButton.click();
-      await expect(page.getByText(/Ordering to table|Order for pickup/).first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/Ordering to |Order for pickup/).first()).toBeVisible({ timeout: 30_000 });
       const hrefs = await page.locator("a[href]").evaluateAll((as) => [...new Set(as.map((a) => (a as HTMLAnchorElement).href))]);
       const results: string[] = [];
       for (const href of hrefs) {
@@ -261,13 +264,13 @@ test.describe("Launch check", () => {
         const label = ((await tile.getAttribute("aria-label")) ?? "").replace(/^Table /, "");
         await tile.click();
         await expect(page).toHaveURL(/table=/);
-        await expect(page.getByText(`Table ${label}`).first()).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByText(placeName(label)).first()).toBeVisible({ timeout: 30_000 });
         await info.attach("table-bill.png", { body: await page.screenshot(), contentType: "image/png" });
         // Table options (move, merge, reserve) are on the tile's own button.
         await page.goto("/tables?app=pos");
         await ready(page);
-        await page.getByRole("button", { name: `More for table ${label}` }).click();
-        await expect(page.getByRole("dialog").getByText(`Table ${label}`)).toBeVisible();
+        await page.getByRole("button", { name: `More for table ${label}`, exact: true }).click();
+        await expect(page.getByRole("dialog").getByText(placeName(label))).toBeVisible();
       });
     });
 

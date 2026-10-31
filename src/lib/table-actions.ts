@@ -5,10 +5,18 @@ import type { Order, RestaurantTable } from "./types";
 
 export { combineOrders, tableIdFor } from "./table-logic";
 
-/** The running (held) order for a table — the newest one if two devices raced. */
-export async function latestHeldOrder(tableId: string): Promise<Order | null> {
+/**
+ * A table can hold two running bills: the staff bill (waiter or counter) and the QR bill
+ * (everything guests ordered by scanning). They are kept and settled separately.
+ */
+export type BillSide = "staff" | "qr" | "any";
+export const isQrBill = (order: Pick<Order, "source">) => order.source === "qr";
+
+/** The running (held) bill for a table — the newest one if two devices raced. */
+export async function latestHeldOrder(tableId: string, side: BillSide = "staff"): Promise<Order | null> {
   // Indexed on [tableId+status]: stays instant however many bills a table has had.
-  const held = await getDb().orders.where("[tableId+status]").equals([tableId, "held"]).toArray();
+  const held = (await getDb().orders.where("[tableId+status]").equals([tableId, "held"]).toArray())
+    .filter((o) => side === "any" || (side === "qr") === isQrBill(o));
   return held.sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
 }
 
@@ -81,7 +89,7 @@ export async function mergeTables(fromId: string, intoId: string): Promise<void>
 
 /** Free or reserve a table by hand. A table with a running bill can't be freed. */
 export async function setTableStatus(tableId: string, status: "free" | "reserved"): Promise<void> {
-  if (status === "free" && await latestHeldOrder(tableId)) {
+  if (status === "free" && await latestHeldOrder(tableId, "any")) {
     throw new Error("This table has a running bill. Settle it or move it first.");
   }
   await getDb().restTables.update(tableId, { status, since: status === "free" ? undefined : Date.now(), heldBy: undefined, heldDevice: undefined, heldAt: undefined, ...(status === "free" ? { runningTotal: 0 } : {}) });
@@ -102,7 +110,7 @@ export async function saveTable(table: Omit<RestaurantTable, "status" | "running
 }
 
 export async function deleteTable(tableId: string): Promise<void> {
-  if (await latestHeldOrder(tableId)) throw new Error("This table has a running bill. Settle or move it before deleting the table.");
+  if (await latestHeldOrder(tableId, "any")) throw new Error("This table has a running bill. Settle or move it before deleting the table.");
   await getDb().restTables.delete(tableId);
   await markDirty(["table", tableId]);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { combineOrders, tableIdFor, withOpenBills } from "./table-logic";
+import { combineOrders, placeName, tableIdFor, withOpenBills } from "./table-logic";
 import type { CartLine, Order, RestaurantTable } from "./types";
 
 const line = (itemId: string, qty: number): CartLine => ({ itemId, name: itemId, price: 100, qty, veg: true, gstRate: 5, station: "Main Course" });
@@ -40,5 +40,23 @@ describe("floor status", () => {
   it("ignores settled, cancelled and empty bills", () => {
     const empty = { ...bill("R1", 0), lines: [] };
     expect(withOpenBills([t("R1", "free")], [bill("R1", 100, "settled"), bill("R1", 100, "void"), empty])[0]?.status).toBe("free");
+  });
+
+  it("keeps a table's QR bill apart from its staff bill", () => {
+    const qr = (tableId: string, total: number, uid: string): Order => ({ ...bill(tableId, total), source: "qr", uid, createdAt: 2000 });
+    const floor = withOpenBills([t("D1", "occupied", 400), t("HUT-1", "free"), t("D2", "free")], [bill("D1", 400), qr("D1", 250, "q1"), qr("HUT-1", 180, "q2")]);
+    expect(floor.map((x) => [x.id, x.status, x.runningTotal, x.qrTotal ?? null, x.qrBill ?? null])).toEqual([
+      ["D1", "occupied", 400, 250, "q1"],
+      ["HUT-1", "occupied", 0, 180, "q2"],
+      ["D2", "free", 0, null, null],
+    ]);
+  });
+});
+
+
+describe("place names", () => {
+  it("names short codes as tables and named places as themselves", () => {
+    expect(["D1", "D2", "4", "T4", "2A", "Room 3A", "Room 666", "Bonfire 1", "Hut 2", "Family Table"].map(placeName))
+      .toEqual(["Table D1", "Table D2", "Table 4", "Table T4", "Table 2A", "Room 3A", "Room 666", "Bonfire 1", "Hut 2", "Family Table"]);
   });
 });

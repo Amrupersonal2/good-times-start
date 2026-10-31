@@ -1,3 +1,4 @@
+import { placeName } from "./table-logic";
 /**
  * Branding for the guest ordering page and WhatsApp marketing: pure logic,
  * no database or network, so every rule here is tested.
@@ -347,7 +348,7 @@ export function sourceLabel(source: string, tables: { id: string; label: string 
   const fixed: Record<string, string> = { direct: "Direct link", poster: "Poster", counter: "Counter stand", insta: "Instagram", google: "Google", whatsapp: "WhatsApp", flyer: "Flyer", menu: "Menu card" };
   if (fixed[source]) return fixed[source] ?? source;
   const table = tables.find((t) => t.id.toLowerCase() === source);
-  return table ? `Table ${table.label}` : source;
+  return table ? placeName(table.label) : source;
 }
 
 export function scanSummary(rows: ScanRow[], ordersBySource: Map<string, number>): { source: string; scans: number; orders: number; rate: number }[] {

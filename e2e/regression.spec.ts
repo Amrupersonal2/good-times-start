@@ -67,10 +67,10 @@ for (const bp of BREAKPOINTS) {
       await page.goto("/order/tab-bistro");
       await audit(page, info, `${bp.name}-guest-menu`, seen, /TAB Bistro|Ordering is off|Scan the QR code/);
       // Choosing a table opens that table's menu (nothing is ordered).
-      const pick = page.getByRole("button", { name: /^Table / }).first();
+      const pick = page.locator("section").filter({ has: page.getByRole("heading", { name: "Choose your table" }) }).getByRole("button").first();
       if (await pick.isVisible().catch(() => false)) {
         await pick.click();
-        await audit(page, info, `${bp.name}-guest-table-menu`, seen, /Ordering to table/);
+        await audit(page, info, `${bp.name}-guest-table-menu`, seen, /Ordering to /);
         await expect(page.getByRole("button", { name: /^Add / }).first()).toBeVisible();
       }
       await page.goto("/order/tab-bistro?table=not-a-table&s=t9");
@@ -141,7 +141,7 @@ for (const bp of BREAKPOINTS) {
         const seen = watch(page);
         await page.goto("/waiter?app=waiter");
         if (allowedOn("waiter", bp.device)) {
-          await audit(page, info, `${bp.name}-waiter`, seen, /Pick a table|No tables yet|Rooftop|Non-AC/);
+          await audit(page, info, `${bp.name}-waiter`, seen, /Pick a table|No tables yet|Rooms|Dine-in/);
           await expect(page.getByText("Not available here")).toHaveCount(0);
         } else {
           await audit(page, info, `${bp.name}-waiter-blocked`, seen, "Not available here");

@@ -58,7 +58,7 @@ describe("live status", () => {
       bill({ status: "settled" }),
     ]);
     expect(live.total).toBe(549);
-    expect(live.cards.map((c) => c.title)).toEqual(["W-1234 Banrita", "Table 2A"]);
+    expect(live.cards.map((c) => c.title)).toEqual(["W-1234 Banrita", "2A"]);
     expect(live.cards[1]?.lines).toEqual([{ name: "Tea", qty: 3 }, { name: "Dosa", qty: 1 }]);
   });
 });

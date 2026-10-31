@@ -1,9 +1,17 @@
 import type { Kot } from "./types";
 
 /** This device's printer setup. Stored on the device only; each counter or kitchen screen sets its own. */
+/**
+ * How this device reaches its printer without a print box:
+ * "browser" — Chrome prints the slip; silent when the app is started with --kiosk-printing (computers);
+ * "rawbt" — the slip goes as printer commands to the RawBT app, which prints straight away (Android, Bluetooth/Wi-Fi/USB).
+ */
+export type PrintMethod = "browser" | "rawbt";
+
 export interface PrintConfig {
   /** Thermal paper width in mm. */
   paper: 58 | 80;
+  method: PrintMethod;
   billCopies: number;
   kotCopies: number;
   /** Print KOTs when this device sends them. */
@@ -20,6 +28,7 @@ export interface PrintConfig {
 
 export const DEFAULT_PRINT_CONFIG: PrintConfig = {
   paper: 80,
+  method: "browser",
   billCopies: 1,
   kotCopies: 1,
   printKotOnSend: true,
@@ -35,6 +44,7 @@ export function normalisePrintConfig(raw: unknown): PrintConfig {
   const copies = (n: unknown) => (typeof n === "number" && Number.isInteger(n) ? Math.min(5, Math.max(0, n)) : 1);
   return {
     paper: r.paper === 58 ? 58 : 80,
+    method: r.method === "rawbt" ? "rawbt" : "browser",
     billCopies: r.billCopies === undefined ? DEFAULT_PRINT_CONFIG.billCopies : copies(r.billCopies),
     kotCopies: r.kotCopies === undefined ? DEFAULT_PRINT_CONFIG.kotCopies : copies(r.kotCopies),
     printKotOnSend: typeof r.printKotOnSend === "boolean" ? r.printKotOnSend : DEFAULT_PRINT_CONFIG.printKotOnSend,
@@ -71,7 +81,7 @@ export function withCopies<T>(docs: T[], copies: number): T[] {
 export function printCss(paper: 58 | 80): string {
   const content = paper === 58 ? 48 : 72;
   return `@media print {
-  @page { size: ${paper}mm auto; margin: 3mm; }
+  @page { size: ${paper}mm auto; margin: 0; }
   html, body { background: #fff !important; }
   body * { visibility: hidden; }
   #print-root, #print-root * { visibility: visible; }

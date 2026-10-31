@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { withOpenBills } from "@/lib/table-logic";
+import { placeName, withOpenBills } from "@/lib/table-logic";
 import { toast } from "sonner";
-import { ArrowRightLeft, Combine, MoreHorizontal, Pencil, Plus, ReceiptText, ShoppingBag, Trash2, Users } from "lucide-react";
+import { ArrowRightLeft, Combine, MoreHorizontal, Pencil, Plus, ReceiptText, ShoppingBag, Trash2, Users, QrCode } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { COUNTER_TYPES } from "@/lib/bill-entry";
 import { holdLabel } from "@/lib/table-hold";
@@ -35,7 +35,7 @@ const STATUS: Record<TableStatus, { label: string; cls: string }> = {
   billed: { label: "Bill printed", cls: "border-gold bg-gold/15" },
   reserved: { label: "Reserved", cls: "border-dashed border-gold bg-card" },
 };
-const DEFAULT_SECTIONS = ["AC", "Non-AC", "Rooftop"];
+const DEFAULT_SECTIONS = ["Rooms", "Dine-in"];
 
 function minutesSince(since?: number) {
   if (!since) return "";
@@ -45,7 +45,7 @@ function minutesSince(since?: number) {
 
 function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable | null; sections: string[]; taken: string[]; onDone: () => void }) {
   const [label, setLabel] = useState(table?.label ?? "");
-  const [section, setSection] = useState(table?.section ?? sections[0] ?? "AC");
+  const [section, setSection] = useState(table?.section ?? sections[0] ?? "Dine-in");
   const [seats, setSeats] = useState(String(table?.seats ?? 4));
   const [error, setError] = useState("");
 
@@ -53,7 +53,7 @@ function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable 
     event.preventDefault();
     const n = Number(seats);
     if (!label.trim()) { setError("Enter a table name, like T7."); return; }
-    if (!section.trim()) { setError("Enter a section, like AC or Rooftop."); return; }
+    if (!section.trim()) { setError("Enter a section, like Rooms or Dine-in."); return; }
     if (!Number.isInteger(n) || n < 1 || n > 50) { setError("Seats must be between 1 and 50."); return; }
     await saveTable({ id: table?.id ?? tableIdFor(label, taken), label: label.trim().slice(0, 12), section: section.trim().slice(0, 30), seats: n });
     toast.success(table ? `${label.trim()} updated` : `${label.trim()} added`);
@@ -155,6 +155,7 @@ function TablesPage() {
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
   const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
     .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
+  const qrBills = tables.filter((t) => t.qrBill).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
   const { user } = useStaff();
   const canEdit = can(user, "tables.edit");
   const canBill = can(user, "bill.create");
@@ -209,6 +210,18 @@ function TablesPage() {
                 </Button>
               ))}
             </div>
+            {qrBills.length ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="QR bills">
+                <span className="text-sm font-semibold text-muted-foreground">QR bills</span>
+                {qrBills.map((t) => (
+                  <Button key={t.qrBill} variant="secondary" asChild>
+                    <Link to="/" search={{ bill: t.qrBill ?? "" }} title={`QR bill for ${t.label}: guests' scanned orders, settled separately`}>
+                      <QrCode />{t.label}<span className="font-normal text-muted-foreground">{formatINR(t.qrTotal ?? 0, 0)}</span>
+                    </Link>
+                  </Button>
+                ))}
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -228,11 +241,12 @@ function TablesPage() {
                 <button type="button" aria-label={`Table ${t.label}${t.status === "free" ? "" : `, ${STATUS[t.status].label}`}`}
                   onClick={() => (editing ? setForm(t) : canBill ? openBill(t) : setSelected(t))}
                   className={`relative flex aspect-square w-full flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
-                  <span className="text-2xl font-extrabold">{t.label}</span>
+                  <span className={`${t.label.length > 4 ? "text-base leading-tight sm:text-lg" : "text-2xl"} max-w-full break-words font-extrabold`}>{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
-                  {t.status === "occupied" || t.status === "billed" ? (
+                  {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
                     <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
                   ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Reserved</span> : null}
+                  {t.qrTotal ? <span className="mt-0.5 rounded bg-primary/15 px-1.5 text-[10px] font-bold text-primary">QR {formatINR(t.qrTotal, 0)}</span> : null}
                   {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate text-[10px] font-semibold text-primary">{holdLabel(t, Date.now())}</span> : null}
                   {editing ? <Pencil className="absolute right-2 top-2 size-3.5 text-muted-foreground" /> : null}
                 </button>
@@ -252,7 +266,7 @@ function TablesPage() {
       <Dialog open={!!live} onOpenChange={(open) => { if (!open) setSelected(null); }}>
         <DialogContent className="max-w-sm">
           {live ? <>
-            <DialogTitle>Table {live.label}</DialogTitle>
+            <DialogTitle>{placeName(live.label)}</DialogTitle>
             <p className="-mt-2 text-sm text-muted-foreground">{STATUS[live.status].label}{live.status === "occupied" || live.status === "billed" ? `, ${formatINR(live.runningTotal, 0)}, ${minutesSince(live.since)}` : ""}</p>
             <TableActions key={live.id} table={live} tables={tables} onDone={() => setSelected(null)} />
           </> : null}

@@ -3,17 +3,39 @@ import { mergeSentLines } from "./sync-core";
 import type { Order, RestaurantTable } from "./types";
 
 /**
- * The floor as it really is: a table with a running bill is taken, even if its own
- * status record missed an update (a device that went offline mid-change, an old copy).
- * Tables are never shown free while a bill is open on them.
+ * How a place is named to guests and on paper: short codes read as tables ("Table D1", "Table 4"),
+ * named places stand on their own ("Room 3A", "Bonfire 1", "Family Table").
  */
-export function withOpenBills(tables: RestaurantTable[], held: Order[]): RestaurantTable[] {
-  const open = new Map<string, Order>();
-  for (const o of held) if (o.status === "held" && o.tableId && o.lines.length && !open.has(o.tableId)) open.set(o.tableId, o);
-  return tables.map((t) => {
-    const bill = open.get(t.id);
-    if (!bill || t.status === "occupied" || t.status === "billed") return t;
-    return { ...t, status: "occupied", runningTotal: bill.total, since: bill.createdAt };
+export function placeName(label: string): string {
+  const name = label.trim();
+  return /^[A-Za-z]{0,2}\d/.test(name) ? `Table ${name}` : name;
+}
+
+/** A table on the floor, with its QR bill (guests' scanned orders) if one is open. */
+export type FloorTable = RestaurantTable & { qrTotal?: number; qrBill?: string };
+
+/**
+ * The floor as it really is. A table with a running staff bill is taken, even if its own
+ * status record missed an update (a device that went offline mid-change, an old copy);
+ * a table with only a QR bill is taken too. The QR bill is shown alongside, never mixed in.
+ */
+export function withOpenBills(tables: RestaurantTable[], held: Order[]): FloorTable[] {
+  const staff = new Map<string, Order>();
+  const qr = new Map<string, Order>();
+  for (const o of held) {
+    if (o.status !== "held" || !o.tableId || !o.lines.length) continue;
+    const into = o.source === "qr" ? qr : staff;
+    const seen = into.get(o.tableId);
+    if (!seen || o.createdAt > seen.createdAt) into.set(o.tableId, o);
+  }
+  return tables.map((t): FloorTable => {
+    const bill = staff.get(t.id);
+    const qrBill = qr.get(t.id);
+    let next: FloorTable = t;
+    const busy = t.status === "occupied" || t.status === "billed";
+    if (bill && !busy) next = { ...t, status: "occupied", runningTotal: bill.total, since: bill.createdAt };
+    else if (qrBill && !busy) next = { ...t, status: "occupied", runningTotal: 0, since: qrBill.createdAt };
+    return qrBill ? { ...next, qrTotal: qrBill.total, ...(qrBill.uid ? { qrBill: qrBill.uid } : {}) } : next;
   });
 }
 

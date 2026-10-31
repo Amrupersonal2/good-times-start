@@ -212,7 +212,8 @@ export function useCart(initialTableId?: string) {
 
   /** Open a running bill that has no table (a pickup or takeaway order) to add to it or settle it. */
   const openOrder = useCallback((order: Order) => {
-    if (order.tableId) { setTableId(order.tableId); return; }
+    // A table's QR bill opens on its own, like a pickup order, so it never mixes with the staff bill.
+    if (order.tableId && order.source !== "qr") { setTableId(order.tableId); return; }
     setTableIdState(undefined);
     setActiveOrder(order);
     setLines(order.lines);
@@ -366,7 +367,7 @@ export function useCart(initialTableId?: string) {
       ...(latest ?? ({} as Order)),
       uid: latest?.uid ?? newUid(),
       billNo: latest?.billNo ?? await newBillNumber(new Date()),
-      orderType, tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines: billLines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
+      orderType, tableId: tableId ?? latest?.tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines: billLines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
       serviceChargePct, serviceCharge: t.serviceCharge, cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
       taxable: t.taxable, tax,
       payments, status: "settled", createdAt: latest?.createdAt ?? Date.now(), synced: false,
@@ -398,7 +399,7 @@ export function useCart(initialTableId?: string) {
     const t = computeTotals(split, discountPct, serviceChargePct, tax);
     const label = latest?.tableLabel ?? await tableLabelOf(tableId);
     const part: Order = withCustomerId({
-      uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel: label, lines: split,
+      uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId: tableId ?? latest?.tableId, tableLabel: label, lines: split,
       subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
       taxable: t.taxable, tax,
