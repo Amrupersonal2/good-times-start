@@ -16,6 +16,7 @@ import { useStaff } from "@/lib/auth-context";
 import { allow } from "@/lib/pin-gate";
 import { useCart } from "@/lib/cart-store";
 import { getDb, markDirty } from "@/lib/db";
+import { withOpenBills } from "@/lib/table-logic";
 import { formatINR } from "@/lib/billing";
 import { needsOptions, orderCategories, outsideHours, priceFor, stockLeft } from "@/lib/menu-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
@@ -66,7 +67,7 @@ function WaiterApp() {
   const [, tick] = useState(0);
   useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30_000); return () => window.clearInterval(t); }, []);
 
-  const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
+  const tables = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
   const sections = useMemo(() => [...new Set(tables.map((t) => t.section))], [tables]);
 
   const signOut = async () => {

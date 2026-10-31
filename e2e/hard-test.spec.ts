@@ -324,9 +324,14 @@ test.describe("Hard test · two-way sync on the live POS", () => {
     // Counter opens a free table and sends one Virgin Mojito to the kitchen.
     await counter.page.goto("/tables?app=pos");
     await synced(counter.page);
-    const free = counter.page.getByRole("button", { name: /^Table [^,]+$/ }).last();
+    // Not the last free table: the guest-order check uses that one at the same time.
+    const freeTables = counter.page.getByRole("button", { name: /^Table [^,]+$/ });
+    await expect(freeTables.nth(1)).toBeVisible({ timeout: 60_000 });
+    const free = freeTables.nth((await freeTables.count()) - 2);
     const label = ((await free.getAttribute("aria-label")) ?? "").replace(/^Table /, "");
     await free.click();
+    // Safety: only a table with no running bill. A real guest's bill is never touched.
+    await expect(counter.page.getByText("New bill", { exact: true })).toBeVisible({ timeout: 30_000 });
     const search = counter.page.getByPlaceholder("Search dishes or codes (F4)");
     await search.fill("Virgin Mojito");
     await counter.page.locator('button[title="Virgin Mojito"]').first().click();
@@ -338,8 +343,9 @@ test.describe("Hard test · two-way sync on the live POS", () => {
     await shot(counter.page, "s1-counter-sent");
 
     // Waiter's tablet sees the running table and adds a Passion Fruit Mojito.
+    // The waiter app has no sync chip; its table list is the sign it has synced.
     await waiter.page.goto("/waiter?app=waiter");
-    await synced(waiter.page);
+    await ready(waiter.page);
     const tile = waiter.page.locator('aside[aria-label="Tables"] button').filter({ hasText: new RegExp(`^\\s*${label}\\b`) }).first();
     await expect(tile).toContainText("₹160", { timeout: 90_000 });
     await tile.click();
