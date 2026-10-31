@@ -1,9 +1,8 @@
 import type { AppKind } from "./staff-login-logic";
 
-export type InstallKind = AppKind | "insights";
+export type InstallKind = AppKind;
 
 export function installKind(pathname: string, chosen: AppKind | null): InstallKind {
-  if (pathname === "/insights" || pathname.startsWith("/insights/")) return "insights";
   if (pathname === "/waiter" || pathname.startsWith("/waiter/")) return "waiter";
   if (pathname === "/manager" || pathname.startsWith("/manager/")) return "manager";
   return chosen ?? "pos";

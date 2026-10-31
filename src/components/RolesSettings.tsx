@@ -109,7 +109,7 @@ export function RolesSettings() {
           </div>
 
           {usesPin && !settings.adminPin ? <p role="alert" className="rounded-xl bg-gold/15 p-3 text-sm font-medium text-gold-foreground">Some actions are On with PIN, but no admin PIN is set yet. Set one below, or those actions stay blocked.</p> : null}
-          <div className="sticky bottom-0 -mx-4 flex items-center gap-3 border-t border-border bg-card/95 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
+          <div className="sticky bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom))] -mx-4 flex items-center gap-3 lg:bottom-0 border-t border-border bg-card/95 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
             <Button disabled={!dirty || busy} onClick={() => void save()}>{busy ? "Saving…" : "Save roles"}</Button>
             {dirty ? <Button variant="ghost" onClick={() => setPolicy(saved)}>Undo changes</Button> : <span className="text-sm text-muted-foreground">All changes saved</span>}
           </div>

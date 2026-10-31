@@ -16,12 +16,11 @@ import { allowAppWorker, installKind, type InstallKind } from "@/lib/app-install
 
 export function appForPath(pathname: string, chosen: AppKind | null): AppKind {
   if (pathname === "/waiter" || pathname.startsWith("/waiter/")) return "waiter";
-  if (pathname === "/manager" || pathname === "/insights" || pathname.startsWith("/insights/")) return "manager";
+  if (pathname === "/manager" || pathname.startsWith("/manager/")) return "manager";
   return chosen ?? "pos";
 }
 
 const APP_META: Record<InstallKind, { title: string; theme: string }> = {
-  insights: { title: "XTSY Reports", theme: "#000000" },
   manager: { title: "Business Manager", theme: "#000000" },
   pos: { title: "Restro POS", theme: "#F2F2F7" },
   waiter: { title: "POS Waiter", theme: "#000000" },

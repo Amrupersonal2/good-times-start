@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { allowAppWorker, installKind } from "./app-install-logic";
 
 describe("separate app installations", () => {
-  it("gives reports its own identity without changing counter or waiter identities", () => {
-    expect(installKind("/insights", "manager")).toBe("insights");
+  it("keeps the counter, waiter and manager identities apart", () => {
     expect(installKind("/", "pos")).toBe("pos");
     expect(installKind("/waiter", "manager")).toBe("waiter");
     expect(installKind("/manager", null)).toBe("manager");
