@@ -1,0 +1,756 @@
+[WebServer] [33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[WebServer] [2m4:41:08 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts:12:34 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts[39m
+[WebServer] [2m4:41:08 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m4:41:08 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m4:41:08 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m4:41:09 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m4:41:09 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m4:41:09 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m4:41:15 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts:12:34 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts[39m
+[WebServer] [2m4:41:15 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m4:41:15 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m4:41:15 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m4:41:15 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m4:41:15 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m4:41:15 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+
+Running 238 tests using 4 workers
+
+  ✓    2 e2e/hard-test.spec.ts:129:3 › Hard test · KPI forecast › forecast waits for history, then projects today and the month exactly as worked by hand (23.0s)
+  ✓    5 e2e/hard-test.spec.ts:246:3 › Hard test · selections › Insights is gone from Business Manager (7.4s)
+  ✓    1 e2e/hard-test.spec.ts:203:3 › Hard test · selections › every dashboard period, report tab and menu section opens without a fault, and totals stay consistent (41.8s)
+  ✓    4 e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) (49.6s)
+  ✓    3 e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) (51.7s)
+  ✓    6 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360) (54.4s)
+  ✓    7 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412) (48.6s)
+  -   11 e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere
+  ✓    8 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-768) (47.0s)
+  ✓    9 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-1024-landscape) (45.7s)
+[WebServer] [2m4:43:11 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m4:43:11 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m4:43:11 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split[39m
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓   14 e2e/launch-check.spec.ts:110:5 › Launch check › QR codes (admin, desktop) › install QR codes for the three apps open the live apps (9.2s)
+[WebServer] [2m4:43:18 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m4:43:18 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m4:43:18 PM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split[39m
+[WebServer] AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12)
+[WebServer] AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12) (status 500)
+[WebServer] caused by: AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12)
+[WebServer] AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12) (status 500)
+[WebServer] caused by: AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12)
+  ✓   15 e2e/launch-check.spec.ts:127:5 › Launch check › QR codes (admin, desktop) › WhatsApp ordering link points at the live menu (4.6s)
+  ✓   10 e2e/hard-test.spec.ts:261:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (laptop-1280) (41.3s)
+  ✓   13 e2e/launch-check.spec.ts:84:5 › Launch check › QR codes (admin, desktop) › printed table cards scan, even with the logo on them (32.7s)
+  ✘   12 e2e/launch-check.spec.ts:56:5 › Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu (40.7s)
+  ✓   16 e2e/launch-check.spec.ts:139:5 › Launch check › Excel and CSV exports (admin, desktop) › Reports: all-reports Excel, GSTR-1, GST CSV, bills CSV, items CSV, Sales Summary (50.2s)
+  ✘   18 e2e/launch-check.spec.ts:215:5 › Launch check › External links › every link on the guest menu works (34.1s)
+  ✓   20 e2e/launch-check.spec.ts:277:7 › Launch check › Bills open only from Tables › Business Manager (admin, phone) › / goes to Tables, and the bottom menu has no Billing (3.8s)
+  ✓   17 e2e/launch-check.spec.ts:191:5 › Launch check › Excel and CSV exports (admin, desktop) › Guests, Stock and Menu Excel (39.4s)
+  ✓   22 e2e/live-audit.spec.ts:36:3 › Live audit · security (public key only) › the public can't write bills, menu or tables, or change the restaurant (645ms)
+  ✓   24 e2e/live-audit.spec.ts:64:3 › Live audit · security (public key only) › the guest menu shares only what guests need (194ms)
+  ✓   23 e2e/live-audit.spec.ts:47:3 › Live audit · security (public key only) › admin and staff functions refuse the public (909ms)
+  -   26 e2e/live-audit.spec.ts:90:3 › Live audit · published site › install files, icons, logo and offline worker are current
+  -   27 e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device
+  -   28 e2e/live-order.spec.ts:100:1 › a waiter taking an order holds the table; others see it; emptying it frees the table
+  ✓   25 e2e/live-audit.spec.ts:75:3 › Live audit · security (public key only) › guests can't set their own prices or order missing dishes (517ms)
+  ✓   21 e2e/live-audit.spec.ts:25:3 › Live audit · security (public key only) › private tables are unreadable without signing in (2.2s)
+  ✘   19 e2e/launch-check.spec.ts:244:7 › Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills (35.1s)
+  ✓   29 e2e/regression.spec.ts:50:5 › phone-360 (360×780) › sign-in page (8.2s)
+  ✓   32 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › dashboard-live (4.7s)
+  ✓   31 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › dashboard (8.5s)
+  ✓   33 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › bill-opens-from-tables (4.7s)
+  ✓   34 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › tables (5.0s)
+  ✓   35 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › menu (5.3s)
+  ✓   36 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › stock (4.8s)
+  ✓   37 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › guests (5.0s)
+  ✓   38 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › reports (5.7s)
+  ✓   39 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-brand (5.0s)
+  ✓   40 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-qr (5.4s)
+  ✓   41 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-whatsapp (5.8s)
+  ✓   42 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-results (5.0s)
+  ✓   43 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings (5.8s)
+  ✘   30 e2e/regression.spec.ts:65:5 › phone-360 (360×780) › guest QR menu (30.9s)
+  ✓   44 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-terminals (6.1s)
+  ✓   45 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-invoice (6.2s)
+  ✓   46 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-printing (6.6s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓   47 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-restaurant (7.3s)
+  ✓   48 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-logins (7.4s)
+  ✓   49 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-ordering (7.7s)
+  ✓   50 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-roles (6.7s)
+  ✓   51 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-device (6.5s)
+  ✓   52 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › setup (7.7s)
+  ✓   54 e2e/regression.spec.ts:122:9 › phone-360 (360×780) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (7.4s)
+  ✓   55 e2e/regression.spec.ts:139:7 › phone-360 (360×780) › POS Waiter (waiter) › waiter screen (5.8s)
+  ✓   53 e2e/regression.spec.ts:93:7 › phone-360 (360×780) › Business Manager (admin) › reports: Sales Summary (10.7s)
+  ✓   56 e2e/regression.spec.ts:50:5 › phone-412 (412×915) › sign-in page (8.4s)
+  ✓   58 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › dashboard (6.3s)
+  ✓   59 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › dashboard-live (5.5s)
+  ✓   60 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › bill-opens-from-tables (4.9s)
+  ✓   61 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › tables (5.1s)
+  ✓   62 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › menu (5.0s)
+  ✓   63 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › stock (4.3s)
+  ✓   64 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › guests (5.0s)
+  ✓   65 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › reports (6.8s)
+  ✓   66 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-brand (4.9s)
+  ✓   67 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-qr (5.1s)
+  ✓   69 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-results (5.6s)
+  ✓   68 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-whatsapp (6.4s)
+  ✓   70 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings (5.6s)
+  ✓   71 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-terminals (6.0s)
+  ✘   57 e2e/regression.spec.ts:65:5 › phone-412 (412×915) › guest QR menu (31.7s)
+  ✓   72 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-invoice (7.1s)
+  ✓   73 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-printing (5.6s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓   74 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-ordering (7.7s)
+  ✓   75 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-logins (7.1s)
+  ✓   76 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-roles (8.3s)
+  ✓   77 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-restaurant (7.5s)
+  ✓   78 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-device (6.8s)
+  ✓   79 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › setup (6.5s)
+  ✓   81 e2e/regression.spec.ts:122:9 › phone-412 (412×915) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (6.0s)
+  ✓   82 e2e/regression.spec.ts:139:7 › phone-412 (412×915) › POS Waiter (waiter) › waiter screen (5.9s)
+  ✓   80 e2e/regression.spec.ts:93:7 › phone-412 (412×915) › Business Manager (admin) › reports: Sales Summary (11.2s)
+  ✓   83 e2e/regression.spec.ts:50:5 › tablet-768 (768×1024) › sign-in page (8.4s)
+  ✓   86 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › dashboard-live (5.6s)
+  ✓   85 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › dashboard (7.3s)
+  ✓   87 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › bill-opens-from-tables (5.0s)
+  ✓   88 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › tables (4.2s)
+  ✓   89 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › menu (5.0s)
+  ✓   90 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › stock (5.2s)
+  ✓   91 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › guests (4.5s)
+  ✓   92 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › reports (6.7s)
+  ✓   93 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-brand (6.1s)
+  ✓   94 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-qr (5.4s)
+  ✓   95 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-whatsapp (5.9s)
+  ✓   96 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-results (6.3s)
+  ✓   97 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings (5.8s)
+  ✓   98 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-terminals (5.6s)
+  ✘   84 e2e/regression.spec.ts:65:5 › tablet-768 (768×1024) › guest QR menu (34.4s)
+  ✓   99 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-invoice (7.0s)
+  ✓  100 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-printing (6.8s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  101 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-ordering (7.2s)
+  ✓  102 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-logins (7.1s)
+  ✓  103 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-roles (8.0s)
+  ✓  104 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-restaurant (8.0s)
+  ✓  105 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-device (6.8s)
+  ✓  106 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › setup (7.4s)
+  ✓  109 e2e/regression.spec.ts:139:7 › tablet-768 (768×1024) › POS Waiter (waiter) › waiter screen (6.4s)
+  ✓  108 e2e/regression.spec.ts:122:9 › tablet-768 (768×1024) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (7.0s)
+  ✓  107 e2e/regression.spec.ts:93:7 › tablet-768 (768×1024) › Business Manager (admin) › reports: Sales Summary (10.6s)
+  ✓  110 e2e/regression.spec.ts:50:5 › tablet-1024-landscape (1024×768) › sign-in page (10.3s)
+  ✓  113 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › dashboard-live (6.3s)
+  ✓  112 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › dashboard (7.8s)
+  ✓  114 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › bill-opens-from-tables (6.0s)
+  ✓  115 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › tables (6.6s)
+  ✓  116 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › menu (6.0s)
+  ✓  117 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › stock (5.0s)
+  ✓  118 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › guests (5.1s)
+  ✓  119 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › reports (7.5s)
+  ✓  120 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-brand (5.2s)
+  ✓  121 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-qr (5.6s)
+  ✓  122 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-whatsapp (6.7s)
+  ✓  123 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-results (6.5s)
+  ✓  124 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings (6.6s)
+  ✘  111 e2e/regression.spec.ts:65:5 › tablet-1024-landscape (1024×768) › guest QR menu (33.2s)
+  ✓  125 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-terminals (6.6s)
+  ✓  126 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-invoice (7.6s)
+  ✓  127 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-printing (6.7s)
+  ✓  128 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-restaurant (6.8s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  129 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-logins (8.0s)
+  ✓  131 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-roles (8.2s)
+  ✓  130 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-ordering (8.3s)
+  ✓  132 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-device (7.3s)
+  ✓  133 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › setup (6.7s)
+  ✓  135 e2e/regression.spec.ts:122:9 › tablet-1024-landscape (1024×768) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (7.4s)
+  ✓  136 e2e/regression.spec.ts:139:7 › tablet-1024-landscape (1024×768) › POS Waiter (waiter) › waiter screen (6.1s)
+  ✓  134 e2e/regression.spec.ts:93:7 › tablet-1024-landscape (1024×768) › Business Manager (admin) › reports: Sales Summary (10.8s)
+  ✓  137 e2e/regression.spec.ts:50:5 › laptop-1280 (1280×800) › sign-in page (7.7s)
+  ✓  140 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › dashboard-live (5.9s)
+  ✓  139 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › dashboard (8.8s)
+  ✓  141 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › bill-opens-from-tables (6.1s)
+  ✓  142 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › tables (5.1s)
+  ✓  143 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › menu (5.6s)
+  ✓  144 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › stock (5.1s)
+  ✓  145 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › guests (5.1s)
+  ✓  147 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-brand (5.6s)
+  ✓  146 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › reports (6.0s)
+  ✓  148 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-qr (4.9s)
+  ✓  150 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-results (6.0s)
+  ✓  149 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-whatsapp (6.6s)
+  ✓  151 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings (5.3s)
+  ✘  138 e2e/regression.spec.ts:65:5 › laptop-1280 (1280×800) › guest QR menu (33.6s)
+  ✓  152 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-terminals (6.9s)
+  ✓  153 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-invoice (6.6s)
+  ✓  154 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-printing (6.6s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  155 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-restaurant (7.8s)
+  ✓  156 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-logins (8.1s)
+  ✓  157 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-roles (8.2s)
+  ✓  158 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-ordering (7.8s)
+  ✓  159 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-device (6.9s)
+  ✓  160 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › setup (7.2s)
+  ✓  162 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-home-is-tables (8.0s)
+  ✓  161 e2e/regression.spec.ts:93:7 › laptop-1280 (1280×800) › Business Manager (admin) › reports: Sales Summary (10.5s)
+  ✓  163 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-tables (6.2s)
+  ✓  164 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-guests (6.6s)
+  ✓  165 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-reports (7.3s)
+  ✓  166 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-settings (7.3s)
+  ✓  167 e2e/regression.spec.ts:115:9 › laptop-1280 (1280×800) › Restro POS (billdesk) › admin-only screens stay closed (6.4s)
+  ✓  168 e2e/regression.spec.ts:139:7 › laptop-1280 (1280×800) › POS Waiter (waiter) › computers follow Settings → Logins (6.1s)
+  ✓  169 e2e/regression.spec.ts:50:5 › desktop-1440 (1440×900) › sign-in page (6.1s)
+  ✓  172 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › dashboard-live (7.2s)
+  ✓  171 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › dashboard (8.8s)
+  ✓  173 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › bill-opens-from-tables (6.6s)
+  ✓  174 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › tables (4.8s)
+  ✓  175 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › menu (5.5s)
+  ✓  176 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › stock (4.8s)
+  ✓  177 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › guests (4.9s)
+  ✓  178 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › reports (5.6s)
+  ✓  179 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-brand (5.7s)
+  ✓  180 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-qr (4.6s)
+  ✓  181 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-whatsapp (6.9s)
+  ✓  182 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-results (5.4s)
+  ✓  183 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings (5.7s)
+  ✓  184 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-terminals (5.6s)
+  ✓  186 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-printing (6.2s)
+  ✓  185 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-invoice (7.3s)
+  ✘  170 e2e/regression.spec.ts:65:5 › desktop-1440 (1440×900) › guest QR menu (34.6s)
+  ✓  187 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-ordering (6.8s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  188 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-restaurant (7.4s)
+  ✓  189 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-logins (7.7s)
+  ✓  190 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-device (7.4s)
+  ✓  192 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › setup (6.7s)
+  ✓  191 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-roles (9.5s)
+  ✓  193 e2e/regression.spec.ts:93:7 › desktop-1440 (1440×900) › Business Manager (admin) › reports: Sales Summary (10.6s)
+  ✓  194 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-home-is-tables (7.3s)
+  ✓  195 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-tables (6.6s)
+  ✓  196 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-guests (6.6s)
+  ✓  197 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-reports (7.2s)
+  ✓  199 e2e/regression.spec.ts:115:9 › desktop-1440 (1440×900) › Restro POS (billdesk) › admin-only screens stay closed (6.5s)
+  ✓  198 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-settings (7.9s)
+  ✓  200 e2e/regression.spec.ts:139:7 › desktop-1440 (1440×900) › POS Waiter (waiter) › computers follow Settings → Logins (6.7s)
+  ✓  201 e2e/regression.spec.ts:50:5 › wide-1920 (1920×1080) › sign-in page (8.7s)
+  ✓  203 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › dashboard (6.9s)
+  ✓  204 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › dashboard-live (6.4s)
+  ✓  206 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › tables (5.7s)
+  ✓  205 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › bill-opens-from-tables (6.0s)
+  ✓  207 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › menu (6.0s)
+  ✓  208 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › stock (5.0s)
+  ✓  209 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › guests (5.3s)
+  ✓  210 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › reports (6.2s)
+  ✓  211 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-brand (5.5s)
+  ✓  212 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-qr (5.4s)
+  ✓  213 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-whatsapp (7.2s)
+  ✓  214 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-results (5.9s)
+  ✓  215 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings (6.0s)
+  ✓  216 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-terminals (6.3s)
+  ✘  202 e2e/regression.spec.ts:65:5 › wide-1920 (1920×1080) › guest QR menu (34.3s)
+  ✓  217 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-invoice (7.4s)
+  ✓  218 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-printing (7.5s)
+  ✓  219 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-ordering (7.0s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  220 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-logins (7.6s)
+  ✓  221 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-roles (8.4s)
+  ✓  223 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-device (7.8s)
+  ✓  222 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-restaurant (8.4s)
+  ✓  224 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › setup (6.8s)
+  ✓  227 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-tables (7.0s)
+  ✓  225 e2e/regression.spec.ts:93:7 › wide-1920 (1920×1080) › Business Manager (admin) › reports: Sales Summary (10.5s)
+  ✓  226 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-home-is-tables (8.3s)
+  ✓  228 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-guests (6.6s)
+  ✓  231 e2e/regression.spec.ts:115:9 › wide-1920 (1920×1080) › Restro POS (billdesk) › admin-only screens stay closed (7.1s)
+  ✓  229 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-reports (8.0s)
+  ✓  230 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-settings (7.6s)
+  ✓  232 e2e/regression.spec.ts:139:7 › wide-1920 (1920×1080) › POS Waiter (waiter) › computers follow Settings → Logins (6.4s)
+  ✓  233 e2e/regression.spec.ts:156:3 › phone-412: admin signs in on the first try (12.5s)
+  ✓  234 e2e/regression.spec.ts:156:3 › desktop-1440: admin signs in on the first try (12.1s)
+  ✓  236 e2e/sync-window.spec.ts:43:5 › Sync window · Business Manager · phone-412 › opens with the right content, syncs, and closes cleanly three ways (20.7s)
+  ✓  235 e2e/sync-window.spec.ts:43:5 › Sync window · Business Manager · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways (21.8s)
+  ✓  237 e2e/sync-window.spec.ts:43:5 › Sync window · Restro POS · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways (15.3s)
+  ✓  238 e2e/sync-window.spec.ts:43:5 › Sync window · Restro POS · laptop-1280 › opens with the right content, syncs, and closes cleanly three ways (16.2s)
+
+
+  1) e2e/launch-check.spec.ts:56:5 › Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).first()
+    Expected: visible
+    Timeout: 30000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 30000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).first()[22m
+
+
+      71 |       // Scanning it opens that table's menu.
+      72 |       await page.goto(`${u.pathname}${u.search}`);
+    > 73 |       await expect(page.getByText(/Ordering to table/).first()).toBeVisible({ timeout: 30_000 });
+         |                                                                 ^
+      74 |       await info.attach("scanned-table-menu.png", { body: await page.screenshot(), contentType: "image/png" });
+      75 |       // Downloaded QR file is the same code.
+      76 |       await page.goto("/settings?app=manager#ordering");
+        at /home/runner/work/good-times-start/good-times-start/e2e/launch-check.spec.ts:73:65
+
+    Error Context: test-results/launch-check-Launch-check--e2a3d--scans-to-that-table-s-menu/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/launch-check-Launch-check--e2a3d--scans-to-that-table-s-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/launch-check-Launch-check--e2a3d--scans-to-that-table-s-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) e2e/launch-check.spec.ts:215:5 › Launch check › External links › every link on the guest menu works 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table|Order for pickup/).first()
+    Expected: visible
+    Timeout: 30000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 30000ms[22m
+    [2m  - waiting for getByText(/Ordering to table|Order for pickup/).first()[22m
+
+
+      218 |       const tableButton = page.getByRole("button", { name: /^Table / }).first();
+      219 |       if (await tableButton.isVisible().catch(() => false)) await tableButton.click();
+    > 220 |       await expect(page.getByText(/Ordering to table|Order for pickup/).first()).toBeVisible({ timeout: 30_000 });
+          |                                                                                  ^
+      221 |       const hrefs = await page.locator("a[href]").evaluateAll((as) => [...new Set(as.map((a) => (a as HTMLAnchorElement).href))]);
+      222 |       const results: string[] = [];
+      223 |       for (const href of hrefs) {
+        at /home/runner/work/good-times-start/good-times-start/e2e/launch-check.spec.ts:220:82
+
+    Error Context: test-results/launch-check-Launch-check--ece59-ink-on-the-guest-menu-works/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/launch-check-Launch-check--ece59-ink-on-the-guest-menu-works/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/launch-check-Launch-check--ece59-ink-on-the-guest-menu-works/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) e2e/launch-check.spec.ts:244:7 › Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Table Room 1').first()
+    Expected: visible
+    Timeout: 30000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 30000ms[22m
+    [2m  - waiting for getByText('Table Room 1').first()[22m
+
+
+      262 |         await tile.click();
+      263 |         await expect(page).toHaveURL(/table=/);
+    > 264 |         await expect(page.getByText(`Table ${label}`).first()).toBeVisible({ timeout: 30_000 });
+          |                                                                ^
+      265 |         await info.attach("table-bill.png", { body: await page.screenshot(), contentType: "image/png" });
+      266 |         // Table options (move, merge, reserve) are on the tile's own button.
+      267 |         await page.goto("/tables?app=pos");
+        at /home/runner/work/good-times-start/good-times-start/e2e/launch-check.spec.ts:264:64
+
+    Error Context: test-results/launch-check-Launch-check--f5084-d-counter-orders-open-bills/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/launch-check-Launch-check--f5084-d-counter-orders-open-bills/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/launch-check-Launch-check--f5084-d-counter-orders-open-bills/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) e2e/regression.spec.ts:65:5 › phone-360 (360×780) › guest QR menu ─────────────────────────────
+
+    Error: phone-360-guest-table-menu: shows "/Ordering to table/"
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - phone-360-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()[22m
+
+
+       at helpers.ts:35
+
+      33 |   if (expectText) {
+      34 |     try {
+    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+         |                                                                                                                     ^
+      36 |     } catch (error) {
+      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      38 |       throw error;
+        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)
+        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+
+    Error Context: test-results/regression-phone-360-360×780-guest-QR-menu/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/regression-phone-360-360×780-guest-QR-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/regression-phone-360-360×780-guest-QR-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) e2e/regression.spec.ts:65:5 › phone-412 (412×915) › guest QR menu ─────────────────────────────
+
+    Error: phone-412-guest-table-menu: shows "/Ordering to table/"
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - phone-412-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()[22m
+
+
+       at helpers.ts:35
+
+      33 |   if (expectText) {
+      34 |     try {
+    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+         |                                                                                                                     ^
+      36 |     } catch (error) {
+      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      38 |       throw error;
+        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)
+        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+
+    Error Context: test-results/regression-phone-412-412×915-guest-QR-menu/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/regression-phone-412-412×915-guest-QR-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/regression-phone-412-412×915-guest-QR-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) e2e/regression.spec.ts:65:5 › tablet-768 (768×1024) › guest QR menu ───────────────────────────
+
+    Error: tablet-768-guest-table-menu: shows "/Ordering to table/"
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - tablet-768-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()[22m
+
+
+       at helpers.ts:35
+
+      33 |   if (expectText) {
+      34 |     try {
+    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+         |                                                                                                                     ^
+      36 |     } catch (error) {
+      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      38 |       throw error;
+        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)
+        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+
+    Error Context: test-results/regression-tablet-768-768×1024-guest-QR-menu/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/regression-tablet-768-768×1024-guest-QR-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/regression-tablet-768-768×1024-guest-QR-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) e2e/regression.spec.ts:65:5 › tablet-1024-landscape (1024×768) › guest QR menu ────────────────
+
+    Error: tablet-1024-landscape-guest-table-menu: shows "/Ordering to table/"
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - tablet-1024-landscape-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()[22m
+
+
+       at helpers.ts:35
+
+      33 |   if (expectText) {
+      34 |     try {
+    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+         |                                                                                                                     ^
+      36 |     } catch (error) {
+      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      38 |       throw error;
+        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)
+        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+
+    Error Context: test-results/regression-tablet-1024-landscape-1024×768-guest-QR-menu/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/regression-tablet-1024-landscape-1024×768-guest-QR-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/regression-tablet-1024-landscape-1024×768-guest-QR-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) e2e/regression.spec.ts:65:5 › laptop-1280 (1280×800) › guest QR menu ──────────────────────────
+
+    Error: laptop-1280-guest-table-menu: shows "/Ordering to table/"
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - laptop-1280-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()[22m
+
+
+       at helpers.ts:35
+
+      33 |   if (expectText) {
+      34 |     try {
+    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+         |                                                                                                                     ^
+      36 |     } catch (error) {
+      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      38 |       throw error;
+        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)
+        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+
+    Error Context: test-results/regression-laptop-1280-1280×800-guest-QR-menu/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/regression-laptop-1280-1280×800-guest-QR-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/regression-laptop-1280-1280×800-guest-QR-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) e2e/regression.spec.ts:65:5 › desktop-1440 (1440×900) › guest QR menu ─────────────────────────
+
+    Error: desktop-1440-guest-table-menu: shows "/Ordering to table/"
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - desktop-1440-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()[22m
+
+
+       at helpers.ts:35
+
+      33 |   if (expectText) {
+      34 |     try {
+    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+         |                                                                                                                     ^
+      36 |     } catch (error) {
+      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      38 |       throw error;
+        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)
+        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+
+    Error Context: test-results/regression-desktop-1440-1440×900-guest-QR-menu/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/regression-desktop-1440-1440×900-guest-QR-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/regression-desktop-1440-1440×900-guest-QR-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) e2e/regression.spec.ts:65:5 › wide-1920 (1920×1080) › guest QR menu ──────────────────────────
+
+    Error: wide-1920-guest-table-menu: shows "/Ordering to table/"
+
+    [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - wide-1920-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms[22m
+    [2m  - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()[22m
+
+
+       at helpers.ts:35
+
+      33 |   if (expectText) {
+      34 |     try {
+    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });
+         |                                                                                                                     ^
+      36 |     } catch (error) {
+      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+      38 |       throw error;
+        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)
+        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+
+    Error Context: test-results/regression-wide-1920-1920×1080-guest-QR-menu/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/regression-wide-1920-1920×1080-guest-QR-menu/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/regression-wide-1920-1920×1080-guest-QR-menu/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10 failed
+    e2e/launch-check.spec.ts:56:5 › Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu 
+    e2e/launch-check.spec.ts:215:5 › Launch check › External links › every link on the guest menu works 
+    e2e/launch-check.spec.ts:244:7 › Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills 
+    e2e/regression.spec.ts:65:5 › phone-360 (360×780) › guest QR menu ──────────────────────────────
+    e2e/regression.spec.ts:65:5 › phone-412 (412×915) › guest QR menu ──────────────────────────────
+    e2e/regression.spec.ts:65:5 › tablet-768 (768×1024) › guest QR menu ────────────────────────────
+    e2e/regression.spec.ts:65:5 › tablet-1024-landscape (1024×768) › guest QR menu ─────────────────
+    e2e/regression.spec.ts:65:5 › laptop-1280 (1280×800) › guest QR menu ───────────────────────────
+    e2e/regression.spec.ts:65:5 › desktop-1440 (1440×900) › guest QR menu ──────────────────────────
+    e2e/regression.spec.ts:65:5 › wide-1920 (1920×1080) › guest QR menu ────────────────────────────
+  4 skipped
+  224 passed (10.3m)
+::error file=e2e/launch-check.spec.ts,title=e2e/launch-check.spec.ts:56:5 › Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu,line=73,col=65::  1) e2e/launch-check.spec.ts:56:5 › Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu %0A    Error: expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).first()%0A    Expected: visible%0A    Timeout: 30000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - Expect "toBeVisible" with timeout 30000ms%0A      - waiting for getByText(/Ordering to table/).first()%0A%0A%0A      71 |       // Scanning it opens that table's menu.%0A      72 |       await page.goto(`${u.pathname}${u.search}`);%0A    > 73 |       await expect(page.getByText(/Ordering to table/).first()).toBeVisible({ timeout: 30_000 });%0A         |                                                                 ^%0A      74 |       await info.attach("scanned-table-menu.png", { body: await page.screenshot(), contentType: "image/png" });%0A      75 |       // Downloaded QR file is the same code.%0A      76 |       await page.goto("/settings?app=manager#ordering");%0A        at /home/runner/work/good-times-start/good-times-start/e2e/launch-check.spec.ts:73:65
+::error file=e2e/launch-check.spec.ts,title=e2e/launch-check.spec.ts:215:5 › Launch check › External links › every link on the guest menu works,line=220,col=82::  2) e2e/launch-check.spec.ts:215:5 › Launch check › External links › every link on the guest menu works %0A    Error: expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table|Order for pickup/).first()%0A    Expected: visible%0A    Timeout: 30000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - Expect "toBeVisible" with timeout 30000ms%0A      - waiting for getByText(/Ordering to table|Order for pickup/).first()%0A%0A%0A      218 |       const tableButton = page.getByRole("button", { name: /^Table / }).first();%0A      219 |       if (await tableButton.isVisible().catch(() => false)) await tableButton.click();%0A    > 220 |       await expect(page.getByText(/Ordering to table|Order for pickup/).first()).toBeVisible({ timeout: 30_000 });%0A          |                                                                                  ^%0A      221 |       const hrefs = await page.locator("a[href]").evaluateAll((as) => [...new Set(as.map((a) => (a as HTMLAnchorElement).href))]);%0A      222 |       const results: string[] = [];%0A      223 |       for (const href of hrefs) {%0A        at /home/runner/work/good-times-start/good-times-start/e2e/launch-check.spec.ts:220:82
+::error file=e2e/launch-check.spec.ts,title=e2e/launch-check.spec.ts:244:7 › Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills,line=264,col=64::  3) e2e/launch-check.spec.ts:244:7 › Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills %0A    Error: expect(locator).toBeVisible() failed%0A%0A    Locator: getByText('Table Room 1').first()%0A    Expected: visible%0A    Timeout: 30000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - Expect "toBeVisible" with timeout 30000ms%0A      - waiting for getByText('Table Room 1').first()%0A%0A%0A      262 |         await tile.click();%0A      263 |         await expect(page).toHaveURL(/table=/);%0A    > 264 |         await expect(page.getByText(`Table ${label}`).first()).toBeVisible({ timeout: 30_000 });%0A          |                                                                ^%0A      265 |         await info.attach("table-bill.png", { body: await page.screenshot(), contentType: "image/png" });%0A      266 |         // Table options (move, merge, reserve) are on the tile's own button.%0A      267 |         await page.goto("/tables?app=pos");%0A        at /home/runner/work/good-times-start/good-times-start/e2e/launch-check.spec.ts:264:64
+::error file=e2e/helpers.ts,title=e2e/regression.spec.ts:65:5 › phone-360 (360×780) › guest QR menu,line=35,col=117::  4) e2e/regression.spec.ts:65:5 › phone-360 (360×780) › guest QR menu ─────────────────────────────%0A    Error: phone-360-guest-table-menu: shows "/Ordering to table/"%0A%0A    expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()%0A    Expected: visible%0A    Timeout: 20000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - phone-360-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms%0A      - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()%0A%0A%0A       at helpers.ts:35%0A%0A      33 |   if (expectText) {%0A      34 |     try {%0A    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });%0A         |                                                                                                                     ^%0A      36 |     } catch (error) {%0A      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });%0A      38 |       throw error;%0A        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)%0A        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+::error file=e2e/helpers.ts,title=e2e/regression.spec.ts:65:5 › phone-412 (412×915) › guest QR menu,line=35,col=117::  5) e2e/regression.spec.ts:65:5 › phone-412 (412×915) › guest QR menu ─────────────────────────────%0A    Error: phone-412-guest-table-menu: shows "/Ordering to table/"%0A%0A    expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()%0A    Expected: visible%0A    Timeout: 20000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - phone-412-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms%0A      - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()%0A%0A%0A       at helpers.ts:35%0A%0A      33 |   if (expectText) {%0A      34 |     try {%0A    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });%0A         |                                                                                                                     ^%0A      36 |     } catch (error) {%0A      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });%0A      38 |       throw error;%0A        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)%0A        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+::error file=e2e/helpers.ts,title=e2e/regression.spec.ts:65:5 › tablet-768 (768×1024) › guest QR menu,line=35,col=117::  6) e2e/regression.spec.ts:65:5 › tablet-768 (768×1024) › guest QR menu ───────────────────────────%0A    Error: tablet-768-guest-table-menu: shows "/Ordering to table/"%0A%0A    expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()%0A    Expected: visible%0A    Timeout: 20000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - tablet-768-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms%0A      - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()%0A%0A%0A       at helpers.ts:35%0A%0A      33 |   if (expectText) {%0A      34 |     try {%0A    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });%0A         |                                                                                                                     ^%0A      36 |     } catch (error) {%0A      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });%0A      38 |       throw error;%0A        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)%0A        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+::error file=e2e/helpers.ts,title=e2e/regression.spec.ts:65:5 › tablet-1024-landscape (1024×768) › guest QR menu,line=35,col=117::  7) e2e/regression.spec.ts:65:5 › tablet-1024-landscape (1024×768) › guest QR menu ────────────────%0A    Error: tablet-1024-landscape-guest-table-menu: shows "/Ordering to table/"%0A%0A    expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()%0A    Expected: visible%0A    Timeout: 20000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - tablet-1024-landscape-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms%0A      - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()%0A%0A%0A       at helpers.ts:35%0A%0A      33 |   if (expectText) {%0A      34 |     try {%0A    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });%0A         |                                                                                                                     ^%0A      36 |     } catch (error) {%0A      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });%0A      38 |       throw error;%0A        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)%0A        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+::error file=e2e/helpers.ts,title=e2e/regression.spec.ts:65:5 › laptop-1280 (1280×800) › guest QR menu,line=35,col=117::  8) e2e/regression.spec.ts:65:5 › laptop-1280 (1280×800) › guest QR menu ──────────────────────────%0A    Error: laptop-1280-guest-table-menu: shows "/Ordering to table/"%0A%0A    expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()%0A    Expected: visible%0A    Timeout: 20000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - laptop-1280-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms%0A      - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()%0A%0A%0A       at helpers.ts:35%0A%0A      33 |   if (expectText) {%0A      34 |     try {%0A    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });%0A         |                                                                                                                     ^%0A      36 |     } catch (error) {%0A      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });%0A      38 |       throw error;%0A        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)%0A        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+::error file=e2e/helpers.ts,title=e2e/regression.spec.ts:65:5 › desktop-1440 (1440×900) › guest QR menu,line=35,col=117::  9) e2e/regression.spec.ts:65:5 › desktop-1440 (1440×900) › guest QR menu ─────────────────────────%0A    Error: desktop-1440-guest-table-menu: shows "/Ordering to table/"%0A%0A    expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()%0A    Expected: visible%0A    Timeout: 20000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - desktop-1440-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms%0A      - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()%0A%0A%0A       at helpers.ts:35%0A%0A      33 |   if (expectText) {%0A      34 |     try {%0A    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });%0A         |                                                                                                                     ^%0A      36 |     } catch (error) {%0A      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });%0A      38 |       throw error;%0A        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)%0A        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+::error file=e2e/helpers.ts,title=e2e/regression.spec.ts:65:5 › wide-1920 (1920×1080) › guest QR menu,line=35,col=117::  10) e2e/regression.spec.ts:65:5 › wide-1920 (1920×1080) › guest QR menu ──────────────────────────%0A    Error: wide-1920-guest-table-menu: shows "/Ordering to table/"%0A%0A    expect(locator).toBeVisible() failed%0A%0A    Locator: getByText(/Ordering to table/).filter({ visible: true }).first()%0A    Expected: visible%0A    Timeout: 20000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - wide-1920-guest-table-menu: shows "/Ordering to table/" with timeout 20000ms%0A      - waiting for getByText(/Ordering to table/).filter({ visible: true }).first()%0A%0A%0A       at helpers.ts:35%0A%0A      33 |   if (expectText) {%0A      34 |     try {%0A    > 35 |       await expect(page.getByText(expectText).filter({ visible: true }).first(), `${label}: shows "${expectText}"`).toBeVisible({ timeout: 20_000 });%0A         |                                                                                                                     ^%0A      36 |     } catch (error) {%0A      37 |       await info.attach(`${label}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });%0A      38 |       throw error;%0A        at audit (/home/runner/work/good-times-start/good-times-start/e2e/helpers.ts:35:117)%0A        at /home/runner/work/good-times-start/good-times-start/e2e/regression.spec.ts:73:9
+::notice title=🎭 Playwright Run Summary::  10 failed%0A    e2e/launch-check.spec.ts:56:5 › Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu %0A    e2e/launch-check.spec.ts:215:5 › Launch check › External links › every link on the guest menu works %0A    e2e/launch-check.spec.ts:244:7 › Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills %0A    e2e/regression.spec.ts:65:5 › phone-360 (360×780) › guest QR menu ──────────────────────────────%0A    e2e/regression.spec.ts:65:5 › phone-412 (412×915) › guest QR menu ──────────────────────────────%0A    e2e/regression.spec.ts:65:5 › tablet-768 (768×1024) › guest QR menu ────────────────────────────%0A    e2e/regression.spec.ts:65:5 › tablet-1024-landscape (1024×768) › guest QR menu ─────────────────%0A    e2e/regression.spec.ts:65:5 › laptop-1280 (1280×800) › guest QR menu ───────────────────────────%0A    e2e/regression.spec.ts:65:5 › desktop-1440 (1440×900) › guest QR menu ──────────────────────────%0A    e2e/regression.spec.ts:65:5 › wide-1920 (1920×1080) › guest QR menu ────────────────────────────%0A  4 skipped%0A  224 passed (10.3m)
