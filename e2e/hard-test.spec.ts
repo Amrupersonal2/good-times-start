@@ -32,7 +32,7 @@ async function synced(page: Page) {
 }
 
 /** Value printed under a small label (KPI tiles and report stats). */
-const valueUnder = (page: Page, label: string) => page.locator(`xpath=//*[normalize-space(text())="${label}" and following-sibling::*]`).filter({ visible: true }).first().locator("xpath=following-sibling::*[1]");
+const valueUnder = (page: Page, label: string) => page.locator(`xpath=//*[not(self::button) and not(ancestor::button) and normalize-space(text())="${label}" and following-sibling::*]`).filter({ visible: true }).first().locator("xpath=following-sibling::*[1]");
 
 async function download(page: Page, click: () => Promise<void>) {
   const [file] = await Promise.all([page.waitForEvent("download", { timeout: 30_000 }), click()]);
