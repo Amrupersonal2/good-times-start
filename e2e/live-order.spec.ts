@@ -21,7 +21,7 @@ const tabletBp = BREAKPOINTS.find((b) => b.name === "tablet-768")!;
 const quiet = () => { try { localStorage.setItem("xtsy-regression", "1"); } catch { /* ignore */ } };
 
 async function open(browser: Browser, bp: typeof phone, auth?: Parameters<typeof authFile>[0]) {
-  const context = await browser.newContext({ ...contextFor(bp), baseURL: "http://127.0.0.1:4173", ...(auth ? { storageState: authFile(auth) } : {}) });
+  const context = await browser.newContext({ ...contextFor(bp), baseURL: process.env["BASE_URL"] || "http://127.0.0.1:4173", ...(auth ? { storageState: authFile(auth) } : {}) });
   await context.addInitScript(quiet);
   return context;
 }
