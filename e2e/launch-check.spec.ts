@@ -188,16 +188,9 @@ test.describe("Launch check", () => {
       info.annotations.push({ type: "export", description: `${items.name}, ${summary.name}` });
     });
 
-    test("Reports app, Guests, Stock and Menu Excel", async ({ page }, info) => {
+    test("Guests, Stock and Menu Excel", async ({ page }, info) => {
       await page.addInitScript(quiet);
-      await page.goto("/insights");
-      await ready(page);
-      const sales = await download(page, () => page.getByRole("button", { name: "Sales Excel" }).click());
-      expect(readXlsx(sales.data).sheets.length).toBeGreaterThan(0);
-      const out = [sales.name];
-      const gst = page.getByRole("button", { name: "GSTR-1" });
-      await page.getByRole("radio", { name: "Month" }).click();
-      if (await gst.isEnabled()) { const f = await download(page, () => gst.click()); readXlsx(f.data); out.push(f.name); }
+      const out: string[] = [];
 
       for (const [path, name] of [["/customers?app=manager", "Excel"], ["/stock?app=manager", "Excel"], ["/menu?app=manager", "Excel"]] as const) {
         await page.goto(path);

@@ -88,7 +88,7 @@ test.describe("Live audit · published site", () => {
   test.skip(!SITE, "Runs against the published site (set BASE_URL)");
 
   test("install files, icons, logo and offline worker are current", async ({ request }, info) => {
-    const expected: Record<string, string> = { pos: "/tables?app=pos", waiter: "/waiter?app=waiter", manager: "/manager?app=manager", insights: "/insights" };
+    const expected: Record<string, string> = { pos: "/tables?app=pos", waiter: "/waiter?app=waiter", manager: "/manager?app=manager" };
     const out: string[] = [];
     for (const [app, start] of Object.entries(expected)) {
       const res = await request.get(`${SITE}/manifest-${app}.webmanifest`);
@@ -103,13 +103,16 @@ test.describe("Live audit · published site", () => {
       out.push(`${m.name}: ${m.start_url}, ${m.icons.length} icons`);
     }
     const sw = await (await request.get(`${SITE}/sw.js`)).text();
-    expect(sw, "offline worker is the latest").toContain('VERSION = "xtsy-pos-v8"');
+    expect(sw, "offline worker is the latest").toContain('VERSION = "xtsy-pos-v9"');
     expect((await request.get(`${SITE}/brand/xtsy-logo.png`)).status()).toBe(200);
     expect((await request.get(`${SITE}/favicon.png`)).status()).toBe(200);
-    for (const path of ["/auth", "/order/tab-bistro", "/tables", "/waiter", "/insights", "/manager"]) {
+    for (const path of ["/auth", "/order/tab-bistro", "/tables", "/waiter", "/manager"]) {
       const r = await request.get(`${SITE}${path}`);
       expect(r.status(), `${path} loads`).toBe(200);
     }
-    info.annotations.push({ type: "site", description: `${out.join(" · ")} · worker v8 · logo and favicon OK · 6 pages load` });
+    // Insights and its separate Reports app are retired: no install file is served for them any more.
+    const gone = await request.get(`${SITE}/manifest-insights.webmanifest`);
+    expect(gone.status() === 404 || !(gone.headers()["content-type"] ?? "").includes("json"), "the Reports app install file is gone").toBe(true);
+    info.annotations.push({ type: "site", description: `${out.join(" · ")} · worker v9 · logo and favicon OK · 5 pages load · Reports app retired` });
   });
 });

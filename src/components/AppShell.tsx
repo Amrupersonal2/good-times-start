@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, LineChart, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
+import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ const NAV = [
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
   { to: "/reports", label: "Reports", icon: BarChart3 },
-  { to: "/insights", label: "Insights", icon: LineChart },
   { to: "/marketing", label: "Marketing", icon: Sparkles },
   { to: "/waiter", label: "Waiter", icon: Tablet },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -60,7 +59,7 @@ function policyAllows(role: string, to: NavPath): boolean {
 
 /** Screens each app shows, in menu order. */
 const APP_SCREENS: Record<AppKind, NavPath[]> = {
-  manager: ["/dashboard", "/insights", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
+  manager: ["/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
   pos: ["/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/settings"],
   waiter: ["/waiter"],
 };
@@ -250,7 +249,7 @@ export function PersistentFrame({ children }: { children: ReactNode }) {
   const { user, loading } = useStaff();
   const navigate = useNavigate();
   const framed = isFramedPath(pathname);
-  const staffApp = framed || pathname === "/waiter" || pathname === "/insights";
+  const staffApp = framed || pathname === "/waiter";
   const app = useAppMode(user);
   useEffect(() => { syncAppModeFromUrl(); }, [pathname]);
   const terminal = useTerminalStatus();
@@ -380,7 +379,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
             <AlertTriangle className="size-4 shrink-0" />Finish setting up: add your GSTIN, menu, tables and staff so bills carry your details.
           </Link>
         ) : null}
-        <main className="min-w-0 flex-1 pb-20 lg:pb-0">
+        <main className="min-w-0 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
           {needsRestaurant ? <NotLinked /> : blocked ? (
             <div className="mx-auto max-w-md p-8 text-center">
               <p className="font-semibold">This screen isn't part of {APPS[app].name}</p>

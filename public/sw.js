@@ -6,11 +6,11 @@
  * - Icons, manifests, fonts: served from cache, refreshed in the background.
  * - Never touches API calls, server functions, Supabase or non-GET requests.
  */
-const VERSION = "xtsy-pos-v8";
+const VERSION = "xtsy-pos-v9";
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const STATIC = `${VERSION}-static`;
-const START_PAGES = ["/", "/waiter", "/manager", "/dashboard", "/auth", "/insights"];
+const START_PAGES = ["/", "/waiter", "/manager", "/dashboard", "/auth"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

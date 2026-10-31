@@ -1,13 +1,14 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { AlertTriangle, Ban, BadgePercent, Clock, Gift, HandCoins, IndianRupee, Package, Receipt, ShoppingBag, Smartphone, Store, UtensilsCrossed, XCircle } from "lucide-react";
+import { AlertTriangle, Ban, BadgePercent, Clock, Gift, HandCoins, IndianRupee, LineChart, Package, Receipt, ShoppingBag, Smartphone, Store, UtensilsCrossed, XCircle } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Dropdown } from "@/components/Dropdown";
 import { getDb } from "@/lib/db";
 import { formatINR } from "@/lib/billing";
 import { PRESET_LABELS, businessOverview, dashboardRange, liveStatus, salesByDay, type Preset } from "@/lib/dashboard-logic";
-import type { Range } from "@/lib/report-logic";
+import { dayStart, type Range } from "@/lib/report-logic";
+import { kpiForecast, LOOKBACK_DAYS } from "@/lib/forecast";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
 import { useStaff } from "@/lib/auth-context";
@@ -151,6 +152,7 @@ function Overview() {
         </div>
 
         <aside className="space-y-6">
+          <ForecastCard />
           <Card title="Sales breakup">
             <dl className="divide-y divide-border">
               <Line icon={Store} label="Billing counter" value={money(o?.breakup.pos ?? 0)} />
@@ -172,6 +174,46 @@ function Overview() {
         </aside>
       </div>
     </div>
+  );
+}
+
+/** Where today and this month are heading, from the usual pattern of past days. Refreshes every minute. */
+function ForecastCard() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = window.setInterval(() => setNow(Date.now()), 60_000); return () => window.clearInterval(t); }, []);
+  const from = dayStart(now - (LOOKBACK_DAYS + 1) * 86_400_000);
+  const orders = useLiveQuery(() => getDb().orders.where("createdAt").aboveOrEqual(from).toArray(), [from]);
+  const f = useMemo(() => (orders ? kpiForecast(orders, now) : null), [orders, now]);
+  const weekday = new Date(now).toLocaleDateString("en-IN", { weekday: "long" });
+  return (
+    <Card title="Forecast" icon={<LineChart className="size-4 text-primary" />}>
+      {!f ? <p className="text-sm text-muted-foreground">Working it out…</p> : !f.ready ? (
+        <div className="text-sm">
+          <p className="font-medium">The forecast starts after {f.needed} days of sales.</p>
+          <p className="mt-1 text-muted-foreground">{f.tradingDays} of {f.needed} days so far, from the last {LOOKBACK_DAYS} days.</p>
+          <div className="mt-3 h-1.5 rounded-full bg-secondary" aria-hidden="true"><div className="h-1.5 rounded-full bg-primary" style={{ width: `${Math.round((f.tradingDays / f.needed) * 100)}%` }} /></div>
+        </div>
+      ) : (
+        <div data-testid="forecast">
+          <p className="text-xs font-medium text-muted-foreground">Today is likely to close at</p>
+          <p className="mt-1 text-[28px] font-bold leading-tight tracking-tight tabular-nums">{money(f.today.expected)}</p>
+          <p className="text-sm text-muted-foreground">{f.today.low === f.today.high ? "" : `Between ${money(f.today.low)} and ${money(f.today.high)}. `}{money(f.today.soFar)} billed so far.</p>
+          {f.today.vsUsual !== null ? (
+            <p className={cn("mt-1 text-sm font-semibold", f.today.vsUsual >= 0 ? "text-success" : "text-destructive")}>
+              {f.today.vsUsual === 0 ? "Same as" : `${Math.abs(Math.round(f.today.vsUsual * 100))}% ${f.today.vsUsual > 0 ? "above" : "below"}`} a usual {f.basis === "weekday" ? weekday : "day"}
+            </p>
+          ) : null}
+          <dl className="mt-4 divide-y divide-border">
+            <div className="flex items-baseline justify-between py-2"><dt className="text-sm">Bills expected</dt><dd className="font-semibold tabular-nums">{f.today.bills.toLocaleString("en-IN")}</dd></div>
+            <div className="flex items-baseline justify-between py-2"><dt className="text-sm">Average bill</dt><dd className="font-semibold tabular-nums">{money(f.today.averageBill)}</dd></div>
+            <div className="flex items-baseline justify-between py-2"><dt className="text-sm">This month</dt><dd className="font-semibold tabular-nums">{money(f.month.expected)}</dd></div>
+          </dl>
+          <p className="mt-2 text-xs text-muted-foreground">
+            From {f.referenceDays} {f.basis === "weekday" ? `past ${weekday}s` : "recent trading days"}. Month: {money(f.month.soFar)} so far{f.month.daysLeft ? `, then about ${money(f.month.dailyAverage)} a day for ${f.month.daysLeft} more days` : ""}.
+          </p>
+        </div>
+      )}
+    </Card>
   );
 }
 

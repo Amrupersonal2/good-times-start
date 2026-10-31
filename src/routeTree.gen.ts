@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ManagerRouteImport } from './routes/manager'
 import { Route as MarketingRouteImport } from './routes/marketing'
 import { Route as MenuRouteImport } from './routes/menu'
@@ -43,11 +42,6 @@ const CustomersRoute = CustomersRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InsightsRoute = InsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManagerRoute = ManagerRouteImport.update({
@@ -106,7 +100,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/insights': typeof InsightsRoute
   '/manager': typeof ManagerRoute
   '/marketing': typeof MarketingRoute
   '/menu': typeof MenuRoute
@@ -123,7 +116,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/insights': typeof InsightsRoute
   '/manager': typeof ManagerRoute
   '/marketing': typeof MarketingRoute
   '/menu': typeof MenuRoute
@@ -141,7 +133,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/insights': typeof InsightsRoute
   '/manager': typeof ManagerRoute
   '/marketing': typeof MarketingRoute
   '/menu': typeof MenuRoute
@@ -160,7 +151,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/customers'
     | '/dashboard'
-    | '/insights'
     | '/manager'
     | '/marketing'
     | '/menu'
@@ -177,7 +167,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/customers'
     | '/dashboard'
-    | '/insights'
     | '/manager'
     | '/marketing'
     | '/menu'
@@ -194,7 +183,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/customers'
     | '/dashboard'
-    | '/insights'
     | '/manager'
     | '/marketing'
     | '/menu'
@@ -212,7 +200,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CustomersRoute: typeof CustomersRoute
   DashboardRoute: typeof DashboardRoute
-  InsightsRoute: typeof InsightsRoute
   ManagerRoute: typeof ManagerRoute
   MarketingRoute: typeof MarketingRoute
   MenuRoute: typeof MenuRoute
@@ -253,13 +240,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/insights': {
-      id: '/insights'
-      path: '/insights'
-      fullPath: '/insights'
-      preLoaderRoute: typeof InsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manager': {
@@ -340,7 +320,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CustomersRoute: CustomersRoute,
   DashboardRoute: DashboardRoute,
-  InsightsRoute: InsightsRoute,
   ManagerRoute: ManagerRoute,
   MarketingRoute: MarketingRoute,
   MenuRoute: MenuRoute,

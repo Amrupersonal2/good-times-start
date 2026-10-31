@@ -13,7 +13,6 @@ const quiet = () => { try { localStorage.setItem("xtsy-regression", "1"); } catc
 const MANAGER_SCREENS: [string, string, (string | RegExp)?][] = [
   ["dashboard", "/dashboard", "Business overview"],
   ["dashboard-live", "/dashboard?tab=live", "Live status"],
-  ["insights", "/insights"],
   ["bill-opens-from-tables", "/", "Counter orders"],
   ["tables", "/tables"],
   ["menu", "/menu"],
@@ -34,7 +33,6 @@ const MANAGER_SCREENS: [string, string, (string | RegExp)?][] = [
   ["settings-roles", "/settings#roles", "On with PIN"],
   ["settings-device", "/settings#device", "This device"],
   ["setup", "/setup"],
-  ["reports-app", "/insights", "How guests paid"],
 ];
 
 const POS_SCREENS: [string, string, (string | RegExp)?][] = [
