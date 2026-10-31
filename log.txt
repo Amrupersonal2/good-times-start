@@ -1,0 +1,492 @@
+[WebServer] [33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[WebServer] [2m7:01:49 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts:12:34 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts[39m
+[WebServer] [2m7:01:49 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m7:01:49 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m7:01:49 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m7:01:51 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m7:01:51 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m7:01:51 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m7:01:56 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts:12:34 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/sync-diagnosis.functions.ts[39m
+[WebServer] [2m7:01:56 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m7:01:56 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m7:01:56 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts[39m
+[WebServer] [2m7:01:56 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m7:01:56 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+[WebServer] [2m7:01:56 AM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:client[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts[39m
+
+Running 238 tests using 4 workers
+
+  ✓    1 e2e/hard-test.spec.ts:118:3 › Hard test · KPI forecast › forecast waits for history, then projects today and the month exactly as worked by hand (23.4s)
+  ✘    3 e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) (23.3s)
+  ✓    5 e2e/hard-test.spec.ts:235:3 › Hard test · selections › Insights is gone from Business Manager (9.6s)
+  ✘    4 e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) (37.8s)
+  ✓    2 e2e/hard-test.spec.ts:192:3 › Hard test · selections › every dashboard period, report tab and menu section opens without a fault, and totals stay consistent (39.0s)
+  ✘    6 e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360) (38.2s)
+  ✘    7 e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412) (34.1s)
+  -   10 e2e/hard-test.spec.ts:301:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere
+  ✓    8 e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-1024-landscape) (37.0s)
+  ✓    9 e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-768) (40.0s)
+[WebServer] [2m7:03:37 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split:18:35 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m7:03:37 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split:28:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m7:03:37 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split:36:33 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/staff-logins.functions.ts?tss-serverfn-split[39m
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓   14 e2e/launch-check.spec.ts:110:5 › Launch check › QR codes (admin, desktop) › install QR codes for the three apps open the live apps (7.7s)
+  ✓   12 e2e/launch-check.spec.ts:56:5 › Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu (21.4s)
+  ✓   13 e2e/launch-check.spec.ts:84:5 › Launch check › QR codes (admin, desktop) › printed table cards scan, even with the logo on them (16.8s)
+[WebServer] [2m7:03:44 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split:19:31 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m7:03:44 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split:38:37 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split[39m
+[WebServer] [2m7:03:44 AM[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: /home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split:72:38 createServerFn().inputValidator() is deprecated. Use createServerFn().validator() instead.[39m
+[WebServer]   Plugin: [35mtanstack-start-core::server-fn:ssr[39m
+[WebServer]   File: [36m/home/runner/work/good-times-start/good-times-start/src/lib/whatsapp.functions.ts?tss-serverfn-split[39m
+  ✓   15 e2e/launch-check.spec.ts:127:5 › Launch check › QR codes (admin, desktop) › WhatsApp ordering link points at the live menu (5.2s)
+[WebServer] AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12)
+[WebServer] AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12) (status 500)
+[WebServer] caused by: AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12)
+[WebServer] AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12) (status 500)
+[WebServer] caused by: AbortError: This operation was aborted
+[WebServer]     at new DOMException (node:internal/per_context/domexception:76:18)
+[WebServer]     at AbortController.abort (node:internal/abort_controller:504:18)
+[WebServer]     at abort (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:316:51)
+[WebServer]     at ServerResponse.<anonymous> (file:///home/runner/work/good-times-start/good-times-start/node_modules/srvx/dist/adapters/node.mjs:320:35)
+[WebServer]     at Object.onceWrapper (node:events:633:28)
+[WebServer]     at ServerResponse.emit (node:events:519:28)
+[WebServer]     at emitCloseNT (node:_http_server:1066:10)
+[WebServer]     at Socket.onServerResponseClose (node:_http_server:285:5)
+[WebServer]     at Socket.emit (node:events:531:35)
+[WebServer]     at TCP.<anonymous> (node:net:347:12)
+  ✓   16 e2e/launch-check.spec.ts:139:5 › Launch check › Excel and CSV exports (admin, desktop) › Reports: all-reports Excel, GSTR-1, GST CSV, bills CSV, items CSV, Sales Summary (10.4s)
+  ✓   18 e2e/launch-check.spec.ts:215:5 › Launch check › External links › every link on the guest menu works (8.9s)
+  ✓   20 e2e/launch-check.spec.ts:277:7 › Launch check › Bills open only from Tables › Business Manager (admin, phone) › / goes to Tables, and the bottom menu has no Billing (6.5s)
+  ✓   17 e2e/launch-check.spec.ts:191:5 › Launch check › Excel and CSV exports (admin, desktop) › Guests, Stock and Menu Excel (19.7s)
+  ✓   22 e2e/live-audit.spec.ts:36:3 › Live audit · security (public key only) › the public can't write bills, menu or tables, or change the restaurant (1.7s)
+  ✓   11 e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (laptop-1280) (46.1s)
+  ✓   21 e2e/live-audit.spec.ts:25:3 › Live audit · security (public key only) › private tables are unreadable without signing in (5.1s)
+  ✓   24 e2e/live-audit.spec.ts:64:3 › Live audit · security (public key only) › the guest menu shares only what guests need (327ms)
+  -   26 e2e/live-audit.spec.ts:90:3 › Live audit · published site › install files, icons, logo and offline worker are current
+  -   27 e2e/live-order.spec.ts:29:1 › guest QR order reaches the POS, is accepted, and syncs to another device
+  -   28 e2e/live-order.spec.ts:91:1 › a waiter taking an order holds the table; others see it; emptying it frees the table
+  ✓   19 e2e/launch-check.spec.ts:244:7 › Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills (12.2s)
+  ✓   25 e2e/live-audit.spec.ts:75:3 › Live audit · security (public key only) › guests can't set their own prices or order missing dishes (1.2s)
+  ✓   23 e2e/live-audit.spec.ts:47:3 › Live audit · security (public key only) › admin and staff functions refuse the public (2.4s)
+  ✓   32 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › dashboard-live (4.3s)
+  ✓   31 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › dashboard (5.7s)
+  ✓   29 e2e/regression.spec.ts:50:5 › phone-360 (360×780) › sign-in page (6.9s)
+  ✓   33 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › bill-opens-from-tables (6.0s)
+  ✓   35 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › menu (5.9s)
+  ✓   34 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › tables (6.5s)
+  ✓   30 e2e/regression.spec.ts:65:5 › phone-360 (360×780) › guest QR menu (15.4s)
+  ✓   36 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › stock (5.6s)
+  ✓   37 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › guests (5.7s)
+  ✓   38 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › reports (7.7s)
+  ✓   39 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-brand (7.1s)
+  ✓   40 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-qr (5.9s)
+  ✓   41 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-whatsapp (8.0s)
+  ✓   42 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › marketing-results (6.5s)
+  ✓   43 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings (7.1s)
+  ✓   44 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-terminals (6.9s)
+  ✓   45 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-invoice (6.6s)
+  ✓   46 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-printing (6.6s)
+  ✓   47 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-ordering (6.0s)
+  ✓   48 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-restaurant (6.3s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓   49 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-logins (6.4s)
+  ✓   50 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-roles (6.7s)
+  ✓   51 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › settings-device (6.1s)
+  ✓   52 e2e/regression.spec.ts:85:9 › phone-360 (360×780) › Business Manager (admin) › setup (7.5s)
+  ✓   54 e2e/regression.spec.ts:122:9 › phone-360 (360×780) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (6.5s)
+  ✓   55 e2e/regression.spec.ts:139:7 › phone-360 (360×780) › POS Waiter (waiter) › waiter screen (6.0s)
+  ✓   53 e2e/regression.spec.ts:93:7 › phone-360 (360×780) › Business Manager (admin) › reports: Sales Summary (9.9s)
+  ✓   56 e2e/regression.spec.ts:50:5 › phone-412 (412×915) › sign-in page (5.3s)
+  ✓   58 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › dashboard (6.6s)
+  ✓   59 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › dashboard-live (6.3s)
+  ✓   60 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › bill-opens-from-tables (6.5s)
+  ✓   61 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › tables (4.8s)
+  ✓   62 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › menu (6.3s)
+  ✓   63 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › stock (6.3s)
+  ✓   64 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › guests (5.5s)
+  ✓   57 e2e/regression.spec.ts:65:5 › phone-412 (412×915) › guest QR menu (18.2s)
+  ✓   66 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-brand (6.3s)
+  ✓   65 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › reports (7.1s)
+  ✓   67 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-qr (6.7s)
+  ✓   68 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-whatsapp (7.5s)
+  ✓   70 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings (6.5s)
+  ✓   69 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › marketing-results (6.7s)
+  ✓   71 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-terminals (6.8s)
+  ✓   72 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-invoice (6.8s)
+  ✓   74 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-ordering (6.1s)
+  ✓   73 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-printing (6.5s)
+  ✓   75 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-restaurant (6.7s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓   76 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-logins (7.4s)
+  ✓   78 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-device (5.4s)
+  ✓   77 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › settings-roles (6.9s)
+  ✓   79 e2e/regression.spec.ts:85:9 › phone-412 (412×915) › Business Manager (admin) › setup (5.8s)
+  ✓   81 e2e/regression.spec.ts:122:9 › phone-412 (412×915) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (5.5s)
+  ✓   82 e2e/regression.spec.ts:139:7 › phone-412 (412×915) › POS Waiter (waiter) › waiter screen (6.4s)
+  ✓   80 e2e/regression.spec.ts:93:7 › phone-412 (412×915) › Business Manager (admin) › reports: Sales Summary (9.9s)
+  ✓   83 e2e/regression.spec.ts:50:5 › tablet-768 (768×1024) › sign-in page (6.8s)
+  ✓   85 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › dashboard (6.4s)
+  ✓   86 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › dashboard-live (5.1s)
+  ✓   87 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › bill-opens-from-tables (4.6s)
+  ✓   88 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › tables (5.3s)
+  ✓   89 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › menu (6.0s)
+  ✓   90 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › stock (6.4s)
+  ✓   91 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › guests (5.5s)
+  ✓   84 e2e/regression.spec.ts:65:5 › tablet-768 (768×1024) › guest QR menu (20.6s)
+  ✓   93 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-brand (6.7s)
+  ✓   92 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › reports (8.3s)
+  ✓   94 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-qr (6.0s)
+  ✓   95 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-whatsapp (7.4s)
+  ✓   96 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › marketing-results (6.8s)
+  ✓   97 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings (7.4s)
+  ✓   98 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-terminals (6.6s)
+  ✓   99 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-invoice (7.0s)
+  ✓  100 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-printing (6.1s)
+  ✓  102 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-restaurant (5.9s)
+  ✓  101 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-ordering (7.4s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  104 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-roles (5.8s)
+  ✓  103 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-logins (6.8s)
+  ✓  105 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › settings-device (5.8s)
+  ✓  106 e2e/regression.spec.ts:85:9 › tablet-768 (768×1024) › Business Manager (admin) › setup (6.3s)
+  ✓  108 e2e/regression.spec.ts:122:9 › tablet-768 (768×1024) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (6.0s)
+  ✓  109 e2e/regression.spec.ts:139:7 › tablet-768 (768×1024) › POS Waiter (waiter) › waiter screen (5.1s)
+  ✓  107 e2e/regression.spec.ts:93:7 › tablet-768 (768×1024) › Business Manager (admin) › reports: Sales Summary (8.8s)
+  ✓  110 e2e/regression.spec.ts:50:5 › tablet-1024-landscape (1024×768) › sign-in page (8.4s)
+  ✓  113 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › dashboard-live (4.7s)
+  ✓  112 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › dashboard (6.1s)
+  ✓  114 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › bill-opens-from-tables (5.2s)
+  ✓  115 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › tables (5.6s)
+  ✓  116 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › menu (5.9s)
+  ✓  117 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › stock (5.8s)
+  ✓  118 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › guests (6.2s)
+  ✓  119 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › reports (8.1s)
+  ✓  111 e2e/regression.spec.ts:65:5 › tablet-1024-landscape (1024×768) › guest QR menu (21.9s)
+  ✓  120 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-brand (6.0s)
+  ✓  121 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-qr (6.4s)
+  ✓  123 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-results (7.3s)
+  ✓  124 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings (7.5s)
+  ✓  122 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › marketing-whatsapp (8.7s)
+  ✓  125 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-terminals (6.7s)
+  ✓  126 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-invoice (7.0s)
+  ✓  127 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-printing (7.3s)
+  ✓  128 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-ordering (7.2s)
+  ✓  129 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-restaurant (5.9s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  130 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-logins (6.7s)
+  ✓  132 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-device (7.0s)
+  ✓  133 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › setup (7.5s)
+  ✓  131 e2e/regression.spec.ts:85:9 › tablet-1024-landscape (1024×768) › Business Manager (admin) › settings-roles (8.5s)
+  ✓  134 e2e/regression.spec.ts:93:7 › tablet-1024-landscape (1024×768) › Business Manager (admin) › reports: Sales Summary (7.1s)
+  ✓  136 e2e/regression.spec.ts:139:7 › tablet-1024-landscape (1024×768) › POS Waiter (waiter) › waiter screen (5.2s)
+  ✓  135 e2e/regression.spec.ts:122:9 › tablet-1024-landscape (1024×768) › Restro POS (billdesk) › phones and tablets follow Settings → Logins (6.3s)
+  ✓  137 e2e/regression.spec.ts:50:5 › laptop-1280 (1280×800) › sign-in page (7.8s)
+  ✓  140 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › dashboard-live (6.4s)
+  ✓  139 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › dashboard (7.3s)
+  ✓  141 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › bill-opens-from-tables (5.8s)
+  ✓  142 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › tables (5.3s)
+  ✓  143 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › menu (5.3s)
+  ✓  144 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › stock (6.1s)
+  ✓  145 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › guests (5.6s)
+  ✓  138 e2e/regression.spec.ts:65:5 › laptop-1280 (1280×800) › guest QR menu (20.5s)
+  ✓  146 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › reports (7.5s)
+  ✓  147 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-brand (6.7s)
+  ✓  148 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-qr (5.2s)
+  ✓  150 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-results (6.5s)
+  ✓  149 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › marketing-whatsapp (8.4s)
+  ✓  152 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-terminals (6.5s)
+  ✓  151 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings (8.0s)
+  ✓  153 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-invoice (7.1s)
+  ✓  154 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-printing (6.5s)
+  ✓  156 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-restaurant (6.3s)
+  ✓  155 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-ordering (6.9s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  157 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-logins (5.8s)
+  ✓  159 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-device (6.6s)
+  ✓  158 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › settings-roles (7.9s)
+  ✓  160 e2e/regression.spec.ts:85:9 › laptop-1280 (1280×800) › Business Manager (admin) › setup (6.5s)
+  ✓  161 e2e/regression.spec.ts:93:7 › laptop-1280 (1280×800) › Business Manager (admin) › reports: Sales Summary (8.0s)
+  ✓  162 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-home-is-tables (6.5s)
+  ✓  163 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-tables (6.6s)
+  ✓  164 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-guests (6.7s)
+  ✓  165 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-reports (5.3s)
+  ✓  166 e2e/regression.spec.ts:107:11 › laptop-1280 (1280×800) › Restro POS (billdesk) › pos-settings (6.2s)
+  ✓  167 e2e/regression.spec.ts:115:9 › laptop-1280 (1280×800) › Restro POS (billdesk) › admin-only screens stay closed (6.0s)
+  ✓  168 e2e/regression.spec.ts:139:7 › laptop-1280 (1280×800) › POS Waiter (waiter) › computers follow Settings → Logins (6.2s)
+  ✓  169 e2e/regression.spec.ts:50:5 › desktop-1440 (1440×900) › sign-in page (6.4s)
+  ✓  172 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › dashboard-live (6.1s)
+  ✓  171 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › dashboard (8.2s)
+  ✓  173 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › bill-opens-from-tables (5.9s)
+  ✓  174 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › tables (5.4s)
+  ✓  175 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › menu (5.5s)
+  ✓  176 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › stock (6.2s)
+  ✓  177 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › guests (6.6s)
+  ✓  178 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › reports (7.4s)
+  ✓  170 e2e/regression.spec.ts:65:5 › desktop-1440 (1440×900) › guest QR menu (22.1s)
+  ✓  179 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-brand (6.6s)
+  ✓  180 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-qr (6.5s)
+  ✓  182 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-results (6.6s)
+  ✓  181 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › marketing-whatsapp (8.1s)
+  ✓  183 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings (7.8s)
+  ✓  184 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-terminals (6.4s)
+  ✓  185 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-invoice (6.8s)
+  ✓  186 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-printing (6.6s)
+  ✓  188 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-restaurant (6.6s)
+  ✓  187 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-ordering (8.4s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  189 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-logins (6.7s)
+  ✓  190 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-roles (7.3s)
+  ✓  192 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › setup (6.0s)
+  ✓  191 e2e/regression.spec.ts:85:9 › desktop-1440 (1440×900) › Business Manager (admin) › settings-device (6.8s)
+  ✓  194 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-home-is-tables (6.2s)
+  ✓  193 e2e/regression.spec.ts:93:7 › desktop-1440 (1440×900) › Business Manager (admin) › reports: Sales Summary (8.8s)
+  ✓  195 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-tables (6.7s)
+  ✓  196 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-guests (6.8s)
+  ✓  197 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-reports (6.2s)
+  ✓  198 e2e/regression.spec.ts:107:11 › desktop-1440 (1440×900) › Restro POS (billdesk) › pos-settings (6.1s)
+  ✓  199 e2e/regression.spec.ts:115:9 › desktop-1440 (1440×900) › Restro POS (billdesk) › admin-only screens stay closed (5.8s)
+  ✓  200 e2e/regression.spec.ts:139:7 › desktop-1440 (1440×900) › POS Waiter (waiter) › computers follow Settings → Logins (5.7s)
+  ✓  201 e2e/regression.spec.ts:50:5 › wide-1920 (1920×1080) › sign-in page (6.0s)
+  ✓  204 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › dashboard-live (6.4s)
+  ✓  203 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › dashboard (7.6s)
+  ✓  205 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › bill-opens-from-tables (6.1s)
+  ✓  206 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › tables (5.4s)
+  ✓  207 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › menu (5.9s)
+  ✓  208 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › stock (5.3s)
+  ✓  209 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › guests (6.4s)
+  ✓  202 e2e/regression.spec.ts:65:5 › wide-1920 (1920×1080) › guest QR menu (21.5s)
+  ✓  210 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › reports (7.3s)
+  ✓  211 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-brand (7.4s)
+  ✓  212 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-qr (5.8s)
+  ✓  214 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-results (7.3s)
+  ✓  213 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › marketing-whatsapp (8.6s)
+  ✓  215 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings (7.7s)
+  ✓  216 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-terminals (7.2s)
+  ✓  217 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-invoice (7.5s)
+  ✓  218 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-printing (6.7s)
+  ✓  219 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-ordering (7.3s)
+  ✓  220 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-restaurant (7.0s)
+[WebServer] [Supabase] Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY. Connect Supabase in Lovable Cloud.
+  ✓  221 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-logins (6.9s)
+  ✓  222 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-roles (8.2s)
+  ✓  224 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › setup (6.5s)
+  ✓  223 e2e/regression.spec.ts:85:9 › wide-1920 (1920×1080) › Business Manager (admin) › settings-device (7.7s)
+  ✓  227 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-tables (6.0s)
+  ✓  228 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-guests (5.5s)
+  ✓  226 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-home-is-tables (7.2s)
+  ✓  225 e2e/regression.spec.ts:93:7 › wide-1920 (1920×1080) › Business Manager (admin) › reports: Sales Summary (9.4s)
+  ✓  231 e2e/regression.spec.ts:115:9 › wide-1920 (1920×1080) › Restro POS (billdesk) › admin-only screens stay closed (6.2s)
+  ✓  232 e2e/regression.spec.ts:139:7 › wide-1920 (1920×1080) › POS Waiter (waiter) › computers follow Settings → Logins (5.9s)
+  ✓  229 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-reports (7.3s)
+  ✓  230 e2e/regression.spec.ts:107:11 › wide-1920 (1920×1080) › Restro POS (billdesk) › pos-settings (7.5s)
+  ✓  234 e2e/regression.spec.ts:156:3 › desktop-1440: admin signs in on the first try (11.6s)
+  ✓  233 e2e/regression.spec.ts:156:3 › phone-412: admin signs in on the first try (11.9s)
+  ✓  235 e2e/sync-window.spec.ts:43:5 › Sync window · Business Manager · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways (17.5s)
+  ✓  236 e2e/sync-window.spec.ts:43:5 › Sync window · Business Manager · phone-412 › opens with the right content, syncs, and closes cleanly three ways (17.6s)
+  ✓  237 e2e/sync-window.spec.ts:43:5 › Sync window · Restro POS · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways (12.3s)
+  ✓  238 e2e/sync-window.spec.ts:43:5 › Sync window · Restro POS · laptop-1280 › opens with the right content, syncs, and closes cleanly three ways (12.8s)
+
+
+  1) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) 
+
+    TimeoutError: locator.click: Timeout 20000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('link', { name: 'Takeaway' })[22m
+
+
+      60 |       await expect(page.getByRole("button", { name: /^Sync status: Offline/ })).toBeVisible({ timeout: 15_000 });
+      61 |       await nav(page, "Tables");
+    > 62 |       await page.getByRole("link", { name: "Takeaway" }).click();
+         |                                                          ^
+      63 |       const search = page.getByPlaceholder("Search dishes or codes (F4)");
+      64 |       await expect(search).toBeVisible({ timeout: 30_000 });
+      65 |
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:62:58
+
+    attachment #1: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-bill-247ed-and-Dashboard-desktop-1440-/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-bill-247ed-and-Dashboard-desktop-1440-/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) 
+
+    Error: locator.click: Error: strict mode violation: getByLabel('Discount') resolved to 2 elements:
+        1) <button dir="ltr" type="button" role="combobox" data-state="closed" aria-expanded="false" aria-label="Discount" aria-autocomplete="none" data-tsd-source="/src/components/Dropdown.tsx:42:7" class="flex items-center justify-between gap-2 whitespace-nowrap border border-input bg-card text-left shadow-[0_1px_1px_rgba(0,0,0,0.04)] cursor-pointer transition-colors hover:bg-secondary/40 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:ring-4 focus-visible:ring-ring/25 focus-visible:b…>…</button> aka getByRole('combobox', { name: 'Discount' })
+        2) <button dir="ltr" type="button" role="combobox" data-state="closed" aria-expanded="false" aria-label="Discount" aria-autocomplete="none" data-tsd-source="/src/components/Dropdown.tsx:42:7" class="flex items-center justify-between gap-2 whitespace-nowrap border border-input bg-card text-left shadow-[0_1px_1px_rgba(0,0,0,0.04)] cursor-pointer transition-colors hover:bg-secondary/40 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:ring-4 focus-visible:ring-ring/25 focus-visible:b…>…</button> aka getByRole('complementary').filter({ hasText: 'TakeawayNew billNew itemsnot' }).getByLabel('Discount')
+
+    Call log:
+    [2m  - waiting for getByLabel('Discount')[22m
+
+
+      80 |
+      81 |       // 10% discount, then GST as set up for the outlet (none until the GSTIN is added), rounded to the rupee.
+    > 82 |       await page.getByLabel("Discount").click();
+         |                                         ^
+      83 |       await page.getByRole("option", { name: "10%" }).click();
+      84 |       const tax = rupees(await valueUnder(page, "Tax").textContent());
+      85 |       const expected = Math.round(subtotal * 0.9 + tax);
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:82:41
+
+    Error Context: test-results/hard-test-Hard-test-·-bill-8956c--and-Dashboard-laptop-1280-/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-bill-8956c--and-Dashboard-laptop-1280-/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-bill-8956c--and-Dashboard-laptop-1280-/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360) 
+
+    Error: /marketing: could not scroll to the end
+    /marketing: ""Get offers from TAB Bistro by XTSY on W" ends at 1776px, under the tab bar at 723px
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoHaveLength[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected length: [32m0[39m
+    Received length: [31m2[39m
+    Received array:  [31m["/marketing: could not scroll to the end", "/marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1776px, under the tab bar at 723px"][39m
+
+      290 |       await info.attach(`scroll-${name}.png`, { body: await page.screenshot(), contentType: "image/png" });
+      291 |       info.annotations.push({ type: "scroll", description: `${name}: ${SCREENS.length} screens, ${problems.length ? problems.join("; ") : "all reach the end with content above the tab bar"}` });
+    > 292 |       expect(problems, problems.join("\n")).toHaveLength(0);
+          |                                             ^
+      293 |       await context.close();
+      294 |     });
+      295 |   }
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:292:45
+
+    Error Context: test-results/hard-test-Hard-test-·-scro-fa3dc-nder-the-tab-bar-phone-360-/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-scro-fa3dc-nder-the-tab-bar-phone-360-/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-scro-fa3dc-nder-the-tab-bar-phone-360-/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412) 
+
+    Error: /marketing: could not scroll to the end
+    /marketing: ""Get offers from TAB Bistro by XTSY on W" ends at 1740px, under the tab bar at 858px
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoHaveLength[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected length: [32m0[39m
+    Received length: [31m2[39m
+    Received array:  [31m["/marketing: could not scroll to the end", "/marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1740px, under the tab bar at 858px"][39m
+
+      290 |       await info.attach(`scroll-${name}.png`, { body: await page.screenshot(), contentType: "image/png" });
+      291 |       info.annotations.push({ type: "scroll", description: `${name}: ${SCREENS.length} screens, ${problems.length ? problems.join("; ") : "all reach the end with content above the tab bar"}` });
+    > 292 |       expect(problems, problems.join("\n")).toHaveLength(0);
+          |                                             ^
+      293 |       await context.close();
+      294 |     });
+      295 |   }
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:292:45
+
+    Error Context: test-results/hard-test-Hard-test-·-scro-25a38-nder-the-tab-bar-phone-412-/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-scro-25a38-nder-the-tab-bar-phone-412-/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-scro-25a38-nder-the-tab-bar-phone-412-/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) 
+    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) 
+    e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360) 
+    e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412) 
+  4 skipped
+  230 passed (8.9m)
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440),line=62,col=58::  1) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) %0A    TimeoutError: locator.click: Timeout 20000ms exceeded.%0A    Call log:%0A      - waiting for getByRole('link', { name: 'Takeaway' })%0A%0A%0A      60 |       await expect(page.getByRole("button", { name: /^Sync status: Offline/ })).toBeVisible({ timeout: 15_000 });%0A      61 |       await nav(page, "Tables");%0A    > 62 |       await page.getByRole("link", { name: "Takeaway" }).click();%0A         |                                                          ^%0A      63 |       const search = page.getByPlaceholder("Search dishes or codes (F4)");%0A      64 |       await expect(search).toBeVisible({ timeout: 30_000 });%0A      65 |%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:62:58
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280),line=82,col=41::  2) e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) %0A    Error: locator.click: Error: strict mode violation: getByLabel('Discount') resolved to 2 elements:%0A        1) <button dir="ltr" type="button" role="combobox" data-state="closed" aria-expanded="false" aria-label="Discount" aria-autocomplete="none" data-tsd-source="/src/components/Dropdown.tsx:42:7" class="flex items-center justify-between gap-2 whitespace-nowrap border border-input bg-card text-left shadow-[0_1px_1px_rgba(0,0,0,0.04)] cursor-pointer transition-colors hover:bg-secondary/40 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:ring-4 focus-visible:ring-ring/25 focus-visible:b…>…</button> aka getByRole('combobox', { name: 'Discount' })%0A        2) <button dir="ltr" type="button" role="combobox" data-state="closed" aria-expanded="false" aria-label="Discount" aria-autocomplete="none" data-tsd-source="/src/components/Dropdown.tsx:42:7" class="flex items-center justify-between gap-2 whitespace-nowrap border border-input bg-card text-left shadow-[0_1px_1px_rgba(0,0,0,0.04)] cursor-pointer transition-colors hover:bg-secondary/40 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:ring-4 focus-visible:ring-ring/25 focus-visible:b…>…</button> aka getByRole('complementary').filter({ hasText: 'TakeawayNew billNew itemsnot' }).getByLabel('Discount')%0A%0A    Call log:%0A      - waiting for getByLabel('Discount')%0A%0A%0A      80 |%0A      81 |       // 10% discount, then GST as set up for the outlet (none until the GSTIN is added), rounded to the rupee.%0A    > 82 |       await page.getByLabel("Discount").click();%0A         |                                         ^%0A      83 |       await page.getByRole("option", { name: "10%" }).click();%0A      84 |       const tax = rupees(await valueUnder(page, "Tax").textContent());%0A      85 |       const expected = Math.round(subtotal * 0.9 + tax);%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:82:41
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360),line=292,col=45::  3) e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360) %0A    Error: /marketing: could not scroll to the end%0A    /marketing: ""Get offers from TAB Bistro by XTSY on W" ends at 1776px, under the tab bar at 723px%0A%0A    expect(received).toHaveLength(expected)%0A%0A    Expected length: 0%0A    Received length: 2%0A    Received array:  ["/marketing: could not scroll to the end", "/marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1776px, under the tab bar at 723px"]%0A%0A      290 |       await info.attach(`scroll-${name}.png`, { body: await page.screenshot(), contentType: "image/png" });%0A      291 |       info.annotations.push({ type: "scroll", description: `${name}: ${SCREENS.length} screens, ${problems.length ? problems.join("; ") : "all reach the end with content above the tab bar"}` });%0A    > 292 |       expect(problems, problems.join("\n")).toHaveLength(0);%0A          |                                             ^%0A      293 |       await context.close();%0A      294 |     });%0A      295 |   }%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:292:45
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412),line=292,col=45::  4) e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412) %0A    Error: /marketing: could not scroll to the end%0A    /marketing: ""Get offers from TAB Bistro by XTSY on W" ends at 1740px, under the tab bar at 858px%0A%0A    expect(received).toHaveLength(expected)%0A%0A    Expected length: 0%0A    Received length: 2%0A    Received array:  ["/marketing: could not scroll to the end", "/marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1740px, under the tab bar at 858px"]%0A%0A      290 |       await info.attach(`scroll-${name}.png`, { body: await page.screenshot(), contentType: "image/png" });%0A      291 |       info.annotations.push({ type: "scroll", description: `${name}: ${SCREENS.length} screens, ${problems.length ? problems.join("; ") : "all reach the end with content above the tab bar"}` });%0A    > 292 |       expect(problems, problems.join("\n")).toHaveLength(0);%0A          |                                             ^%0A      293 |       await context.close();%0A      294 |     });%0A      295 |   }%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:292:45
+::notice title=🎭 Playwright Run Summary::  4 failed%0A    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440) %0A    e2e/hard-test.spec.ts:49:5 › Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280) %0A    e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360) %0A    e2e/hard-test.spec.ts:250:5 › Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412) %0A  4 skipped%0A  230 passed (8.9m)

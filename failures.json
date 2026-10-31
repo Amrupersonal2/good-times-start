@@ -1,0 +1,314 @@
+[
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440)",
+    "status": "unexpected",
+    "errors": [
+      "TimeoutError: locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for getByRole('link', { name: 'Takeaway' })\n\n\n  60 |       await expect(page.getByRole(\"button\", { name: /^Sync status: Offline/ })).toBeVisible({ timeout: 15_000 });\n  61 |       await nav(page, \"Tables\");\n> 62 |       await page.getByRole(\"link\", { name: \"Takeaway\" }).click();\n     |                                                          ^\n  63 |       const search = page.getByPlaceholder(\"Search dishes or codes (F4)\");\n  64 |       await expect(search).toBeVisible({ timeout: 30_000 });\n  65 |\n    at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:62:58"
+    ],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280)",
+    "status": "unexpected",
+    "errors": [
+      "Error: locator.click: Error: strict mode violation: getByLabel('Discount') resolved to 2 elements:\n    1) <button dir=\"ltr\" type=\"button\" role=\"combobox\" data-state=\"closed\" aria-expanded=\"false\" aria-label=\"Discount\" aria-autocomplete=\"none\" data-tsd-source=\"/src/components/Dropdown.tsx:42:7\" class=\"flex items-center justify-between gap-2 whitespace-nowrap border border-input bg-card text-left shadow-[0_1px_1px_rgba(0,0,0,0.04)] cursor-pointer transition-colors hover:bg-secondary/40 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:ring-4 focus-visible:ring-ring/25 focus-visible:b…>…</button> aka getByRole('combobox', { name: 'Discount' })\n    2) <button dir=\"ltr\" type=\"button\" role=\"combobox\" data-state=\"closed\" aria-expanded=\"false\" aria-label=\"Discount\" aria-autocomplete=\"none\" data-tsd-source=\"/src/components/Dropdown.tsx:42:7\" class=\"flex items-center justify-between gap-2 whitespace-nowrap border border-input bg-card text-left shadow-[0_1px_1px_rgba(0,0,0,0.04)] cursor-pointer transition-colors hover:bg-secondary/40 data-[placeholder]:text-muted-foreground focus:outline-none focus-visible:ring-4 focus-visible:ring-ring/25 focus-visible:b…>…</button> aka getByRole('complementary').filter({ hasText: 'TakeawayNew billNew itemsnot' }).getByLabel('Discount')\n\nCall log:\n  - waiting for getByLabel('Discount')\n\n\n  80 |\n  81 |       // 10% discount, then GST as set up for the outlet (none until the GSTIN is added), rounded to the rupee.\n> 82 |       await page.getByLabel(\"Discount\").click();\n     |                                         ^\n  83 |       await page.getByRole(\"option\", { name: \"10%\" }).click();\n  84 |       const tax = rupees(await valueUnder(page, \"Tax\").textContent());"
+    ],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Hard test · KPI forecast › forecast waits for history, then projects today and the month exactly as worked by hand",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "00-forecast.png"
+    ],
+    "annotations": [
+      "Live data: Forecast The forecast starts after 7 days of sales. 0 of 7 days so far, from the last 28 days.",
+      "Injected 14 days: today ₹3,500 (2 bills, avg ₹1,750, +17% vs usual Saturday), month ₹45500 (₹43500 so far, 0 days left); earlier live card correctly waited for history"
+    ]
+  },
+  {
+    "name": "Hard test · selections › every dashboard period, report tab and menu section opens without a fault, and totals stay consistent",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Today ₹0, Yesterday ₹0, This week ₹0, Last week ₹260, Last 15 days ₹260, This month ₹260, Last month ₹0",
+      "24 menu sections opened"
+    ]
+  },
+  {
+    "name": "Hard test · selections › Insights is gone from Business Manager",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360)",
+    "status": "unexpected",
+    "errors": [
+      "Error: /marketing: could not scroll to the end\n/marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1776px, under the tab bar at 723px\n\nexpect(received).toHaveLength(expected)\n\nExpected length: 0\nReceived length: 2\nReceived array:  [\"/marketing: could not scroll to the end\", \"/marketing: \\\"\\\"Get offers from TAB Bistro by XTSY on W\\\" ends at 1776px, under the tab bar at 723px\"]\n\n  290 |       await info.attach(`scroll-${name}.png`, { body: await page.screenshot(), contentType: \"image/png\" });\n  291 |       info.annotations.push({ type: \"scroll\", description: `${name}: ${SCREENS.length} screens, ${problems.length ? problems.join(\"; \") : \"all reach the end with content above the tab bar\"}` });\n> 292 |       expect(problems, problems.join(\"\\n\")).toHaveLength(0);\n      |                                             ^\n  293 |       await context.close();"
+    ],
+    "screenshots": [
+      "01-scroll-phone-360.png"
+    ],
+    "annotations": [
+      "phone-360: 8 screens, /marketing: could not scroll to the end; /marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1776px, under the tab bar at 723px"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412)",
+    "status": "unexpected",
+    "errors": [
+      "Error: /marketing: could not scroll to the end\n/marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1740px, under the tab bar at 858px\n\nexpect(received).toHaveLength(expected)\n\nExpected length: 0\nReceived length: 2\nReceived array:  [\"/marketing: could not scroll to the end\", \"/marketing: \\\"\\\"Get offers from TAB Bistro by XTSY on W\\\" ends at 1740px, under the tab bar at 858px\"]\n\n  290 |       await info.attach(`scroll-${name}.png`, { body: await page.screenshot(), contentType: \"image/png\" });\n  291 |       info.annotations.push({ type: \"scroll\", description: `${name}: ${SCREENS.length} screens, ${problems.length ? problems.join(\"; \") : \"all reach the end with content above the tab bar\"}` });\n> 292 |       expect(problems, problems.join(\"\\n\")).toHaveLength(0);\n      |                                             ^\n  293 |       await context.close();"
+    ],
+    "screenshots": [
+      "02-scroll-phone-412.png"
+    ],
+    "annotations": [
+      "phone-412: 8 screens, /marketing: could not scroll to the end; /marketing: \"\"Get offers from TAB Bistro by XTSY on W\" ends at 1740px, under the tab bar at 858px"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-768)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "03-scroll-tablet-768.png"
+    ],
+    "annotations": [
+      "tablet-768: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-1024-landscape)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "04-scroll-tablet-1024-landscape.png"
+    ],
+    "annotations": [
+      "tablet-1024-landscape: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (laptop-1280)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "05-scroll-laptop-1280.png"
+    ],
+    "annotations": [
+      "laptop-1280: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › table QR in Settings → Guest ordering scans to that table's menu",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "06-scanned-table-menu.png"
+    ],
+    "annotations": [
+      "Settings table QR → https://good-times-start.lovable.app/order/tab-bistro?table=N1",
+      "Downloaded tab-bistro-N1-qr.png → https://good-times-start.lovable.app/order/tab-bistro?table=N1"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › printed table cards scan, even with the logo on them",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "07-print-sheet.png"
+    ],
+    "annotations": [
+      "QR kit table tent sample → https://good-times-start.lovable.app/order/tab-bistro?s=poster",
+      "QR kit tab-bistro-qr-poster.png → https://good-times-start.lovable.app/order/tab-bistro?s=poster",
+      "Printed card 1 → https://good-times-start.lovable.app/order/tab-bistro?table=T1&s=t1",
+      "Printed card 2 → https://good-times-start.lovable.app/order/tab-bistro?table=T1&s=t1",
+      "Printed card 3 → https://good-times-start.lovable.app/order/tab-bistro?table=T2&s=t2",
+      "Printed card 4 → https://good-times-start.lovable.app/order/tab-bistro?table=T2&s=t2",
+      "Printed card 5 → https://good-times-start.lovable.app/order/tab-bistro?table=T3&s=t3",
+      "Printed card 6 → https://good-times-start.lovable.app/order/tab-bistro?table=T3&s=t3",
+      "Printed card 7 → https://good-times-start.lovable.app/order/tab-bistro?table=T4&s=t4",
+      "Printed card 8 → https://good-times-start.lovable.app/order/tab-bistro?table=T4&s=t4",
+      "Printed card 9 → https://good-times-start.lovable.app/order/tab-bistro?table=T5&s=t5",
+      "Printed card 10 → https://good-times-start.lovable.app/order/tab-bistro?table=T5&s=t5",
+      "Printed card 11 → https://good-times-start.lovable.app/order/tab-bistro?table=T6&s=t6",
+      "Printed card 12 → https://good-times-start.lovable.app/order/tab-bistro?table=T6&s=t6",
+      "Printed card 13 → https://good-times-start.lovable.app/order/tab-bistro?table=N1&s=n1",
+      "Printed card 14 → https://good-times-start.lovable.app/order/tab-bistro?table=N1&s=n1",
+      "Printed card 15 → https://good-times-start.lovable.app/order/tab-bistro?table=N2&s=n2",
+      "Printed card 16 → https://good-times-start.lovable.app/order/tab-bistro?table=N2&s=n2",
+      "Printed card 17 → https://good-times-start.lovable.app/order/tab-bistro?table=N3&s=n3",
+      "Printed card 18 → https://good-times-start.lovable.app/order/tab-bistro?table=N3&s=n3",
+      "Printed card 19 → https://good-times-start.lovable.app/order/tab-bistro?table=N4&s=n4",
+      "Printed card 20 → https://good-times-start.lovable.app/order/tab-bistro?table=N4&s=n4",
+      "Printed card 21 → https://good-times-start.lovable.app/order/tab-bistro?table=R1&s=r1",
+      "Printed card 22 → https://good-times-start.lovable.app/order/tab-bistro?table=R1&s=r1",
+      "Printed card 23 → https://good-times-start.lovable.app/order/tab-bistro?table=R2&s=r2",
+      "Printed card 24 → https://good-times-start.lovable.app/order/tab-bistro?table=R2&s=r2",
+      "Printed card 25 → https://good-times-start.lovable.app/order/tab-bistro?table=R3&s=r3",
+      "Printed card 26 → https://good-times-start.lovable.app/order/tab-bistro?table=R3&s=r3"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › install QR codes for the three apps open the live apps",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Install links: https://good-times-start.lovable.app/manager, https://good-times-start.lovable.app/tables?app=pos, https://good-times-start.lovable.app/waiter?app=waiter"
+    ]
+  },
+  {
+    "name": "Launch check › QR codes (admin, desktop) › WhatsApp ordering link points at the live menu",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Launch check › Excel and CSV exports (admin, desktop) › Reports: all-reports Excel, GSTR-1, GST CSV, bills CSV, items CSV, Sales Summary",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "reports-xtsy-pos-2026-10-01-to-2026-10-31.xlsx: Summary, Bills, Bill items, Dishes, Categories, Payments, Order types, GST by rate, Staff, Day closes (61 rows)",
+      "GSTR-1-xtsy-pos-2026-10-01-to-2026-10-31.xlsx: Summary, b2b, b2cs, hsn(b2b), hsn(b2c), docs, eco 9(5)",
+      "GST CSV off (no GST on bills yet), xtsy-pos-2026-10-01-to-2026-10-31-bills.csv: 2 bills",
+      "xtsy-pos-2026-10-01-to-2026-10-31-items.csv, sales-summary-2026-10-01.xlsx"
+    ]
+  },
+  {
+    "name": "Launch check › Excel and CSV exports (admin, desktop) › Guests, Stock and Menu Excel",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "guests-2026-10-31.xlsx (5 rows), stock-2026-10-31.xlsx (111 rows), TAB Bistro by XTSY-menu-2026-10-31.xlsx (1431 rows)"
+    ]
+  },
+  {
+    "name": "Launch check › External links › every link on the guest menu works",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "https://instagram.com/tabbistrobyxtsy → 200"
+    ]
+  },
+  {
+    "name": "Launch check › Bills open only from Tables › Restro POS (Reception, desktop) › no Billing menu item; / goes to Tables; tables and counter orders open bills",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "08-takeaway-bill.png",
+      "09-table-bill.png"
+    ],
+    "annotations": []
+  },
+  {
+    "name": "Launch check › Bills open only from Tables › Business Manager (admin, phone) › / goes to Tables, and the bottom menu has no Billing",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Live audit · security (public key only) › private tables are unreadable without signing in",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "restaurant_records: 200 0 rows · staff_logins: 401 0 rows · password_reset_codes: 401 0 rows · guest_orders: 200 0 rows · terminals: 401 0 rows · restaurant_members: 200 0 rows · profiles: 200 0 rows · marketing_campaigns: 200 0 rows · qr_scans: 200 0 rows · accounts: 200 0 rows · platform_admins: 200 0 rows"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › the public can't write bills, menu or tables, or change the restaurant",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "insert 401, restaurant update changed 0 rows, guest order delete 204"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › admin and staff functions refuse the public",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "admin_accounts: 401 · set_member_role: 401 · create_restaurant: 401 · push_menu: 401 · touch_terminal: 401"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › the guest menu shares only what guests need",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "storefront: 44855 chars, no recipes, costs, logins or phone numbers"
+    ]
+  },
+  {
+    "name": "Live audit · security (public key only) › guests can't set their own prices or order missing dishes",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "fake table 400: {\"code\":\"P0001\",\"details\":null,\"hint\":null,\"message\":\"This table QR code is out of date. P · unknown dish 400 · order status without token: nothing returned"
+    ]
+  },
+  {
+    "name": "Sync window · Business Manager · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "10-desktop-1440-sync-open.png",
+      "11-desktop-1440-sync-closed.png"
+    ],
+    "annotations": [
+      "Business Manager desktop-1440 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Business Manager · phone-412 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "12-phone-412-sync-open.png",
+      "13-phone-412-sync-closed.png"
+    ],
+    "annotations": [
+      "Business Manager phone-412 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Restro POS · desktop-1440 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "14-desktop-1440-sync-open.png",
+      "15-desktop-1440-sync-closed.png"
+    ],
+    "annotations": [
+      "Restro POS desktop-1440 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  },
+  {
+    "name": "Sync window · Restro POS · laptop-1280 › opens with the right content, syncs, and closes cleanly three ways",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "16-laptop-1280-sync-open.png",
+      "17-laptop-1280-sync-closed.png"
+    ],
+    "annotations": [
+      "Restro POS laptop-1280 on http://127.0.0.1:4173: opened, synced, closed by ✕, Esc and outside tap"
+    ]
+  }
+]
