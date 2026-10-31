@@ -1,5 +1,29 @@
 import type { CartLine } from "./types";
 
+/**
+ * Lines to show when a device reopens a running bill it had a draft for: the shared bill
+ * (which may hold items other devices added since), plus only the items this device added
+ * and has not sent yet. The draft alone is never trusted for items already in the kitchen.
+ */
+export function reopenedLines(draftLines: CartLine[], draftSent: Record<string, number> | undefined, shared: CartLine[], sharedSent: Record<string, number> = {}): CartLine[] {
+  const pending = unsentKitchenLines(draftLines, draftSent ?? sharedSent);
+  const merged = shared.map((line) => ({ ...line }));
+  for (const add of pending) {
+    const existing = merged.find((line) => line.itemId === add.itemId);
+    if (existing) existing.qty += add.qty;
+    else merged.push({ ...add });
+  }
+  // Cancellations this device started but hasn't sent: only when the draft knows what it had sent.
+  if (draftSent) {
+    for (const [itemId, sent] of Object.entries(draftSent)) {
+      const kept = draftLines.filter((line) => line.itemId === itemId).reduce((t, line) => t + line.qty, 0);
+      const line = merged.find((l) => l.itemId === itemId);
+      if (line && kept < sent) line.qty = Math.max(0, line.qty - (sent - kept));
+    }
+  }
+  return merged.filter((line) => line.qty > 0);
+}
+
 export function unsentKitchenLines(lines: CartLine[], submitted: Record<string, number> = {}): CartLine[] {
   return lines.flatMap((line) => {
     const sent = submitted[line.itemId] ?? 0;

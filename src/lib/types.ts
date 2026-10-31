@@ -110,6 +110,8 @@ export interface CartDraft {
   lines: CartLine[];
   discountPct: number;
   updatedAt: number;
+  /** What the kitchen had of this bill when the draft was saved, to tell this device's unsent items apart. */
+  sentQty?: Record<string, number> | undefined;
 }
 
 export interface InventoryItem {

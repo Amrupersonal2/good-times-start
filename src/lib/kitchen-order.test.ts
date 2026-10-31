@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import type { CartLine } from "./types";
 
 const lines: CartLine[] = [
@@ -36,5 +36,32 @@ describe("cancellation tickets", () => {
   it("updates sent counts and order lines after a cancellation", () => {
     expect(subtractSubmittedQuantities({ naan: 3, dal: 1 }, [l("naan", 2), l("dal", 1)])).toEqual({ naan: 1 });
     expect(removeCancelled([l("naan", 3), l("dal", 1)], [l("naan", 2), l("dal", 1)])).toEqual([l("naan", 1)]);
+  });
+});
+
+describe("reopening a running bill on another device's changes", () => {
+  const l = (itemId: string, qty: number, price = 100) => ({ itemId, name: itemId, price, qty, veg: true, gstRate: 5, station: "Bar" });
+
+  it("keeps what other devices added since this device's draft (the R1 case: ₹160 draft, ₹340 bill)", () => {
+    const draft = [l("virgin-mojito", 1, 160)];
+    const shared = [l("virgin-mojito", 1, 160), l("passion-mojito", 1, 180)];
+    const lines = reopenedLines(draft, { "virgin-mojito": 1 }, shared, { "virgin-mojito": 1, "passion-mojito": 1 });
+    expect(lines.map((x) => [x.itemId, x.qty])).toEqual([["virgin-mojito", 1], ["passion-mojito", 1]]);
+    expect(lines.reduce((t, x) => t + x.qty * x.price, 0)).toBe(340);
+  });
+
+  it("adds this device's unsent items on top, once", () => {
+    const lines = reopenedLines([l("tea", 3), l("fries", 1)], { tea: 1 }, [l("tea", 2), l("rice", 1)], { tea: 2, rice: 1 });
+    expect(lines.map((x) => [x.itemId, x.qty])).toEqual([["tea", 4], ["rice", 1], ["fries", 1]]);
+  });
+
+  it("keeps a cancellation this device started but hasn't sent", () => {
+    const lines = reopenedLines([l("tea", 1)], { tea: 2, rice: 1 }, [l("tea", 2), l("rice", 1), l("cake", 1)], { tea: 2, rice: 1, cake: 1 });
+    expect(lines.map((x) => [x.itemId, x.qty])).toEqual([["tea", 1], ["cake", 1]]);
+  });
+
+  it("never removes items for an older draft that didn't record what it had sent", () => {
+    const lines = reopenedLines([l("tea", 1)], undefined, [l("tea", 1), l("cake", 1)], { tea: 1, cake: 1 });
+    expect(lines.map((x) => [x.itemId, x.qty])).toEqual([["tea", 1], ["cake", 1]]);
   });
 });

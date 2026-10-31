@@ -367,12 +367,28 @@ test.describe("Hard test · two-way sync on the live POS", () => {
     await expect(card).toContainText("Passion Fruit Mojito");
     await shot(owner.page, "s3-owner-live");
 
-    // Counter cancels the bill with a reason: the table frees on the waiter's tablet and leaves the owner's live board.
+    // The counter reopens the bill it started: it must show the waiter's dish too, not its own older copy.
     await counter.page.getByRole("button", { name: new RegExp(`^Table ${label},`) }).click();
-    await counter.page.getByRole("button", { name: "Cancel bill" }).click();
-    await counter.page.getByRole("button", { name: "Order entered by mistake" }).click();
-    await counter.page.getByRole("button", { name: "Cancel this bill" }).click();
-    await expect(counter.page.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(counter.page.getByText("Passion Fruit Mojito").first()).toBeVisible({ timeout: 30_000 });
+    await expect(counter.page.locator("dl").filter({ hasText: "Items" }).filter({ hasText: "Total" }).last()).toContainText("₹340");
+    await shot(counter.page, "s4-counter-reopened");
+    await counter.page.getByRole("link", { name: "Tables" }).first().click();
+    await ready(counter.page);
+    await expect(counter.page.getByRole("button", { name: new RegExp(`^Table ${label},`) })).toContainText("₹340");
+
+    // The owner cancels the bill with a reason (Reception isn't allowed to): the table frees everywhere.
+    const desk = await device(browser, baseURL, bp("desktop-1440"), "admin");
+    await desk.page.goto(`/?app=manager&table=${encodeURIComponent(label)}`);
+    await ready(desk.page);
+    await expect(desk.page.getByText("Passion Fruit Mojito").first()).toBeVisible({ timeout: 60_000 });
+    await desk.page.getByRole("button", { name: "Cancel bill" }).click();
+    await desk.page.getByRole("button", { name: "Order entered by mistake" }).click();
+    await desk.page.getByRole("button", { name: "Cancel this bill" }).click();
+    await expect(desk.page.getByRole("heading", { name: "Counter orders" })).toBeVisible({ timeout: 30_000 });
+    await desk.context.close();
+    await expect(counter.page.getByRole("button", { name: `Table ${label}`, exact: true })).toBeVisible({ timeout: 90_000 });
+    await owner.page.goto("/dashboard?app=manager&tab=live");
+    await ready(owner.page);
     await expect(tile).not.toContainText("₹", { timeout: 90_000 });
     await expect(owner.page.locator("article, li, section").filter({ hasText: billNo }).filter({ hasText: "₹340" })).toHaveCount(0, { timeout: 90_000 });
     await shot(waiter.page, "s4-waiter-free-again");

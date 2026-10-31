@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
 import { computeTotals, billNumber } from "./billing";
 import { getDb, getDeviceCode, markDirty, nextSeq } from "./db";
-import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
 import { buildLine, priceFor } from "./menu-logic";
@@ -67,7 +67,10 @@ export function useCart(initialTableId?: string) {
     const draft = stored && (!stored.orderUid || stored.orderUid === openOrder?.uid) ? stored : undefined;
     if (stored && !draft) void getDb().drafts.delete(stored.id);
     // A table opened on this device for the first time shows what other devices already sent.
-    setLines(draft?.lines.length ? draft.lines : openOrder?.lines ?? []);
+    // Start from the shared bill: other devices may have added to it since this draft was saved.
+    setLines(draft?.lines.length
+      ? (openOrder ? reopenedLines(draft.lines, draft.sentQty, openOrder.lines, openOrder.kotSubmittedQty) : draft.lines)
+      : openOrder?.lines ?? []);
     setDiscountPct(draft?.discountPct ?? openOrder?.discountPct ?? 0);
     setServiceChargePct(openOrder?.serviceChargePct ?? 0);
     setCustomer(openOrder?.customer ?? {});
@@ -81,7 +84,7 @@ export function useCart(initialTableId?: string) {
   useEffect(() => {
     if (!draftReady) return;
     const timeout = window.setTimeout(() => {
-      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, lines, discountPct, updatedAt: Date.now() });
+      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, lines, discountPct, updatedAt: Date.now() });
       if (tableId && lines.length) {
         const total = computeTotals(lines, discountPct, serviceChargePct, tax).total;
         void getDb().restTables.get(tableId).then(async (table) => {
