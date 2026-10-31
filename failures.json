@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere",
+    "status": "unexpected",
+    "errors": [
+      "Error: expect(locator).toContainText(expected) failed\n\nLocator: locator('aside[aria-label=\"Tables\"] button').filter({ hasText: /^\\s*R2\\b/ }).first()\nExpected substring: \"₹160\"\nTimeout: 90000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" with timeout 90000ms\n  - waiting for locator('aside[aria-label=\"Tables\"] button').filter({ hasText: /^\\s*R2\\b/ }).first()\n    30 × locator resolved to <button aria-pressed=\"false\" class=\"relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 bg-primary text-primary-foreground \">…</button>\n       - unexpected value \"R2₹680 · 0m\"\n    60 × locator resolved to <button aria-pressed=\"false\" class=\"relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 bg-primary text-primary-foreground \">…</button>\n       - unexpected value \"R2₹680 · 1m\""
+    ],
+    "screenshots": [
+      "00-s1-counter-sent.png"
+    ],
+    "annotations": [
+      "Live sync test bill D1/26-27/0005 on table R2 (cancelled at the end; clean up)"
+    ]
+  }
+]

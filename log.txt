@@ -1,0 +1,47 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere (1.6m)
+
+
+  1) e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('aside[aria-label="Tables"] button').filter({ hasText: /^\s*R2\b/ }).first()
+    Expected substring: [32m"₹160"[39m
+    Timeout: 90000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 90000ms[22m
+    [2m  - waiting for locator('aside[aria-label="Tables"] button').filter({ hasText: /^\s*R2\b/ }).first()[22m
+    [2m    30 × locator resolved to <button aria-pressed="false" class="relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 bg-primary text-primary-foreground ">…</button>[22m
+    [2m       - unexpected value "R2₹680 · 0m"[22m
+    [2m    60 × locator resolved to <button aria-pressed="false" class="relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 bg-primary text-primary-foreground ">…</button>[22m
+    [2m       - unexpected value "R2₹680 · 1m"[22m
+
+
+      346 |     await ready(waiter.page);
+      347 |     const tile = waiter.page.locator('aside[aria-label="Tables"] button').filter({ hasText: new RegExp(`^\\s*${label}\\b`) }).first();
+    > 348 |     await expect(tile).toContainText("₹160", { timeout: 90_000 });
+          |                        ^
+      349 |     await tile.click();
+      350 |     await waiter.page.getByPlaceholder("Find a dish").fill("Passion Fruit Mojito");
+      351 |     await waiter.page.locator('section[aria-label="Menu"] button:not([disabled])').filter({ hasText: "Passion Fruit Mojito" }).first().click();
+        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:348:24
+
+    Error Context: test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/hard-test-Hard-test-·-two--a3b06--frees-the-table-everywhere/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
+::error file=e2e/hard-test.spec.ts,title=e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere,line=348,col=24::  1) e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere %0A    Error: expect(locator).toContainText(expected) failed%0A%0A    Locator: locator('aside[aria-label="Tables"] button').filter({ hasText: /^\s*R2\b/ }).first()%0A    Expected substring: "₹160"%0A    Timeout: 90000ms%0A    Error: element(s) not found%0A%0A    Call log:%0A      - Expect "toContainText" with timeout 90000ms%0A      - waiting for locator('aside[aria-label="Tables"] button').filter({ hasText: /^\s*R2\b/ }).first()%0A        30 × locator resolved to <button aria-pressed="false" class="relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 bg-primary text-primary-foreground ">…</button>%0A           - unexpected value "R2₹680 · 0m"%0A        60 × locator resolved to <button aria-pressed="false" class="relative flex h-16 flex-col items-center justify-center rounded-xl transition-transform active:scale-95 bg-primary text-primary-foreground ">…</button>%0A           - unexpected value "R2₹680 · 1m"%0A%0A%0A      346 |     await ready(waiter.page);%0A      347 |     const tile = waiter.page.locator('aside[aria-label="Tables"] button').filter({ hasText: new RegExp(`^\\s*${label}\\b`) }).first();%0A    > 348 |     await expect(tile).toContainText("₹160", { timeout: 90_000 });%0A          |                        ^%0A      349 |     await tile.click();%0A      350 |     await waiter.page.getByPlaceholder("Find a dish").fill("Passion Fruit Mojito");%0A      351 |     await waiter.page.locator('section[aria-label="Menu"] button:not([disabled])').filter({ hasText: "Passion Fruit Mojito" }).first().click();%0A        at /home/runner/work/good-times-start/good-times-start/e2e/hard-test.spec.ts:348:24
+::notice title=🎭 Playwright Run Summary::  1 failed%0A    e2e/hard-test.spec.ts:318:3 › Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere 
