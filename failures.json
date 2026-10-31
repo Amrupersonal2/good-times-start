@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Hard test · two-way sync on the live POS › counter → waiter → counter → owner, then cancel frees the table everywhere",
+    "status": "unexpected",
+    "errors": [
+      "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Passion Fruit Mojito').first()\nExpected: visible\nTimeout: 60000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 60000ms\n  - waiting for getByText('Passion Fruit Mojito').first()\n\n\n  381 |     await desk.page.goto(`/?app=manager&table=${encodeURIComponent(label)}`);\n  382 |     await ready(desk.page);"
+    ],
+    "screenshots": [
+      "00-s1-counter-sent.png",
+      "01-s2-waiter-added.png",
+      "02-s3-owner-live.png",
+      "03-s4-counter-reopened.png"
+    ],
+    "annotations": [
+      "Live sync test bill SK2/26-27/0001 on table Hut 1 (cancelled at the end; clean up)"
+    ]
+  },
+  {
+    "name": "Live audit · published site › install files, icons, logo and offline worker are current",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Restro POS by XTSY: /tables?app=pos, 3 icons · POS Waiter: /waiter?app=waiter, 3 icons · POS Business Manager: /manager?app=manager, 3 icons · worker v9 · logo and favicon OK · 5 pages load · Reports app retired"
+    ]
+  },
+  {
+    "name": "guest QR order reaches the POS, is accepted, and syncs to another device",
+    "status": "unexpected",
+    "errors": [
+      "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('QR bill · Room 9D').first()\nExpected: visible\nTimeout: 30000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 30000ms\n  - waiting for getByText('QR bill · Room 9D').first()\n\n\n  88 |   await expect(qrBill).toBeVisible({ timeout: 90_000 });\n  89 |   await qrBill.click();"
+    ],
+    "screenshots": [
+      "04-1-choose-table.png",
+      "05-2-menu-with-cart.png",
+      "06-3-checkout.png",
+      "07-4-order-sent.png",
+      "08-5-pos-incoming.png",
+      "09-6-pos-accepted.png",
+      "10-7-guest-preparing.png"
+    ],
+    "annotations": [
+      "Guest order Q-2295: Awesome Shillong at table Room 9D (ROOM-9D)"
+    ]
+  },
+  {
+    "name": "a waiter taking an order holds the table; others see it; emptying it frees the table",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "11-h1-waiter-holding.png",
+      "12-h2-counter-sees-hold.png",
+      "13-h3-table-free-again.png"
+    ],
+    "annotations": [
+      "Waiter holds table Room 1 with one dish (not sent)"
+    ]
+  }
+]
