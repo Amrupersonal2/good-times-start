@@ -1,0 +1,112 @@
+[
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (desktop-1440)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "00-receipt-desktop-1440.png",
+      "01-bill-desktop-1440.png"
+    ],
+    "annotations": [
+      "desktop-1440: subtotal ₹600, 10% off, tax ₹0 → ₹540",
+      "desktop-1440: Bill TFG/26-27/0001 settled offline"
+    ]
+  },
+  {
+    "name": "Hard test · billing and reports, offline › a discounted takeaway bill adds up, settles offline, and reaches Reports, CSV and Dashboard (laptop-1280)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "02-receipt-laptop-1280.png",
+      "03-bill-laptop-1280.png"
+    ],
+    "annotations": [
+      "laptop-1280: subtotal ₹600, 10% off, tax ₹0 → ₹540",
+      "laptop-1280: Bill QVP/26-27/0001 settled offline"
+    ]
+  },
+  {
+    "name": "Hard test · KPI forecast › forecast waits for history, then projects today and the month exactly as worked by hand",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "04-forecast.png"
+    ],
+    "annotations": [
+      "Live data: Forecast The forecast starts after 7 days of sales. 0 of 7 days so far, from the last 28 days.",
+      "Injected 14 days: today ₹3,500 (2 bills, avg ₹1,750, +17% vs usual Saturday), month ₹45500 (₹43500 so far, 0 days left); earlier live card correctly waited for history"
+    ]
+  },
+  {
+    "name": "Hard test · selections › every dashboard period, report tab and menu section opens without a fault, and totals stay consistent",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": [
+      "Today ₹0, Yesterday ₹0, This week ₹0, Last week ₹260, Last 15 days ₹260, This month ₹260, Last month ₹0",
+      "24 menu sections opened"
+    ]
+  },
+  {
+    "name": "Hard test · selections › Insights is gone from Business Manager",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [],
+    "annotations": []
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-360)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "05-scroll-phone-360.png"
+    ],
+    "annotations": [
+      "phone-360: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (phone-412)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "06-scroll-phone-412.png"
+    ],
+    "annotations": [
+      "phone-412: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-768)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "07-scroll-tablet-768.png"
+    ],
+    "annotations": [
+      "tablet-768: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (tablet-1024-landscape)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "08-scroll-tablet-1024-landscape.png"
+    ],
+    "annotations": [
+      "tablet-1024-landscape: 8 screens, all reach the end with content above the tab bar"
+    ]
+  },
+  {
+    "name": "Hard test · scrolling › every Business Manager screen scrolls to its end with nothing hidden under the tab bar (laptop-1280)",
+    "status": "expected",
+    "errors": [],
+    "screenshots": [
+      "09-scroll-laptop-1280.png"
+    ],
+    "annotations": [
+      "laptop-1280: 8 screens, all reach the end with content above the tab bar"
+    ]
+  }
+]
