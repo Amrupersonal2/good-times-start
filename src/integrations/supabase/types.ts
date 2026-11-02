@@ -607,6 +607,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          launched_at: string | null
           marketing: Json
           name: string
           ordering: Json
@@ -619,6 +620,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          launched_at?: string | null
           marketing?: Json
           name: string
           ordering?: Json
@@ -631,6 +633,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          launched_at?: string | null
           marketing?: Json
           name?: string
           ordering?: Json
