@@ -7,7 +7,7 @@ import type { AppKind } from "@/lib/staff-login-logic";
 import { allowAppWorker, installKind, type InstallKind } from "@/lib/app-install-logic";
 
 /**
- * Three installable apps from one codebase:
+ * Three installable screens from one cloud codebase:
  *   /manager   POS Business Manager (admin: phone, tablet, computer)
 ^ *   /tables?app=pos  Restro POS by XTSY (reception counter: Windows or Mac)
  *   /waiter    POS Waiter (waiters: Android phone or tablet)
