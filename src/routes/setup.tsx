@@ -280,11 +280,11 @@ function DeviceStep({ onNext }: { onNext: () => void }) {
 
 const DEFAULT_DEVICES: Record<LoginId, (keyof typeof DEVICE_LABELS)[]> = { admin: ["android", "ios", "desktop"], billdesk: ["desktop"], waiter: ["android"] };
 
-/** The three internal logins, one per app. Passwords and WhatsApp numbers are managed in Settings → Logins. */
+/** The three internal logins, one per screen. Passwords and WhatsApp numbers are managed in Settings → Logins. */
 function TeamStep({ onNext }: { onNext: () => void }) {
   return (
     <div>
-      <p className="text-sm text-muted-foreground">TAB Bistro uses three logins, one for each app. No emails are sent; xtsy.pos is internal only.</p>
+      <p className="text-sm text-muted-foreground">TAB Bistro uses three logins, one for each screen. No emails are sent; xtsy.pos is internal only.</p>
       <ul className="mt-4 grid gap-3 sm:grid-cols-3">
         {(Object.keys(LOGINS) as LoginId[]).map((id) => {
           const app = APPS[LOGINS[id].app];
@@ -292,7 +292,7 @@ function TeamStep({ onNext }: { onNext: () => void }) {
             <li key={id} className="rounded-xl border border-border p-4">
               <p className="text-sm font-semibold">{LOGINS[id].label}</p>
               <p className="mt-0.5 break-all text-xs font-mono">{LOGINS[id].email}</p>
-              <p className="mt-2 text-xs text-muted-foreground">{app.name}{id === "admin" ? ", plus every other app" : ""}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{app.name}{id === "admin" ? ", plus every other screen" : ""}</p>
               <p className="text-xs text-muted-foreground">{DEFAULT_DEVICES[id].map((d) => DEVICE_LABELS[d]).join(" · ")}</p>
             </li>
           );
