@@ -91,7 +91,7 @@ function AuthPage() {
       <aside className="hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex">
         <div className="flex items-center gap-3"><img src={logo} alt="" width={36} height={36} className="rounded-[10px]" /><span className="text-lg font-bold">TAB Bistro by XTSY</span></div>
         <div className="max-w-md">
-          <p className="text-4xl font-bold leading-tight tracking-tight">{app ? APPS[app].name : "One restaurant. Three apps."}</p>
+          <p className="text-4xl font-bold leading-tight tracking-tight">{app ? APPS[app].name : "Cloud software. Three screens."}</p>
           <p className="mt-4 text-sidebar-foreground/75">{app ? APPS[app].for : "Business Manager for the admin, Restro POS for the counter, POS Waiter for the floor. Orders flow between them live."}</p>
         </div>
         <p className="text-xs text-sidebar-foreground/50">Internal system. Logins are managed by the admin.</p>
@@ -106,12 +106,12 @@ function AuthPage() {
               <span className="grid size-11 place-items-center rounded-2xl bg-primary-tint text-primary"><AppIcon className="size-5" /></span>
               <div>
                 <h1 className="text-2xl font-bold leading-tight">Sign in</h1>
-                <p className="text-sm text-muted-foreground">{app ? APPS[app].name : "Choose your app"}</p>
+                <p className="text-sm text-muted-foreground">{app ? APPS[app].name : "Choose your screen"}</p>
               </div>
             </div>
 
             {!app ? (
-              <div className="mt-5 grid gap-2" role="radiogroup" aria-label="App">
+              <div className="mt-5 grid gap-2" role="radiogroup" aria-label="Screen">
                 {(Object.keys(APPS) as AppKind[]).map((a) => {
                   const Icon = APP_ICONS[a];
                   return (
@@ -138,7 +138,7 @@ function AuthPage() {
                 <Button disabled={busy || !login.trim() || !password} className="h-12 w-full text-base" type="submit">{busy ? "Signing in…" : "Sign in"}</Button>
                 <div className="flex items-center justify-between pt-1">
                   <button type="button" className="text-sm font-semibold text-primary" onClick={() => { setResetting(true); setMessage(""); }}>Forgot password?</button>
-                  <button type="button" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => { try { window.sessionStorage.removeItem("xtsy-app"); } catch { /* ignore */ } window.location.assign("/auth"); }}>Other app</button>
+                  <button type="button" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => { try { window.sessionStorage.removeItem("xtsy-app"); } catch { /* ignore */ } window.location.assign("/auth"); }}>Other screen</button>
                 </div>
               </form>
             )}

@@ -107,8 +107,8 @@ export function AppInstall() {
   );
 }
 
-/** "Install app" button; on iPhone and iPad shows how to add it to the home screen. */
-export function InstallButton({ label = "Install app", className = "" }: { label?: string; className?: string }) {
+/** "Install" button; on iPhone and iPad shows how to add it to the home screen. */
+export function InstallButton({ label = "Install", className = "" }: { label?: string; className?: string }) {
   const { available, install } = useInstallPrompt();
   const [iosHelp, setIosHelp] = useState(false);
   const [standalone, setStandalone] = useState(true);
@@ -123,7 +123,7 @@ export function InstallButton({ label = "Install app", className = "" }: { label
         <div role="dialog" aria-label="Add to Home Screen" className="fixed inset-x-3 bottom-3 z-50 rounded-2xl bg-card p-4 text-card-foreground shadow-2xl ring-1 ring-border">
           <Button variant="ghost" size="icon" aria-label="Close" className="absolute right-3 top-3" onClick={() => setIosHelp(false)}><X className="size-4" /></Button>
           <p className="font-semibold">Add to your Home Screen</p>
-          <p className="mt-1 text-sm text-muted-foreground">In Safari, tap <Share className="inline size-4 align-text-bottom" /> Share, then <strong>Add to Home Screen</strong>. It opens full screen like any app.</p>
+          <p className="mt-1 text-sm text-muted-foreground">In Safari, tap <Share className="inline size-4 align-text-bottom" /> Share, then <strong>Add to Home Screen</strong>. It opens full screen, like installed software.</p>
         </div>
       ) : null}
     </>

@@ -67,7 +67,7 @@ function LoginCard({ row, onSaved }: { row: LoginRow; onSaved: () => void }) {
         <div>
           <h3 className="text-base font-bold">{LOGINS[row.login].label}</h3>
           <p className="font-mono text-sm">{LOGINS[row.login].email}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{APPS[LOGINS[row.login].app].name}{isAdminLogin ? ", and every other app" : ""}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{APPS[LOGINS[row.login].app].name}{isAdminLogin ? ", and every other screen" : ""}</p>
         </div>
         {isAdminLogin ? <span className="inline-flex items-center gap-1 rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary"><ShieldCheck className="size-3.5" />Always on, any device</span> : (
           <label className="flex items-center gap-2 text-sm font-medium">{active ? "On" : "Off"}<Switch checked={active} onCheckedChange={setActive} aria-label={`${LOGINS[row.login].label} login on or off`} /></label>
@@ -126,7 +126,7 @@ function InstallCard({ app }: { app: AppKind }) {
       <div className="min-w-0">
         <p className="font-semibold">{APPS[app].name}</p>
         <p className="text-xs text-muted-foreground">{APPS[app].for}</p>
-        <p className="mt-2 text-xs text-muted-foreground">Scan on the device, sign in as <strong className="text-foreground">{LOGINS[APPS[app].login].label}</strong>, then use <em>Install app</em> (Chrome or Edge: install icon in the address bar; Android: menu → Install app).</p>
+        <p className="mt-2 text-xs text-muted-foreground">Scan on the device, sign in as <strong className="text-foreground">{LOGINS[APPS[app].login].label}</strong>, then use <em>Install</em> (Chrome or Edge: install icon in the address bar; Android: menu → Install app).</p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => void copy()}><Copy />Copy link</Button>
           <Button size="sm" variant="outline" asChild><a href={APP_LINKS[app]} target="_blank" rel="noreferrer"><ExternalLink />Open</a></Button>
@@ -147,7 +147,7 @@ export function LoginsSettings() {
       <section className="grid gap-4 lg:grid-cols-[15rem_1fr]">
         <div>
           <h2 className="text-base font-bold">Logins</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Three internal logins, one per app. xtsy.pos is internal: no email is ever sent. A switched-off login stops working at once, even on devices already signed in.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Three internal logins, one per screen. xtsy.pos is internal: no email is ever sent. A switched-off login stops working at once, even on devices already signed in.</p>
         </div>
         <div className="space-y-4">
           {q.isLoading ? <div className="h-40 animate-pulse rounded-2xl bg-card" /> : q.isError ? (
@@ -161,8 +161,8 @@ export function LoginsSettings() {
       </section>
       <section className="grid gap-4 border-t border-border pt-8 lg:grid-cols-[15rem_1fr]">
         <div>
-          <h2 className="text-base font-bold">Install the apps</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Each app installs from its own link and opens full screen, like a downloaded app. Install once per device.</p>
+          <h2 className="text-base font-bold">Install the software</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Each screen installs from its own link and opens full screen, like software you downloaded. Install once per device.</p>
         </div>
         <div className="grid gap-3 xl:grid-cols-2">{(["manager", "pos", "waiter"] as const).map((a) => <InstallCard key={a} app={a} />)}</div>
       </section>
