@@ -6,6 +6,7 @@ import { Download, Printer, Search } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { gstr1Workbook } from "@/lib/gstr1";
+import { gstr1Pdf } from "@/lib/gstr1-pdf";
 import { reportsWorkbook } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import { Receipt } from "@/components/Receipt";
@@ -180,6 +181,12 @@ function Gst({ orders, file }: { orders: Order[]; file: string }) {
     const { sheets } = gstr1Workbook(orders, settings, period);
     downloadXlsx(`GSTR-1-${file}`, sheets, { title: `GSTR-1 ${period}` });
   };
+  const exportGstr1Pdf = async () => {
+    const blob = await gstr1Pdf(orders, settings, file);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `GSTR-1-${file}.pdf`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  };
   const exportGst = () => download(`${file}-gst.csv`, toCsv([["GST rate %", "Taxable value", "CGST", "SGST", "Total tax"], ...rows.map((r) => [r.rate, r.taxable, r.cgst, r.sgst, Math.round((r.cgst + r.sgst) * 100) / 100])]));
   return (
     <div className="card-elevated p-4">
@@ -190,6 +197,7 @@ function Gst({ orders, file }: { orders: Order[]; file: string }) {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" disabled={!settled.length} onClick={() => { void exportGstr1(); }}><Download />GSTR-1 (Excel)</Button>
+          <Button size="sm" variant="outline" disabled={!settled.length} onClick={() => { void exportGstr1Pdf(); }}><Download />GSTR-1 (PDF)</Button>
           <Button size="sm" variant="outline" disabled={!rows.length} onClick={() => { void exportGst(); }}><Download />GST CSV</Button>
           <Button size="sm" variant="outline" disabled={!orders.length} onClick={() => { void exportBills(); }}><Download />All bills CSV</Button>
         </div>
