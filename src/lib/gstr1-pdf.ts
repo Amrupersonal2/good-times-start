@@ -10,7 +10,7 @@ export async function gstr1Pdf(orders: Order[], settings: RestaurantSettings, pe
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const settled = orders.filter((o) => o.status === "settled");
   const from = Math.min(...settled.map((o) => o.createdAt), Date.now());
-  const ov = businessOverview(orders, [], [], { from, to: Date.now() + 1 } as never);
+  const ov = businessOverview(orders, [], [], { from, to: Date.now() + 1 });
   const { sheets } = gstr1Workbook(orders, settings, period);
 
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
