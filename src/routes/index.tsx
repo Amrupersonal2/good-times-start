@@ -79,11 +79,12 @@ function PosPage() {
   }, [search.type]);
   const openedBill = useRef<string | null>(null);
   useEffect(() => {
-    if (!search.bill || openedBill.current === search.bill) return;
+    if (!search.bill) { openedBill.current = null; return; }
+    if (openedBill.current === search.bill && cart.activeOrder?.uid === search.bill) return;
     const bill = openBills.find((o) => o.uid === search.bill);
     if (bill) { openedBill.current = search.bill; cart.openOrder(bill); }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once when the bill is available locally
-  }, [search.bill, openBills]);
+  }, [search.bill, openBills, cart.activeOrder?.uid]);
   const [cat, setCat] = useState<string>("Popular");
   const [q, setQ] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
@@ -259,6 +260,14 @@ function PosPage() {
             {qrBillOpen ? `QR bill · ${cart.activeOrder?.tableLabel ?? cart.activeOrder?.tableId ?? ""}` : cart.orderType === "dine-in" ? (currentTable ? `${currentTable.section} · ${currentTable.label}` : "Choose a table") : cart.customer.name && cart.activeOrder?.guestCodes ? `${cart.activeOrder.guestCodes[0]} ${cart.customer.name}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
           </div>
           <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}, opened ${since(cart.activeOrder.createdAt)}${since(cart.activeOrder.createdAt) === "just now" ? "" : " ago"}` : "New bill"}</div>
+          <div className="mt-2 flex gap-1.5">
+            <input aria-label="Guest name" placeholder="Guest name" maxLength={60} value={cart.customer.name ?? ""}
+              onChange={(e) => cart.setCustomer({ ...cart.customer, name: e.target.value })}
+              className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs" />
+            <input aria-label="Guest mobile number" placeholder="Mobile" inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""}
+              onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })}
+              className="h-8 w-28 rounded-md border border-input bg-background px-2 text-xs tabular-nums" />
+          </div>
         </div>
         {cart.activeOrder && canCancel ? (
           <button type="button" onClick={() => void allow(user, "bill.cancel", "Cancel this bill").then((ok) => { if (ok) setCancelOpen(true); })} aria-label="Cancel bill" title="Cancel bill" className="grid size-8 shrink-0 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="size-4" /></button>
