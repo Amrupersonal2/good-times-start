@@ -311,7 +311,7 @@ function TableGroup<T extends RestaurantTable & { runningTotal: number }>({ tabl
   const total = busy.reduce((n, t) => n + t.runningTotal, 0);
   return (
     <label className={`relative flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-2 text-center hover:border-primary ${STATUS[top.status].cls}`}>
-      <span className="text-lg font-extrabold">{first}–{last}</span>
+      <span className="text-lg font-extrabold leading-tight">{first}–{last.slice(-1)}</span>
       <span className="text-xs text-muted-foreground">{busy.length}/{tables.length} busy{total ? ` · ${formatINR(total, 0)}` : ""}</span>
       <span className="mt-1 text-[11px] font-semibold text-primary">Choose table ▾</span>
       <select aria-label={`Choose a table from ${first} to ${last}`} value=""
