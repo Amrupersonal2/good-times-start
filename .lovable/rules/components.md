@@ -22,6 +22,16 @@ import { Button } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6
 import { Dialog } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `open` | boolean | `—` |
+| `defaultOpen` | boolean | `—` |
+| `onOpenChange` | function | `—` |
+| `modal` | boolean | `true` |
+| `children` | any | `—` |
+
 ### DialogClose
 
 ```ts
@@ -33,6 +43,17 @@ import { DialogClose } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2
 ```ts
 import { DialogContent } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `forceMount` | boolean | `—` |
+| `onEscapeKeyDown` | function | `—` |
+| `onPointerDownOutside` | function | `—` |
+| `onInteractOutside` | function | `—` |
+| `onOpenAutoFocus` | function | `—` |
+| `onCloseAutoFocus` | function | `—` |
 
 ### DialogDescription
 

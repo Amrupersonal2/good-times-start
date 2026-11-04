@@ -2,7 +2,7 @@
   "meta": {
     "name": "Good Times Start",
     "package": "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d",
-    "version": "4.4.0",
+    "version": "4.5.0",
     "framework": "react",
     "css_framework": "tailwind",
     "starter_template": "custom_design_system_tailwind",
@@ -15,7 +15,7 @@
       ".github/workflows/regression.yml": "c0b35114b2b27b5a87d979d9ad00c341",
       ".gitignore": "e772048e53476ce026dddb3a271b0f66",
       ".lovable/meta.yaml": "954a981e8847ec1692669dbb04ae9ae9",
-      ".lovable/north-star.md": "8b8366c4aa31bada9c33e06edd84d51e",
+      ".lovable/north-star/north-star.md": "8b8366c4aa31bada9c33e06edd84d51e",
       ".lovable/plan/table-first-pos-kitchen-tickets-and-sync-recovery-2026-10-16.md": "7956f6185a7718331d049c136f03c7d4",
       ".lovable/project.json": "8a614b0de0ec719c6a3c839b39ebb7b9",
       ".lovable/sources.yaml": "5fd6523c145638df3f2fcfd110718f4d",
@@ -63,7 +63,7 @@
       "e2e/summary.mjs": "5e50e287aa07b4e0eb663d9b32a5c6b9",
       "e2e/sync-window.spec.ts": "7de8a8fc3f4abc104ba0987f294080c1",
       "eslint.config.js": "345bdd57e188e0e4525edcd00e5003f5",
-      "package.json": "497f64d5ed6575514331f8de649acbaf",
+      "package.json": "a6575760cbce847c9b8bf869f2cdd078",
       "public/brand/xtsy-logo.png": "cd243719b721f7d30437f8f7c2f135c4",
       "public/favicon.png": "d745fd540d9c741d1ae8108c6899c251",
       "public/icons/manager-192.png": "f56fb481dacef05de0b2e6370f6433fe",
@@ -130,7 +130,7 @@
       "src/components/ui/command.tsx": "014782599cc838b021ec68b07ad4ea02",
       "src/components/ui/context-menu.tsx": "3ba8244ea23df34a1dba92f3a1230dad",
       "src/components/ui/dialog.test.tsx": "92f03f089c1fc2f9129a5fefb8c5ff6d",
-      "src/components/ui/dialog.tsx": "468671ce55063e7428a5af4426db1987",
+      "src/components/ui/dialog.tsx": "1bde46a17e451f34954b6decd3f38c86",
       "src/components/ui/drawer.tsx": "8be333e8fd8e42576b1b5f72f07f4337",
       "src/components/ui/dropdown-menu.tsx": "28d6e98d3c7811fc0514bfa69416f087",
       "src/components/ui/form.tsx": "1b0aa6302b9017ea2a1307c22a1d2983",
@@ -205,6 +205,8 @@
       "src/lib/error-page.ts": "8da0ddd7569bac2676b9a5c8edff8a36",
       "src/lib/forecast.test.ts": "cb7101d69c4bcea15300bf1a3eef6e7b",
       "src/lib/forecast.ts": "3e2775d6e1c56681a159eb19a0c62474",
+      "src/lib/gstr1-pdf.test.ts": "d8127307c5a35d12be383482698a15ba",
+      "src/lib/gstr1-pdf.ts": "254bb5ebdb51c8d6dfe64f9d5b5fdecc",
       "src/lib/gstr1.test.ts": "f6b884a6a7b1e51808865443cba4e7f7",
       "src/lib/gstr1.ts": "7d7dac1c422d35c47c80bacf1cb1dfd8",
       "src/lib/guest-order-actions.ts": "d07f19742d12e413d278aab291c3fa24",
@@ -289,16 +291,17 @@
       "src/routes/auth.tsx": "af68486ac8cfe2ebc62e354bc183e986",
       "src/routes/customers.tsx": "af6632001f5c1f41af79a548f4776674",
       "src/routes/dashboard.tsx": "a2623bf1c91b767ac8f2b672bfb541e9",
-      "src/routes/index.tsx": "e95d78407871844012724c78b2cdd9b2",
+      "src/routes/index.tsx": "219f310506d6501372cf6fdc0caaf813",
       "src/routes/manager.tsx": "4e7fa5b610d1ed0210b7fd9c4c81fe62",
       "src/routes/marketing.tsx": "af3bfe5d4324d2e8d11b5d4d6be105c9",
       "src/routes/menu.tsx": "6f97d252d73ea6a3f8cf4e707d4bf4fa",
       "src/routes/order.$slug.tsx": "dd4593b6dbd915a5b9cb5312744c3114",
-      "src/routes/reports.tsx": "c0628e5af90487e472e9afeecb50c76b",
+      "src/routes/reports.tsx": "60f7ae73cde5cdd7e1a876af610996ae",
       "src/routes/settings.tsx": "9e2d9e2c10de466fe5be3b0827dc239d",
       "src/routes/setup.tsx": "7704abcc292f020538e12ae692d52488",
       "src/routes/stock.tsx": "5344dde30fcc608728e5def8311b74d4",
-      "src/routes/tables.tsx": "53633ddb40ae547fd76b9f38adc71d54",
+      "src/routes/t.png": "cd61f03b4fb5512f93e536339c7953ff",
+      "src/routes/tables.tsx": "8303dd8e63b46b98e28991bc1401379f",
       "src/routes/waiter.tsx": "72cf79548eb37914ad8e6840a6d00bc1",
       "src/server.ts": "c7bbc49bb70e318af618d92775ee0f27",
       "src/start.ts": "d77c1c12904be5077c6955d9b30071af",
@@ -686,7 +689,30 @@
     {
       "name": "Dialog",
       "file": "src/components/ui/dialog",
-      "import_path": ""
+      "import_path": "",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean"
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "function"
+        },
+        {
+          "name": "modal",
+          "type": "boolean",
+          "default": "true"
+        },
+        {
+          "name": "children",
+          "type": "any"
+        }
+      ]
     },
     {
       "name": "DialogPortal",
@@ -711,7 +737,33 @@
     {
       "name": "DialogContent",
       "file": "src/components/ui/dialog",
-      "import_path": ""
+      "import_path": "",
+      "props": [
+        {
+          "name": "forceMount",
+          "type": "boolean"
+        },
+        {
+          "name": "onEscapeKeyDown",
+          "type": "function"
+        },
+        {
+          "name": "onPointerDownOutside",
+          "type": "function"
+        },
+        {
+          "name": "onInteractOutside",
+          "type": "function"
+        },
+        {
+          "name": "onOpenAutoFocus",
+          "type": "function"
+        },
+        {
+          "name": "onCloseAutoFocus",
+          "type": "function"
+        }
+      ]
     },
     {
       "name": "DialogHeader",
