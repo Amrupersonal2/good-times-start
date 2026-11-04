@@ -293,7 +293,7 @@ function groupTables<T extends RestaurantTable>(list: T[]): T[][] {
   const out: T[][] = [];
   const byPrefix = new Map<string, T[]>();
   for (const t of list) {
-    const m = /^(\d+)\s*-?\s*([a-z])$/i.exec(t.label.trim());
+    const m = /^(.*?\d+)\s*-?\s*([a-z])$/i.exec(t.label.trim());
     if (!m) { out.push([t]); continue; }
     const key = m[1] ?? "";
     const g = byPrefix.get(key);
