@@ -17,10 +17,10 @@ const DialogContext = React.createContext<Ctx | null>(null);
 const useDialog = () => React.useContext(DialogContext);
 
 export interface DialogProps {
-  open?: boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  modal?: boolean;
+  open?: boolean | undefined;
+  defaultOpen?: boolean | undefined;
+  onOpenChange?: ((open: boolean) => void) | undefined;
+  modal?: boolean | undefined;
   children?: React.ReactNode;
 }
 
@@ -157,7 +157,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
         } else if (e.key === "Tab" && innerRef.current) {
           const items = Array.from(innerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => el.offsetParent !== null);
           if (!items.length) return;
-          const first = items[0], last = items[items.length - 1];
+          const first = items[0]!, last = items[items.length - 1]!;
           if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
           else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
         }
