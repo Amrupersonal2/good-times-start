@@ -236,11 +236,13 @@ function TablesPage() {
           <section key={sec} className="mb-7">
             <h2 className="mb-3 text-base font-bold">{sec}</h2>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
-              {tables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })).map((t) => (
+              {groupTables(tables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))).map((g) => g.length > 1 && !editing ? (
+                <TableGroup key={g[0].id} tables={g} onPick={(t) => (canBill ? openBill(t) : setSelected(t))} />
+              ) : g.map((t) => (
                 <div key={t.id} className="relative">
                 <button type="button" aria-label={`Table ${t.label}${t.status === "free" ? "" : `, ${STATUS[t.status].label}`}`}
                   onClick={() => (editing ? setForm(t) : canBill ? openBill(t) : setSelected(t))}
-                  className={`relative flex aspect-square w-full flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
+                  className={`relative flex h-24 w-full flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
                   <span className={`${t.label.length > 4 ? "text-base leading-tight sm:text-lg" : "text-2xl"} max-w-full break-words font-extrabold`}>{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
                   {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
@@ -257,7 +259,7 @@ function TablesPage() {
                   </button>
                 ) : null}
                 </div>
-              ))}
+              )))}
             </div>
           </section>
         ))}
@@ -283,5 +285,40 @@ function TablesPage() {
         </DialogContent>
       </Dialog>
     </AppShell>
+  );
+}
+
+/** Tables like 2A, 2B … 2F share one tile with a picker, so big floors scroll less. */
+function groupTables(list: RestaurantTable[]): RestaurantTable[][] {
+  const out: RestaurantTable[][] = [];
+  const byPrefix = new Map<string, RestaurantTable[]>();
+  for (const t of list) {
+    const m = /^(\d+)\s*-?\s*([a-z])$/i.exec(t.label.trim());
+    if (!m) { out.push([t]); continue; }
+    const key = m[1];
+    const g = byPrefix.get(key);
+    if (g) g.push(t); else { const n = [t]; byPrefix.set(key, n); out.push(n); }
+  }
+  return out;
+}
+
+const RANK: Record<TableStatus, number> = { free: 0, reserved: 1, occupied: 2, billed: 3 };
+
+function TableGroup({ tables, onPick }: { tables: RestaurantTable[]; onPick: (t: RestaurantTable) => void }) {
+  const top = tables.reduce((a, b) => (RANK[b.status] > RANK[a.status] ? b : a));
+  const busy = tables.filter((t) => t.status === "occupied" || t.status === "billed");
+  const total = busy.reduce((n, t) => n + t.runningTotal, 0);
+  return (
+    <label className={`relative flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-2 text-center hover:border-primary ${STATUS[top.status].cls}`}>
+      <span className="text-lg font-extrabold">{tables[0].label}–{tables[tables.length - 1].label}</span>
+      <span className="text-xs text-muted-foreground">{busy.length}/{tables.length} busy{total ? ` · ${formatINR(total, 0)}` : ""}</span>
+      <span className="mt-1 text-[11px] font-semibold text-primary">Choose table ▾</span>
+      <select aria-label={`Choose a table from ${tables[0].label} to ${tables[tables.length - 1].label}`} value=""
+        onChange={(e) => { const t = tables.find((x) => x.id === e.target.value); if (t) onPick(t); }}
+        className="absolute inset-0 cursor-pointer opacity-0">
+        <option value="" disabled>Choose a table</option>
+        {tables.map((t) => <option key={t.id} value={t.id}>{t.label} — {STATUS[t.status].label}{t.runningTotal ? ` · ${formatINR(t.runningTotal, 0)}` : ""}</option>)}
+      </select>
+    </label>
   );
 }
