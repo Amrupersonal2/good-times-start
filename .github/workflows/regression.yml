@@ -28,7 +28,9 @@ permissions:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Pin to a Playwright-supported runner image; ubuntu-latest moved to 26.04,
+    # which Playwright 1.56 does not support yet.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -56,9 +58,13 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          node e2e/summary.mjs > summary.md || echo "No results were produced." > summary.md
+          if [ -f e2e-results.json ]; then
+            node e2e/summary.mjs > summary.md || echo "Could not generate summary." > summary.md
+            node e2e/extract.mjs || true
+          else
+            echo "No Playwright results were produced (setup or test execution failed)." > summary.md
+          fi
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
-          node e2e/extract.mjs || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
