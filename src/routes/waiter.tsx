@@ -106,12 +106,13 @@ function WaiterApp() {
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-2">
                 {tables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })).map((t) => (
                   <button key={t.id} onClick={() => setTableIdState(t.id)} aria-pressed={tableId === t.id}
-                    className={`relative flex min-h-16 flex-col items-center justify-center rounded-xl px-1 py-1.5 transition-transform active:scale-95 ${STATUS_STYLE[t.status]} ${tableId === t.id ? "outline outline-2 outline-offset-2 outline-foreground" : ""}`}>
+                    aria-label={`${t.label}, ${t.status === "free" ? "Free" : t.status === "occupied" ? "Occupied" : t.status === "billed" ? "Bill ready" : "Reserved"}${t.status === "occupied" || t.status === "billed" ? `, ${formatINR(t.runningTotal, 0)} running total` : ""}`} className={`relative flex min-h-20 flex-col items-center justify-center rounded-xl px-1.5 py-2 transition-transform active:scale-95 ${STATUS_STYLE[t.status]} ${tableId === t.id ? "outline outline-2 outline-offset-2 outline-foreground" : ""}`}>
                     <span className={`${t.label.length > 6 ? "text-sm" : "text-lg"} max-w-full break-words text-center font-extrabold leading-tight`}>{t.label}</span>
+                    <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide">{t.status === "free" ? "Free" : t.status === "occupied" ? "Occupied" : t.status === "billed" ? "Bill ready" : "Reserved"}</span>
                     <span className="mt-1 text-[11px] font-semibold opacity-80">
                       {(t.status === "occupied" || t.status === "billed") && t.qrTotal && !t.runningTotal ? `QR ${formatINR(t.qrTotal, 0)} · ${minutes(t.since)}` : t.status === "occupied" || t.status === "billed" ? `${formatINR(t.runningTotal, 0)}${t.qrTotal ? ` + QR ${formatINR(t.qrTotal, 0)}` : ""} · ${minutes(t.since)}` : t.status === "reserved" ? "Reserved" : <><Users className="inline size-3" /> {t.seats}</>}
                     </span>
-                    {t.status === "billed" ? <Bell className="absolute right-1.5 top-1.5 size-3.5" aria-label="Bill asked" /> : null}
+                    {t.status === "billed" ? <Bell className="absolute right-1.5 top-1.5 size-3.5" aria-hidden="true" /> : null}
                     {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate px-1 text-[10px] font-semibold opacity-90">{holdLabel(t, Date.now())}</span> : null}
                   </button>
                 ))}
@@ -123,7 +124,7 @@ function WaiterApp() {
         {tableId ? <OrderPad key={tableId} tableId={tableId} onBack={() => setTableIdState(undefined)} /> : (
           <div className="hidden flex-1 flex-col items-center justify-center gap-2 p-8 text-center md:flex">
             <p className="text-2xl font-extrabold">Pick a table</p>
-            <p className="max-w-sm text-sm text-muted-foreground">Blue tables have guests. White tables have asked for the bill.</p>
+            <p className="max-w-sm text-sm text-muted-foreground">Each table shows its status: Free, Occupied, Bill ready, or Reserved.</p>
           </div>
         )}
       </div>
