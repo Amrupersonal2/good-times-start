@@ -41,8 +41,20 @@ jobs:
         run: |
           bun add -d @playwright/test@1.56.0 jsqr@1.4.0 pngjs@7.0.0 @types/pngjs@6.0.5
           bunx playwright install --with-deps chromium
+      - name: Validate E2E Supabase configuration
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Configure repository Actions secrets VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY for authenticated browser regression tests."
+            exit 1
+          fi
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Production build
         run: bunx vite build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Unit and sync tests
         run: bunx vitest run --exclude "e2e/**" --exclude "src/test/app-routing.test.tsx"
       - name: Browser regression
@@ -55,9 +67,9 @@ jobs:
           XTSY_WAITER_PASSWORD: ${{ secrets.XTSY_WAITER_PASSWORD }}
           LIVE_ORDER: ${{ inputs.live_order && '1' || '' }}
           BASE_URL: ${{ inputs.base_url }}
-          # Local E2E needs non-empty public config to render the auth route; no real project secrets are used.
-          VITE_SUPABASE_URL: https://127.0.0.1:54321
-          VITE_SUPABASE_PUBLISHABLE_KEY: e2e-placeholder-publishable-key
+          # First-time sign-in must reach the real Supabase Auth + database APIs.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Summary
         if: always()
         run: |
