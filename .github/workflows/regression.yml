@@ -21,8 +21,10 @@ concurrency:
   group: regression-${{ github.ref }}
   cancel-in-progress: true
 
+# The regression workflow only needs to read the repository.
+# Reports are uploaded as artifacts; it must not create/push result branches.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   e2e:
@@ -41,7 +43,6 @@ jobs:
         run: bunx vite build
       - name: Unit and sync tests
         run: bunx vitest run --exclude "e2e/**" --exclude "src/test/app-routing.test.tsx"
-        continue-on-error: true
       - name: Browser regression
         run: |
           set -o pipefail
@@ -58,20 +59,6 @@ jobs:
           node e2e/summary.mjs > summary.md || echo "No results were produced." > summary.md
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
           node e2e/extract.mjs || true
-      - name: Publish results to a branch (readable without downloading artifacts)
-        if: always()
-        run: |
-          mkdir -p /tmp/out && cp summary.md /tmp/out/ && cp -r e2e-out/* /tmp/out/ 2>/dev/null || true
-          tail -c 200000 e2e-log.txt > /tmp/out/log.txt 2>/dev/null || true
-          ls -la > /tmp/out/files.txt
-          git config user.name "regression-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan "regression/run-${GITHUB_RUN_ID}"
-          git rm -rf -q . && git clean -fdq -e node_modules
-          cp -r /tmp/out/* .
-          git add -A
-          git commit -qm "Regression results for ${GITHUB_SHA::7} (run ${GITHUB_RUN_ID})"
-          git push -q origin "regression/run-${GITHUB_RUN_ID}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -79,4 +66,8 @@ jobs:
           path: |
             e2e-report
             e2e-results.json
+            e2e-out
+            e2e-log.txt
+            summary.md
+          if-no-files-found: ignore
           retention-days: 14
