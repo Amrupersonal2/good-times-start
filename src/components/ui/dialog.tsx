@@ -176,16 +176,21 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
 
     if (!open) return null;
 
-    const outside = () => {
+    const outside = (event: React.PointerEvent<HTMLDivElement>) => {
       const ev = makeEvent();
       onPointerDownOutside?.(ev);
       onInteractOutside?.(ev);
-      if (!ev.defaultPrevented) ctx?.setOpen(false);
+      if (ev.defaultPrevented) return;
+
+      // Prevent the outside pointer target from taking focus as the modal closes.
+      // The dialog's close cleanup restores the element that opened it.
+      event.preventDefault();
+      ctx?.setOpen(false);
     };
 
     return (
       <DialogPortal>
-        <DialogOverlay onPointerDown={(e) => { if (e.target === e.currentTarget) outside(); }} />
+        <DialogOverlay onPointerDown={(e) => { if (e.target === e.currentTarget) outside(e); }} />
         <div
           ref={setRefs}
           role="dialog"
