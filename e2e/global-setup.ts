@@ -14,8 +14,12 @@ export default async function globalSetup(config: FullConfig) {
     const context = await browser.newContext({ ...contextFor(bp), baseURL });
     await context.addInitScript(() => { try { localStorage.setItem("xtsy-regression", "1"); } catch { /* ignore */ } });
     const page = await context.newPage();
-    await page.goto(login.entry);
-    await page.waitForURL(/\/auth/, { timeout: 90_000 });
+    // Enter the sign-in route directly. App entry routes (e.g. /manager) are
+    // client redirects and can remain on their shell if auth hydration stalls.
+    // The app query preserves the intended app context after sign-in.
+    const app = name === "admin" ? "manager" : name === "billdesk" ? "pos" : "waiter";
+    await page.goto(`/auth?app=${app}`);
+    await page.getByRole("heading", { name: "Sign in" }).waitFor({ state: "visible", timeout: 30_000 });
     await page.getByLabel("Login").fill(login.email);
     await page.getByLabel("Password").fill(login.password);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
