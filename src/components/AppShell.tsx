@@ -81,11 +81,6 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
   const [open, setOpen] = useState(false);
   // Closing the Sync window always hands focus back to the status button, however it was closed.
   const statusButton = useRef<HTMLButtonElement>(null);
-  const wasOpen = useRef(false);
-  useEffect(() => {
-    if (wasOpen.current && !open) statusButton.current?.focus({ preventScroll: true });
-    wasOpen.current = open;
-  }, [open]);
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
@@ -168,7 +163,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         : <Button size="sm" variant="ghost" onClick={() => void navigate({ to: "/auth" })}><LogIn />Sign in</Button>}
     </div>
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); statusButton.current?.focus({ preventScroll: true }); }}>
         {/* The dialog's own ✕ closes it; a second Close button sat on top of it. */}
         <div className="pr-8">
           <DialogTitle>Sync</DialogTitle>
