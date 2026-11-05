@@ -43,7 +43,7 @@ BEGIN
      AND (NEW.payload ->> 'billNo') IS NOT DISTINCT FROM (OLD.payload ->> 'billNo')
      AND reason <> ''
      AND length(reason) <= 500
-     AND coalesce(NEW.payload ->> 'uid', NEW.uid::text) IS NOT NULL
+     AND NEW.record_id IS NOT NULL
   THEN
     -- Lock the exact approval row, then consume it in this transaction.
     -- The trigger update and approval consumption commit/rollback together.
@@ -52,7 +52,7 @@ BEGIN
       FROM public.restaurant_void_approvals AS a
      WHERE a.restaurant_id = NEW.restaurant_id
        AND a.user_id = auth.uid()
-       AND a.bill_uid = coalesce(NEW.payload ->> 'uid', NEW.uid::text)
+       AND a.bill_uid = NEW.record_id
        AND a.expires_at > clock_timestamp()
        AND a.consumed_at IS NULL
      ORDER BY a.created_at DESC
