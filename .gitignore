@@ -36,3 +36,8 @@ e2e/.auth/
 e2e-report/
 e2e-results.json
 test-results/
+
+# Environment files
+.env
+.env.*
+!.env.example
