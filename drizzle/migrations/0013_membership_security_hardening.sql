@@ -1,0 +1,101 @@
+-- Security hardening for restaurant membership helpers and invite acceptance.
+-- Safe to apply after 0012. Does not change application data or roles.
+
+-- SECURITY DEFINER helpers are callable only by authenticated users, and may
+-- only answer membership/role questions about the caller. RLS policies pass
+-- auth.uid() as the user argument; this prevents cross-user membership probing.
+CREATE OR REPLACE FUNCTION public.is_member(_rid uuid, _uid uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+  SELECT _uid = auth.uid()
+     AND EXISTS (
+       SELECT 1
+       FROM public.restaurant_members
+       WHERE restaurant_id = _rid AND user_id = auth.uid()
+     );
+$$;
+
+CREATE OR REPLACE FUNCTION public.has_restaurant_role(
+  _rid uuid,
+  _uid uuid,
+  _roles public.restaurant_role[]
+)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+  SELECT _uid = auth.uid()
+     AND EXISTS (
+       SELECT 1
+       FROM public.restaurant_members
+       WHERE restaurant_id = _rid
+         AND user_id = auth.uid()
+         AND role = ANY(_roles)
+     );
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_member(uuid, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.has_restaurant_role(uuid, uuid, public.restaurant_role[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_member(uuid, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_restaurant_role(uuid, uuid, public.restaurant_role[]) TO authenticated;
+
+-- Accept only invitations for the verified caller and delete only invitations
+-- that actually belong to restaurants the caller joined. The previous function
+-- deleted every invite with the same email after accepting, even when an insert
+-- conflicted with an existing membership.
+CREATE OR REPLACE FUNCTION public.accept_restaurant_invites()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  caller uuid := auth.uid();
+  caller_email text;
+BEGIN
+  IF caller IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT lower(u.email)
+    INTO caller_email
+    FROM auth.users AS u
+   WHERE u.id = caller
+     AND u.email_confirmed_at IS NOT NULL;
+
+  IF caller_email IS NULL OR caller_email = '' THEN
+    RETURN;
+  END IF;
+
+  INSERT INTO public.restaurant_members (
+    restaurant_id, user_id, role, display_name, email
+  )
+  SELECT i.restaurant_id,
+         caller,
+         i.role,
+         coalesce(p.display_name, ''),
+         caller_email
+    FROM public.restaurant_invites AS i
+    LEFT JOIN public.profiles AS p ON p.id = caller
+   WHERE lower(i.email) = caller_email
+  ON CONFLICT (restaurant_id, user_id) DO NOTHING;
+
+  DELETE FROM public.restaurant_invites AS i
+   WHERE lower(i.email) = caller_email
+     AND EXISTS (
+       SELECT 1
+         FROM public.restaurant_members AS m
+        WHERE m.restaurant_id = i.restaurant_id
+          AND m.user_id = caller
+     );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.accept_restaurant_invites() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.accept_restaurant_invites() TO authenticated;
