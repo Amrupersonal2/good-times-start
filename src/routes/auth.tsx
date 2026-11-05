@@ -47,7 +47,11 @@ function AuthPage() {
   // Each app suggests its own login; anyone can type another.
   useEffect(() => { if (app && !login) setLogin(LOGINS[APPS[app].login].email); }, [app, login]);
 
-  const pickApp = (a: AppKind) => { setAppMode(a); setLogin(LOGINS[APPS[a].login].email); setMessage(""); };
+  const pickApp = (a: AppKind) => {
+    // Each installed app has a direct, shareable sign-in URL.
+    try { window.sessionStorage.removeItem("xtsy-app"); } catch { /* ignore */ }
+    window.location.assign(`/auth?app=${a}`);
+  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
