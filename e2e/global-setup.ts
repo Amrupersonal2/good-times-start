@@ -20,7 +20,17 @@ export default async function globalSetup(config: FullConfig) {
     const app = name === "admin" ? "manager" : name === "billdesk" ? "pos" : "waiter";
     await page.goto(`/auth?app=${app}`);
     await page.getByRole("heading", { name: "Sign in" }).waitFor({ state: "visible", timeout: 30_000 });
-    await page.getByLabel("Login").fill(login.email);
+    // The app picker can render briefly before the ?app= context is hydrated.
+    // If the Login field is not present, choose the requested screen explicitly.
+    const loginField = page.getByLabel("Login", { exact: true });
+    try {
+      await loginField.waitFor({ state: "visible", timeout: 5_000 });
+    } catch {
+      const appName = app === "manager" ? "POS Business Manager" : app === "pos" ? "Restro POS by XTSY" : "POS Waiter";
+      await page.getByRole("radio", { name: new RegExp(appName, "i") }).click();
+      await loginField.waitFor({ state: "visible", timeout: 15_000 });
+    }
+    await loginField.fill(login.email);
     await page.getByLabel("Password").fill(login.password);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     try {
