@@ -50,7 +50,9 @@ describe("internal logins", () => {
   });
 
   it("knows which app a window is", () => {
-    expect(appFromLocation("/", "?app=pos")).toBe("pos");
+    expect(appFromLocation("/auth", "?app=pos")).toBe("pos");
+    expect(appFromLocation("/auth", "?app=manager")).toBe("manager");
+    expect(appFromLocation("/auth", "?app=waiter")).toBe("waiter");
     expect(appFromLocation("/dashboard", "?app=manager")).toBe("manager");
     expect(appFromLocation("/waiter", "?app=waiter")).toBe("waiter");
     expect(appFromLocation("/waiter", "")).toBeNull(); // an admin peeking at the waiter screen stays in their app
