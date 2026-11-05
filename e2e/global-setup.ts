@@ -12,23 +12,34 @@ export default async function globalSetup(config: FullConfig) {
     const login = LOGINS[name];
     const bp = BREAKPOINTS.find((b) => b.device === login.device && (login.device === "desktop" ? b.width >= 1280 : b.width >= 700))!;
     const context = await browser.newContext({ ...contextFor(bp), baseURL });
-    await context.addInitScript(() => { try { localStorage.setItem("xtsy-regression", "1"); } catch { /* ignore */ } });
+    const app = name === "admin" ? "manager" : name === "billdesk" ? "pos" : "waiter";
+    await context.addInitScript((selectedApp: string) => {
+      try {
+        localStorage.setItem("xtsy-regression", "1");
+        sessionStorage.setItem("xtsy-app", selectedApp);
+      } catch { /* ignore */ }
+    }, app);
     const page = await context.newPage();
     // Enter the sign-in route directly. App entry routes (e.g. /manager) are
     // client redirects and can remain on their shell if auth hydration stalls.
     // The app query preserves the intended app context after sign-in.
-    const app = name === "admin" ? "manager" : name === "billdesk" ? "pos" : "waiter";
     await page.goto(`/auth?app=${app}`);
     await page.getByRole("heading", { name: "Sign in" }).waitFor({ state: "visible", timeout: 30_000 });
-    // The app picker can render briefly before the ?app= context is hydrated.
-    // If the Login field is not present, choose the requested screen explicitly.
-    const loginField = page.getByLabel("Login", { exact: true });
+    // App mode is seeded in sessionStorage before app code executes. Wait for the
+    // actual username input rather than relying on the label's accessible name.
+    const loginField = page.locator('input[autocomplete="username"]');
     try {
-      await loginField.waitFor({ state: "visible", timeout: 5_000 });
-    } catch {
-      const appName = app === "manager" ? "POS Business Manager" : app === "pos" ? "Restro POS by XTSY" : "POS Waiter";
-      await page.getByRole("radio", { name: new RegExp(appName, "i") }).click();
-      await loginField.waitFor({ state: "visible", timeout: 15_000 });
+      await loginField.waitFor({ state: "visible", timeout: 20_000 });
+    } catch (error) {
+      const diagnostic = await page.evaluate(() => ({
+        url: location.href,
+        title: document.title,
+        bodyText: document.body.innerText.slice(0, 3000),
+        inputs: Array.from(document.querySelectorAll("input")).map((el) => ({ type: el.type, name: el.getAttribute("name"), autocomplete: el.getAttribute("autocomplete"), ariaLabel: el.getAttribute("aria-label") })),
+        buttons: Array.from(document.querySelectorAll("button")).map((el) => el.innerText.trim()).filter(Boolean).slice(0, 30),
+        appMode: sessionStorage.getItem("xtsy-app"),
+      })).catch(() => null);
+      throw new Error(`Sign-in username field did not render for ${name}. Diagnostic: ${JSON.stringify(diagnostic)}. Original: ${String(error)}`);
     }
     await loginField.fill(login.email);
     await page.getByLabel("Password").fill(login.password);
