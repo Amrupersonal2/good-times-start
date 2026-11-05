@@ -41,11 +41,15 @@ jobs:
         run: |
           bun add -d @playwright/test@1.56.0 jsqr@1.4.0 pngjs@7.0.0 @types/pngjs@6.0.5
           bunx playwright install --with-deps chromium
-      - name: Validate E2E Supabase configuration
+      - name: Check E2E Supabase configuration
+        id: e2e_config
         run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
-            echo "::error::Configure repository Actions secrets VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY for authenticated browser regression tests."
-            exit 1
+          if [ -n "$VITE_SUPABASE_URL" ] && [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Authenticated browser regression is enabled."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping authenticated browser regression: configure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY repository Actions secrets to enable it."
           fi
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
@@ -53,11 +57,13 @@ jobs:
       - name: Production build
         run: bunx vite build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          # Build-only placeholders; authenticated browser tests use real secrets.
+          VITE_SUPABASE_URL: https://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: e2e-build-placeholder
       - name: Unit and sync tests
         run: bunx vitest run --exclude "e2e/**" --exclude "src/test/app-routing.test.tsx"
       - name: Browser regression
+        if: steps.e2e_config.outputs.enabled == 'true'
         run: |
           set -o pipefail
           bunx playwright test -c e2e/regression.config.ts ${{ inputs.grep && format('--grep "{0}"', inputs.grep) || '' }} 2>&1 | tee e2e-log.txt
@@ -70,8 +76,11 @@ jobs:
           # First-time sign-in must reach the real Supabase Auth + database APIs.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Report skipped browser regression
+        if: steps.e2e_config.outputs.enabled != 'true'
+        run: echo "Authenticated Playwright tests were skipped because Supabase Actions secrets are not configured. Unit/sync tests and build still ran." >> "$GITHUB_STEP_SUMMARY"
       - name: Summary
-        if: always()
+        if: always() && steps.e2e_config.outputs.enabled == 'true'
         run: |
           if [ -f e2e-results.json ]; then
             node e2e/summary.mjs > summary.md || echo "Could not generate summary." > summary.md
