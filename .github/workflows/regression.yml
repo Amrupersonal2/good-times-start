@@ -55,6 +55,9 @@ jobs:
           XTSY_WAITER_PASSWORD: ${{ secrets.XTSY_WAITER_PASSWORD }}
           LIVE_ORDER: ${{ inputs.live_order && '1' || '' }}
           BASE_URL: ${{ inputs.base_url }}
+          # Local E2E needs non-empty public config to render the auth route; no real project secrets are used.
+          VITE_SUPABASE_URL: https://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: e2e-placeholder-publishable-key
       - name: Summary
         if: always()
         run: |
