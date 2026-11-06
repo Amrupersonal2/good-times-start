@@ -6,7 +6,7 @@
  * - Icons, manifests, fonts: served from cache, refreshed in the background.
  * - Never touches API calls, server functions, Supabase or non-GET requests.
  */
-const VERSION = "xtsy-pos-v10";
+const VERSION = "xtsy-pos-v11";
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const STATIC = `${VERSION}-static`;
@@ -39,19 +39,37 @@ async function networkFirstPage(request) {
   const cache = await caches.open(PAGES);
   const key = new URL(request.url);
   key.search = "";
+
+  // Always revalidate navigations against the published origin. Hashed assets
+  // can safely remain cache-first, but cached HTML can point at chunks from an
+  // older deployment and leave the app stuck on its server-rendered shell.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
-    const response = await fetch(request, { signal: controller.signal });
-    clearTimeout(timer);
-    if (response.ok && response.type === "basic") cache.put(key.toString(), response.clone());
+    const response = await fetch(request, {
+      signal: controller.signal,
+      cache: "no-store",
+    });
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (
+      response.ok &&
+      response.type === "basic" &&
+      contentType.includes("text/html") &&
+      !response.redirected
+    ) {
+      await cache.put(key.toString(), response.clone());
+    }
     return response;
   } catch {
+    // Offline fallback is only used after the network navigation actually fails.
     const exact = await cache.match(key.toString());
     if (exact) return exact;
     const app = START_PAGES.slice().sort((a, b) => b.length - a.length).find((p) => key.pathname.startsWith(p)) || "/";
     const fallback = await cache.match(new URL(app, self.location.origin).toString());
     return fallback || new Response("<h1>You're offline</h1><p>Open this app once while online so it can work offline.</p>", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
+  } finally {
+    clearTimeout(timer);
   }
 }
 
