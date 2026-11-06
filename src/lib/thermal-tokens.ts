@@ -1,7 +1,7 @@
 /** Physical receipt tokens; independent of the software's screen typography. */
 export const THERMAL = {
   fontFamily: "'Consolas','Lucida Console','Courier New',monospace",
-  fontMm: 2.5,
+  fontMm: 2.65,
   lineHeight: 1.25,
   largeLineHeight: 1.15,
   normalWeight: 600,

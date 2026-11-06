@@ -92,13 +92,13 @@ describe("thermal slips", () => {
     expect(rawbtIntent(Uint8Array.from([0x1b, 0x40]))).toBe("intent:base64,G0A=#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;");
   });
 
-  it("ends each 2-inch KOT with a 30 mm feed and no additional cut feed", () => {
+  it("ends each 2-inch KOT with a 50 mm feed and no additional cut feed", () => {
     const slip = kotSlip([kot], 58);
-    expect(slip.endFeedMm).toBe(30);
+    expect(slip.endFeedMm).toBe(50);
     const bytes = escPos(slip);
-    // 30 mm at 203 dots per inch rounds to 240 dots.
-    expect(Array.from(bytes.slice(-10))).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 240, 0x1d, 0x56, 0]);
-    expect(billSlip(bill, settings, 58).endFeedMm).toBeUndefined();
+    // 50 mm at 203 dots per inch rounds to 400 dots.
+    expect(Array.from(bytes.slice(-10))).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 255, 0x1b, 0x4a, 145, 0x1d, 0x56, 0]);
+    expect(billSlip(bill, settings, 58).endFeedMm).toBe(50);
   });
 
   it("keeps text printable on any thermal printer", () => {

@@ -18,7 +18,7 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export const KOT_END_FEED_MM = 30;
+export const KOT_END_FEED_MM = 50;
 export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
@@ -141,7 +141,7 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
   L.push({ text: "" });
   center(settings.billFooter || "Thank you! Visit again.");
   if (qr) { L.push({ text: "" }); L.push({ text: `Scan to pay Rs.${money(due)} by UPI`, align: "center", bold: true }); }
-  return { paper, lines: L, qr };
+  return { paper, lines: L, qr, endFeedMm: 50 };
 }
 
 /** A kitchen ticket: big order type and table, then items in tall bold text with their quantities. */
