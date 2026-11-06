@@ -32,6 +32,11 @@ async function tableLabelOf(tableId: string | undefined): Promise<string | undef
   return (await getDb().restTables.get(tableId))?.label ?? tableId;
 }
 
+async function tableCapacityOf(tableId: string | undefined): Promise<number | undefined> {
+  if (!tableId) return undefined;
+  return (await getDb().restTables.get(tableId))?.seats;
+}
+
 async function orderByUid(uid: string): Promise<Order | null> {
   return (await getDb().orders.where("uid").equals(uid).first()) ?? null;
 }
@@ -279,7 +284,7 @@ export function useCart(initialTableId?: string) {
   /** Send unsent items (and cancellations) to the kitchen; returns the tickets and the saved running bill. */
   const sendKitchenWithOrder = useCallback(async (): Promise<{ kots: Kot[]; order: Order } | null> => {
     if (!pendingKitchenLines.length && !pendingCancelLines.length) return null;
-    const detailsError = guestDetailsError(customer, guestCount);
+    const detailsError = guestDetailsError(customer, guestCount, await tableCapacityOf(tableId));
     if (detailsError) { toast.error(detailsError); return null; }
     const db = getDb();
     const now = Date.now();
