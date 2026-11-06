@@ -274,7 +274,7 @@ export async function nextKotNumber(deviceId: string, at: number): Promise<strin
   const existing = await db.kots.toArray();
   const submissions = new Set(existing.map((kot) => kot.submissionId ?? `legacy:${kot.orderUid ?? kot.billNo}:${kot.createdAt}`));
   const printedMax = existing.reduce((max, kot) => {
-    const match = /^KOT\/(\\d+)$/.exec(kot.kotNo ?? "");
+    const match = /^KOT\/(\d+)$/.exec(kot.kotNo ?? "");
     return match ? Math.max(max, Number(match[1])) : max;
   }, 0);
   // Count surviving historical submissions (not station rows) to seed the new
