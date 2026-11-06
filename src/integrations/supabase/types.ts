@@ -953,6 +953,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_restaurant_number: {
+        Args: { _request_id: string; _restaurant_id: string; _series: string }
+        Returns: string
+      }
       _void_totp_code: {
         Args: { _secret: string; _step: number }
         Returns: string
