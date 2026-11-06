@@ -65,7 +65,16 @@ export function kotsForDevice(kots: Kot[], config: PrintConfig): Kot[] {
  * (per kind, so a cancellation never prints on the same slip as new items).
  */
 export function kotPrintGroups(kots: Kot[], byStation: boolean): Kot[][] {
-  if (byStation) return kots.map((k) => [k]);
+  if (byStation) {
+    const groups = new Map<string, Kot[]>();
+    for (const kot of kots) {
+      const key = `${kot.kind === "cancel" ? "cancel" : "new"}:${kot.station || "Kitchen"}`;
+      const group = groups.get(key);
+      if (group) group.push(kot);
+      else groups.set(key, [kot]);
+    }
+    return [...groups.values()];
+  }
   const orders = kots.filter((k) => k.kind !== "cancel");
   const cancels = kots.filter((k) => k.kind === "cancel");
   return [orders, cancels].filter((g) => g.length);
