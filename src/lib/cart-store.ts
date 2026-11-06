@@ -54,7 +54,16 @@ export function useCart(initialTableId?: string) {
   const [customer, setCustomer] = useState<{ name?: string; phone?: string; gstin?: string }>({});
   const [guestCount, setGuestCount] = useState<number | undefined>();
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const [submittedOverride, setSubmittedOverride] = useState<{ orderUid: string; quantities: Record<string, number> } | null>(null);
   const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : getDb().kots.where("orderId").equals(activeOrder.id).toArray(), [activeOrder?.id], [] as Kot[]);
+  const persistedSubmitted = submittedQuantitiesFromKots(storedKots);
+  useEffect(() => {
+    if (!submittedOverride || submittedOverride.orderUid !== activeOrder?.uid) return;
+    const keys = new Set([...Object.keys(persistedSubmitted), ...Object.keys(submittedOverride.quantities)]);
+    if ([...keys].every((key) => (persistedSubmitted[key] ?? 0) === (submittedOverride.quantities[key] ?? 0))) {
+      setSubmittedOverride(null);
+    }
+  }, [storedKots, activeOrder?.uid, submittedOverride]);
   const [draftReady, setDraftReady] = useState(false);
   const settings = useRestaurantSettings();
   const { user } = useStaff();
@@ -259,7 +268,9 @@ export function useCart(initialTableId?: string) {
   }, [activeOrder, tableId]);
 
   const totals = computeTotals(lines, discountPct, serviceChargePct, tax);
-  const submitted = storedKots.length ? submittedQuantitiesFromKots(storedKots) : activeOrder?.kotSubmittedQty ?? {};
+  const submitted = submittedOverride?.orderUid === activeOrder?.uid
+    ? submittedOverride.quantities
+    : storedKots.length ? persistedSubmitted : activeOrder?.kotSubmittedQty ?? {};
   const pendingKitchenLines = unsentKitchenLines(lines, submitted);
   const pendingCancelLines = cancelledKitchenLines(lines, submitted, activeOrder?.lines ?? []);
 
@@ -347,6 +358,7 @@ export function useCart(initialTableId?: string) {
       if (!base) await db.meta.delete(pendingOrderKey);
     });
     await markDirty(["order", orderUid], ...kots.map((kot): [RecordKind, string] => ["kot", kot.uid ?? ""]));
+    setSubmittedOverride({ orderUid, quantities: nextSubmitted });
     if (allCancelled) {
       await finishTable([]);
       toast.success(`Cancellation sent to the kitchen; bill ${saved.billNo} closed with nothing to pay`);
