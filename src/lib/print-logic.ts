@@ -91,11 +91,14 @@ export function printCss(paper: 58 | 80): string {
   const content = paper === 58 ? 48 : 72;
   return `@media print {
   @page { size: ${paper}mm auto; margin: 0; }
-  html, body { background: #fff !important; }
-  body * { visibility: hidden; }
+  html, body { background: #fff !important; margin: 0 !important; min-height: 0 !important; height: auto !important; }
+  body *:not(:has(#print-root)):not(#print-root):not(#print-root *) { display: none !important; }
+  body *:has(#print-root) { display: contents !important; }
   #print-root, #print-root * { visibility: visible; }
   #print-root { position: absolute; left: 0; top: 0; width: ${content}mm; }
   #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0 0 4mm; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
   #print-root .print-ticket:last-child { break-after: auto; page-break-after: auto; }
+  #print-root .print-ticket:has(.kot-print-slip) { padding-bottom: 0; }
+  #print-root .kot-print-slip::after { content: ""; display: block; height: var(--kot-end-feed); }
 }`;
 }
