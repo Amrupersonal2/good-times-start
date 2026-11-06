@@ -18,7 +18,7 @@ export async function resetBillNumbers(restaurantId: string, role: string, retai
   const source = retained?.billNo.split("/")[0] ?? (await db.meta.get("deviceCode"))?.value;
   if (typeof source !== "string") throw new Error("Counter series is not ready");
   const { error } = await supabase.rpc("reset_counter_bill_numbers", {
-    _restaurant: restaurantId, _source: source, _year: financialYear(new Date()), _keep: retainedUid ?? undefined,
+    _restaurant: restaurantId, _source: source, _year: financialYear(new Date()), ...(retainedUid ? { _keep: retainedUid } : {}),
   });
   if (error) throw new Error(error.message);
   // Bind this counter to the retained bill's original series. Other devices with
