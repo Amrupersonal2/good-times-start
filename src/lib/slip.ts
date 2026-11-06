@@ -9,7 +9,7 @@ import { gstModeOf, exemptionNote } from "./billing-config";
 import type { Kot, Order, RestaurantSettings } from "./types";
 
 export type Paper = 58 | 80;
-export const columnsFor = (paper: Paper) => (paper === 58 ? 32 : 48);
+export const columnsFor = (paper: Paper) => (paper === 58 ? 30 : 45);
 
 export interface SlipLine {
   text: string;
