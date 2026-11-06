@@ -252,8 +252,8 @@ function MenuPage() {
             <div className="flex flex-wrap gap-2">
               <MenuExcel restaurant={settings.name} menuCount={menu.length} />
               <ConfirmButton id="sync-printed-tab-prices" className={buttonVariants({ variant: "outline" })} armedClassName="!border-primary !text-primary"
-                onConfirm={() => void syncPrintedTabMenuPrices().then(({ dishesUpdated }) => toast.success(dishesUpdated ? `Updated ${dishesUpdated} menu prices and repriced all running bills` : "Menu prices already match the printed menu")).catch(() => toast.error("Could not apply printed menu prices"))}
-                confirm="Tap again to update menu and running bills">Apply printed menu prices</ConfirmButton>
+                onConfirm={() => void syncPrintedTabMenuPrices().then(({ dishesUpdated }) => toast.success(dishesUpdated ? `Updated ${dishesUpdated} menu items, sections and prices; repriced all running bills` : "Menu prices already match the printed menu")).catch(() => toast.error("Could not apply printed menu prices"))}
+                confirm="Tap again to update menu and running bills">Apply printed menu prices & sections</ConfirmButton>
               <Button onClick={() => setEditing("new")}><Plus />Add dish</Button>
             </div>
           ) : null}
