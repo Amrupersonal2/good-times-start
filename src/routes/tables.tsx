@@ -234,7 +234,7 @@ function TablesPage() {
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No tables yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">{canEdit ? "Choose Edit floor, then Add table. Takeaway and delivery bills work without tables." : "Ask the owner or a manager to set up the floor."}</p>
+            {!canEdit ? <p className="mt-1 text-sm text-muted-foreground">Ask the owner or a manager to set up the floor.</p> : null}
           </div>
         ) : null}
 

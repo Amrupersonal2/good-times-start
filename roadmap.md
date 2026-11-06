@@ -1,7 +1,7 @@
 # POS expansion
 
 ## Counter rollout and floor creation
-- [ ] Add direct Add section / Add table forms and verify saved tables.
+- [x] Add direct Add section / Add table forms; verified create, refresh, second table and test-table cleanup under owner session.
 - [ ] Connect real Swiggy/Zomato orders; blocked pending approved partner API access and documentation.
 - [ ] Publish the current counter and verify its order/print flow.
 - [ ] Check actual 2-inch thermal paper; requires access to the user's counter printer.

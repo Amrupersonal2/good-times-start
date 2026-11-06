@@ -23,3 +23,4 @@
 - Keep KOT end-feed in the shared slip model and use it for browser and ESC/POS output; printer-driver paper length and cutter offsets remain device-controlled.
 - Treat cloud order mirrors as data only, never print commands; gate browser thermal printing on device-local silent transport confirmation because browsers cannot bypass their print dialog programmatically.
 - Keep Orders history in indexed local bill/KOT reads and preserve guest acceptance separately; hide aggregator entry until an actual order-sync integration exists, retaining historical order types.
+- Create floor sections together with their first table through the existing table save/sync path, so section creation works offline without a parallel registry.
