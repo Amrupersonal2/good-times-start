@@ -29,6 +29,12 @@ const kot: Kot = {
 const text = (lines: { text: string }[]) => lines.map((l) => l.text).join("\n");
 
 describe("thermal slips", () => {
+  it("uses the printable width with a small safe side margin on both paper sizes", () => {
+    expect(columnsFor(58)).toBe(30);
+    expect(columnsFor(80)).toBe(45);
+    expect(billSlip(bill, settings, 58).endFeedMm).toBe(5);
+  });
+
   for (const paper of [80, 58] as const) {
     it(`fits every bill and KOT line on ${paper} mm paper`, () => {
       const cols = columnsFor(paper);
