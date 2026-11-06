@@ -16,6 +16,7 @@ export function SlipView({ slip, qrDataUrl }: { slip: Slip; qrDataUrl?: string |
   const base: CSSProperties = { fontSize: `${font}mm`, lineHeight: THERMAL.lineHeight, whiteSpace: "pre", fontWeight: THERMAL.normalWeight };
   return (
     <div className="slip bg-white text-black" style={{ width: `${width}mm`, fontFamily: THERMAL.fontFamily }}>
+      {slip.startFeedMm ? <div className="print-slip-start-feed" aria-hidden="true" style={{ height: String(slip.startFeedMm) + "mm" }} /> : null}
       {slip.lines.map((line, i) => {
         const style: CSSProperties = { ...base, textAlign: line.align ?? "left", fontWeight: line.bold ? THERMAL.boldWeight : THERMAL.normalWeight };
         if (line.size === "big") return <div key={i} style={{ ...style, fontSize: `${font * THERMAL.largeMultiplier}mm`, lineHeight: THERMAL.largeLineHeight }}>{line.text || " "}</div>;

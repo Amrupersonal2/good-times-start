@@ -165,6 +165,8 @@ export interface Kot {
   /** UUID receipt key returned to the server allocator for this KOT submission. */
   numberRequestId?: string | undefined;
   kotNo?: string;
+  /** Number printed on paper by an older counter before the cloud assigned `kotNo`. */
+  printedKotNo?: string;
   orderType?: OrderType;
   billNo: string;
   station: string;
