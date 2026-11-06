@@ -308,9 +308,10 @@ export function useCart(initialTableId?: string) {
     // the screen uses to show "not sent". The bill's own counter can be ahead of the
     // tickets (a ticket the cloud refused), which used to make KOT send nothing.
     const baseKots = base?.id !== undefined ? await db.kots.where("orderId").equals(base.id).toArray() : [];
+    const baseRawSubmitted = baseKots.length ? submittedQuantitiesFromKots(baseKots) : base?.kotSubmittedQty ?? {};
     const baseSubmitted = baseKots.length
-      ? subtractSettledQuantities(submittedQuantitiesFromKots(baseKots), base?.kotSettledQty ?? {})
-      : base?.kotSubmittedQty ?? {};
+      ? subtractSettledQuantities(baseRawSubmitted, base?.kotSettledQty ?? {})
+      : baseRawSubmitted;
     const ticketsToSend = base
       ? [...unsentKitchenLines(base.lines, baseSubmitted), ...localAdditions]
       : pendingKitchenLines;
@@ -339,7 +340,7 @@ export function useCart(initialTableId?: string) {
         });
     const orderUid = order.uid ?? newUid();
     order.uid = orderUid;
-    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base ? baseSubmitted : {}, ticketsToSend), pendingCancelLines);
+    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base ? baseRawSubmitted : {}, ticketsToSend), pendingCancelLines);
     const allCancelled = merged.length === 0;
     const saved: Order = {
       ...order, kotSubmittedQty: nextSubmitted, synced: false,
