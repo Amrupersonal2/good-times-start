@@ -1,3 +1,4 @@
+import type { Order } from "@/lib/types";
 import { getDb, getSettings, markDirty, saveSettings } from "./db";
 import type { RecordKind } from "./sync-core";
 import { computeTotals } from "./billing";
