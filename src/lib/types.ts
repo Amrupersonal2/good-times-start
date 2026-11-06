@@ -65,6 +65,8 @@ export interface Order {
   /** Global id shared by every device of the restaurant. Local `id` differs per device. */
   uid?: string;
   billNo: string;
+  /** UUID receipt key returned to the server allocator for this bill. */
+  numberRequestId?: string;
   orderType: OrderType;
   tableId?: string | undefined;
   /** Table name as printed, e.g. "T4"; kept with the bill in case the table is renamed later. */
@@ -154,6 +156,8 @@ export interface Kot {
   tableLabel?: string | undefined;
   tableSection?: string | undefined;
   submissionId?: string;
+  /** UUID receipt key returned to the server allocator for this KOT submission. */
+  numberRequestId?: string;
   kotNo?: string;
   orderType?: OrderType;
   billNo: string;
