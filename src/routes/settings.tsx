@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { Trash2, UserPlus } from "lucide-react";
+import { RotateCcw, Trash2, UserPlus } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,7 @@ import { Segmented } from "@/components/Segmented";
 import { can } from "@/lib/permissions";
 import { useDeviceCode } from "@/lib/use-device-code";
 import { useFirstSyncDone } from "@/lib/use-first-sync";
+import { ownerCanReset, resetBillNumbers } from "@/lib/bill-number-reset";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -317,6 +318,9 @@ function ThisDevice() {
   const seq = useLiveQuery(async () => (await getDb().meta.get("billSeq"))?.value, [], 0);
   const menuCount = useLiveQuery(() => getDb().menu.count(), [], 0);
   const [draft, setDraft] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [keepUid, setKeepUid] = useState("");
+  const bills = useLiveQuery(() => getDb().orders.toArray(), [], []);
   useEffect(() => { setDraft(code); }, [code]);
   const next = normaliseDeviceCode(draft);
   const canReset = can(user, "device.reset");
@@ -333,6 +337,16 @@ function ThisDevice() {
     window.location.reload();
   };
   const synced = useFirstSyncDone();
+  const resetNumbers = async () => {
+    if (!user?.restaurantId || !ownerCanReset(user.role)) return;
+    if (!window.confirm(keepUid ? "Renumber the selected bill to TBX/26-27/0001 and start the next bill at 0002? No amounts or items will change." : "Reset this counter to TBX with next bill 0001? This is blocked if existing numbers would be reused.")) return;
+    setResetBusy(true);
+    try {
+      await resetBillNumbers(user.restaurantId, user.role, keepUid || undefined);
+      toast.success(keepUid ? "Retained bill is 0001. Next bill is TBX/26-27/0002." : "Next bill is TBX/26-27/0001.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't reset bill numbers"); }
+    finally { setResetBusy(false); }
+  };
   const loadSample = async () => {
     try { await loadSampleData(); toast.success("Sample menu and tables added"); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't add the sample menu."); }
@@ -348,6 +362,15 @@ function ThisDevice() {
           {can(user, "settings.series") ? <Button variant="secondary" disabled={!next || next === code} onClick={() => void saveCode()}>Start new series</Button>
             : <p className="pb-2 text-xs text-muted-foreground">Only the owner or a manager can change it.</p>}
         </div>
+        {ownerCanReset(user?.role) ? <div className="space-y-3 border-t border-border pt-4">
+          <Field label="Bill to keep as 0001">
+            <Dropdown ariaLabel="Bill to keep as 0001" value={keepUid} onChange={setKeepUid} options={[
+              { value: "", label: "No bill — next number 0001" },
+              ...bills.filter((bill) => bill.uid).map((bill) => ({ value: bill.uid ?? "", label: bill.billNo })),
+            ]} />
+          </Field>
+          <Button variant="outline" disabled={resetBusy || !synced} onClick={() => void resetNumbers()}><RotateCcw />{resetBusy ? "Resetting…" : "Reset bill numbers"}</Button>
+        </div> : null}
         {menuCount === 0 && synced && can(user, "menu.edit") ? (
           <div className="rounded-lg border border-dashed border-border p-4">
             <p className="text-sm font-medium">Your menu is empty.</p>

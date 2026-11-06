@@ -43,6 +43,13 @@
       "when": 1792176457354,
       "tag": "0005_restaurant_team_sharing",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793941600816,
+      "tag": "0006_owner_counter_numbering_reset",
+      "breakpoints": true
     }
   ]
 }
