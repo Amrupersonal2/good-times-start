@@ -200,13 +200,353 @@ numbered_groups AS (
     g.order_uid,
     g.old_bill_no,
     g.existing_kot_no AS new_kot_no,
-    g.canonical_number_count,
     CASE
-      WHEN coalesce(g.first_request_id, '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      WHEN coalesce(g.first_request_id, '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+  FROM (
+    SELECT
+      g.*,
+      min(k.payload->>'numberRequestId') AS first_request_id
+    FROM checked_groups g
+    JOIN public.restaurant_records k
+      ON k.restaurant_id = g.restaurant_id
+     AND k.kind = 'kot'
+     AND NOT k.deleted
+     AND coalesce(nullif(k.payload->>'submissionId', ''),
+       'legacy:' || coalesce(k.payload->>'orderUid', '') || ':' || coalesce(k.payload->>'createdAt', '')) = g.group_key
+    GROUP BY g.restaurant_id, g.group_key, g.order_uid, g.old_bill_no, g.created_order, g.existing_kot_no, g.canonical_number_count
+  ) g
+  WHERE g.existing_kot_no IS NOT NULL
+
+  UNION ALL
+
+  SELECT
+    g.restaurant_id,
+    g.group_key,
+    g.order_uid,
+    g.old_bill_no,
+    'KOT/' || lpad((h.high_water + g.missing_offset)::text, 4, '0') AS new_kot_no,
+    md5(g.restaurant_id::text || ':KOT:' || g.group_key)::uuid AS request_id,
+    h.high_water + g.missing_offset AS sequence_number,
+    g.canonical_number_count
+  FROM missing_groups g
+  JOIN kot_high_water h ON h.restaurant_id = g.restaurant_id
+)
+SELECT * FROM numbered_groups;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM _tab_bistro_reconcile_kots
+    WHERE new_kot_no IS NULL OR sequence_number IS NULL OR canonical_number_count > 1
+  ) THEN
+    RAISE EXCEPTION 'Could not safely map every pending KOT submission.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM _tab_bistro_reconcile_kots
+    GROUP BY restaurant_id, group_key
+    HAVING count(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Duplicate logical KOT submission mapping detected.';
+  END IF;
+END;
+$$;
+
+UPDATE public.restaurant_records k
+SET payload = jsonb_set(
+  jsonb_set(
+    jsonb_set(k.payload, '{kotNo}', to_jsonb(m.new_kot_no), true),
+    '{numberRequestId}', to_jsonb(m.request_id::text), true
+  ),
+  '{billNo}', to_jsonb(o.new_bill_no), true
+)
+FROM _tab_bistro_reconcile_kots m
+JOIN _tab_bistro_reconcile_orders o
+  ON o.restaurant_id = m.restaurant_id
+ AND (
+   o.record_id = m.order_uid
+   OR (nullif(m.order_uid, '') IS NULL AND o.old_bill_no = m.old_bill_no)
+ )
+WHERE k.restaurant_id = m.restaurant_id
+  AND k.kind = 'kot'
+  AND NOT k.deleted
+  AND coalesce(nullif(k.payload->>'submissionId', ''),
+    'legacy:' || coalesce(k.payload->>'orderUid', '') || ':' || coalesce(k.payload->>'createdAt', '')) = m.group_key;
+
+-- Persist allocator receipts for any legacy records just upgraded. The
+-- high-water marks never move backwards and canonical existing numbers survive.
+INSERT INTO public.restaurant_number_allocations
+  (restaurant_id, series, request_id, sequence_number)
+SELECT restaurant_id, 'POS', request_id, sequence_number
+FROM _tab_bistro_reconcile_orders
+WHERE old_bill_no !~ '^POS/[0-9]{4,}$'
+ON CONFLICT (restaurant_id, series, request_id)
+DO UPDATE SET sequence_number = EXCLUDED.sequence_number;
+
+INSERT INTO public.restaurant_number_allocations
+  (restaurant_id, series, request_id, sequence_number)
+SELECT restaurant_id, 'KOT', request_id, sequence_number
+FROM _tab_bistro_reconcile_kots
+WHERE existing_kot_no IS NULL
+ON CONFLICT (restaurant_id, series, request_id)
+DO UPDATE SET sequence_number = EXCLUDED.sequence_number;
+
+INSERT INTO public.restaurant_number_sequences (restaurant_id, series, last_sequence)
+SELECT
+  t.id,
+  'POS',
+  greatest(
+    coalesce((SELECT max((regexp_match(o.payload->>'billNo', '^POS/([0-9]+)$'))[1]::bigint)
+      FROM public.restaurant_records o WHERE o.restaurant_id = t.id AND o.kind = 'order' AND NOT o.deleted
+        AND coalesce(o.payload->>'billNo', '') ~ '^POS/[0-9]{4,}$'), 0),
+    coalesce((SELECT max(a.sequence_number) FROM public.restaurant_number_allocations a
+      WHERE a.restaurant_id = t.id AND a.series = 'POS'), 0)
+  )
+FROM _tab_bistro_reconcile_target t
+ON CONFLICT (restaurant_id, series)
+DO UPDATE SET last_sequence = greatest(public.restaurant_number_sequences.last_sequence, EXCLUDED.last_sequence),
+              updated_at = clock_timestamp();
+
+INSERT INTO public.restaurant_number_sequences (restaurant_id, series, last_sequence)
+SELECT
+  t.id,
+  'KOT',
+  greatest(
+    coalesce((SELECT max((regexp_match(k.payload->>'kotNo', '^KOT/([0-9]+)$'))[1]::bigint)
+      FROM public.restaurant_records k WHERE k.restaurant_id = t.id AND k.kind = 'kot' AND NOT k.deleted
+        AND coalesce(k.payload->>'kotNo', '') ~ '^KOT/[0-9]{4,}$'), 0),
+    coalesce((SELECT max(a.sequence_number) FROM public.restaurant_number_allocations a
+      WHERE a.restaurant_id = t.id AND a.series = 'KOT'), 0)
+  )
+FROM _tab_bistro_reconcile_target t
+ON CONFLICT (restaurant_id, series)
+DO UPDATE SET last_sequence = greatest(public.restaurant_number_sequences.last_sequence, EXCLUDED.last_sequence),
+              updated_at = clock_timestamp();
+
+-- Remove only the known QAF1 / floor-verification test fixture from active
+-- operations. Keep any settled/void order history untouched.
+UPDATE public.restaurant_records k
+SET deleted = true
+WHERE k.kind = 'kot'
+  AND NOT k.deleted
+  AND k.restaurant_id IN (SELECT id FROM _tab_bistro_reconcile_target)
+  AND (
+    coalesce(k.payload->>'tableLabel', '') = 'QAF1'
+    OR coalesce(k.payload->>'tableId', '') = 'QAF1'
+    OR lower(coalesce(k.payload->>'tableSection', '')) = 'floor verification'
+    OR k.payload->>'orderUid' IN (
+      SELECT o.record_id
+      FROM public.restaurant_records o
+      WHERE o.restaurant_id = k.restaurant_id
+        AND o.kind = 'order'
+        AND o.payload->>'status' = 'held'
+        AND (
+          coalesce(o.payload->>'tableLabel', '') = 'QAF1'
+          OR coalesce(o.payload->>'tableId', '') = 'QAF1'
+          OR lower(coalesce(o.payload->>'tableSection', '')) = 'floor verification'
+        )
+    )
+  );
+
+UPDATE public.restaurant_records o
+SET deleted = true
+WHERE o.kind = 'order'
+  AND NOT o.deleted
+  AND o.restaurant_id IN (SELECT id FROM _tab_bistro_reconcile_target)
+  AND o.payload->>'status' = 'held'
+  AND (
+    coalesce(o.payload->>'tableLabel', '') = 'QAF1'
+    OR coalesce(o.payload->>'tableId', '') = 'QAF1'
+    OR lower(coalesce(o.payload->>'tableSection', '')) = 'floor verification'
+  );
+
+UPDATE public.restaurant_records t
+SET deleted = true
+WHERE t.kind = 'table'
+  AND NOT t.deleted
+  AND t.restaurant_id IN (SELECT id FROM _tab_bistro_reconcile_target)
+  AND (
+    coalesce(t.payload->>'label', '') = 'QAF1'
+    OR coalesce(t.payload->>'id', '') = 'QAF1'
+    OR lower(coalesce(t.payload->>'section', '')) = 'floor verification'
+    OR t.record_id = 'QAF1'
+  );
+
         THEN g.first_request_id::uuid
       ELSE md5(g.restaurant_id::text || ':KOT:' || g.group_key)::uuid
     END AS request_id,
-    substring(g.existing_kot_no from '/([0-9]+)$')::bigint AS sequence_number
+    substring(g.existing_kot_no from '/([0-9]+)
+  FROM (
+    SELECT
+      g.*,
+      min(k.payload->>'numberRequestId') AS first_request_id
+    FROM checked_groups g
+    JOIN public.restaurant_records k
+      ON k.restaurant_id = g.restaurant_id
+     AND k.kind = 'kot'
+     AND NOT k.deleted
+     AND coalesce(nullif(k.payload->>'submissionId', ''),
+       'legacy:' || coalesce(k.payload->>'orderUid', '') || ':' || coalesce(k.payload->>'createdAt', '')) = g.group_key
+    GROUP BY g.restaurant_id, g.group_key, g.order_uid, g.old_bill_no, g.created_order, g.existing_kot_no, g.canonical_number_count
+  ) g
+  WHERE g.existing_kot_no IS NOT NULL
+
+  UNION ALL
+
+  SELECT
+    g.restaurant_id,
+    g.group_key,
+    g.order_uid,
+    g.old_bill_no,
+    'KOT/' || lpad((h.high_water + g.missing_offset)::text, 4, '0') AS new_kot_no,
+    md5(g.restaurant_id::text || ':KOT:' || g.group_key)::uuid AS request_id,
+    h.high_water + g.missing_offset AS sequence_number,
+    g.canonical_number_count
+  FROM missing_groups g
+  JOIN kot_high_water h ON h.restaurant_id = g.restaurant_id
+)
+SELECT * FROM numbered_groups;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM _tab_bistro_reconcile_kots
+    WHERE new_kot_no IS NULL OR sequence_number IS NULL OR canonical_number_count > 1
+  ) THEN
+    RAISE EXCEPTION 'Could not safely map every pending KOT submission.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM _tab_bistro_reconcile_kots
+    GROUP BY restaurant_id, group_key
+    HAVING count(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Duplicate logical KOT submission mapping detected.';
+  END IF;
+END;
+$$;
+
+UPDATE public.restaurant_records k
+SET payload = jsonb_set(
+  jsonb_set(
+    jsonb_set(k.payload, '{kotNo}', to_jsonb(m.new_kot_no), true),
+    '{numberRequestId}', to_jsonb(m.request_id::text), true
+  ),
+  '{billNo}', to_jsonb(o.new_bill_no), true
+)
+FROM _tab_bistro_reconcile_kots m
+JOIN _tab_bistro_reconcile_orders o
+  ON o.restaurant_id = m.restaurant_id
+ AND (
+   o.record_id = m.order_uid
+   OR (nullif(m.order_uid, '') IS NULL AND o.old_bill_no = m.old_bill_no)
+ )
+WHERE k.restaurant_id = m.restaurant_id
+  AND k.kind = 'kot'
+  AND NOT k.deleted
+  AND coalesce(nullif(k.payload->>'submissionId', ''),
+    'legacy:' || coalesce(k.payload->>'orderUid', '') || ':' || coalesce(k.payload->>'createdAt', '')) = m.group_key;
+
+-- Persist allocator receipts for any legacy records just upgraded. The
+-- high-water marks never move backwards and canonical existing numbers survive.
+INSERT INTO public.restaurant_number_allocations
+  (restaurant_id, series, request_id, sequence_number)
+SELECT restaurant_id, 'POS', request_id, sequence_number
+FROM _tab_bistro_reconcile_orders
+WHERE old_bill_no !~ '^POS/[0-9]{4,}$'
+ON CONFLICT (restaurant_id, series, request_id)
+DO UPDATE SET sequence_number = EXCLUDED.sequence_number;
+
+INSERT INTO public.restaurant_number_allocations
+  (restaurant_id, series, request_id, sequence_number)
+SELECT restaurant_id, 'KOT', request_id, sequence_number
+FROM _tab_bistro_reconcile_kots
+WHERE existing_kot_no IS NULL
+ON CONFLICT (restaurant_id, series, request_id)
+DO UPDATE SET sequence_number = EXCLUDED.sequence_number;
+
+INSERT INTO public.restaurant_number_sequences (restaurant_id, series, last_sequence)
+SELECT
+  t.id,
+  'POS',
+  greatest(
+    coalesce((SELECT max((regexp_match(o.payload->>'billNo', '^POS/([0-9]+)$'))[1]::bigint)
+      FROM public.restaurant_records o WHERE o.restaurant_id = t.id AND o.kind = 'order' AND NOT o.deleted
+        AND coalesce(o.payload->>'billNo', '') ~ '^POS/[0-9]{4,}$'), 0),
+    coalesce((SELECT max(a.sequence_number) FROM public.restaurant_number_allocations a
+      WHERE a.restaurant_id = t.id AND a.series = 'POS'), 0)
+  )
+FROM _tab_bistro_reconcile_target t
+ON CONFLICT (restaurant_id, series)
+DO UPDATE SET last_sequence = greatest(public.restaurant_number_sequences.last_sequence, EXCLUDED.last_sequence),
+              updated_at = clock_timestamp();
+
+INSERT INTO public.restaurant_number_sequences (restaurant_id, series, last_sequence)
+SELECT
+  t.id,
+  'KOT',
+  greatest(
+    coalesce((SELECT max((regexp_match(k.payload->>'kotNo', '^KOT/([0-9]+)$'))[1]::bigint)
+      FROM public.restaurant_records k WHERE k.restaurant_id = t.id AND k.kind = 'kot' AND NOT k.deleted
+        AND coalesce(k.payload->>'kotNo', '') ~ '^KOT/[0-9]{4,}$'), 0),
+    coalesce((SELECT max(a.sequence_number) FROM public.restaurant_number_allocations a
+      WHERE a.restaurant_id = t.id AND a.series = 'KOT'), 0)
+  )
+FROM _tab_bistro_reconcile_target t
+ON CONFLICT (restaurant_id, series)
+DO UPDATE SET last_sequence = greatest(public.restaurant_number_sequences.last_sequence, EXCLUDED.last_sequence),
+              updated_at = clock_timestamp();
+
+-- Remove only the known QAF1 / floor-verification test fixture from active
+-- operations. Keep any settled/void order history untouched.
+UPDATE public.restaurant_records k
+SET deleted = true
+WHERE k.kind = 'kot'
+  AND NOT k.deleted
+  AND k.restaurant_id IN (SELECT id FROM _tab_bistro_reconcile_target)
+  AND (
+    coalesce(k.payload->>'tableLabel', '') = 'QAF1'
+    OR coalesce(k.payload->>'tableId', '') = 'QAF1'
+    OR lower(coalesce(k.payload->>'tableSection', '')) = 'floor verification'
+    OR k.payload->>'orderUid' IN (
+      SELECT o.record_id
+      FROM public.restaurant_records o
+      WHERE o.restaurant_id = k.restaurant_id
+        AND o.kind = 'order'
+        AND o.payload->>'status' = 'held'
+        AND (
+          coalesce(o.payload->>'tableLabel', '') = 'QAF1'
+          OR coalesce(o.payload->>'tableId', '') = 'QAF1'
+          OR lower(coalesce(o.payload->>'tableSection', '')) = 'floor verification'
+        )
+    )
+  );
+
+UPDATE public.restaurant_records o
+SET deleted = true
+WHERE o.kind = 'order'
+  AND NOT o.deleted
+  AND o.restaurant_id IN (SELECT id FROM _tab_bistro_reconcile_target)
+  AND o.payload->>'status' = 'held'
+  AND (
+    coalesce(o.payload->>'tableLabel', '') = 'QAF1'
+    OR coalesce(o.payload->>'tableId', '') = 'QAF1'
+    OR lower(coalesce(o.payload->>'tableSection', '')) = 'floor verification'
+  );
+
+UPDATE public.restaurant_records t
+SET deleted = true
+WHERE t.kind = 'table'
+  AND NOT t.deleted
+  AND t.restaurant_id IN (SELECT id FROM _tab_bistro_reconcile_target)
+  AND (
+    coalesce(t.payload->>'label', '') = 'QAF1'
+    OR coalesce(t.payload->>'id', '') = 'QAF1'
+    OR lower(coalesce(t.payload->>'section', '')) = 'floor verification'
+    OR t.record_id = 'QAF1'
+  );
+)::bigint AS sequence_number,
+    g.canonical_number_count
   FROM (
     SELECT
       g.*,
