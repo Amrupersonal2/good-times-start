@@ -116,6 +116,7 @@ export interface CartDraft {
   orderUid?: string | undefined;
   lines: CartLine[];
   discountPct: number;
+  customer?: { name?: string; phone?: string; gstin?: string };
   guestCount?: number;
   updatedAt: number;
   /** What the kitchen had of this bill when the draft was saved, to tell this device's unsent items apart. */
