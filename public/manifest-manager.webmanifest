@@ -1,0 +1,64 @@
+{
+  "id": "/manager",
+  "name": "POS Business Manager",
+  "short_name": "Business Manager",
+  "description": "TAB Bistro by XTSY: sales, reports, menu, stock, marketing and settings. Phone, tablet and computer.",
+  "start_url": "/manager?app=manager",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "orientation": "any",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "lang": "en-IN",
+  "categories": [
+    "business",
+    "food",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/icons/manager-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/manager-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/manager-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard?app=manager",
+      "icons": [
+        {
+          "src": "/icons/manager-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "url": "/reports?app=manager",
+      "icons": [
+        {
+          "src": "/icons/manager-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
