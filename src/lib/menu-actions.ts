@@ -68,3 +68,34 @@ export async function loadTabBistroMenu(removeOthers: boolean): Promise<ApplyMen
   await saveSettings({ ...settings, name: settings.name || "TAB Bistro by XTSY", categoryOrder: TAB_CATEGORIES });
   return result;
 }
+
+/**
+ * Apply only the printed TAB Bistro prices to matching menu IDs. Preserve
+ * restaurant-specific names, availability, recipes, tax settings and custom
+ * dishes. applyMenuImport also reprices every held bill; settled bills are
+ * intentionally immutable.
+ */
+export async function syncPrintedTabMenuPrices(): Promise<{ dishesUpdated: number }> {
+  const { TAB_MENU } = await import("@/data/tab-bistro");
+  const current = await getDb().menu.toArray();
+  const printedById = new Map(TAB_MENU.map((item) => [item.id, item]));
+  let dishesUpdated = 0;
+
+  const updated = current.map((item) => {
+    const printed = printedById.get(item.id);
+    if (!printed) return item;
+
+    const variants = item.variants?.map((variant) => {
+      const printedVariant = printed.variants?.find((candidate) => candidate.id === variant.id);
+      return printedVariant ? { ...variant, price: printedVariant.price } : variant;
+    });
+    const changed = item.price !== printed.price ||
+      (variants ?? []).some((variant, index) => variant.price !== item.variants?.[index]?.price);
+    if (!changed) return item;
+    dishesUpdated += 1;
+    return { ...item, price: printed.price, ...(variants ? { variants } : {}) };
+  });
+
+  if (dishesUpdated) await applyMenuImport(updated, [], { removeOthers: false });
+  return { dishesUpdated };
+}
