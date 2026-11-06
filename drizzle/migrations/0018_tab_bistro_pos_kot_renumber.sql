@@ -93,6 +93,9 @@ WITH kot_groups AS (
         AND running_order.kind = 'order'
         AND NOT running_order.deleted
         AND running_order.payload->>'status' = 'held'
+        AND coalesce(running_order.payload->>'tableLabel', '') <> 'QAF1'
+        AND coalesce(running_order.payload->>'tableId', '') <> 'QAF1'
+        AND lower(coalesce(running_order.payload->>'tableSection', '')) <> 'floor verification'
         AND running_order.record_id = rr.payload->>'orderUid'
     )
     AND coalesce(rr.payload->>'tableLabel', '') <> 'QAF1'
