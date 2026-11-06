@@ -3,6 +3,7 @@ import { billSlip, columnsFor, type Slip } from "@/lib/slip";
 import { usePrintConfig } from "@/lib/print-config";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import type { Order } from "@/lib/types";
+import { THERMAL } from "@/lib/thermal-tokens";
 
 /**
  * A slip as Chrome prints it: the same fixed-width lines the thermal printer gets,
@@ -10,16 +11,14 @@ import type { Order } from "@/lib/types";
  * thermal heads print it dark and clear.
  */
 export function SlipView({ slip, qrDataUrl }: { slip: Slip; qrDataUrl?: string | undefined }) {
-  const cols = columnsFor(slip.paper);
-  const width = slip.paper === 58 ? 48 : 72; // printable mm
-  // Monospace characters are about 0.6em wide: size the font so `cols` characters fill the width.
-  const font = width / cols / 0.6;
-  const base: CSSProperties = { fontSize: `${font}mm`, lineHeight: 1.25, whiteSpace: "pre", fontWeight: 600 };
+  const width = THERMAL.widths[slip.paper];
+  const font = THERMAL.fontMm;
+  const base: CSSProperties = { fontSize: `${font}mm`, lineHeight: THERMAL.lineHeight, whiteSpace: "pre", fontWeight: THERMAL.normalWeight };
   return (
-    <div className="slip bg-white text-black" style={{ width: `${width}mm`, fontFamily: "'Consolas','Lucida Console','Courier New',monospace" }}>
+    <div className="slip bg-white text-black" style={{ width: `${width}mm`, fontFamily: THERMAL.fontFamily }}>
       {slip.lines.map((line, i) => {
-        const style: CSSProperties = { ...base, textAlign: line.align ?? "left", fontWeight: line.bold ? 800 : 600 };
-        if (line.size === "big") return <div key={i} style={{ ...style, fontSize: `${font * 2}mm`, lineHeight: 1.15 }}>{line.text || " "}</div>;
+        const style: CSSProperties = { ...base, textAlign: line.align ?? "left", fontWeight: line.bold ? THERMAL.boldWeight : THERMAL.normalWeight };
+        if (line.size === "big") return <div key={i} style={{ ...style, fontSize: `${font * THERMAL.largeMultiplier}mm`, lineHeight: THERMAL.largeLineHeight }}>{line.text || " "}</div>;
         if (line.size === "tall") {
           return (
             <div key={i} style={{ ...style, height: `${font * 2.5}mm` }}>

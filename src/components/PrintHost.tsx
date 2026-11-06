@@ -1,7 +1,8 @@
 import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { getPrintConfig, usePrintConfig } from "@/lib/print-config";
-import { kotPrintGroups, kotsForDevice, printCss, withCopies } from "@/lib/print-logic";
+import { kotPrintGroups, kotsForDevice, printCss, withCopies, shouldPrintKot } from "@/lib/print-logic";
+import { toast } from "sonner";
 import { getDb, getSettings } from "@/lib/db";
 import type { Kot, Order } from "@/lib/types";
 import QRCode from "qrcode";
@@ -47,6 +48,7 @@ function sendToRawbt(chunks: Uint8Array[]): void {
 /** Print bill copies per this device's settings, in the thermal slip layout. */
 export async function printBill(order: Order): Promise<void> {
   const [config, settings] = await Promise.all([getPrintConfig(), getSettings()]);
+  if (config.method === "browser" && !config.silentBrowserReady) { notifyPrinterSetup(); return; }
   const slip = billSlip(order, settings, config.paper);
   const copies = Math.max(1, config.billCopies);
   const due = order.status === "held" ? order.total : order.payments.filter((p) => p.mode === "credit").reduce((s, p) => s + p.amount, 0);
@@ -63,8 +65,8 @@ export async function printBill(order: Order): Promise<void> {
  */
 export async function printKots(kots: Kot[], source: "sent" | "incoming" | "reprint"): Promise<void> {
   const config = await getPrintConfig();
-  if (source === "sent" && !config.printKotOnSend) { for (const k of kots) if (k.uid) printedKots.add(k.uid); return; }
-  if (source === "incoming" && !config.printIncomingKots) return;
+  if (!shouldPrintKot(source, config)) return;
+  if (config.method === "browser" && !config.silentBrowserReady) { notifyPrinterSetup(); return; }
   let mine = source === "reprint" ? kots : kotsForDevice(kots, config);
   if (source !== "reprint") mine = mine.filter((k) => !k.uid || !printedKots.has(k.uid));
   for (const k of mine) if (k.uid) printedKots.add(k.uid);
@@ -114,12 +116,13 @@ export function PrintHost() {
     if (!docs.length) return;
     // Give QR codes and fonts a moment to render before the print dialog takes over.
     const timer = window.setTimeout(() => {
+      if (!config.silentBrowserReady) { notifyPrinterSetup(); jobs = []; emit(); return; }
       try { window.print(); } catch { /* printing unavailable; bill is already saved */ }
     }, 450);
     const clear = () => { jobs = []; emit(); };
     window.addEventListener("afterprint", clear, { once: true });
     return () => { window.clearTimeout(timer); window.removeEventListener("afterprint", clear); };
-  }, [docs]);
+  }, [docs, config.silentBrowserReady]);
 
   return (
     <>
@@ -129,4 +132,8 @@ export function PrintHost() {
       </div>
     </>
   );
+}
+
+function notifyPrinterSetup(): void {
+  toast.error("Set up silent printing on this device in Settings → Printing & KOT. No print window was opened.", { id: "printer-setup" });
 }

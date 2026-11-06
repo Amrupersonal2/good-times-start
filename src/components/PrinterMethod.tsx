@@ -74,11 +74,13 @@ export function PrinterMethod({ form, patch, appPath, station = "Kitchen" }: {
       {form.method === "browser" ? (
         <ol className="list-decimal space-y-1.5 rounded-xl bg-secondary p-3 pl-7 text-xs leading-relaxed">
           <li>Make the thermal printer this computer's <b>default printer</b> (Windows: Settings → Bluetooth & devices → Printers → the printer → Set as default; turn off "Let Windows manage my default printer"). A network printer is added there by its IP address first.</li>
-          <li>Make a desktop shortcut that opens this app with silent printing:
+          <li>Make a desktop shortcut that opens this software with silent printing:
             <code className="mt-1 block break-all rounded-lg bg-card p-2 font-mono text-[11px]">{shortcut}</code>
             <Button size="sm" variant="outline" className="mt-1.5" onClick={copy}>{copied ? <Check /> : <Copy />}{copied ? "Copied" : "Copy shortcut"}</Button>
           </li>
           <li>Close every Chrome window, then open the POS from that shortcut. Print KOT and Print bill now print at once, with no print box.</li>
+          <li>In the printer driver, select {form.paper} mm continuous roll, 100% scale, zero margins and no headers or footers.</li>
+          <li><label className="flex items-start gap-2"><input type="checkbox" checked={form.silentBrowserReady} onChange={(e) => patch({ silentBrowserReady: e.target.checked })} />I have reopened this device using the silent-printing shortcut.</label></li>
         </ol>
       ) : (
         <ol className="list-decimal space-y-1.5 rounded-xl bg-secondary p-3 pl-7 text-xs leading-relaxed">
