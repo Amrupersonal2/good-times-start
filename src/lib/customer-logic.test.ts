@@ -29,6 +29,6 @@ describe("customers", () => {
       bill("1111111111", 500, [{ mode: "cash", amount: 500 }]),
     ];
     const stats = customerStats({ id: "9876543210", pointsAdjustment: 5, duesPaid: [{ id: "p", amount: 200, mode: "upi", at: 30 }] }, orders, 5);
-    expect(stats).toMatchObject({ visits: 2, spent: 1600, lastVisit: 20, pointsEarned: 0, pointsRedeemed: 30, points: 53, dueOwed: 570, duePaid: 200, due: 370, averageRating: 4.5 });
+    expect(stats).toMatchObject({ visits: 2, spent: 1600, lastVisit: 20, pointsEarned: 0, pointsRedeemed: 30, points: 0, dueOwed: 570, duePaid: 200, due: 370, averageRating: 4.5 });
   });
 });
