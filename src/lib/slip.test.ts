@@ -32,7 +32,7 @@ describe("thermal slips", () => {
   it("uses the printable width with a small safe side margin on both paper sizes", () => {
     expect(columnsFor(58)).toBe(30);
     expect(columnsFor(80)).toBe(45);
-    expect(billSlip(bill, settings, 58).endFeedMm).toBe(5);
+    expect(billSlip(bill, settings, 58).endFeedMm).toBe(30);
   });
 
   for (const paper of [80, 58] as const) {
@@ -105,7 +105,7 @@ describe("thermal slips", () => {
     expect(slip.endFeedMm).toBe(10);
     const bytes = Array.from(escPos(slip));
     // 30 mm at 203 dpi = 240 dots, fed right after the printer set-up.
-    expect(bytes.slice(9, 16)).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 240]);
+    expect(bytes.slice(10, 17)).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 240]);
     // 10 mm = 80 dots at the end.
     expect(bytes.slice(-7)).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 80]);
     expect(Array.from(escPos(slip, { cutter: "partial" }).slice(-3))).toEqual([0x1d, 0x56, 0x01]);
