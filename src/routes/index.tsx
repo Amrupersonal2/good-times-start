@@ -269,8 +269,8 @@ function PosPage() {
               onChange={(e) => cart.setCustomer({ ...cart.customer, name: e.target.value })}
               className="h-8 min-w-0 rounded-md border border-input bg-background px-2 text-xs" />
             <input aria-label="Guest mobile number, required" aria-required="true" required placeholder="Mobile *" type="tel" inputMode="numeric" maxLength={10}
-              value={(cart.customer.phone ?? "").replace(/\\D/g, "").slice(-10)}
-              onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/\\D/g, "").slice(0, 10) })}
+              value={(cart.customer.phone ?? "").replace(/\D/g, "").slice(-10)}
+              onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
               className="h-8 min-w-0 rounded-md border border-input bg-background px-2 text-xs tabular-nums" />
             <select aria-label="Total number of guests, required" aria-required="true" required value={cart.guestCount ?? ""}
               onChange={(e) => cart.setGuestCount(e.target.value ? Number(e.target.value) : undefined)}
