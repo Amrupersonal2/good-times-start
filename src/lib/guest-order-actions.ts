@@ -76,7 +76,8 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     : undefined;
 
   // Reuse the order UID as the allocator idempotency key.
-  const orderUid = base?.uid ?? newUid();
+  // Guest-order UUID is stable across a failed acceptance retry.
+  const orderUid = base?.uid ?? guest.id;
   const billNo = base ? base.billNo : await allocateRestaurantNumber("POS", orderUid);
   const order = withCustomerId(billWithGuestLines(base, lines, {
     uid: orderUid,
