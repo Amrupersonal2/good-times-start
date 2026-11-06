@@ -69,12 +69,9 @@ export function financialYear(d: Date): string {
   return `${String(start).slice(-2)}-${String(start + 1).slice(-2)}`;
 }
 
-/**
- * GST invoice number: unique per financial year and at most 16 characters
- * (CGST Rule 46). Device series first, e.g. "C1/26-27/0001".
- */
-export function billNumber(seq: number, d: Date, device = "D1"): string {
-  return `${device.slice(0, 4)}/${financialYear(d)}/${String(seq).padStart(4, "0")}`;
+/** Bill number in the restaurant's sequential device series, e.g. XTSY/D1/0001. */
+export function billNumber(seq: number, _d: Date, device = "D1"): string {
+  return `XTSY/${device.slice(0, 4)}/${String(seq).padStart(4, "0")}`;
 }
 
 export function upiLink(opts: { vpa: string; name: string; amount: number; billNo: string }): string {

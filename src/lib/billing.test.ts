@@ -34,11 +34,10 @@ describe("billing", () => {
     expect(t.taxable).toBe(900);
     expect(t.serviceCharge).toBe(90);
   });
-  it("uses Indian financial year in bill numbers", () => {
+  it("uses the XTSY device series for bill numbers", () => {
     expect(financialYear(new Date(2026, 9, 11))).toBe("26-27");
-    expect(financialYear(new Date(2026, 1, 1))).toBe("25-26");
-    expect(billNumber(1, new Date(2026, 1, 1))).toBe("D1/25-26/0001");
-    expect(billNumber(12345, new Date(2026, 9, 1), "TAB12").length).toBeLessThanOrEqual(16);
+    expect(billNumber(1, new Date(2026, 1, 1))).toBe("XTSY/D1/0001");
+    expect(billNumber(12, new Date(2026, 9, 1), "TAB12")).toBe("XTSY/TAB1/0012");
   });
   it("works GST out backwards when menu prices include it", () => {
     const t = computeTotals([line(105, 2, 5)], 0, 0, { inclusive: true });

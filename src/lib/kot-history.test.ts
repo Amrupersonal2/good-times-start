@@ -12,8 +12,8 @@ describe("KOT submissions", () => {
   it("keeps explicit sends separate even if their timestamps match", () => {
     expect(kotSubmissions([{ ...ticket("A", 1), submissionId: "one" }, { ...ticket("B", 1), submissionId: "two" }])).toHaveLength(2);
   });
-  it("numbers KOTs separately by day and device, not by invoice", () => {
-    expect(kotNumber("abcd1234-ffff", "2026-11-06", 1)).toBe("KOT/20261106/ABCD1234/0001");
-    expect(kotNumber("efgh5678-ffff", "2026-11-06", 1)).not.toBe(kotNumber("abcd1234-ffff", "2026-11-06", 1));
+  it("uses the requested sequential KOT display format", () => {
+    expect(kotNumber("abcd1234-ffff", "2026-11-06", 1)).toBe("KOT/0001");
+    expect(kotNumber("efgh5678-ffff", "2026-11-06", 27)).toBe("KOT/0027");
   });
 });
