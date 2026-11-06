@@ -103,6 +103,8 @@ export interface Order {
   synced: boolean;
   cloudUserId?: string;
   kotSubmittedQty?: Record<string, number>;
+  /** KOT quantities allocated to separately settled child bills; do not cancel them in the kitchen. */
+  kotSettledQty?: Record<string, number>;
   /** Placed by the guest: from a table QR code or the online ordering page. */
   source?: "qr" | "online" | "waiter";
   /** Guest order codes (e.g. Q-4821) that make up this bill. */
