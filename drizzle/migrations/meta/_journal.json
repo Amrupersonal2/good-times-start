@@ -78,6 +78,62 @@
       "when": 1793957809682,
       "tag": "0010_targeted_waiter_print_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793960000000,
+      "tag": "0011_terminals",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793960001000,
+      "tag": "0012_launch_cutoff",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793960002000,
+      "tag": "0013_membership_security_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793960003000,
+      "tag": "0014_rotating_void_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1793960004000,
+      "tag": "0015_atomic_void_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793960005000,
+      "tag": "0016_restaurant_wide_number_allocators",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793960006000,
+      "tag": "0017_tab_bistro_numbering_and_qaf1_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793960007000,
+      "tag": "0018_tab_bistro_pos_kot_renumber",
+      "breakpoints": true
     }
   ]
 }
