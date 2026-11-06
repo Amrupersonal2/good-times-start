@@ -206,7 +206,8 @@ export function expectedCash(orders: Order[], series: string, openingCash: numbe
 }
 
 const csvCell = (value: unknown) => {
-  const text = value === undefined || value === null ? "" : String(value);
+  const raw = value === undefined || value === null ? "" : String(value);
+  const text = typeof value === "string" && /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 

@@ -9,7 +9,11 @@ const loginId = z.enum(["admin", "billdesk", "waiter"]);
 
 /** Creates any missing login (already confirmed) and links all three to the restaurant. Never changes a password. */
 export const ensureInternalLogins = createServerFn({ method: "POST" })
-  .handler(async () => {
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as unknown as { supabase: { from: (t: string) => any }; userId: string };
+    const { data } = await ctx.supabase.from("restaurant_members").select("role").eq("user_id", ctx.userId).in("role", ["owner", "manager"]).limit(1);
+    if (!data || data.length === 0) throw new Error("Only the admin can set up logins.");
     const { ensureLogins } = await import("./staff-logins/logins.server");
     return ensureLogins();
   });
