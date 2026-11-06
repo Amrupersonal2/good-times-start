@@ -28,7 +28,7 @@ SELECT
   rr.payload->>'billNo' AS old_bill_no,
   row_number() OVER (
     ORDER BY
-      CASE WHEN coalesce(rr.payload->>'createdAt', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+      CASE WHEN coalesce(rr.payload->>'createdAt', '') ~ '^[0-9]+(\.[0-9]+)?$'
         THEN (rr.payload->>'createdAt')::numeric
         ELSE extract(epoch FROM rr.updated_at) * 1000
       END,
@@ -36,7 +36,7 @@ SELECT
   )::bigint AS sequence_number,
   ('POS/' || lpad(row_number() OVER (
     ORDER BY
-      CASE WHEN coalesce(rr.payload->>'createdAt', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+      CASE WHEN coalesce(rr.payload->>'createdAt', '') ~ '^[0-9]+(\.[0-9]+)?$'
         THEN (rr.payload->>'createdAt')::numeric
         ELSE extract(epoch FROM rr.updated_at) * 1000
       END,
@@ -60,7 +60,7 @@ WITH kot_groups AS (
       'legacy:' || coalesce(rr.payload->>'orderUid', '') || ':' || coalesce(rr.payload->>'createdAt', '')
     ) AS group_key,
     min(
-      CASE WHEN coalesce(rr.payload->>'createdAt', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+      CASE WHEN coalesce(rr.payload->>'createdAt', '') ~ '^[0-9]+(\.[0-9]+)?$'
         THEN (rr.payload->>'createdAt')::numeric
         ELSE extract(epoch FROM rr.updated_at) * 1000
       END
