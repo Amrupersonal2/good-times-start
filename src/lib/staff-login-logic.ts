@@ -86,6 +86,7 @@ export function appFromLocation(pathname: string, search: string): AppKind | nul
   const param = new URLSearchParams(search).get("app");
   if (param === "manager" || param === "pos" || param === "waiter") return param;
   if (pathname === "/manager" || pathname.startsWith("/manager/")) return "manager";
+  if (pathname === "/waiter" || pathname.startsWith("/waiter/")) return "waiter";
   return null;
 }
 

@@ -55,7 +55,7 @@ describe("internal logins", () => {
     expect(appFromLocation("/auth", "?app=waiter")).toBe("waiter");
     expect(appFromLocation("/dashboard", "?app=manager")).toBe("manager");
     expect(appFromLocation("/waiter", "?app=waiter")).toBe("waiter");
-    expect(appFromLocation("/waiter", "")).toBeNull(); // an admin peeking at the waiter screen stays in their app
+    expect(appFromLocation("/waiter", "")).toBe("waiter");
     expect(appFromLocation("/manager", "")).toBe("manager");
     expect(appFromLocation("/", "?app=evil")).toBeNull();
   });

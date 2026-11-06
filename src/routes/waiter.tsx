@@ -24,7 +24,6 @@ import { useRestaurantSettings } from "@/lib/use-settings";
 import type { MenuItem, RestaurantTable } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { holdLabel } from "@/lib/table-hold";
-import { getDeviceId } from '@/lib/terminal-actions';
 
 export const Route = createFileRoute("/waiter")({
   head: () => ({
@@ -70,6 +69,7 @@ function WaiterApp() {
   useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30_000); return () => window.clearInterval(t); }, []);
 
   const tables = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
+  const printStatus = useLiveQuery(async () => ({ pending: await getDb().meta.where('key').startsWith('counterPrint:').count(), error: (await getDb().meta.get('counterPrintError'))?.value }), [], { pending: 0, error: undefined });
   const sections = useMemo(() => { const used = [...new Set(tables.map((t) => t.section))]; return [...["Rooms", "Dine-in"].filter((s) => used.includes(s)), ...used.filter((s) => s !== "Rooms" && s !== "Dine-in").sort()]; }, [tables]);
 
   const signOut = async () => {
@@ -92,6 +92,7 @@ function WaiterApp() {
           {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>
+      {printStatus.pending ? <p role="status" className="border-b border-border px-4 py-2 text-sm">{printStatus.pending} print request{printStatus.pending === 1 ? '' : 's'} waiting for the counter{printStatus.error ? ` · ${printStatus.error}` : ''}</p> : null}
 
       <div className="flex min-h-0 flex-1">
         <aside className={`${tableId ? "hidden md:flex" : "flex w-full"} shrink-0 flex-col overflow-y-auto border-r border-border p-3 md:w-56 xl:w-64`} aria-label="Tables">
