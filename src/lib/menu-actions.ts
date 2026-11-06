@@ -1,6 +1,7 @@
 import { getDb, getSettings, markDirty, saveSettings } from "./db";
 import type { RecordKind } from "./sync-core";
 import { computeTotals } from "./billing";
+import { taxOptionsFor } from "./billing-config";
 import { buildLine, parseLineId } from "./menu-logic";
 import type { Material, MenuItem } from "./types";
 
@@ -11,7 +12,7 @@ export interface ApplyMenuResult { dishes: number; ingredients: number; removed:
  * Existing dishes with the same id are replaced; with `removeOthers`, dishes
  * not in the import are deleted (past bills keep their copies).
  */
-export async function applyMenuImport(items: MenuItem[], materials: Material[], options: { removeOthers?: boolean } = {}): Promise<ApplyMenuResult> {
+export async function applyMenuImport(items: MenuItem[], materials: Material[], options: { removeOthers?: boolean; refreshHeldBillTax?: boolean } = {}): Promise<ApplyMenuResult> {
   const db = getDb();
   const keep = new Set(items.map((i) => i.id));
   const changes: [RecordKind, string][] = [];
@@ -23,6 +24,7 @@ export async function applyMenuImport(items: MenuItem[], materials: Material[], 
     // current menu price when the imported menu changes that item/variant.
     const byId = new Map(items.map((item) => [item.id, item]));
     const held = await db.orders.where("status").equals("held").toArray();
+    const settings = options.refreshHeldBillTax ? await getSettings() : undefined;
     for (const order of held) {
       let changed = false;
       const lines = order.lines.map((line) => {
@@ -34,9 +36,11 @@ export async function applyMenuImport(items: MenuItem[], materials: Material[], 
         changed = true;
         return { ...line, price: repriced.price };
       });
-      if (!changed) continue;
-      const totals = computeTotals(lines, order.discountPct, order.serviceChargePct ?? 0, order.tax);
-      const updated = { ...order, lines, ...totals, synced: false };
+      const tax = settings ? taxOptionsFor(settings, order.orderType) : order.tax;
+      const taxChanged = JSON.stringify(tax ?? {}) !== JSON.stringify(order.tax ?? {});
+      if (!changed && !taxChanged) continue;
+      const totals = computeTotals(lines, order.discountPct, order.serviceChargePct ?? 0, tax);
+      const updated = { ...order, lines, tax, ...totals, synced: false };
       await db.orders.put(updated);
       if (updated.uid) changes.push(["order", updated.uid]);
     }
@@ -102,10 +106,13 @@ export async function syncPrintedTabMenuPrices(): Promise<{ dishesUpdated: numbe
       ...(variants ? { variants } : {}), ...(addons ? { addons } : {}) };
   });
 
-  if (dishesUpdated) await applyMenuImport(updated, [], { removeOthers: false });
   const settings = await getSettings();
-  if (JSON.stringify(settings.categoryOrder ?? []) !== JSON.stringify(TAB_CATEGORIES)) {
-    await saveSettings({ ...settings, categoryOrder: TAB_CATEGORIES });
+  const nextSettings = { ...settings, pricesIncludeGst: false, categoryOrder: TAB_CATEGORIES };
+  const settingsChanged = settings.pricesIncludeGst !== false ||
+    JSON.stringify(settings.categoryOrder ?? []) !== JSON.stringify(TAB_CATEGORIES);
+  if (settingsChanged) await saveSettings(nextSettings);
+  if (dishesUpdated || settingsChanged) {
+    await applyMenuImport(updated, [], { removeOthers: false, refreshHeldBillTax: true });
   }
   return { dishesUpdated };
 }
