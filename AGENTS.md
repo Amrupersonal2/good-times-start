@@ -19,3 +19,4 @@
 - Resolve app installation identity with app-install-logic and exclude app workers from development and editor hosts; this prevents stale preview assets.
 - Keep library component extraction pointed at src/index.ts and export documented public controls there, so the published catalog matches the consumer entry point.
 - Dialog and Popover wrappers in src/components/ui render nothing while closed and force-mount while open, so no Radix Presence runs for closed overlays; Presence open/close tracking caused React 19 "Maximum update depth exceeded" blank screens.
+- Restore merged GitHub changes selectively without replacing generated Cloud configuration or local numbering protections; apply database safeguards through managed migrations so the preview and Cloud stay consistent.

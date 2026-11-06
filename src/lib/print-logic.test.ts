@@ -22,6 +22,15 @@ describe("printing", () => {
     expect(kotPrintGroups(kots, false).map((g) => g.map((k) => k.station))).toEqual([["Tandoor", "Chinese"], ["Chinese"]]);
   });
 
+  it("combines multiple new KOTs at the same station without mixing cancellation tickets", () => {
+    const first = kot("Chinese");
+    const second = kot("Chinese");
+    const cancellation = kot("Chinese", "cancel");
+    expect(kotPrintGroups([first, second, cancellation, kot("Tandoor")], true)).toEqual([
+      [first, second], [cancellation], [kot("Tandoor")],
+    ]);
+  });
+
   it("repeats documents for copies and sizes paper", () => {
     expect(withCopies(["a", "b"], 2)).toEqual(["a", "a", "b", "b"]);
     expect(withCopies(["a"], 0)).toEqual([]);
