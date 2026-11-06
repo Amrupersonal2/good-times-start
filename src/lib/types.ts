@@ -92,6 +92,8 @@ export interface Order {
   /** Tax rules this bill was made under. */
   tax?: { inclusive?: boolean; exempt?: boolean; roundToRupee?: boolean };
   customer?: { name?: string; phone?: string; gstin?: string };
+  /** Number of guests covered by this bill. */
+  guestCount?: number;
   /** Guest's phone as the last 10 digits, kept indexed so their visits load quickly. */
   customerId?: string;
   /** Who settled or voided the bill, for the staff report. */
@@ -114,6 +116,7 @@ export interface CartDraft {
   orderUid?: string | undefined;
   lines: CartLine[];
   discountPct: number;
+  guestCount?: number;
   updatedAt: number;
   /** What the kitchen had of this bill when the draft was saved, to tell this device's unsent items apart. */
   sentQty?: Record<string, number> | undefined;
