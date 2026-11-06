@@ -19,6 +19,7 @@ import { Segmented } from "@/components/Segmented";
 import { fillTemplate, waLink } from "@/lib/marketing-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import { sendOrderReadyMessage } from "@/lib/whatsapp.functions";
+import { OrdersOverview } from "./OrdersOverview";
 
 function chime(ctx: AudioContext) {
   const now = ctx.currentTime;
@@ -95,43 +96,40 @@ export function GuestOrdersButton() {
     seen.current = ids;
   }, [waiting]);
 
-  if (!enabled) return null;
+  if (!user?.restaurantId || user.role === "kitchen") return null;
   return (
     <>
       <Button size="sm" variant={waiting.length ? "default" : "outline"} onClick={() => setOpen(true)} className={waiting.length ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : ""}
-        aria-label={`Guest orders${waiting.length ? `: ${waiting.length} waiting` : ""}`}>
+        aria-label="Orders">
         <BellRing className="size-4" />
         <span className="hidden sm:inline">Orders</span>
         {waiting.length ? <span className="rounded-full bg-gold-foreground px-1.5 text-[11px] font-bold text-gold">{waiting.length}</span> : null}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
-          <GuestOrdersPanel orders={orders} onDone={() => setOpen(false)} />
+          <OrdersOverview onClose={() => setOpen(false)} guestCount={waiting.length} guestContent={<GuestOrdersPanel orders={orders} onDone={() => setOpen(false)} />} />
         </DialogContent>
       </Dialog>
     </>
   );
 }
 
-type View = "waiting" | "progress" | "done";
+type View = "requests" | "accepted";
 
 function GuestOrdersPanel({ orders, onDone }: { orders: GuestOrder[]; onDone: () => void }) {
-  const [view, setView] = useState<View>("waiting");
+  const [view, setView] = useState<View>("requests");
   const groups: Record<View, GuestOrder[]> = {
-    waiting: orders.filter((o) => o.status === "new"),
-    progress: orders.filter((o) => o.status === "accepted" || o.status === "ready"),
-    done: orders.filter((o) => !isActiveGuestOrder(o)),
+    requests: orders.filter((o) => o.status === "new"),
+    accepted: orders.filter((o) => o.status === "accepted" || o.status === "ready"),
   };
   const list = sortGuestOrders(groups[view]);
   return (
     <div>
-      <DialogTitle>Guest orders</DialogTitle>
-      <p className="-mt-1 text-sm text-muted-foreground">From table QR codes and your online ordering page. Accepting sends the KOT and opens the bill.</p>
       <Segmented ariaLabel="Order status" stretch className="mt-3" value={view} onChange={setView}
-        options={([["waiting", "Waiting"], ["progress", "In progress"], ["done", "Done today"]] as const).map(([v, l]) => ({ value: v, label: l, badge: groups[v].length }))} />
+        options={([["requests", "Requests"], ["accepted", "Accepted"]] as const).map(([v, l]) => ({ value: v, label: l, badge: groups[v].length }))} />
       <div className="mt-3 space-y-3">
         {list.length ? list.map((o) => <GuestOrderCard key={o.id} order={o} onOpenBill={onDone} />) : (
-          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{view === "waiting" ? "No orders waiting." : "Nothing here yet."}</p>
+          <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No guest requests here.</p>
         )}
       </div>
     </div>
