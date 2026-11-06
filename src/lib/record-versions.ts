@@ -25,14 +25,32 @@ export function parseBase(value: unknown): RecordBase | null {
   } catch { return null; }
 }
 
+/** Canonical identity keeps portions/add-ons distinct while allowing qty deltas to merge. */
+function lineIdentity(line: CartLine): string {
+  const addons = [...(line.addons ?? [])].map((a) => [a.name, a.price] as const)
+    .sort((a, b) => a[0].localeCompare(b[0]) || a[1] - b[1]);
+  return JSON.stringify([line.itemId, line.menuItemId ?? "", line.variant ?? "", addons]);
+}
+
+function lineAttributes(line: CartLine): string {
+  const { qty: _qty, addons, ...rest } = line;
+  const normalized = {
+    ...rest,
+    addons: addons ? [...addons].map((a) => ({ name: a.name, price: a.price }))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.price - b.price) : undefined,
+  };
+  return JSON.stringify(Object.entries(normalized).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 const sameLine = (a: CartLine | undefined, b: CartLine | undefined) =>
-  a === b || (!!a && !!b && a.qty === b.qty && (a.note ?? "") === (b.note ?? "") && a.price === b.price && a.name === b.name);
+  a === b || (!!a && !!b && a.qty === b.qty && lineIdentity(a) === lineIdentity(b) && lineAttributes(a) === lineAttributes(b));
 
 function byItem(lines: CartLine[]): Map<string, CartLine> | null {
   const map = new Map<string, CartLine>();
   for (const line of lines) {
-    if (map.has(line.itemId)) return null; // duplicate rows for one dish: never guess
-    map.set(line.itemId, line);
+    const key = lineIdentity(line);
+    if (map.has(key)) return null; // duplicate canonical rows: never guess
+    map.set(key, line);
   }
   return map;
 }
@@ -50,8 +68,8 @@ export function mergeLines(base: CartLine[], local: CartLine[], remote: CartLine
   const b = byItem(base); const l = byItem(local); const r = byItem(remote);
   if (!b || !l || !r) return { lines: remote.map((x) => ({ ...x })), conflicts: ["Bill has repeated dish rows"] };
   const order: string[] = [];
-  for (const list of [remote, local]) for (const line of list) if (!order.includes(line.itemId)) order.push(line.itemId);
-  for (const line of base) if (!order.includes(line.itemId)) order.push(line.itemId);
+  for (const list of [remote, local]) for (const line of list) { const key = lineIdentity(line); if (!order.includes(key)) order.push(key); }
+  for (const line of base) { const key = lineIdentity(line); if (!order.includes(key)) order.push(key); }
 
   const out: CartLine[] = [];
   const conflicts: string[] = [];
@@ -71,13 +89,16 @@ export function mergeLines(base: CartLine[], local: CartLine[], remote: CartLine
     else if (sameLine(rl, bl)) pick = ll;
     else if (bl && ll && rl) {
       const qty = rl.qty + (ll.qty - bl.qty);
-      const noteL = ll.note ?? ""; const noteR = rl.note ?? ""; const noteB = bl.note ?? "";
-      if (ll.price !== rl.price && ll.price !== bl.price && rl.price !== bl.price) conflicts.push(`${rl.name}: different prices`);
-      if (noteL !== noteR && noteL !== noteB && noteR !== noteB) conflicts.push(`${rl.name}: different notes`);
-      const note = noteL !== noteB ? ll.note : rl.note;
-      const price = ll.price !== bl.price ? ll.price : rl.price;
-      pick = qty > 0 ? { ...rl, qty, price, ...(note ? { note } : {}) } : undefined;
-      if (!note && pick) delete pick.note;
+      const localAttributesChanged = lineAttributes(ll) !== lineAttributes(bl);
+      const remoteAttributesChanged = lineAttributes(rl) !== lineAttributes(bl);
+      if (localAttributesChanged && remoteAttributesChanged && lineAttributes(ll) !== lineAttributes(rl)) {
+        conflicts.push(`${rl.name}: conflicting line details (price, tax, station, options or note)`);
+        pick = { ...rl, qty: Math.max(0, rl.qty) };
+      } else {
+        // Preserve an independent metadata edit while adding the other device's quantity delta.
+        const attributes = localAttributesChanged ? ll : rl;
+        pick = qty > 0 ? { ...rl, ...attributes, qty } : undefined;
+      }
     } else {
       // One side removed the dish, the other edited it.
       const edited = ll ?? rl;
