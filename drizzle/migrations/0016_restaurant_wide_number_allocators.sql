@@ -134,3 +134,51 @@ $$;
 
 REVOKE ALL ON FUNCTION public.allocate_restaurant_number(uuid, text, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.allocate_restaurant_number(uuid, text, uuid) TO authenticated;
+
+
+-- Reject stale-device overwrites and tombstone resurrection. New records must
+-- use the restaurant-wide formats; the allocator RPC above issues their values.
+CREATE OR REPLACE FUNCTION public.guard_restaurant_numbered_records()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  prior public.restaurant_records;
+BEGIN
+  IF NEW.kind NOT IN ('order', 'kot') THEN RETURN NEW; END IF;
+
+  SELECT * INTO prior
+  FROM public.restaurant_records
+  WHERE restaurant_id = NEW.restaurant_id AND kind = NEW.kind AND record_id = NEW.record_id;
+
+  IF FOUND THEN
+    IF prior.deleted AND NOT NEW.deleted THEN
+      RAISE EXCEPTION 'A centrally deleted record cannot be restored from a stale device.' USING ERRCODE = '42501';
+    END IF;
+    IF NOT prior.deleted AND NOT NEW.deleted THEN
+      IF NEW.kind = 'order' AND prior.payload->>'billNo' LIKE 'POS/%'
+         AND NEW.payload->>'billNo' IS DISTINCT FROM prior.payload->>'billNo' THEN
+        RAISE EXCEPTION 'A centrally assigned bill number cannot be overwritten.' USING ERRCODE = '42501';
+      END IF;
+      IF NEW.kind = 'kot' AND prior.payload->>'kotNo' LIKE 'KOT/%'
+         AND NEW.payload->>'kotNo' IS DISTINCT FROM prior.payload->>'kotNo' THEN
+        RAISE EXCEPTION 'A centrally assigned KOT number cannot be overwritten.' USING ERRCODE = '42501';
+      END IF;
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF NOT NEW.deleted AND NEW.kind = 'order' AND coalesce(NEW.payload->>'billNo', '') !~ '^POS/[0-9]{4,}$' THEN
+    RAISE EXCEPTION 'Update the POS app before creating new bills.' USING ERRCODE = '42501';
+  END IF;
+  IF NOT NEW.deleted AND NEW.kind = 'kot' AND coalesce(NEW.payload->>'kotNo', '') !~ '^KOT/[0-9]{4,}$' THEN
+    RAISE EXCEPTION 'Update the POS app before sending new kitchen tickets.' USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER restaurant_records_numbering_guard
+  BEFORE INSERT OR UPDATE ON public.restaurant_records
+  FOR EACH ROW EXECUTE FUNCTION public.guard_restaurant_numbered_records();
