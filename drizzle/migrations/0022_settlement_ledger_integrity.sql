@@ -18,7 +18,7 @@ BEGIN
   IF _total < 0 THEN RAISE EXCEPTION 'A settled bill cannot have a negative total' USING ERRCODE = '23514'; END IF;
   FOR _payment IN SELECT value FROM jsonb_array_elements(NEW.payload->'payments') LOOP
     _mode := _payment->>'mode';
-    IF _mode NOT IN ('cash', 'upi', 'card', 'wallet', 'credit', 'points') THEN
+    IF _mode IS NULL OR _mode NOT IN ('cash', 'upi', 'card', 'wallet', 'credit', 'points') THEN
       RAISE EXCEPTION 'Unsupported payment mode on settled bill' USING ERRCODE = '23514';
     END IF;
     IF coalesce(_payment->>'amount', '') !~ '^[0-9]+(\.[0-9]+)?$' THEN
@@ -51,7 +51,7 @@ BEGIN
   END IF;
   SELECT payload INTO _order FROM public.restaurant_records
    WHERE restaurant_id = NEW.restaurant_id AND kind = 'order' AND record_id = NEW.order_uid AND NOT deleted
-   FOR KEY SHARE;
+   FOR UPDATE;
   IF _order IS NULL OR _order->>'status' IS DISTINCT FROM 'settled' THEN
     RAISE EXCEPTION 'Payment must belong to an already-settled bill' USING ERRCODE = '23514';
   END IF;
@@ -91,7 +91,7 @@ ALTER TABLE public.bill_payments
 CREATE OR REPLACE FUNCTION public.protect_kot_submission_identity()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
-  IF OLD.kind = 'kot' AND NEW.kind = 'kot' AND (
+  IF OLD.kind = 'kot' AND (NEW.kind <> 'kot' OR OLD.record_id IS DISTINCT FROM NEW.record_id OR OLD.restaurant_id IS DISTINCT FROM NEW.restaurant_id OR
     OLD.payload->>'submissionId' IS DISTINCT FROM NEW.payload->>'submissionId'
     OR OLD.payload->>'station' IS DISTINCT FROM NEW.payload->>'station'
     OR OLD.payload->>'kind' IS DISTINCT FROM NEW.payload->>'kind'
