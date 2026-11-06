@@ -675,6 +675,67 @@ export type Database = {
           },
         ]
       }
+      restaurant_number_allocations: {
+        Row: {
+          created_at: string
+          request_id: string
+          restaurant_id: string
+          sequence_number: number
+          series: string
+        }
+        Insert: {
+          created_at?: string
+          request_id: string
+          restaurant_id: string
+          sequence_number: number
+          series: string
+        }
+        Update: {
+          created_at?: string
+          request_id?: string
+          restaurant_id?: string
+          sequence_number?: number
+          series?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_number_allocations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_number_sequences: {
+        Row: {
+          last_sequence: number
+          restaurant_id: string
+          series: string
+          updated_at: string
+        }
+        Insert: {
+          last_sequence?: number
+          restaurant_id: string
+          series: string
+          updated_at?: string
+        }
+        Update: {
+          last_sequence?: number
+          restaurant_id?: string
+          series?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_number_sequences_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_records: {
         Row: {
           deleted: boolean
@@ -953,10 +1014,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      allocate_restaurant_number: {
-        Args: { _request_id: string; _restaurant_id: string; _series: string }
-        Returns: string
-      }
       _void_totp_code: {
         Args: { _secret: string; _step: number }
         Returns: string
@@ -1000,6 +1057,10 @@ export type Database = {
           _trial_ends_at: string
         }
         Returns: undefined
+      }
+      allocate_restaurant_number: {
+        Args: { _request_id: string; _restaurant_id: string; _series: string }
+        Returns: string
       }
       claim_counter_print: {
         Args: { _device: string; _restaurant: string }
