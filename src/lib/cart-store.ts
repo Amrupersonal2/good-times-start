@@ -304,9 +304,20 @@ export function useCart(initialTableId?: string) {
     const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : tableId ? await latestHeldOrder(tableId) : null;
     const base = latest && latest.status === "held" ? latest : null;
     const localAdditions = base ? additionsNotInShared(base.lines, lines) : pendingKitchenLines;
+    // Saved kitchen tickets are the evidence of what reached the kitchen — the same rule
+    // the screen uses to show "not sent". The bill's own counter can be ahead of the
+    // tickets (a ticket the cloud refused), which used to make KOT send nothing.
+    const baseKots = base?.id !== undefined ? await db.kots.where("orderId").equals(base.id).toArray() : [];
+    const baseSubmitted = baseKots.length
+      ? subtractSettledQuantities(submittedQuantitiesFromKots(baseKots), base?.kotSettledQty ?? {})
+      : base?.kotSubmittedQty ?? {};
     const ticketsToSend = base
-      ? [...unsentKitchenLines(base.lines, base.kotSubmittedQty ?? {}), ...localAdditions]
+      ? [...unsentKitchenLines(base.lines, baseSubmitted), ...localAdditions]
       : pendingKitchenLines;
+    if (!ticketsToSend.length && !pendingCancelLines.length) {
+      toast.error("Nothing new to send — refresh the table and try again.");
+      return null;
+    }
     const merged = base ? removeCancelled(mergeSentLines(base.lines, localAdditions), pendingCancelLines) : lines;
     const t = computeTotals(merged, discountPct, serviceChargePct, tax);
     const tableLabel = await tableLabelOf(tableId);
@@ -328,7 +339,7 @@ export function useCart(initialTableId?: string) {
         });
     const orderUid = order.uid ?? newUid();
     order.uid = orderUid;
-    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base?.kotSubmittedQty ?? {}, ticketsToSend), pendingCancelLines);
+    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base ? baseSubmitted : {}, ticketsToSend), pendingCancelLines);
     const allCancelled = merged.length === 0;
     const saved: Order = {
       ...order, kotSubmittedQty: nextSubmitted, synced: false,
@@ -340,7 +351,14 @@ export function useCart(initialTableId?: string) {
     const existingSubmission = (await db.meta.get(submissionKey))?.value;
     const submissionId = typeof existingSubmission === "string" ? existingSubmission : newUid();
     if (typeof existingSubmission !== "string") await db.meta.put({ key: submissionKey, value: submissionId });
-    const kotNo = await allocateRestaurantNumber("KOT", submissionId);
+    let kotNo: string;
+    try {
+      kotNo = await allocateRestaurantNumber("KOT", submissionId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't get a KOT number. Check the internet and try again.");
+      return null;
+    }
+    void rememberCustomer(customer);
     await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
       const id = saved.id ?? Number(await db.orders.add(saved));
       saved.id = id;
