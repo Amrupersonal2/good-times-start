@@ -481,7 +481,7 @@ const PRINTED_MENU_PRICES: Record<string, number> = {
   "Arabian Fruit & Nut Shake": 280, "Cold Coffee": 200,
   "North Indian Poha": 140, "Masala Omelette": 140, "Italian Cheese Omelette": 160,
   "Mushroom Cheese Omelette": 180, "Chicken Cheese Omelette": 200, "Bread Omelette": 160, "Masala Bread Omelette": 180,
-  "Aloo Paratha": 140, "Paneer Paratha": 160, "Pancake with Maple Syrup": 280, "Pancake Sundae with Ice Cream": 360,
+  "Aloo Paratha": 140, "Paneer Paratha": 160, "Puri Sabji": 160, "Egg Dosa": 160, "Masala Dosa": 180, "Pancake with Maple Syrup": 280, "Pancake Sundae with Ice Cream": 360,
   "Lemon Coriander Soup (Veg)": 160, "Sweet Corn Soup (Veg)": 160, "Hot & Sour Soup (Veg)": 160, "Manchow Soup (Veg)": 180,
   "Cream of Tomato": 200, "Lemon Coriander Soup (Non Veg)": 180, "Sweet Corn Soup (Non Veg)": 180,
   "Hot & Sour Soup (Non Veg)": 180, "Manchow Soup (Non Veg)": 200, "Clear Soup (Non Veg)": 140,
