@@ -116,6 +116,9 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
     setBusy(true);
     try {
       await syncCloudData(restaurantId);
+      // Guest requests live in their own Supabase table, not restaurant_records.
+      // Refresh that query explicitly so Sync now updates the Orders panel too.
+      await queryClient.invalidateQueries({ queryKey: ["guest-orders", restaurantId] });
     } catch (error) {
       await saveSyncError(error);
     } finally {
