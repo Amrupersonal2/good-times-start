@@ -1,5 +1,11 @@
 # POS expansion
 
+## Device-local thermal printing
+- [x] Block incoming-order printing and unconfigured browser print dialogs; preserve local direct transports.
+- [x] Standardize thermal typography and preserve per-device 58/80 mm choices.
+- [x] Verify local print dispatch and no print jobs on a second signed-in device at both paper widths (16 tests passed).
+- [ ] Verify physical silent output; requires the printer device launched with the silent Chrome shortcut or configured RawBT.
+
 ## Restore merged GitHub fixes (#24–33)
 - [x] Restore missing merged code and CI changes; exclude unmerged #34 and preserve numbering.
 - [x] Apply membership and paid-bill approval safeguards to Lovable Cloud.

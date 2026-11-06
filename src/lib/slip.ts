@@ -158,7 +158,8 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   L.push(rule(cols));
   const when = dateTime(first.createdAt);
   L.push({ text: plain(`Bill: ${first.billNo}`) });
-  L.push({ text: `Date: ${when.date}  Time: ${when.time}` });
+  const stamp = `Date: ${when.date}  Time: ${when.time}`;
+  for (const t of stamp.length <= cols ? [stamp] : wrap(stamp, cols)) L.push({ text: t });
   L.push(rule(cols));
   const qtyW = 5;
   let total = 0;
@@ -191,6 +192,8 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
   const text = (s: string) => { for (const ch of plain(s)) out.push(ch.charCodeAt(0)); };
   const one = () => {
     push(ESC, 0x40); // initialise
+    push(ESC, 0x4d, 0); // Font A: 32 columns on 58 mm / 48 on 80 mm
+    push(ESC, 0x32); // standard line spacing, independent of a previous job
     push(ESC, 0x74, 0x00); // code page PC437 (ASCII-safe)
     for (const line of slip.lines) {
       push(ESC, 0x61, line.align === "center" ? 1 : line.align === "right" ? 2 : 0);
