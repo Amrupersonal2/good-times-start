@@ -2,7 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CartLine, Kot, Order } from "./types";
 import { getDb, getSettings, markDirty } from "./db";
 import { allocateRestaurantNumber } from "./restaurant-numbering";
-import { getDeviceId } from "./terminal-actions";
 import { newUid, type RecordKind } from "./sync-core";
 import { latestHeldOrder } from "./table-actions";
 import { taxOptionsFor } from "./billing-config";
