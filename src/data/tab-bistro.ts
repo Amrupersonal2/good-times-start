@@ -494,7 +494,6 @@ const PRINTED_MENU_PRICES: Record<string, number> = {
   "Chicken Cheese Manchurian Gravy": 360, "Honey Chilli Chicken Gravy": 380, "Chef's Special Chicken Gravy": 380,
   "French Fries": 150, "Peri Peri Fries": 200, "Papad Masala": 150,
   "Choice of Ice Cream": 160, "Fruit Bowl": 180, "Fruit Bowl with Cream": 240, "Fruit Salad": 180,
-  "Hot Brownie with Ice Cream": 0,
 };
 
 const PRINTED_VARIANT_PRICES: Record<string, Record<string, number>> = {
