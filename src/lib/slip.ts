@@ -219,12 +219,12 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
       push(LF, ESC, 0x61, 0);
     }
     if (slip.endFeedMm !== undefined) {
-      // Set the vertical motion unit to 1/203 inch, then feed 30 mm in dots.
-      // ESC J feeds without a cutter; GS V 0 cuts without requesting extra feed.
+      // Set the vertical motion unit to 1/203 inch, then feed the configured tear-off gap.
+      // ESC J feeds without cutting; GS V B 0 invokes the printer's full-cut command.
       push(GS, 0x50, 203, 203);
       let dots = Math.round(slip.endFeedMm * 203 / 25.4);
       while (dots > 0) { const chunk = Math.min(255, dots); push(ESC, 0x4a, chunk); dots -= chunk; }
-      push(GS, 0x56, 0x00);
+      push(GS, 0x56, 0x42, 0x00);
     } else {
       push(LF, LF, LF, LF);
       push(GS, 0x56, 0x42, 0x00); // bill feed and cut unchanged
