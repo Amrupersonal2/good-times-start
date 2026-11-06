@@ -40,7 +40,5 @@ export const SEED_MENU: MenuItem[] = [
 ];
 
 export const SEED_TABLES: RestaurantTable[] = [
-  ...["T1", "T2", "T3", "T4", "T5", "T6"].map((l) => ({ id: l, label: l, section: "AC" as const, seats: 4, status: "free" as const, runningTotal: 0 })),
-  ...["N1", "N2", "N3", "N4"].map((l) => ({ id: l, label: l, section: "Non-AC" as const, seats: 4, status: "free" as const, runningTotal: 0 })),
-  ...["R1", "R2", "R3"].map((l) => ({ id: l, label: l, section: "Rooftop" as const, seats: 6, status: "free" as const, runningTotal: 0 })),
+  ...["D1", "D2", "D3"].map((l) => ({ id: l, label: l, section: "Dine-in", seats: 4, status: "free" as const, runningTotal: 0 })),
 ];
