@@ -104,8 +104,9 @@ GRANT EXECUTE ON FUNCTION public.allocate_restaurant_number(uuid, text, uuid) TO
 CREATE OR REPLACE FUNCTION public.guard_restaurant_numbered_records()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = pg_catalog, public
-AS $$
+AS $
 DECLARE
   prior public.restaurant_records;
   number_text text;
