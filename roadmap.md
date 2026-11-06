@@ -67,3 +67,10 @@
 - [ ] Send and print station-routed KOTs before bill printing and settlement.
 - [ ] Add manager sync status, actionable errors, and AI-assisted diagnosis.
 - [ ] Verify sign-in, table ordering, KOT-before-bill, sync recovery, and current build.
+## Room 666 KOT recovery and guests
+- [x] KOT button now sends exactly the items shown as "not sent" (bill counter could be ahead of saved tickets, so KOT sent nothing).
+- [x] Tickets synced before their bill now link to it on every device, so sent items never show as unsent.
+- [x] Recorded Room 666 waters in history: KOT/0012 (4) and KOT/0013 (2, printed earlier).
+- [x] Guests list fills from names on running and settled bills; WhatsApp allows guests whose consent staff recorded.
+- [x] Exported live menu (131 items, 23 sections) for corrections.
+- [ ] Apply the owner's menu corrections once returned.
