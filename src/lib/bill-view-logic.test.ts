@@ -32,10 +32,11 @@ describe("bill view", () => {
     ]);
   });
 
-  it("keeps legacy same-timestamp station rows separate when their submission identity is unknown", () => {
+  it("groups legacy station rows sent at the same timestamp when submission identity is unavailable", () => {
     const a: Kot = { orderId: 1, orderUid: "order-1", billNo: "POS/0001", station: "Kitchen", lines: [], status: "new", createdAt: 100 };
     const b: Kot = { ...a, station: "Continental" };
-    expect(sentGroups([a, b])).toHaveLength(2);
+    expect(sentGroups([a, b])).toHaveLength(1);
+    expect(sentGroups([a, b])[0]?.station).toBe("Kitchen, Continental");
   });
 
   it("says how long ago a ticket went", () => {
