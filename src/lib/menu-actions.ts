@@ -76,7 +76,7 @@ export async function loadTabBistroMenu(removeOthers: boolean): Promise<ApplyMen
  * intentionally immutable.
  */
 export async function syncPrintedTabMenuPrices(): Promise<{ dishesUpdated: number }> {
-  const { TAB_MENU } = await import("@/data/tab-bistro");
+  const { TAB_CATEGORIES, TAB_MENU } = await import("@/data/tab-bistro");
   const current = await getDb().menu.toArray();
   const printedById = new Map(TAB_MENU.map((item) => [item.id, item]));
   let dishesUpdated = 0;
@@ -89,13 +89,23 @@ export async function syncPrintedTabMenuPrices(): Promise<{ dishesUpdated: numbe
       const printedVariant = printed.variants?.find((candidate) => candidate.id === variant.id);
       return printedVariant ? { ...variant, price: printedVariant.price } : variant;
     });
-    const changed = item.price !== printed.price ||
-      (variants ?? []).some((variant, index) => variant.price !== item.variants?.[index]?.price);
+    const addons = item.addons?.map((addon) => {
+      const printedAddon = printed.addons?.find((candidate) => candidate.id === addon.id);
+      return printedAddon ? { ...addon, price: printedAddon.price } : addon;
+    });
+    const changed = item.price !== printed.price || item.category !== printed.category || item.station !== printed.station ||
+      (variants ?? []).some((variant, index) => variant.price !== item.variants?.[index]?.price) ||
+      (addons ?? []).some((addon, index) => addon.price !== item.addons?.[index]?.price);
     if (!changed) return item;
     dishesUpdated += 1;
-    return { ...item, price: printed.price, ...(variants ? { variants } : {}) };
+    return { ...item, price: printed.price, category: printed.category, station: printed.station,
+      ...(variants ? { variants } : {}), ...(addons ? { addons } : {}) };
   });
 
   if (dishesUpdated) await applyMenuImport(updated, [], { removeOthers: false });
+  const settings = await getSettings();
+  if (JSON.stringify(settings.categoryOrder ?? []) !== JSON.stringify(TAB_CATEGORIES)) {
+    await saveSettings({ ...settings, categoryOrder: TAB_CATEGORIES });
+  }
   return { dishesUpdated };
 }
