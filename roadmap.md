@@ -1,5 +1,13 @@
 # POS expansion
 
+## Hotel counter corrections
+- [ ] Count KOT submissions rather than station tickets; add independent daily KOT numbering and table/section print context.
+- [ ] Add guest-only QR requests entry under Counter orders; preserve POS/waiter acceptance and admin-only controls.
+- [ ] Remove builder cleanup diagnostics from staff Sync screens.
+- [ ] Add Hotel declaration, stable device-bound Cash Counter, settled-day close accounting and dated close history.
+- [ ] Verify targeted regressions and signed-in counter workflow; publish and verify live when ready.
+- [ ] Review completed security findings and verify existing staff access without broadening privileged roles.
+
 ## Counter rollout and floor creation
 - [x] Add direct Add section / Add table forms; verified create, refresh, second table and test-table cleanup under owner session.
 - [ ] Connect real Swiggy/Zomato orders; blocked pending approved partner API access and documentation.
