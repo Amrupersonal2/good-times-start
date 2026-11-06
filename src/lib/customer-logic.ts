@@ -6,11 +6,11 @@ export function normalisePhone(raw: string | undefined): string | null {
   return digits.length >= 10 ? digits.slice(-10) : null;
 }
 
-export function earnedPoints(order: Pick<Order, "total" | "payments">, loyaltyPct: number): number {
-  if (loyaltyPct <= 0) return 0;
-  // Points aren't earned on the part of a bill paid with points.
+export function earnedPoints(order: Pick<Order, "total" | "taxable" | "subtotal" | "discountAmt" | "payments">, loyaltyPct: number, qualifying = true): number {
+  if (loyaltyPct <= 0 || !qualifying) return 0;
   const paidWithPoints = order.payments.filter((p) => p.mode === "points").reduce((s, p) => s + p.amount, 0);
-  return Math.floor(Math.max(0, order.total - paidWithPoints) * loyaltyPct / 100);
+  const discountedValue = order.taxable ?? Math.max(0, order.subtotal - order.discountAmt);
+  return Math.floor(Math.max(0, discountedValue - paidWithPoints) * loyaltyPct / 100);
 }
 
 export interface CustomerStats {
@@ -31,7 +31,8 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 /** Everything about a guest, worked out from their settled bills. Nothing here can drift between devices. */
 export function customerStats(customer: Pick<Customer, "id" | "pointsAdjustment" | "duesPaid">, orders: Order[], loyaltyPct: number): CustomerStats {
   const mine = orders.filter((o) => o.status === "settled" && normalisePhone(o.customer?.phone) === customer.id);
-  const pointsEarned = mine.reduce((s, o) => s + earnedPoints(o, loyaltyPct), 0);
+  const chronological = [...mine].sort((a, b) => a.createdAt - b.createdAt);
+  const pointsEarned = chronological.reduce((s, o, index) => s + earnedPoints(o, loyaltyPct, index >= 5), 0);
   const pointsRedeemed = mine.reduce((s, o) => s + o.payments.filter((p) => p.mode === "points").reduce((t, p) => t + p.amount, 0), 0);
   const dueOwed = r2(mine.reduce((s, o) => s + o.payments.filter((p) => p.mode === "credit").reduce((t, p) => t + p.amount, 0), 0));
   const duePaid = r2((customer.duesPaid ?? []).reduce((s, p) => s + p.amount, 0));

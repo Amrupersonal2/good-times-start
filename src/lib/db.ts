@@ -258,7 +258,8 @@ export async function nextSeq(): Promise<number> {
     const orders = await db.orders.toArray();
     const floor = orders.reduce((max, order) => {
       const parts = order.billNo.split("/");
-      const belongsToSeries = order.billNo.startsWith(`XTSY/${code.slice(0, 4)}/`) || parts[0] === code;
+      const canonicalSeries = code === "D1" || code === "SJT" || code === "POS" ? "POS" : code;
+      const belongsToSeries = order.billNo.startsWith(`XTSY/${code.slice(0, 4)}/`) || parts[0] === code || parts[0] === canonicalSeries;
       const suffix = Number(parts.at(-1));
       return belongsToSeries && Number.isSafeInteger(suffix) ? Math.max(max, suffix) : max;
     }, 0);

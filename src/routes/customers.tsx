@@ -147,7 +147,7 @@ function WhatsappConsent({ customer }: { customer: Customer }) {
 
 function CustomersPage() {
   const settings = useRestaurantSettings();
-  const loyaltyPct = settings.loyaltyPct ?? 0;
+  const loyaltyPct = settings.loyaltyPct ?? 1;
   const customers = useLiveQuery(() => getDb().customers.toArray(), [], []);
   // Only bills with a guest attached, straight from the guest index; not the whole year's bills.
   const orders = useLiveQuery(async () => (await getDb().orders.where("customerId").above("").toArray()).filter((o) => o.status === "settled"), [], []);

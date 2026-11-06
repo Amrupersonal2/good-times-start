@@ -103,7 +103,7 @@ export function Receipt({ order }: { order: Order }) {
       ) : null}
       <div className="mt-3 text-center">
         <div>{settings.billFooter || "Thank you! Visit again."}</div>
-        <div className="mt-1 text-[10px] text-black/60">Billed with XTSY POS</div>
+        <div className="mt-1 text-[10px] text-black/60">{order.source === "waiter" ? "Printed through XTSY Waiter" : "Billed with XTSY POS"}</div>
       </div>
     </div>
   );

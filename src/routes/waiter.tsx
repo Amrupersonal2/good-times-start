@@ -11,7 +11,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VegMark } from "@/components/VegMark";
 import { ItemOptions } from "@/components/ItemOptions";
 import { InstallButton } from "@/components/AppInstall";
-import { printBill, printKots } from "@/components/PrintHost";
+import { queueCounterPrint } from "@/lib/counter-print";
 import { useStaff } from "@/lib/auth-context";
 import { allow } from "@/lib/pin-gate";
 import { useCart } from "@/lib/cart-store";
@@ -163,7 +163,7 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
     setSending(true);
     try {
       const kots = await cart.sendKitchen();
-      if (kots.length) void printKots(kots, "sent");
+      if (kots.length && user?.restaurantId) await queueCounterPrint(user.restaurantId, "kot", kots);
     } finally {
       setSending(false);
     }
@@ -174,7 +174,8 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
     // The guest gets the running bill at the table; the counter sees the table is ready to pay.
     if (!cart.activeOrder) return;
     // Await durable queueing before marking the table's bill as requested.
-    await printBill(cart.activeOrder);
+    if (!user?.restaurantId) { toast.error("Restaurant connection is unavailable. The bill was not queued."); return; }
+    await queueCounterPrint(user.restaurantId, "bill", { ...cart.activeOrder, source: "waiter" });
     if (table?.status !== "billed") {
       await getDb().restTables.update(tableId, { status: "billed" });
       await markDirty(["table", tableId]);

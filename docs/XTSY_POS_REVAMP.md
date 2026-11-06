@@ -340,3 +340,84 @@ The overview shows each section as a card with an Update button. Staff see only 
 - Sales Summary totals, filters and Excel
 - Terminals SQL
 - Icon safety test
+
+## Universal thermal printer standard
+
+The XTSY POS print engine must be hardware-independent and support a common
+ESC/POS-compatible baseline, with optional vendor-specific adapters for
+printer models that implement commands differently. A printer's brand or
+driver installer must not be required to change bill/KOT templates.
+
+### Default device profile
+
+New printer configurations use these design defaults:
+
+| Setting | Default |
+|---|---|
+| Paper width | 58 mm |
+| Print density | Normal |
+| Cutter | Disabled by default; enable only after model/firmware verification |
+| Connection | USB |
+| Nominal print resolution | 203 DPI (8 dots/mm) |
+| Printable width | 48 mm target (384 dots at 203 DPI) |
+
+These are application defaults, not a claim that a printer is connected or
+that its hardware supports every feature. The physical printer/driver remains
+authoritative for resolution, darkness, feed and cutter capabilities. The
+current browser/RawBT transport cannot reliably discover cutter capability
+across all devices, so the application must default to feed-only/manual tearing.
+A full or partial cut may be enabled only after model and firmware verification;
+never send an unsupported cutter command blindly.
+
+### Supported paper profiles
+
+- **58 mm:** target 48 mm printable width; 203 DPI baseline; compact bill/KOT
+  profile.
+- **80 mm:** target 72 mm printable width; 203 DPI baseline; standard commercial
+  bill/KOT profile.
+
+The renderer must derive dot width from the selected paper profile and the
+detected or configured printer resolution. Do not treat CSS DPI as a way to
+change physical print-head resolution.
+
+### Transport and compatibility
+
+- USB is the default connection. Support Bluetooth and LAN/Wi-Fi as optional
+  transports where the host platform exposes a supported connection API.
+- Use ESC/POS-compatible text/raster, feed and cut operations as the baseline.
+  Keep vendor/model quirks in isolated adapters, not in receipt templates.
+- Support browser/OS printing where raw device access is unavailable. Silent
+  browser printing is only available when the host has explicitly enabled the
+  required kiosk/managed-print configuration.
+- Store printer assignments and preferences per restaurant, outlet and
+  terminal. Keep local connection credentials/device handles on the device.
+- Route customer bills, new KOTs and cancellation KOTs independently to
+  configured printer destinations and kitchen stations.
+- Provide test print, status/health indication, safe retry, and duplicate-job
+  protection. Reprints must be explicit and auditable.
+
+### Receipt design and quality
+
+- Design for readable 58 mm output first: strong item names, legible quantities
+  and prices, clear totals, adequate line spacing and high-contrast monochrome
+  output.
+- Keep bill and KOT templates responsive to paper width; never scale a full
+  80 mm layout down to fit 58 mm.
+- Make end-feed/tear-off spacing configurable per terminal. The current outlet
+  preference is 50 mm; this is not a universal printer standard.
+- Keep the 58 mm character grid at 32 columns and 48 mm usable width; keep the
+  80 mm grid at 48 columns and 72 mm usable width. At the 203 DPI baseline,
+  use a 2.5 mm monospace CSS font target so the glyph grid does not overflow.
+- Do not claim a physical print succeeded when the host only accepted a job;
+  report dispatch/queue acknowledgement separately from device-level status.
+- Density presets (light/normal/dark) are logical settings. Map them only to
+  printer-supported commands or driver controls; otherwise leave density to
+  the operating-system driver.
+
+### Compatibility certification
+
+Maintain automated renderer/command tests for 58 mm and 80 mm profiles, plus
+physical verification against representative ESC/POS printers. Brand/model
+support is certified per tested model and firmware, not inferred from the
+brand name alone. Initial compatibility targets include Epson, Xprinter,
+Rongta, Bixolon, TVS, Star Micronics and generic KPOS 58/80 devices.

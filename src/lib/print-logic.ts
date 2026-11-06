@@ -26,6 +26,10 @@ export interface PrintConfig {
   stations: string[];
   /** Bigger item text on KOTs for the kitchen. */
   largeKotText: boolean;
+  /** Tear-off feed in millimetres; outlet preference, not a printer standard. */
+  endFeedMm: number;
+  /** Cutter is opt-in because ESC/POS does not provide reliable universal capability discovery. */
+  cutter: "none" | "full" | "partial";
 }
 
 export const DEFAULT_PRINT_CONFIG: PrintConfig = {
@@ -39,6 +43,8 @@ export const DEFAULT_PRINT_CONFIG: PrintConfig = {
   autoPrintBill: false,
   stations: [],
   largeKotText: true,
+  endFeedMm: 50,
+  cutter: "none",
 };
 
 /** Read a stored config, falling back to defaults for anything missing or invalid. */
@@ -56,6 +62,8 @@ export function normalisePrintConfig(raw: unknown): PrintConfig {
     autoPrintBill: typeof r.autoPrintBill === "boolean" ? r.autoPrintBill : DEFAULT_PRINT_CONFIG.autoPrintBill,
     stations: Array.isArray(r.stations) ? r.stations.filter((s): s is string => typeof s === "string") : [],
     largeKotText: typeof r.largeKotText === "boolean" ? r.largeKotText : DEFAULT_PRINT_CONFIG.largeKotText,
+    endFeedMm: typeof r.endFeedMm === "number" && Number.isFinite(r.endFeedMm) ? Math.min(100, Math.max(0, r.endFeedMm)) : DEFAULT_PRINT_CONFIG.endFeedMm,
+    cutter: r.cutter === "full" || r.cutter === "partial" ? r.cutter : "none",
   };
 }
 
@@ -105,9 +113,9 @@ export function printCss(paper: 58 | 80): string {
   body *:has(#print-root) { display: contents !important; }
   #print-root, #print-root * { visibility: visible; }
   #print-root { position: absolute; left: 0; top: 0; width: ${content}mm; }
-  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0 0 4mm; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
+  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
   #print-root .print-ticket:last-child { break-after: auto; page-break-after: auto; }
   #print-root .print-ticket:has(.kot-print-slip) { padding-bottom: 0; }
-  #print-root .kot-print-slip::after { content: ""; display: block; height: var(--kot-end-feed); }
+  #print-root .kot-print-slip::after { content: ""; display: block; height: 0; }
 }`;
 }

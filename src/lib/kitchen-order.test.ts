@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import type { CartLine } from "./types";
 
 const lines: CartLine[] = [
@@ -8,6 +8,12 @@ const lines: CartLine[] = [
 ];
 
 describe("kitchen ticket quantities", () => {
+  it("does not treat already-shared unsent quantities as new local additions", () => {
+    const shared = [{ ...lines[0], qty: 1 }];
+    expect(additionsNotInShared(shared, [{ ...lines[0], qty: 1 }])).toEqual([]);
+    expect(additionsNotInShared(shared, [{ ...lines[0], qty: 3 }])).toEqual([{ ...lines[0], qty: 2 }]);
+  });
+
   it("sends only quantities not already sent", () => {
     expect(unsentKitchenLines(lines, { naan: 2 })).toEqual([
       { ...lines[0], qty: 1 },
@@ -48,6 +54,13 @@ describe("reopening a running bill on another device's changes", () => {
     const lines = reopenedLines(draft, { "virgin-mojito": 1 }, shared, { "virgin-mojito": 1, "passion-mojito": 1 });
     expect(lines.map((x) => [x.itemId, x.qty])).toEqual([["virgin-mojito", 1], ["passion-mojito", 1]]);
     expect(lines.reduce((t, x) => t + x.qty * x.price, 0)).toBe(340);
+  });
+
+  it("uses the saved shared snapshot to avoid duplicating already-shared unsent lines", () => {
+    const base = [l("tea", 1)];
+    const draft = [l("tea", 1)];
+    const shared = [l("tea", 1)];
+    expect(reopenedLines(draft, { tea: 0 }, shared, { tea: 0 }, base).map((x) => [x.itemId, x.qty])).toEqual([["tea", 1]]);
   });
 
   it("adds this device's unsent items on top, once", () => {
