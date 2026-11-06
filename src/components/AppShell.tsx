@@ -30,7 +30,7 @@ const NAV = [
   { to: "/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/reports", label: "Cash Counter", icon: BarChart3 },
   { to: "/marketing", label: "Marketing", icon: Sparkles },
   { to: "/waiter", label: "Waiter", icon: Tablet },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -143,7 +143,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
     await navigate({ to: "/auth", replace: true });
   };
 
-  const tone = !online || snapshot.error || snapshot.notice ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
+  const tone = !online || snapshot.error ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
   const label = !online ? "Offline" : snapshot.error ? "Sync needs attention" : pending ? `${pending} to sync` : !staff ? "This device only" : live === "reconnecting" ? "Reconnecting…" : live === "live" ? "Live" : "Synced";
 
   return <>
@@ -175,7 +175,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         </div>
         <p className="text-sm text-muted-foreground">Last synced: {snapshot.lastSyncAt ? format(new Date(snapshot.lastSyncAt), "dd MMM yyyy, h:mm a") : "not yet"}</p>
         {snapshot.error ? <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"><strong className="flex items-center gap-2"><AlertTriangle className="size-4" />Sync needs attention</strong><p className="mt-1 break-words">{snapshot.error}</p></div> : null}
-        {snapshot.notice ? <div role="status" className="rounded-lg border border-gold/50 bg-gold/10 p-3 text-sm"><p className="break-words">{snapshot.notice}</p><Button size="sm" variant="ghost" className="mt-1 -ml-2" onClick={() => void clearSyncNotice()}>Got it</Button></div> : null}
+
         {!staff ? <p className="text-sm text-muted-foreground">Sign in to share bills, tables and kitchen tickets with your other devices.</p> : null}
         <Button onClick={() => void retry()} disabled={busy || !online || (!!staff && !restaurantId)} className="w-full"><RefreshCw className={`size-4 ${busy ? "animate-spin" : ""}`} />{busy ? "Syncing…" : staff ? "Sync now" : "Sign in to sync"}</Button>
         {isAdmin(staff) ? <section className="border-t border-border pt-4">

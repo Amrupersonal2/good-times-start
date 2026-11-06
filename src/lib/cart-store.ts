@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
 import { computeTotals, billNumber } from "./billing";
-import { getDb, getDeviceCode, markDirty, nextSeq } from "./db";
+import { getDb, getDeviceCode, markDirty, nextSeq, nextKotNumber } from "./db";
 import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
@@ -163,6 +163,7 @@ export function useCart(initialTableId?: string) {
 
   /** Add one of a dish, with an optional portion and add-ons, priced for the current order type. */
   const addItem = useCallback((item: MenuItem, variantId?: string, addonIds: string[] = []) => {
+    if (activeOrder?.source === "qr" || activeOrder?.source === "online") { toast.error("Guest orders can only be placed through QR Scan & Order."); return; }
     const held = holdRef.current;
     if (held) { toast.error(`${held.by} is taking this table's order. It opens for everyone once it reaches the kitchen.`); return; }
     const line = buildLine(item, orderType, variantId, addonIds);
@@ -176,7 +177,7 @@ export function useCart(initialTableId?: string) {
       }
       return [...prev, line];
     });
-  }, [orderType]);
+  }, [orderType, activeOrder?.source]);
 
   /** Switching to takeaway, delivery or an aggregator reprices plain dishes not yet sent to the kitchen. */
   const changeOrderType = useCallback((next: OrderType) => {
@@ -192,8 +193,9 @@ export function useCart(initialTableId?: string) {
   }, [activeOrder]);
 
   const setQty = useCallback((itemId: string, qty: number) => {
+    if (activeOrder?.source === "qr" || activeOrder?.source === "online") return;
     setLines((prev) => (qty <= 0 ? prev.filter((line) => line.itemId !== itemId) : prev.map((line) => (line.itemId === itemId ? { ...line, qty } : line))));
-  }, []);
+  }, [activeOrder?.source]);
 
   /** Put back items marked for cancellation before the cancel ticket goes out. */
   const restoreLine = useCallback((line: CartLine) => {
@@ -278,7 +280,8 @@ export function useCart(initialTableId?: string) {
     const merged = base ? removeCancelled(mergeSentLines(base.lines, pendingKitchenLines), pendingCancelLines) : lines;
     const t = computeTotals(merged, discountPct, serviceChargePct, tax);
     const tableLabel = await tableLabelOf(tableId);
-    const extras = { serviceChargePct, tax, taxable: t.taxable, ...(customer.name || customer.phone || customer.gstin ? { customer } : {}) };
+    const tableSection = tableId ? (await db.restTables.get(tableId))?.section : base?.tableSection;
+    const extras = { serviceChargePct, tableSection, tax, taxable: t.taxable, ...(customer.name || customer.phone || customer.gstin ? { customer } : {}) };
     const order: Order = withCustomerId(base
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
@@ -296,12 +299,15 @@ export function useCart(initialTableId?: string) {
     };
 
     let kots: Kot[] = [];
-    await db.transaction("rw", db.orders, db.kots, async () => {
+    const deviceId = await getDeviceId();
+    const submissionId = newUid();
+    await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
+      const kotNo = await nextKotNumber(deviceId, now);
       const id = saved.id ?? Number(await db.orders.add(saved));
       saved.id = id;
       await db.orders.put(saved);
       const ticket = (kind: "order" | "cancel") => ([station, stationLines]: [string, CartLine[]]): Kot => ({
-        uid: newUid(), orderId: id, orderUid, billNo: saved.billNo, station, kind, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
+        uid: newUid(), submissionId, kotNo, tableSection: saved.tableSection, orderId: id, orderUid, billNo: saved.billNo, station, kind, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
         lines: stationLines.map((line) => ({ itemId: line.itemId, name: line.name, qty: line.qty, note: line.note })),
         status: "new", createdAt: now,
       });
@@ -375,7 +381,8 @@ export function useCart(initialTableId?: string) {
       orderType, tableId: tableId ?? latest?.tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines: billLines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
       serviceChargePct, serviceCharge: t.serviceCharge, cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
       taxable: t.taxable, tax,
-      payments, status: "settled", createdAt: latest?.createdAt ?? Date.now(), synced: false,
+      payments, status: "settled", settledAt: Date.now(), settledDeviceId: await getDeviceId(), createdAt: latest?.createdAt ?? Date.now(), synced: false,
+      tableSection: latest?.tableSection ?? (tableId ? (await getDb().restTables.get(tableId))?.section : undefined),
       ...(customer.name || customer.phone || customer.gstin ? { customer } : {}),
       ...(closedBy ? { closedBy } : {}),
     });
@@ -408,7 +415,7 @@ export function useCart(initialTableId?: string) {
       subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
       taxable: t.taxable, tax,
-      status: "settled", createdAt: now, synced: false,
+      status: "settled", settledAt: now, settledDeviceId: await getDeviceId(), tableSection: latest?.tableSection ?? (tableId ? (await getDb().restTables.get(tableId))?.section : undefined), createdAt: now, synced: false,
       kotSubmittedQty: Object.fromEntries(split.map((l) => [l.itemId, l.qty])),
       ...(customer.name || customer.phone || customer.gstin ? { customer } : {}),
       ...(closedBy ? { closedBy } : {}),

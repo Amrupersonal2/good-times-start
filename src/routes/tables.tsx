@@ -8,6 +8,7 @@ import { Link } from "@tanstack/react-router";
 import { COUNTER_TYPES } from "@/lib/bill-entry";
 import { holdLabel } from "@/lib/table-hold";
 import type { Order } from "@/lib/types";
+import { openQrRequests } from "@/components/GuestOrders";
 import { AppShell } from "@/components/AppShell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -207,6 +208,7 @@ function TablesPage() {
               {COUNTER_TYPES.map((t) => (
                 <Button key={t.v} variant="outline" asChild><Link to="/" search={{ type: t.v }}><Plus />{t.l}</Link></Button>
               ))}
+              <Button variant="outline" onClick={openQrRequests}><QrCode />QR Scan & Order</Button>
               {counterBills.map((o) => (
                 <Button key={o.uid ?? o.billNo} variant="secondary" asChild>
                   <Link to="/" search={{ bill: o.uid ?? "" }} title={`Running bill ${o.billNo}`}>

@@ -1,11 +1,19 @@
 # POS expansion
 
+## Hotel counter corrections
+- [x] Count KOT submissions rather than station tickets; add independent daily device-safe KOT numbering and table/section print context.
+- [x] Add guest-only QR requests entry under Counter orders; preserve POS/waiter acceptance and admin-only controls.
+- [x] Remove builder cleanup diagnostics from staff Sync screens.
+- [x] Add Hotel declaration, stable device-bound Cash Counter, settled-day close accounting and dated close history.
+- [ ] Complete published end-to-end verification after deployment: publishing scheduled, but fresh live check still serves the previous controls. Preview Reception Orders/QR/Cash Counter verified with zero runtime errors; 252 tests pass. No test sale or cash-close record created.
+- [x] Review completed security findings and verify existing staff access without broadening privileged roles; Reception and Waiter already active. Basic checks clear; deep scan retains the owner/manager campaign-recipient warning.
+
 ## Counter rollout and floor creation
 - [x] Add direct Add section / Add table forms; verified create, refresh, second table and test-table cleanup under owner session.
 - [ ] Connect real Swiggy/Zomato orders; blocked pending approved partner API access and documentation.
 - [ ] Publishing requested; current preview opens Room 666 and safely gates unconfigured KOT printing (24 tests passed). Published end-to-end check awaits deployment: live check still showed older controls.
 - [ ] Check actual 2-inch thermal paper; requires access to the user's counter printer.
-- [ ] Complete requested deep security review and address its findings when the scan finishes.
+- [ ] Complete security clearance; remaining campaign-recipient warning needs a decision on restricting owner/manager sends to saved opted-in guests.
 
 ## Orders window
 - [x] Hide unconnected aggregator entry buttons; keep historical bills.

@@ -11,20 +11,22 @@ import { SlipView } from "./Slip";
 import { billSlip, kotSlip } from "@/lib/slip";
 import { usePrintConfig } from "@/lib/print-config";
 import { useRestaurantSettings } from "@/lib/use-settings";
+import { kotSubmissions, type KotSubmission } from "@/lib/kot-history";
 import type { Order, Kot } from "@/lib/types";
 
-export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number }
-export function OrdersOverview({ onClose, guestContent, guestCount }: OrdersOverviewProps) {
-  const [view, setView] = useState<"running" | "history" | "guest">("running");
+export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" }
+export function OrdersOverview({ onClose, guestContent, guestCount, initialView = "running" }: OrdersOverviewProps) {
+  const [view, setView] = useState<"running" | "history" | "guest">(initialView);
   const [kind, setKind] = useState<HistoryKind>("bills");
   const [period, setPeriod] = useState("today");
   const [custom, setCustom] = useState(dateLabel());
-  const [detail, setDetail] = useState<Order | Kot | null>(null);
+  const [detail, setDetail] = useState<Order | KotSubmission | null>(null);
   const date = period === "custom" ? custom : dateLabel(period === "yesterday" ? -1 : period === "before" ? -2 : 0);
   const [start, end] = dayBounds(date);
   const running = useLiveQuery(() => getDb().orders.where("status").equals("held").sortBy("createdAt"), [], []);
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const history = useLiveQuery(async () => ({ bills: await getDb().orders.where("createdAt").between(start, end, true, false).reverse().toArray(), kots: await getDb().kots.where("createdAt").between(start, end, true, false).reverse().toArray() }), [start, end], { bills: [], kots: [] });
+  const submissions = kotSubmissions(history.kots);
   const settings = useRestaurantSettings(); const config = usePrintConfig();
   const navigate = useNavigate();
   const open = (order: Order) => { onClose(); void navigate({ to: "/", search: order.tableId && order.source !== "qr" ? { table: order.tableId } : { bill: order.uid ?? "" } }); };
@@ -38,10 +40,10 @@ export function OrdersOverview({ onClose, guestContent, guestCount }: OrdersOver
     </div> : <>
       <Segmented ariaLabel="History dates" value={period} onChange={(v) => { setPeriod(v); setDetail(null); }} options={[{ value: "today", label: "Today" }, { value: "yesterday", label: "Yesterday" }, { value: "before", label: "Day before" }, { value: "custom", label: "Custom" }]} />
       {period === "custom" ? <label className="block text-sm">Date<input type="date" aria-label="History date" value={custom} onChange={(e) => { if (e.target.value) { setCustom(e.target.value); setDetail(null); } }} className="ml-3 rounded-md border border-input bg-card p-2" /></label> : null}
-      <Segmented ariaLabel="History type" value={kind} onChange={(v) => { setKind(v); setDetail(null); }} options={[{ value: "bills", label: "Bills", badge: history.bills.length }, { value: "kots", label: "KOTs", badge: history.kots.length }, { value: "settled", label: "Settled", badge: historyBills(history.bills, "settled").length }, { value: "cancelled", label: "Cancelled", badge: historyBills(history.bills, "cancelled").length }]} />
-      <div className="divide-y divide-border">{(kind === "kots" ? history.kots : historyBills(history.bills, kind)).map((record) => <Button key={record.uid ?? record.id} variant="ghost" className="h-auto w-full justify-between rounded-none py-3 text-left" onClick={() => setDetail(record)}><span><span className="block font-semibold">{record.billNo}</span><span className="block text-xs font-normal text-muted-foreground">{record.tableLabel ?? record.tableId ?? "Counter"} · {new Date(record.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · {"station" in record ? record.station : record.status === "held" ? "Running" : record.status === "void" ? "Cancelled" : "Settled"}</span></span><span>{"total" in record ? formatINR(record.total, 0) : `${record.lines.reduce((n, l) => n + l.qty, 0)} items`}</span></Button>)}</div>
-      {!(kind === "kots" ? history.kots : historyBills(history.bills, kind)).length ? <p className="py-6 text-center text-sm text-muted-foreground">No records for this date.</p> : null}
-      {detail ? <div className="overflow-x-auto border-t border-border pt-4"><Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close details</Button><div className="mx-auto w-fit"><SlipView slip={"station" in detail ? kotSlip([detail], config.paper, settings.kotHeader, config.largeKotText) : billSlip(detail, settings, config.paper)} /></div></div> : null}
+      <Segmented ariaLabel="History type" value={kind} onChange={(v) => { setKind(v); setDetail(null); }} options={[{ value: "bills", label: "Bills", badge: history.bills.length }, { value: "kots", label: "KOTs", badge: submissions.length }, { value: "settled", label: "Settled", badge: historyBills(history.bills, "settled").length }, { value: "cancelled", label: "Cancelled", badge: historyBills(history.bills, "cancelled").length }]} />
+      <div className="divide-y divide-border">{kind === "kots" ? submissions.map((group) => <Button key={group.id} variant="ghost" className="h-auto w-full justify-between rounded-none py-3 text-left" onClick={() => setDetail(group)}><span><span className="block font-semibold">{group.first.kotNo ?? group.first.billNo}</span><span className="block text-xs font-normal text-muted-foreground">{group.first.tableLabel ?? group.first.tableId ?? "Counter"} · {new Date(group.first.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · {group.tickets.map((k) => k.station).join(", ")}</span></span><span>{group.tickets.reduce((n, k) => n + k.lines.reduce((q, l) => q + l.qty, 0), 0)} items</span></Button>) : historyBills(history.bills, kind).map((record) => <Button key={record.uid ?? record.id} variant="ghost" className="h-auto w-full justify-between rounded-none py-3 text-left" onClick={() => setDetail(record)}><span><span className="block font-semibold">{record.billNo}</span><span className="block text-xs font-normal text-muted-foreground">{record.tableLabel ?? record.tableId ?? "Counter"} · {record.status === "held" ? "Running" : record.status === "void" ? "Cancelled" : "Settled"}</span></span><span>{formatINR(record.total, 0)}</span></Button>)}</div>
+      {!(kind === "kots" ? submissions : historyBills(history.bills, kind)).length ? <p className="py-6 text-center text-sm text-muted-foreground">No records for this date.</p> : null}
+      {detail ? <div className="overflow-x-auto border-t border-border pt-4"><Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close details</Button><div className="mx-auto w-fit">{"tickets" in detail ? detail.tickets.map((ticket) => <SlipView key={ticket.uid ?? ticket.id} slip={kotSlip([ticket], config.paper, settings.kotHeader, config.largeKotText)} />) : <SlipView slip={billSlip(detail, settings, config.paper)} />}</div></div> : null}
     </>}
   </div>;
 }

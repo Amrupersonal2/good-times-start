@@ -19,6 +19,7 @@ import { Segmented } from "@/components/Segmented";
 import { fillTemplate, waLink } from "@/lib/marketing-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import { sendOrderReadyMessage } from "@/lib/whatsapp.functions";
+import { can } from "@/lib/permissions";
 import { OrdersOverview } from "./OrdersOverview";
 
 function chime(ctx: AudioContext) {
@@ -38,6 +39,8 @@ function chime(ctx: AudioContext) {
 
 const minutesAgo = (iso: string) => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60_000));
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+export function openQrRequests() { window.dispatchEvent(new Event("pos:qr-requests")); }
+
 const REJECT_REASONS = ["A dish is unavailable", "Kitchen is closing", "Too busy right now"];
 
 /** Live list of guest orders for the active outlet; chimes when a new one arrives. */
@@ -71,6 +74,12 @@ export function GuestOrdersButton() {
   const orders: GuestOrder[] = useGuestOrders(user?.restaurantId ?? null, enabled).data ?? [];
   const waiting = orders.filter((o) => o.status === "new");
   const [open, setOpen] = useState(false);
+  const [initialView, setInitialView] = useState<"running" | "guest">("running");
+  useEffect(() => {
+    const show = () => { setInitialView("guest"); setOpen(true); };
+    window.addEventListener("pos:qr-requests", show);
+    return () => window.removeEventListener("pos:qr-requests", show);
+  }, []);
   const audio = useRef<AudioContext | null>(null);
   const seen = useRef<Set<string> | null>(null);
 
@@ -90,7 +99,7 @@ export function GuestOrdersButton() {
       const fresh = waiting.filter((o) => !seen.current?.has(o.id));
       if (fresh.length) {
         if (audio.current) { void audio.current.resume(); chime(audio.current); }
-        toast(`New ${fresh[0]?.channel === "table" ? `table order from ${fresh[0]?.table_label ?? "a table"}` : "pickup order"}`, { action: { label: "Open", onClick: () => setOpen(true) } });
+        toast(`New ${fresh[0]?.channel === "table" ? `table order from ${fresh[0]?.table_label ?? "a table"}` : "pickup order"}`, { action: { label: "Open", onClick: () => { setInitialView("guest"); setOpen(true); } } });
       }
     }
     seen.current = ids;
@@ -99,7 +108,7 @@ export function GuestOrdersButton() {
   if (!user?.restaurantId || user.role === "kitchen") return null;
   return (
     <>
-      <Button size="sm" variant={waiting.length ? "default" : "outline"} onClick={() => setOpen(true)} className={waiting.length ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : ""}
+      <Button size="sm" variant={waiting.length ? "default" : "outline"} onClick={() => { setInitialView("running"); setOpen(true); }} className={waiting.length ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : ""}
         aria-label="Orders">
         <BellRing className="size-4" />
         <span className="hidden sm:inline">Orders</span>
@@ -107,7 +116,7 @@ export function GuestOrdersButton() {
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
-          <OrdersOverview onClose={() => setOpen(false)} guestCount={waiting.length} guestContent={<GuestOrdersPanel orders={orders} onDone={() => setOpen(false)} />} />
+          <OrdersOverview key={initialView} initialView={initialView} onClose={() => setOpen(false)} guestCount={waiting.length} guestContent={<GuestOrdersPanel orders={orders} onDone={() => setOpen(false)} />} />
         </DialogContent>
       </Dialog>
     </>
@@ -172,8 +181,7 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
   });
   const openBill = () => {
     onOpenBill();
-    if (order.channel === "table" && order.table_id) void navigate({ to: "/", search: { table: order.table_id } });
-    else if (order.order_uid) void navigate({ to: "/", search: { bill: order.order_uid } });
+    if (order.order_uid) void navigate({ to: "/", search: { bill: order.order_uid } });
   };
 
   return (
@@ -214,7 +222,7 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
-          {order.status === "new" ? <>
+          {order.status === "new" && can(user, "guestOrders.handle") ? <>
             <ConfirmButton id={`accept-${order.id}`} disabled={busy} onConfirm={accept} className={buttonVariants()} armedClassName="!bg-gold !text-gold-foreground" confirm={<><ChefHat />Tap again to accept</>}><ChefHat />{busy ? "Accepting…" : "Accept & send KOT"}</ConfirmButton>
             <Button variant="ghost" className="text-destructive" disabled={busy} onClick={() => setRejecting(true)}><X />Reject</Button>
           </> : null}
