@@ -200,6 +200,7 @@ numbered_groups AS (
     g.order_uid,
     g.old_bill_no,
     g.existing_kot_no AS new_kot_no,
+    g.canonical_number_count,
     CASE
       WHEN coalesce(g.first_request_id, '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
         THEN g.first_request_id::uuid
@@ -230,7 +231,8 @@ numbered_groups AS (
     g.old_bill_no,
     'KOT/' || lpad((h.high_water + g.missing_offset)::text, 4, '0') AS new_kot_no,
     md5(g.restaurant_id::text || ':KOT:' || g.group_key)::uuid AS request_id,
-    h.high_water + g.missing_offset AS sequence_number
+    h.high_water + g.missing_offset AS sequence_number,
+    g.canonical_number_count
   FROM missing_groups g
   JOIN kot_high_water h ON h.restaurant_id = g.restaurant_id
 )
@@ -240,7 +242,7 @@ DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM _tab_bistro_reconcile_kots
-    WHERE new_kot_no IS NULL OR sequence_number IS NULL
+    WHERE new_kot_no IS NULL OR sequence_number IS NULL OR canonical_number_count > 1
   ) THEN
     RAISE EXCEPTION 'Could not safely map every pending KOT submission.';
   END IF;
