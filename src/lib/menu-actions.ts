@@ -1,5 +1,7 @@
 import { getDb, getSettings, markDirty, saveSettings } from "./db";
 import type { RecordKind } from "./sync-core";
+import { computeTotals } from "./billing";
+import { buildLine, parseLineId } from "./menu-logic";
 import type { Material, MenuItem } from "./types";
 
 export interface ApplyMenuResult { dishes: number; ingredients: number; removed: number }
@@ -14,9 +16,30 @@ export async function applyMenuImport(items: MenuItem[], materials: Material[], 
   const keep = new Set(items.map((i) => i.id));
   const changes: [RecordKind, string][] = [];
   let removed = 0;
-  await db.transaction("rw", db.menu, db.materials, async () => {
+  await db.transaction("rw", db.menu, db.materials, db.orders, async () => {
     if (materials.length) await db.materials.bulkPut(materials);
     if (items.length) await db.menu.bulkPut(items);
+    // Running bills retain their original printed item names, but follow the
+    // current menu price when the imported menu changes that item/variant.
+    const byId = new Map(items.map((item) => [item.id, item]));
+    const held = await db.orders.where("status").equals("held").toArray();
+    for (const order of held) {
+      let changed = false;
+      const lines = order.lines.map((line) => {
+        const parsed = parseLineId(line.menuItemId ?? line.itemId);
+        const item = byId.get(parsed.menuItemId);
+        if (!item) return line;
+        const repriced = buildLine(item, order.orderType, parsed.variantId, parsed.addonIds);
+        if (repriced.price === line.price) return line;
+        changed = true;
+        return { ...line, price: repriced.price };
+      });
+      if (!changed) continue;
+      const totals = computeTotals(lines, order.discountPct, order.serviceChargePct ?? 0, order.tax);
+      const updated = { ...order, lines, ...totals, synced: false };
+      await db.orders.put(updated);
+      if (updated.uid) changes.push(["order", updated.uid]);
+    }
     if (options.removeOthers) {
       const stale = (await db.menu.toCollection().primaryKeys()).map(String).filter((id) => !keep.has(id));
       if (stale.length) await db.menu.bulkDelete(stale);
