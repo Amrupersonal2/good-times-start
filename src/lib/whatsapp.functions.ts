@@ -49,10 +49,21 @@ export const sendWhatsappCampaign = createServerFn({ method: "POST" })
     // Never message anyone twice in one campaign, even if the screen retries.
     const { data: already } = await ctx.supabase.from("marketing_sends").select("phone").eq("campaign_id", data.campaignId).eq("status", "sent");
     const done = new Set(((already ?? []) as { phone: string }[]).map((r) => r.phone));
+    // Only message guests of this restaurant who agreed to WhatsApp messages; never caller-chosen numbers.
+    const wanted = data.recipients.map((r) => r.wa);
+    const local = wanted.map((w) => (w.startsWith("91") && w.length === 12 ? w.slice(2) : w));
+    const { data: optedIn } = await ctx.supabase.from("guest_orders").select("customer_phone")
+      .eq("restaurant_id", data.restaurantId).eq("whatsapp_opt_in", true)
+      .in("customer_phone", [...new Set([...wanted, ...local])]);
+    const allowed = new Set(((optedIn ?? []) as { customer_phone: string }[]).map((g) => {
+      const d = g.customer_phone.replace(/\D/g, "");
+      return d.length === 10 ? `91${d}` : d;
+    }));
 
     const results: { wa: string; ok: boolean; error?: string }[] = [];
     for (const r of data.recipients) {
       if (done.has(r.wa)) { results.push({ wa: r.wa, ok: true }); continue; }
+      if (!allowed.has(r.wa)) { results.push({ wa: r.wa, ok: false, error: "This guest hasn't agreed to WhatsApp messages." }); continue; }
       const first = r.name.trim().split(/\s+/)[0] || "there";
       const sent = await sendTemplate(keys, { to: r.wa, template: data.template, language: data.language, bodyParams: data.params.map((p) => p.replace(/\{name\}/g, first)) });
       results.push(sent.ok ? { wa: r.wa, ok: true } : { wa: r.wa, ok: false, error: sent.error });
