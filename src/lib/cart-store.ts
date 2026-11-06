@@ -269,7 +269,7 @@ export function useCart(initialTableId?: string) {
   }, [activeOrder, tableId]);
 
   const totals = computeTotals(lines, discountPct, serviceChargePct, tax);
-  const submitted = submittedOverride?.orderUid === activeOrder?.uid
+  const submitted = submittedOverride !== null && submittedOverride.orderUid === activeOrder?.uid
     ? subtractSettledQuantities(submittedOverride.quantities, activeOrder?.kotSettledQty ?? {})
     : storedKots.length ? persistedEffectiveSubmitted : activeOrder?.kotSubmittedQty ?? {};
   const pendingKitchenLines = unsentKitchenLines(lines, submitted);
