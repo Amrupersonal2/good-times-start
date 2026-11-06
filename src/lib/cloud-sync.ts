@@ -132,6 +132,35 @@ export function isRefusal(error: { code?: string; message?: string } | null | un
  */
 type RefusedRow = PushRow & { prelaunch?: boolean };
 
+const UNNUMBERED = /Update the POS app before creating numbered records/i;
+
+/**
+ * An older counter version numbered some kitchen tickets itself; the cloud refuses
+ * those. Instead of dropping the printed ticket, give its whole submission a cloud
+ * number (keeping the printed one for reference) and re-queue it so it reaches history.
+ */
+async function renumberStuckKot(row: PushRow, message: string | undefined): Promise<boolean> {
+  if (row.kind !== "kot" || !UNNUMBERED.test(message ?? "")) return false;
+  try {
+    const db = getDb();
+    const local = await db.kots.where("uid").equals(row.record_id).first();
+    if (!local || local.id === undefined) return false;
+    const submissionId = local.submissionId && /^[0-9a-f-]{36}$/i.test(local.submissionId) ? local.submissionId : crypto.randomUUID();
+    const kotNo = await allocateRestaurantNumber("KOT", submissionId);
+    const siblings = local.submissionId
+      ? await db.kots.filter((k) => k.submissionId === local.submissionId).toArray()
+      : [local];
+    for (const k of siblings) {
+      if (k.id === undefined) continue;
+      await db.kots.put({ ...k, submissionId, numberRequestId: submissionId, kotNo, ...(k.kotNo && k.kotNo !== kotNo ? { printedKotNo: k.printedKotNo ?? k.kotNo } : {}) });
+    }
+    await markDirty(...siblings.map((k): [RecordKind, string] => ["kot", k.uid ?? ""]));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function upsertAllowed(rows: PushRow[]): Promise<RefusedRow[]> {
   const error = await upsert(rows);
   if (!error) return [];
@@ -141,6 +170,7 @@ async function upsertAllowed(rows: PushRow[]): Promise<RefusedRow[]> {
     const one = await upsert([row]);
     if (!one) continue;
     if (!isRefusal(one)) throw one;
+    if (await renumberStuckKot(row, one.message)) continue;
     // The launch cut-off refuses bills and tickets made before the restaurant launched.
     refused.push(/made before launch/i.test(one.message ?? "") ? { ...row, prelaunch: true } : row);
   }
@@ -262,6 +292,7 @@ async function pushVersioned(restaurantId: string, entries: OutboxEntry[], rows:
         break; // stays queued; retried with its unit
       case "error":
         if (!isRefusal(result)) throw Object.assign(new Error(result.message ?? "Sync failed"), { code: result.code });
+        if (sent && await renumberStuckKot(sent, result.message)) { done.add(key); break; }
         if (sent) refused.push(/made before launch/i.test(result.message ?? "") ? { ...sent, prelaunch: true } : sent);
         done.add(key);
         // A settlement unit is all-or-nothing: its stock entry and table go back to the cloud copy too.
