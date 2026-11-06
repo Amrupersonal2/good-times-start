@@ -23,7 +23,7 @@ export async function latestHeldOrder(tableId: string, side: BillSide = "staff")
 async function retargetKots(
   orderUid: string | undefined,
   to: RestaurantTable,
-  target?: { orderUid?: string; orderId?: number; billNo?: string },
+  target?: { orderUid?: string | undefined; orderId?: number | undefined; billNo?: string | undefined },
 ): Promise<[RecordKind, string][]> {
   if (!orderUid) return [];
   const db = getDb();
