@@ -80,7 +80,7 @@ export function useCart(initialTableId?: string) {
       : openOrder?.lines ?? []);
     setDiscountPct(draft?.discountPct ?? openOrder?.discountPct ?? 0);
     setServiceChargePct(openOrder?.serviceChargePct ?? 0);
-    setCustomer(openOrder?.customer ?? {});
+    setCustomer(draft?.customer ?? openOrder?.customer ?? {});
     setGuestCount(draft?.guestCount ?? openOrder?.guestCount);
     setActiveOrder(openOrder);
     if (id) setOrderType("dine-in");
@@ -92,7 +92,7 @@ export function useCart(initialTableId?: string) {
   useEffect(() => {
     if (!draftReady) return;
     const timeout = window.setTimeout(() => {
-      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, baseLines: activeOrder?.lines ?? [], lines, discountPct, guestCount, updatedAt: Date.now() });
+      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, baseLines: activeOrder?.lines ?? [], lines, discountPct, customer, guestCount, updatedAt: Date.now() });
       if (tableId && lines.length) {
         const total = computeTotals(lines, discountPct, serviceChargePct, tax).total;
         void getDb().restTables.get(tableId).then(async (table) => {
@@ -119,7 +119,7 @@ export function useCart(initialTableId?: string) {
     }, 150);
     return () => window.clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- tax is tracked by taxKey
-  }, [draftReady, tableId, lines, discountPct, guestCount, serviceChargePct, activeOrder?.uid, taxKey, myDevice, staffName]);
+  }, [draftReady, tableId, lines, discountPct, customer, guestCount, serviceChargePct, activeOrder?.uid, taxKey, myDevice, staffName]);
 
   // Who else is taking this table's first order, if anyone.
   const liveTable = useLiveQuery(async () => (tableId ? getDb().restTables.get(tableId) : undefined), [tableId]);
