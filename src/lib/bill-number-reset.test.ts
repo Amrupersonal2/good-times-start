@@ -13,10 +13,10 @@ describe("owner counter reset", () => {
     }
   });
   it("starts an empty counter at 0001", () => {
-    expect(billNumber(resetSequence(false) + 1, new Date(2026, 10, 6), "TBX")).toBe("TBX/26-27/0001");
+    expect(billNumber(resetSequence(false) + 1, new Date(2026, 10, 6), "TBX")).toBe("XTSY/TBX/0001");
   });
   it("keeps 0001 and starts the next bill at 0002", () => {
-    expect(billNumber(resetSequence(true), new Date(2026, 10, 6), "TBX")).toBe("TBX/26-27/0001");
-    expect(billNumber(resetSequence(true) + 1, new Date(2026, 10, 6), "TBX")).toBe("TBX/26-27/0002");
+    expect(billNumber(resetSequence(true), new Date(2026, 10, 6), "TBX")).toBe("XTSY/TBX/0001");
+    expect(billNumber(resetSequence(true) + 1, new Date(2026, 10, 6), "TBX")).toBe("XTSY/TBX/0002");
   });
 });
