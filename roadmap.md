@@ -1,5 +1,10 @@
 # POS expansion
 
+## Orders window
+- [ ] Hide unconnected aggregator entry buttons; keep historical bills.
+- [ ] Default to running bills; add dated bill/KOT/settled/cancelled history and preserve guest acceptance.
+- [ ] Verify history filters and running-bill opening.
+
 ## Device-local thermal printing
 - [x] Block incoming-order printing and unconfigured browser print dialogs; preserve local direct transports.
 - [x] Standardize thermal typography and preserve per-device 58/80 mm choices.
