@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSettledKitchenQuantities, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import type { CartLine } from "./types";
 
 const lines: CartLine[] = [
@@ -112,5 +112,18 @@ describe("KOT-backed submitted quantities", () => {
   it("subtracts cancellation tickets from the net submitted quantity", () => {
     const submitted = submittedQuantitiesFromKots([kot("order", "paneer", 3), kot("cancel", "paneer", 1)]);
     expect(submitted).toEqual({ paneer: 2 });
+  });
+
+  it("does not turn quantities allocated to a split bill into kitchen cancellations", () => {
+    const kots = [kot("order", "paneer", 3), kot("order", "naan", 2)];
+    const settled = { paneer: 1, naan: 2 };
+    const submitted = submittedQuantitiesFromKots(kots, settled);
+    expect(submitted).toEqual({ paneer: 2 });
+    expect(cancelledKitchenLines([{ ...lines[0], qty: 2 }], submitted, lines)).toEqual([]);
+    expect(unsentKitchenLines([{ ...lines[0], qty: 2 }], submitted)).toEqual([]);
+  });
+
+  it("subtracts split allocations safely when legacy order snapshots are used", () => {
+    expect(subtractSettledKitchenQuantities({ tea: 2, cake: 1 }, { tea: 1, cake: 3 })).toEqual({ tea: 1 });
   });
 });
