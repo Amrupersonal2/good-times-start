@@ -8,7 +8,7 @@ const byName = (name: string) => TAB_MENU.find((m) => m.name === name)!;
 
 describe("TAB Bistro menu", () => {
   it("has every dish from the printed menu", () => {
-    expect(TAB_MENU).toHaveLength(131);
+    expect(TAB_MENU).toHaveLength(139);
     expect(TAB_CATEGORIES).toHaveLength(23);
     expect(new Set(TAB_MENU.map((m) => m.id)).size).toBe(TAB_MENU.length);
   });
@@ -27,6 +27,16 @@ describe("TAB Bistro menu", () => {
     expect(byName("Chicken Butter Masala").price).toBe(340);
     expect(byName("Paneer Butter Masala").price).toBe(300);
     expect(byName("XTSY Chicken Biryani").price).toBe(280);
+    expect(byName("Fresh Lime").variants?.map((v) => v.price)).toEqual([120, 120]);
+    expect(byName("Fresh Lemon Soda").variants?.map((v) => v.price)).toEqual([140, 140]);
+    expect(byName("Choice of Ice Cream").variants?.map((v) => v.price)).toEqual([160, 160, 160]);
+    expect(byName("Puri Sabji").price).toBe(160);
+    expect(byName("Egg Dosa").price).toBe(160);
+    expect(byName("Masala Dosa").price).toBe(180);
+    expect(byName("Peri Peri Cheesy Fries").price).toBe(250);
+    expect(byName("Boiled Eggs (3 Eggs)").price).toBe(150);
+    expect(byName("Butter Bread Toast (3 Pcs)").price).toBe(150);
+    expect(byName("Veg/Chicken/Paneer Pakoda").variants?.map((v) => v.price)).toEqual([200, 200, 200]);
   });
 
   it("uses only known ingredients, in positive amounts", () => {
