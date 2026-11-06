@@ -65,16 +65,7 @@ export function kotsForDevice(kots: Kot[], config: PrintConfig): Kot[] {
  * (per kind, so a cancellation never prints on the same slip as new items).
  */
 export function kotPrintGroups(kots: Kot[], byStation: boolean): Kot[][] {
-  if (byStation) {
-    const groups = new Map<string, Kot[]>();
-    for (const kot of kots) {
-      const key = `${kot.kind === "cancel" ? "cancel" : "new"}:${kot.station || "Kitchen"}`;
-      const group = groups.get(key);
-      if (group) group.push(kot);
-      else groups.set(key, [kot]);
-    }
-    return [...groups.values()];
-  }
+  if (byStation) return kots.map((k) => [k]);
   const orders = kots.filter((k) => k.kind !== "cancel");
   const cancels = kots.filter((k) => k.kind === "cancel");
   return [orders, cancels].filter((g) => g.length);
@@ -95,7 +86,7 @@ export function printCss(paper: 58 | 80): string {
   body * { visibility: hidden; }
   #print-root, #print-root * { visibility: visible; }
   #print-root { position: absolute; left: 0; top: 0; width: ${content}mm; }
-  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0 0 4mm; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
+  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0 0 4mm; break-after: page; page-break-after: always; }
   #print-root .print-ticket:last-child { break-after: auto; page-break-after: auto; }
 }`;
 }

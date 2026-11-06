@@ -22,26 +22,6 @@ describe("printing", () => {
     expect(kotPrintGroups(kots, false).map((g) => g.map((k) => k.station))).toEqual([["Tandoor", "Chinese"], ["Chinese"]]);
   });
 
-  it("combines repeated KOTs for the same station into one ticket", () => {
-    const first = kot("Chinese");
-    const second = kot("Chinese");
-    const tandoor = kot("Tandoor");
-    expect(kotPrintGroups([first, tandoor, second], true)).toEqual([[first, second], [tandoor]]);
-  });
-
-  it("keeps cancellation tickets separate from new items at the same station", () => {
-    const order = kot("Chinese");
-    const cancellation = kot("Chinese", "cancel");
-    const secondCancellation = kot("Chinese", "cancel");
-    expect(kotPrintGroups([order, cancellation, secondCancellation], true)).toEqual([[order], [cancellation, secondCancellation]]);
-  });
-
-  it("groups unnamed stations under Kitchen", () => {
-    const unnamed = kot("");
-    const kitchen = kot("Kitchen");
-    expect(kotPrintGroups([unnamed, kitchen], true)).toEqual([[unnamed, kitchen]]);
-  });
-
   it("repeats documents for copies and sizes paper", () => {
     expect(withCopies(["a", "b"], 2)).toEqual(["a", "a", "b", "b"]);
     expect(withCopies(["a"], 0)).toEqual([]);
