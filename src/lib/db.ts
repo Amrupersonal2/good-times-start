@@ -162,6 +162,9 @@ class RestroDB extends Dexie {
       const levels = stockLevels(await tx.table<StockEntry, string>("stockEntries").toArray());
       await tx.table<{ materialId: string; qty: number }, string>("materialLevels").bulkPut([...levels].map(([materialId, qty]) => ({ materialId, qty })));
     });
+    this.version(8).stores({
+      orders: "++id, billNo, status, createdAt, settledAt, tableId, uid, customerId, [tableId+status]",
+    });
   }
 }
 

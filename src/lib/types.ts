@@ -69,7 +69,7 @@ export interface Order {
   tableId?: string | undefined;
   /** Table name as printed, e.g. "T4"; kept with the bill in case the table is renamed later. */
   tableLabel?: string | undefined;
-  tableSection?: string;
+  tableSection?: string | undefined;
   settledAt?: number;
   settledDeviceId?: string;
   lines: CartLine[];
@@ -150,7 +150,7 @@ export interface Kot {
   orderUid?: string;
   tableId?: string | undefined;
   tableLabel?: string | undefined;
-  tableSection?: string;
+  tableSection?: string | undefined;
   submissionId?: string;
   kotNo?: string;
   orderType?: OrderType;
