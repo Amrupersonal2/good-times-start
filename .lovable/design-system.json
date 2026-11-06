@@ -763,6 +763,17 @@
           "name": "onCloseAutoFocus",
           "type": "function"
         }
+      ],
+      "usage": "Use inside Dialog for a modal task. Outside-pointer dismissal preserves opener focus without scrolling; preventDefault on the outside event keeps the window open.",
+      "examples": [
+        {
+          "label": "Confirm an action",
+          "code": "<Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogTitle>Confirm cancellation</DialogTitle><DialogDescription>Review this action before continuing.</DialogDescription><Button onClick={confirm}>Confirm</Button></DialogContent></Dialog>"
+        }
+      ],
+      "antipatterns": [
+        "Do not replace the self-contained modal with Radix Presence.",
+        "Do not restore focus without preventScroll or intercept outside clicks without respecting preventDefault."
       ]
     },
     {
