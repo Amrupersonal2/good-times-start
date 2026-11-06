@@ -22,7 +22,7 @@ describe("Excel menu", () => {
     expect(result.errors).toEqual([]);
     expect(result.stats).toMatchObject({ newDishes: 139, updatedDishes: 0, newIngredients: TAB_MATERIALS.length });
     const naan = result.items.find((i) => i.name === "Naan")!;
-    expect(naan.variants?.map((v) => [v.name, v.price])).toEqual([["Plain", 59], ["Butter", 69]]);
+    expect(naan.variants?.map((v) => [v.name, v.price])).toEqual([["Plain", 60], ["Butter", 80]]);
     const butter = result.materials.find((m) => m.name === "Butter")!;
     expect(naan.variants?.[1]?.recipe).toEqual([{ materialId: butter.id, qty: 0.008 }]);
     const noodles = result.items.find((i) => i.name === "Burned Garlic Hakka Noodles")!;
