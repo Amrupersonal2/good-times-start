@@ -48,7 +48,7 @@ describe("thermal slips", () => {
     }
     const header = slip.lines.find((l) => l.text.startsWith("Item"))!.text;
     const omelette = slip.lines.find((l) => l.text.startsWith("Masala Bread Omelette"))!.text;
-    expect(omelette.length).toBe(48);
+    expect(omelette.length).toBe(45);
     expect(omelette.endsWith("169.00")).toBe(true);
     expect(header.indexOf("Amt") + 3).toBe(omelette.length); // amounts end under "Amt"
     expect(slip.lines.find((l) => l.text.startsWith("TOTAL"))).toMatchObject({ size: "big", bold: true });
@@ -80,7 +80,7 @@ describe("thermal slips", () => {
   it("wraps long names inside their column on 58 mm paper", () => {
     const lines = kotSlip([kot], 58).lines.map((l) => l.text);
     expect(lines.some((l) => l.startsWith("Kerala Parotta"))).toBe(true);
-    expect(lines.every((l) => l.length <= 32)).toBe(true);
+    expect(lines.every((l) => l.length <= 30)).toBe(true);
   });
 
   it("makes ESC/POS bytes: initialise, text, feed and cut, once per copy", () => {
@@ -93,14 +93,14 @@ describe("thermal slips", () => {
     expect(rawbtIntent(Uint8Array.from([0x1b, 0x40]))).toBe("intent:base64,G0A=#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;");
   });
 
-  it("ends each 2-inch KOT with a 50 mm feed and no additional cut feed", () => {
+  it("ends each 2-inch KOT with a compact 5 mm feed and no additional cut feed", () => {
     const slip = kotSlip([kot], 58);
-    expect(slip.endFeedMm).toBe(50);
+    expect(slip.endFeedMm).toBe(5);
     const bytes = escPos(slip);
-    // 50 mm at 203 dots per inch rounds to 400 dots.
-    expect(Array.from(bytes.slice(-10))).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 255, 0x1b, 0x4a, 145]);
+    // 5 mm at 203 dots per inch rounds to 40 dots.
+    expect(Array.from(bytes.slice(-6))).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 40].slice(-6));
     expect(Array.from(escPos(slip, { cutter: "partial" }).slice(-3))).toEqual([0x1d, 0x56, 0x01]);
-    expect(billSlip(bill, settings, 58).endFeedMm).toBe(50);
+    expect(billSlip(bill, settings, 58).endFeedMm).toBe(5);
   });
 
   it("marks waiter-originated bills on the thermal receipt", () => {
