@@ -32,6 +32,14 @@ describe("bill view", () => {
     ]);
   });
 
+  it("keeps cancellation slips separate from the original submission while retaining its KOT number", () => {
+    const base: Kot = { orderId: 1, orderUid: "order-1", submissionId: "send-10", kotNo: "KOT/0010", billNo: "POS/0001", station: "Kitchen", lines: [{ name: "Fries", qty: 1 }], status: "new", createdAt: 100 };
+    const cancel: Kot = { ...base, uid: "cancel", kind: "cancel", lines: [{ name: "Fries", qty: 1 }], createdAt: 200 };
+    const groups = sentGroups([base, cancel]);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((g) => [g.kotNo, g.cancel])).toEqual([["KOT/0010", false], ["KOT/0010", true]]);
+  });
+
   it("groups legacy station rows sent at the same timestamp when submission identity is unavailable", () => {
     const a: Kot = { orderId: 1, orderUid: "order-1", billNo: "POS/0001", station: "Kitchen", lines: [], status: "new", createdAt: 100 };
     const b: Kot = { ...a, station: "Continental" };
