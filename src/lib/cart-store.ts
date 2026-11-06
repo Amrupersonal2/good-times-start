@@ -291,7 +291,7 @@ export function useCart(initialTableId?: string) {
     const order: Order = withCustomerId(base
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
-          uid: newOrderUid, billNo: await newBillNumber(newOrderUid), orderType, tableId, tableLabel, lines: merged,
+          uid: newOrderUid, billNo: await newBillNumber(newOrderUid), numberRequestId: newOrderUid, orderType, tableId, tableLabel, lines: merged,
           ...(user?.login === "waiter" ? { source: "waiter" as const } : {}),
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
@@ -306,14 +306,17 @@ export function useCart(initialTableId?: string) {
     };
 
     let kots: Kot[] = [];
-    const submissionId = newUid();
+    const submissionKey = `pendingKotSubmission:${orderUid}`;
+    const existingSubmission = (await db.meta.get(submissionKey))?.value;
+    const submissionId = typeof existingSubmission === "string" ? existingSubmission : newUid();
+    if (typeof existingSubmission !== "string") await db.meta.put({ key: submissionKey, value: submissionId });
     const kotNo = await allocateRestaurantNumber("KOT", submissionId);
     await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
       const id = saved.id ?? Number(await db.orders.add(saved));
       saved.id = id;
       await db.orders.put(saved);
       const ticket = (kind: "order" | "cancel") => ([station, stationLines]: [string, CartLine[]]): Kot => ({
-        uid: newUid(), submissionId, kotNo, tableSection: saved.tableSection, orderId: id, orderUid, billNo: saved.billNo, station, kind, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
+        uid: newUid(), submissionId, numberRequestId: submissionId, kotNo, tableSection: saved.tableSection, orderId: id, orderUid, billNo: saved.billNo, station, kind, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
         lines: stationLines.map((line) => ({ itemId: line.itemId, name: line.name, qty: line.qty, note: line.note })),
         status: "new", createdAt: now,
       });
@@ -322,6 +325,7 @@ export function useCart(initialTableId?: string) {
         ...Array.from(kotGroups(pendingCancelLines), ticket("cancel")),
       ];
       await db.kots.bulkAdd(kots);
+      await db.meta.delete(submissionKey);
     });
     await markDirty(["order", orderUid], ...kots.map((kot): [RecordKind, string] => ["kot", kot.uid ?? ""]));
     if (allCancelled) {
@@ -385,6 +389,7 @@ export function useCart(initialTableId?: string) {
       ...(latest ?? ({} as Order)),
       uid: newOrderUid,
       billNo: latest?.billNo ?? await newBillNumber(newOrderUid),
+      numberRequestId: latest?.numberRequestId ?? (latest ? undefined : newOrderUid),
       orderType, tableId: tableId ?? latest?.tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines: billLines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
       serviceChargePct, serviceCharge: t.serviceCharge, cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
       taxable: t.taxable, tax,
