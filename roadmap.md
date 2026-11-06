@@ -5,7 +5,7 @@
 - [x] Add guest-only QR requests entry under Counter orders; preserve POS/waiter acceptance and admin-only controls.
 - [x] Remove builder cleanup diagnostics from staff Sync screens.
 - [x] Add Hotel declaration, stable device-bound Cash Counter, settled-day close accounting and dated close history.
-- [ ] Verify targeted regressions and signed-in counter workflow; publish and verify live when ready.
+- [ ] Complete published end-to-end verification after deployment: publishing scheduled, but fresh live check still serves the previous controls. Preview Reception Orders/QR/Cash Counter verified with zero runtime errors; 252 tests pass. No test sale or cash-close record created.
 - [x] Review completed security findings and verify existing staff access without broadening privileged roles; Reception and Waiter already active. Basic checks clear; deep scan retains the owner/manager campaign-recipient warning.
 
 ## Counter rollout and floor creation
