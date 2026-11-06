@@ -171,7 +171,7 @@ BEGIN
     FROM _tab_bistro_kot_map km
     LEFT JOIN _tab_bistro_pos_map pm
       ON pm.restaurant_id = km.restaurant_id
-     AND (pm.record_id = km.order_uid OR pm.old_bill_no = km.old_bill_no)
+     AND (pm.record_id = km.order_uid OR (nullif(km.order_uid, '') IS NULL AND pm.old_bill_no = km.old_bill_no))
     WHERE pm.record_id IS NULL
   ) THEN
     RAISE EXCEPTION 'A KOT submission has no mapped parent POS bill; refusing partial renumbering.';
@@ -190,7 +190,7 @@ SET payload = jsonb_set(
 FROM _tab_bistro_kot_map km
 JOIN _tab_bistro_pos_map pm
   ON pm.restaurant_id = km.restaurant_id
- AND (pm.record_id = km.order_uid OR pm.old_bill_no = km.old_bill_no)
+ AND (pm.record_id = km.order_uid OR (nullif(km.order_uid, '') IS NULL AND pm.old_bill_no = km.old_bill_no))
 WHERE rr.restaurant_id = km.restaurant_id
   AND rr.kind = 'kot'
   AND NOT rr.deleted
