@@ -42,8 +42,8 @@ describe("thermal slips", () => {
     const slip = billSlip(bill, settings, 80);
     const t = text(slip.lines);
     expect(slip.lines[0]).toMatchObject({ text: "TAB Bistro by XTSY", align: "center", bold: true, size: "big" });
-    for (const want of ["Mawdiangdiang, New Shillong Township", "Meghalaya 793018", "DINE IN", "Bill: SJT/26-27/0835", "Date: 02-06-2026 09:58 AM",
-      "Guest: Kalidhas/8714040109", "Cashier: Reception", "Table: Room 7A", "Flavour Food Fusion", "For Delivery / Table Booking", "WhatsApp: +91 8837317070"]) {
+    for (const want of ["Mawdiangdiang, New Shillong Township", "Meghalaya 793018", "DINE IN", "Bill: SJT/26-27/0835", "Date: 02-06-2026", "Time: 09:58 AM",
+      "Guest: Kalidhas/8714040109", "Cashier: Reception", "Table: Room 7A", "Thank you for visiting", "TAB Bistro by XTSY", "POS by XTSY"]) {
       expect(t).toContain(want);
     }
     const header = slip.lines.find((l) => l.text.startsWith("Item"))!.text;
@@ -55,6 +55,7 @@ describe("thermal slips", () => {
     expect(slip.lines.find((l) => l.text.startsWith("TOTAL"))!.text.trim().endsWith("208.00")).toBe(true);
     expect(t).toMatch(/Total qty\s+2/);
     expect(t).toMatch(/Paid by Cash\s+208\.00/);
+    expect(slip.bottomFeedMm).toBe(30);
     expect(t).not.toMatch(/CGST|SGST/); // GST registration pending: no tax lines
   });
 
@@ -70,10 +71,13 @@ describe("thermal slips", () => {
     expect(t).toContain("Running KOT");
     expect(slip.lines.find((l) => l.text === "DINE IN")).toMatchObject({ size: "big", bold: true });
     expect(slip.lines.find((l) => l.text === "TBL: D2")).toMatchObject({ size: "big", bold: true });
-    expect(t).toContain("Date: 03-10-2026  Time: 07:45 PM");
+    expect(t).toContain("Date: 03-10-2026");
+    expect(t).toContain("Time: 07:45 PM");
     expect(slip.lines.find((l) => l.text.startsWith("Chicken Burned Garlic"))).toMatchObject({ size: "tall", bold: true });
     expect(t).toContain("NOTE: less spicy");
     expect(t).toMatch(/Total Qty\s+2/);
+    expect(slip.topFeedMm).toBe(30);
+    expect(slip.bottomFeedMm).toBe(10);
     expect(text(kotSlip([{ ...kot, kind: "cancel" }], 80).lines)).toContain("CANCEL KOT");
   });
 
