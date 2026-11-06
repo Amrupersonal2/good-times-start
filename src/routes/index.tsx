@@ -18,7 +18,7 @@ import { BillSlipPreview } from "@/components/Slip";
 import { getDb, markDirty } from "@/lib/db";
 import { CATEGORIES } from "@/lib/seed";
 import { formatINR } from "@/lib/billing";
-import { useCart } from "@/lib/cart-store";
+import { kotsForOrder, useCart } from "@/lib/cart-store";
 import type { Kot, MenuItem, Order, OrderType, PaymentMode } from "@/lib/types";
 import { buildLine, needsOptions, orderCategories, outsideHours, priceFor, stockLeft } from "@/lib/menu-logic";
 import { toast } from "sonner";
