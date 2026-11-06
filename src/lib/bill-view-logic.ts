@@ -37,9 +37,9 @@ export function sentGroups(kots: Kot[]): SentGroup[] {
   for (const k of sorted) {
     const cancel = k.kind === "cancel";
     const submissionKey = k.submissionId
-      ? `submission:${k.submissionId}`
+      ? `submission:${k.submissionId}:${cancel ? "cancel" : "order"}`
       : k.kotNo
-        ? `number:${k.kotNo}`
+        ? `number:${k.kotNo}:${cancel ? "cancel" : "order"}`
         : `legacy:${k.orderUid ?? k.billNo}:${k.createdAt}:${cancel ? "cancel" : "order"}`;
     const group = groups.get(submissionKey);
 
