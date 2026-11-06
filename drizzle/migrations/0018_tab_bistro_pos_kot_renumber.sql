@@ -80,12 +80,13 @@ WITH kot_groups AS (
         THEN (rr.payload->>'createdAt')::numeric
         ELSE extract(epoch FROM rr.updated_at) * 1000
       END
-    ) AS created_order
+    ) AS created_order,
+    min(rr.payload->>'orderUid') AS order_uid,
+    min(rr.payload->>'billNo') AS old_bill_no
   FROM public.restaurant_records rr
   JOIN _tab_bistro_target target ON target.id = rr.restaurant_id
   WHERE rr.kind = 'kot'
     AND NOT rr.deleted
-    AND rr.payload->>'status' = 'new'
     AND EXISTS (
       SELECT 1 FROM public.restaurant_records running_order
       WHERE running_order.restaurant_id = rr.restaurant_id
@@ -105,6 +106,8 @@ WITH kot_groups AS (
 SELECT
   restaurant_id,
   group_key,
+  order_uid,
+  old_bill_no,
   row_number() OVER (ORDER BY created_order, group_key)::bigint AS sequence_number,
   'KOT/' || lpad(row_number() OVER (ORDER BY created_order, group_key)::text, 4, '0') AS new_kot_no,
   md5(restaurant_id::text || ':KOT:' || group_key)::uuid AS request_id
@@ -123,38 +126,53 @@ WHERE rr.restaurant_id = m.restaurant_id
   AND rr.kind = 'order'
   AND rr.record_id = m.record_id;
 
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM public.restaurant_records kot
+    JOIN _tab_bistro_target target ON target.id = kot.restaurant_id
+    WHERE kot.kind = 'kot'
+      AND NOT kot.deleted
+      AND coalesce(kot.payload->>'tableLabel', '') <> 'QAF1'
+      AND coalesce(kot.payload->>'tableId', '') <> 'QAF1'
+      AND lower(coalesce(kot.payload->>'tableSection', '')) <> 'floor verification'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.restaurant_records running_order
+        WHERE running_order.restaurant_id = kot.restaurant_id
+          AND running_order.kind = 'order'
+          AND NOT running_order.deleted
+          AND running_order.payload->>'status' = 'held'
+          AND running_order.record_id = kot.payload->>'orderUid'
+      )
+  ) THEN
+    RAISE EXCEPTION 'Found an active genuine KOT without a matching held bill; reconcile it before renumbering.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM _tab_bistro_kot_map km
+    LEFT JOIN _tab_bistro_pos_map pm
+      ON pm.restaurant_id = km.restaurant_id
+     AND (pm.record_id = km.order_uid OR pm.old_bill_no = km.old_bill_no)
+    WHERE pm.record_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'A KOT submission has no mapped parent POS bill; refusing partial renumbering.';
+  END IF;
+END;
+$;
+
 UPDATE public.restaurant_records rr
 SET payload = jsonb_set(
   jsonb_set(
     jsonb_set(rr.payload, '{kotNo}', to_jsonb(km.new_kot_no), true),
     '{numberRequestId}', to_jsonb(km.request_id::text), true
   ),
-  '{billNo}',
-  to_jsonb(coalesce(parent.new_bill_no, rr.payload->>'billNo')),
-  true
+  '{billNo}', to_jsonb(pm.new_bill_no), true
 )
 FROM _tab_bistro_kot_map km
-LEFT JOIN LATERAL (
-  SELECT p.new_bill_no
-  FROM _tab_bistro_pos_map p
-  WHERE p.restaurant_id = km.restaurant_id
-    AND (p.record_id = (SELECT r.payload->>'orderUid'
-                        FROM public.restaurant_records r
-                        WHERE r.restaurant_id = km.restaurant_id
-                          AND r.kind = 'kot'
-                          AND coalesce(nullif(r.payload->>'submissionId', ''),
-                            'legacy:' || coalesce(r.payload->>'orderUid', '') || ':' || coalesce(r.payload->>'createdAt', '')) = km.group_key
-                        LIMIT 1)
-         OR p.old_bill_no = (SELECT r.payload->>'billNo'
-                             FROM public.restaurant_records r
-                             WHERE r.restaurant_id = km.restaurant_id
-                               AND r.kind = 'kot'
-                               AND coalesce(nullif(r.payload->>'submissionId', ''),
-                                 'legacy:' || coalesce(r.payload->>'orderUid', '') || ':' || coalesce(r.payload->>'createdAt', '')) = km.group_key
-                             LIMIT 1))
-  ORDER BY p.sequence_number
-  LIMIT 1
-) parent ON true
+JOIN _tab_bistro_pos_map pm
+  ON pm.restaurant_id = km.restaurant_id
+ AND (pm.record_id = km.order_uid OR pm.old_bill_no = km.old_bill_no)
 WHERE rr.restaurant_id = km.restaurant_id
   AND rr.kind = 'kot'
   AND NOT rr.deleted
