@@ -278,23 +278,31 @@ WHERE k.restaurant_id = m.restaurant_id
   AND coalesce(nullif(k.payload->>'submissionId', ''),
     'legacy:' || coalesce(k.payload->>'orderUid', '') || ':' || coalesce(k.payload->>'createdAt', '')) = m.group_key;
 
--- Persist allocator receipts for any legacy records just upgraded. The
--- high-water marks never move backwards and canonical existing numbers survive.
+-- Rebuild receipts for the active bills/submissions being reconciled.
+-- Delete only allocations for the exact sequences represented by these active
+-- records, then restore their deterministic request IDs. This also repairs a
+-- canonical bill/KOT whose receipt row was missing.
+DELETE FROM public.restaurant_number_allocations a
+USING _tab_bistro_reconcile_orders m
+WHERE a.restaurant_id = m.restaurant_id
+  AND a.series = 'POS'
+  AND a.sequence_number = m.sequence_number;
+
 INSERT INTO public.restaurant_number_allocations
   (restaurant_id, series, request_id, sequence_number)
 SELECT restaurant_id, 'POS', request_id, sequence_number
-FROM _tab_bistro_reconcile_orders
-WHERE old_bill_no !~ '^POS/[0-9]{4,}$'
-ON CONFLICT (restaurant_id, series, request_id)
-DO UPDATE SET sequence_number = EXCLUDED.sequence_number;
+FROM _tab_bistro_reconcile_orders;
+
+DELETE FROM public.restaurant_number_allocations a
+USING _tab_bistro_reconcile_kots m
+WHERE a.restaurant_id = m.restaurant_id
+  AND a.series = 'KOT'
+  AND a.sequence_number = m.sequence_number;
 
 INSERT INTO public.restaurant_number_allocations
   (restaurant_id, series, request_id, sequence_number)
 SELECT restaurant_id, 'KOT', request_id, sequence_number
-FROM _tab_bistro_reconcile_kots
-WHERE existing_kot_no IS NULL
-ON CONFLICT (restaurant_id, series, request_id)
-DO UPDATE SET sequence_number = EXCLUDED.sequence_number;
+FROM _tab_bistro_reconcile_kots;
 
 INSERT INTO public.restaurant_number_sequences (restaurant_id, series, last_sequence)
 SELECT
