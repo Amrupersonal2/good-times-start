@@ -47,7 +47,7 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
-  IF _series NOT IN ('POS', 'KOT') OR _request_id IS NULL THEN
+  IF _series IS NULL OR _series NOT IN ('POS', 'KOT') OR _request_id IS NULL THEN
     RAISE EXCEPTION 'Invalid numbering request.';
   END IF;
 
@@ -63,14 +63,14 @@ BEGIN
     AND request_id = _request_id;
 
   IF allocated IS NOT NULL THEN
-    RETURN _series || '/' || lpad(allocated::text, 4, '0');
+    RETURN _series || '/' || CASE WHEN allocated < 10000 THEN lpad(allocated::text, 4, '0') ELSE allocated::text END;
   END IF;
 
-  INSERT INTO public.restaurant_number_sequences (restaurant_id, series, last_sequence)
+  INSERT INTO public.restaurant_number_sequences AS seq (restaurant_id, series, last_sequence)
   VALUES (_restaurant_id, _series, 1)
   ON CONFLICT (restaurant_id, series)
   DO UPDATE SET
-    last_sequence = public.restaurant_number_sequences.last_sequence + 1,
+    last_sequence = seq.last_sequence + 1,
     updated_at = clock_timestamp()
   RETURNING last_sequence INTO allocated;
 
@@ -78,7 +78,7 @@ BEGIN
     (restaurant_id, series, request_id, sequence_number)
   VALUES (_restaurant_id, _series, _request_id, allocated);
 
-  RETURN _series || '/' || lpad(allocated::text, 4, '0');
+  RETURN _series || '/' || CASE WHEN allocated < 10000 THEN lpad(allocated::text, 4, '0') ELSE allocated::text END;
 END;
 $$;
 
