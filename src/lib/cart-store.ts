@@ -55,7 +55,7 @@ export function useCart(initialTableId?: string) {
   const [guestCount, setGuestCount] = useState<number | undefined>();
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [submittedOverride, setSubmittedOverride] = useState<{ orderUid: string; quantities: Record<string, number> } | null>(null);
-  const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : getDb().kots.where("orderId").equals(activeOrder.id).toArray(), [activeOrder?.id], [] as Kot[]);
+  const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : kotsForOrder(activeOrder.id, activeOrder.uid), [activeOrder?.id, activeOrder?.uid], [] as Kot[]);
   const persistedSubmitted = submittedQuantitiesFromKots(storedKots);
   const persistedEffectiveSubmitted = subtractSettledQuantities(persistedSubmitted, activeOrder?.kotSettledQty ?? {});
   useEffect(() => {
@@ -307,7 +307,7 @@ export function useCart(initialTableId?: string) {
     // Saved kitchen tickets are the evidence of what reached the kitchen — the same rule
     // the screen uses to show "not sent". The bill's own counter can be ahead of the
     // tickets (a ticket the cloud refused), which used to make KOT send nothing.
-    const baseKots = base?.id !== undefined ? await db.kots.where("orderId").equals(base.id).toArray() : [];
+    const baseKots = base?.id !== undefined ? await kotsForOrder(base.id, base.uid) : [];
     const baseRawSubmitted = baseKots.length ? submittedQuantitiesFromKots(baseKots) : base?.kotSubmittedQty ?? {};
     const baseSubmitted = baseKots.length
       ? subtractSettledQuantities(baseRawSubmitted, base?.kotSettledQty ?? {})
