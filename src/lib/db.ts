@@ -3,6 +3,7 @@ import type { CartDraft, Customer, DayClose, InventoryItem, Kot, Material, MenuI
 import { SEED_MENU, SEED_TABLES } from "./seed";
 import { normalisePhone } from "./customer-logic";
 import { stockLevels } from "./stock-logic";
+import { financialYear } from "./billing";
 import {
   SETTINGS_RECORD_ID,
   legacyKotUid,
@@ -221,7 +222,10 @@ export async function markDirty(...changes: [RecordKind, string][]): Promise<voi
 export async function getDeviceCode(): Promise<string> {
   const db = getDb();
   const stored = (await db.meta.get("deviceCode"))?.value;
-  if (typeof stored === "string" && stored) return stored;
+  if (typeof stored === "string" && stored) {
+    const mapped = (await db.meta.get(`billSeries:${stored}:${financialYear(new Date())}`))?.value;
+    return typeof mapped === "string" && mapped ? mapped : stored;
+  }
   const code = randomDeviceCode();
   await db.meta.put({ key: "deviceCode", value: code });
   return code;
@@ -243,9 +247,13 @@ export async function setDeviceCode(code: string): Promise<void> {
 
 export async function nextSeq(): Promise<number> {
   const db = getDb();
-  return db.transaction("rw", db.meta, async () => {
+  const code = await getDeviceCode();
+  const prefix = `${code}/${financialYear(new Date())}/`;
+  return db.transaction("rw", db.meta, db.orders, async () => {
     const stored = (await db.meta.get("billSeq"))?.value;
-    const cur = typeof stored === "number" ? stored : 0;
+    const used = await db.orders.where("billNo").startsWith(prefix).toArray();
+    const floor = used.reduce((n, order) => Math.max(n, Number(order.billNo.slice(prefix.length)) || 0), 0);
+    const cur = Math.max(typeof stored === "number" ? stored : 0, floor);
     await db.meta.put({ key: "billSeq", value: cur + 1 });
     return cur + 1;
   });
