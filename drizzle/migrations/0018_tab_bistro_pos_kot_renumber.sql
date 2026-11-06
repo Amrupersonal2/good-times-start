@@ -141,6 +141,18 @@ BEGIN
       AND coalesce(kot.payload->>'tableId', '') <> 'QAF1'
       AND lower(coalesce(kot.payload->>'tableSection', '')) <> 'floor verification'
       AND NOT EXISTS (
+        SELECT 1 FROM public.restaurant_records qaf_order
+        WHERE qaf_order.restaurant_id = kot.restaurant_id
+          AND qaf_order.kind = 'order'
+          AND qaf_order.payload->>'status' = 'held'
+          AND qaf_order.record_id = kot.payload->>'orderUid'
+          AND (
+            coalesce(qaf_order.payload->>'tableLabel', '') = 'QAF1'
+            OR coalesce(qaf_order.payload->>'tableId', '') = 'QAF1'
+            OR lower(coalesce(qaf_order.payload->>'tableSection', '')) = 'floor verification'
+          )
+      )
+      AND NOT EXISTS (
         SELECT 1 FROM public.restaurant_records running_order
         WHERE running_order.restaurant_id = kot.restaurant_id
           AND running_order.kind = 'order'
