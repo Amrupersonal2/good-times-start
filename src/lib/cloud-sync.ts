@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { allocateRestaurantNumber } from "@/lib/restaurant-numbering";
 import { SyncScheduler } from "./sync-scheduler";
 import type { Json } from "@/integrations/supabase/types";
 import { applyEntryToLevels, getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
