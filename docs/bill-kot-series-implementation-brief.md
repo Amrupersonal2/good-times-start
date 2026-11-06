@@ -15,7 +15,7 @@
 - Database record store: `public.restaurant_records`
 - Inspection date recorded in the prior work: 2026-11-06 (Asia/Kolkata)
 
-The prior live-data inspection found three genuine active held orders, all unpaid, and no active settled orders at the time of inspection. It also found one QAF1 test order and its linked kitchen tickets. Treat these as a point-in-time snapshot, not a guarantee that the live database remains unchanged. The migration must re-check all assumptions immediately before modifying data.
+The latest live-data inspection on 2026-11-06 found four active held orders, all unpaid, and no active settled orders: the three genuine held bills plus the QAF1 test order. This is a point-in-time snapshot. It also found one QAF1 test order and its linked kitchen tickets. Treat these as a point-in-time snapshot, not a guarantee that the live database remains unchanged. The migration must re-check all assumptions immediately before modifying data.
 
 ## Desired numbering state
 
@@ -43,7 +43,7 @@ The QAF1 table was used intentionally for live testing. The inspected QA order U
 
 `3f1d03f2-318b-4ebe-8f18-1c7281dab4b2`
 
-The inspection found 10 linked KOT station rows across 3 submissions. Soft-delete the QAF1 order and all its linked KOT rows from active shared records. Keep the QAF1 table definition, but reset its operational state to free, with running total zero and no active `since` value.
+The latest live inspection on 2026-11-06 found 10 linked active KOT station rows across 4 submissions (createdAt groups 1793957031061, 1793963923768, 1793964608322, and 1793966740818). This supersedes the earlier 3-submission snapshot. Soft-delete the QAF1 order and all its linked KOT rows from active shared records. Keep the QAF1 table definition, but reset its operational state to free, with running total zero and no active `since` value.
 
 Do not delete unrelated records. Do not hard-delete the QA records; preserve tombstones for sync convergence and auditability.
 
@@ -92,3 +92,17 @@ Do not delete unrelated records. Do not hard-delete the QA records; preserve tom
 - Repeated request keys return the same allocation.
 - All terminals converge on the same canonical bill/KOT identifiers.
 - Tests and build pass, with results documented in the pull request.
+
+
+## Latest preflight refresh (2026-11-06)
+
+The Lovable project's connected Supabase database was queried directly. The restaurant ID resolves to TAB Bistro by XTSY. Current active state at inspection:
+
+- Active orders: 4; held: 4; settled: 0.
+- Genuine held orders remain the three expected identities and bill numbers.
+- QAF1 order remains held, unpaid, with bill D1/26-27/0010.
+- Active KOT rows: 24 total; genuine: 14 rows across 7 logical submissions; QAF1: 10 rows across 4 logical submissions.
+- QAF1 table remains billed with running total ₹3,119 and a populated since value.
+- QAF1's 4 submission timestamps are 1793957031061, 1793963923768, 1793964608322 and 1793966740818.
+
+The updated guarded cleanup migration must require exactly these counts and identities. Do not execute the cleanup until the application allocator change is deployed, and re-run the same preflight immediately before applying it.
