@@ -35,6 +35,7 @@ import { getDeviceId } from "@/lib/terminal-actions";
 import { counterPayments, counterCanClose } from "@/lib/counter-logic";
 import { dateLabel, dayBounds } from "@/lib/orders-history";
 import { useDeviceCode } from "@/lib/use-device-code";
+import { reportOrders } from "@/lib/report-orders";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -248,7 +249,7 @@ function DayCloseTab() {
   const { user } = useStaff();
   const today = dayKey(Date.now());
   const myCode = useDeviceCode();
-  const allOrders = useLiveQuery(() => getDb().orders.toArray(), [], []);
+  const allOrders = useLiveQuery(async () => [...await reportOrders(presetRange("today")), ...await getDb().orders.where("status").equals("held").toArray()], [], []);
   const todays = counterPayments(allOrders, presetRange("today"), deviceId, myCode);
   const closes = useLiveQuery(() => getDb().dayCloses.where("day").equals(historyDate).toArray(), [historyDate], []);
   const chosen = myCode;
@@ -345,7 +346,7 @@ function ReportsPage() {
   };
   const showDates = full || tab === "summary";
   const range = preset === "custom" ? custom : presetRange(preset);
-  const all = useLiveQuery(() => getDb().orders.where("createdAt").between(range.from, range.to, true, true).toArray(), [range.from, range.to], []);
+  const all = useLiveQuery(() => reportOrders(range), [range.from, range.to], []);
   const orders = inRange(all, range);
   const restaurant = useRestaurantSettings().name;
   const exportAll = async () => {

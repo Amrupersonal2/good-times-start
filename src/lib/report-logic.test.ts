@@ -14,6 +14,11 @@ const b = order({ billNo: "INV/26-27/C2/0001", orderType: "takeaway", lines: [li
 const v = order({ status: "void", lines: [line("Naan", 60, 1)], total: 63, closedBy: "Arun" });
 
 describe("reports", () => {
+  it("reports a room bill on its settlement day after a 28-day stay", () => {
+    const at = new Date(2026, 10, 6, 12).getTime();
+    const room = order({ createdAt: at - 28 * 86400000, settledAt: at, total: 539, payments: [{ mode: "cash", amount: 539 }] });
+    expect(salesSummary(inRange([room], { from: at - 1, to: at + 1 })).byPayment).toEqual({ cash: 539 });
+  });
   it("summarises sales and keeps voids out", () => {
     const s = salesSummary([a, b, v]);
     expect(s).toMatchObject({ bills: 2, gross: 480, discounts: 6, net: 537, average: 268.5, voids: 1, voidValue: 63 });
