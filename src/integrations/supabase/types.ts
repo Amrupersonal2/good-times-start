@@ -637,6 +637,76 @@ export type Database = {
           },
         ]
       }
+      restaurant_void_approvals: {
+        Row: {
+          bill_uid: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          bill_uid: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          bill_uid?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          restaurant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_void_approvals_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_void_totp: {
+        Row: {
+          created_at: string
+          created_by: string
+          enabled: boolean
+          restaurant_id: string
+          secret: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          enabled?: boolean
+          restaurant_id: string
+          secret: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          enabled?: boolean
+          restaurant_id?: string
+          secret?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_void_totp_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           account_id: string | null
@@ -807,6 +877,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _void_totp_code: {
+        Args: { _secret: string; _step: number }
+        Returns: string
+      }
       accept_restaurant_invites: { Args: never; Returns: undefined }
       account_feature: {
         Args: { _account: string; _feature: string }
@@ -857,6 +931,7 @@ export type Database = {
         Returns: string
       }
       create_restaurant: { Args: { _name: string }; Returns: string }
+      get_void_approval_code: { Args: never; Returns: Json }
       guest_order_marketing: {
         Args: {
           _id: string
@@ -960,6 +1035,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      setup_void_approval_code: { Args: never; Returns: Json }
       slugify: { Args: { _text: string }; Returns: string }
       touch_terminal: {
         Args: {
@@ -981,6 +1057,10 @@ export type Database = {
           _phone: string
         }
         Returns: undefined
+      }
+      verify_void_approval_code: {
+        Args: { _bill_uid: string; _code: string; _restaurant_id: string }
+        Returns: boolean
       }
     }
     Enums: {

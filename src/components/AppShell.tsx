@@ -163,7 +163,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         : <Button size="sm" variant="ghost" onClick={() => void navigate({ to: "/auth" })}><LogIn />Sign in</Button>}
     </div>
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); statusButton.current?.focus(); }}>
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" onCloseAutoFocus={(event) => { event.preventDefault(); statusButton.current?.focus({ preventScroll: true }); }}>
         {/* The dialog's own ✕ closes it; a second Close button sat on top of it. */}
         <div className="pr-8">
           <DialogTitle>Sync</DialogTitle>

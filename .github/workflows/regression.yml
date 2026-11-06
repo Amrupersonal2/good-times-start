@@ -21,12 +21,16 @@ concurrency:
   group: regression-${{ github.ref }}
   cancel-in-progress: true
 
+# The regression workflow only needs to read the repository.
+# Reports are uploaded as artifacts; it must not create/push result branches.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Pin to a Playwright-supported runner image; ubuntu-latest moved to 26.04,
+    # which Playwright 1.56 does not support yet.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -37,12 +41,29 @@ jobs:
         run: |
           bun add -d @playwright/test@1.56.0 jsqr@1.4.0 pngjs@7.0.0 @types/pngjs@6.0.5
           bunx playwright install --with-deps chromium
+      - name: Check E2E Supabase configuration
+        id: e2e_config
+        run: |
+          if [ -n "$VITE_SUPABASE_URL" ] && [ -n "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Authenticated browser regression is enabled."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping authenticated browser regression: configure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY repository Actions secrets to enable it."
+          fi
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Production build
         run: bunx vite build
+        env:
+          # Build-only placeholders; authenticated browser tests use real secrets.
+          VITE_SUPABASE_URL: https://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: e2e-build-placeholder
       - name: Unit and sync tests
         run: bunx vitest run --exclude "e2e/**" --exclude "src/test/app-routing.test.tsx"
-        continue-on-error: true
       - name: Browser regression
+        if: steps.e2e_config.outputs.enabled == 'true'
         run: |
           set -o pipefail
           bunx playwright test -c e2e/regression.config.ts ${{ inputs.grep && format('--grep "{0}"', inputs.grep) || '' }} 2>&1 | tee e2e-log.txt
@@ -52,26 +73,22 @@ jobs:
           XTSY_WAITER_PASSWORD: ${{ secrets.XTSY_WAITER_PASSWORD }}
           LIVE_ORDER: ${{ inputs.live_order && '1' || '' }}
           BASE_URL: ${{ inputs.base_url }}
+          # First-time sign-in must reach the real Supabase Auth + database APIs.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Report skipped browser regression
+        if: steps.e2e_config.outputs.enabled != 'true'
+        run: echo "Authenticated Playwright tests were skipped because Supabase Actions secrets are not configured. Unit/sync tests and build still ran." >> "$GITHUB_STEP_SUMMARY"
       - name: Summary
-        if: always()
+        if: always() && steps.e2e_config.outputs.enabled == 'true'
         run: |
-          node e2e/summary.mjs > summary.md || echo "No results were produced." > summary.md
+          if [ -f e2e-results.json ]; then
+            node e2e/summary.mjs > summary.md || echo "Could not generate summary." > summary.md
+            node e2e/extract.mjs || true
+          else
+            echo "No Playwright results were produced (setup or test execution failed)." > summary.md
+          fi
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
-          node e2e/extract.mjs || true
-      - name: Publish results to a branch (readable without downloading artifacts)
-        if: always()
-        run: |
-          mkdir -p /tmp/out && cp summary.md /tmp/out/ && cp -r e2e-out/* /tmp/out/ 2>/dev/null || true
-          tail -c 200000 e2e-log.txt > /tmp/out/log.txt 2>/dev/null || true
-          ls -la > /tmp/out/files.txt
-          git config user.name "regression-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan "regression/run-${GITHUB_RUN_ID}"
-          git rm -rf -q . && git clean -fdq -e node_modules
-          cp -r /tmp/out/* .
-          git add -A
-          git commit -qm "Regression results for ${GITHUB_SHA::7} (run ${GITHUB_RUN_ID})"
-          git push -q origin "regression/run-${GITHUB_RUN_ID}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -79,4 +96,8 @@ jobs:
           path: |
             e2e-report
             e2e-results.json
+            e2e-out
+            e2e-log.txt
+            summary.md
+          if-no-files-found: ignore
           retention-days: 14

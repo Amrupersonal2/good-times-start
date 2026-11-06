@@ -51,7 +51,7 @@ for (const bp of BREAKPOINTS) {
       await page.addInitScript(quiet);
       const seen = watch(page);
       await page.goto("/auth");
-      await audit(page, info, `${bp.name}-auth-choose-app`, seen, "Choose your app");
+      await audit(page, info, `${bp.name}-auth-choose-app`, seen, "Choose your screen");
       // The first click can land before the page is interactive on a cold server; retry it.
       await expect(async () => {
         await page.getByRole("radio", { name: /POS Business Manager/ }).click();

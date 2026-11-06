@@ -1,5 +1,10 @@
 # POS expansion
 
+## Restore merged GitHub fixes (#24–33)
+- [x] Restore missing merged code and CI changes; exclude unmerged #34 and preserve numbering.
+- [x] Apply membership and paid-bill approval safeguards to Lovable Cloud.
+- [x] Run regression tests and signed-in preview checks (238 tests; Sync close/Escape/outside and sign-in links).
+
 ## Counter bill numbering
 - [ ] Add owner-authorized reset with collision protection and durable counter series metadata.
 - [ ] Rename the retained bill and linked references to TBX/26-27/0001; next number 0002.

@@ -98,14 +98,26 @@ beforeEach(() => {
   ];
   delete process.env["WHATSAPP_ACCESS_TOKEN"];
   delete process.env["WHATSAPP_OTP_TEMPLATE"];
-  delete process.env["XTSY_INITIAL_PASSWORD"];
+  process.env["XTSY_INITIAL_PASSWORD"] = "Test-only-Initial-2026!";
 });
 
 describe("internal logins on the server", () => {
+  it("refuses provisioning without a configured initial password", async () => {
+    delete process.env["XTSY_INITIAL_PASSWORD"];
+    await expect(server.ensureLogins()).rejects.toThrow(/at least 12 characters/);
+    expect(users).toHaveLength(0);
+  });
+
+  it("refuses provisioning with an initial password shorter than 12 characters", async () => {
+    process.env["XTSY_INITIAL_PASSWORD"] = "Short-123";
+    await expect(server.ensureLogins()).rejects.toThrow(/at least 12 characters/);
+    expect(users).toHaveLength(0);
+  });
+
   it("creates the three logins once, confirmed, with the first password, and links them with their roles", async () => {
     expect(await server.ensureLogins()).toEqual({ created: 3 });
     expect(users.map((u) => [u.email, u.password, u.confirmed])).toEqual([
-      ["admin@xtsy.pos", "Xtsy123$$", true], ["billdesk@xtsy.pos", "Xtsy123$$", true], ["waiter@xtsy.pos", "Xtsy123$$", true],
+      ["admin@xtsy.pos", "Test-only-Initial-2026!", true], ["billdesk@xtsy.pos", "Test-only-Initial-2026!", true], ["waiter@xtsy.pos", "Test-only-Initial-2026!", true],
     ]);
     expect(db["restaurant_members"]?.map((m) => m["role"])).toEqual(["owner", "cashier", "captain"]);
     // Calling again changes nothing, and never resets a password.
