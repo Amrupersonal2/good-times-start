@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { billSlip, columnsFor, type Slip } from "@/lib/slip";
+import { billSlip, type Slip } from "@/lib/slip";
 import { usePrintConfig } from "@/lib/print-config";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import type { Order } from "@/lib/types";

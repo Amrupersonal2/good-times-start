@@ -158,7 +158,8 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   L.push(rule(cols));
   const when = dateTime(first.createdAt);
   L.push({ text: plain(`Bill: ${first.billNo}`) });
-  for (const t of wrap(`Date: ${when.date}  Time: ${when.time}`, cols)) L.push({ text: t });
+  const stamp = `Date: ${when.date}  Time: ${when.time}`;
+  for (const t of stamp.length <= cols ? [stamp] : wrap(stamp, cols)) L.push({ text: t });
   L.push(rule(cols));
   const qtyW = 5;
   let total = 0;
