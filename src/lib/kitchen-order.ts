@@ -115,7 +115,14 @@ export function guestDetailsError(customer: { name?: string; phone?: string }, g
  * submitted quantities from them so a newly printed ticket immediately clears
  * the unsent section even if an older order snapshot has stale kotSubmittedQty.
  */
-export function submittedQuantitiesFromKots(kots: Kot[]): Record<string, number> {
+export function subtractSettledKitchenQuantities(submitted: Record<string, number>, settled: Record<string, number> = {}): Record<string, number> {
+  return Object.fromEntries(Object.entries(submitted).flatMap(([itemId, qty]) => {
+    const remaining = Math.max(0, qty - (settled[itemId] ?? 0));
+    return remaining > 0 ? [[itemId, remaining]] : [];
+  }));
+}
+
+export function submittedQuantitiesFromKots(kots: Kot[], settled: Record<string, number> = {}): Record<string, number> {
   const submitted: Record<string, number> = {};
   for (const kot of kots) {
     for (const line of kot.lines) {
@@ -124,5 +131,5 @@ export function submittedQuantitiesFromKots(kots: Kot[]): Record<string, number>
       submitted[line.itemId] = Math.max(0, (submitted[line.itemId] ?? 0) + sign * line.qty);
     }
   }
-  return Object.fromEntries(Object.entries(submitted).filter(([, qty]) => qty > 0));
+  return subtractSettledKitchenQuantities(submitted, settled);
 }
