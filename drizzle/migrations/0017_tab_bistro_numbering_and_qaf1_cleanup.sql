@@ -232,12 +232,9 @@ BEGIN
 
   UPDATE public.restaurant_records
   SET payload = jsonb_set(
-    jsonb_set(
-      jsonb_set(payload, '{status}', to_jsonb('free'::text)),
-      '{runningTotal}', to_jsonb(0)
-    ),
-    '{since}', 'null'::jsonb
-  )
+    jsonb_set(payload, '{status}', to_jsonb('free'::text)),
+    '{runningTotal}', to_jsonb(0)
+  ) - 'since'
   WHERE restaurant_id = '66c66ac4-efce-492b-b709-1c2b38d9cd78'
     AND kind = 'table' AND record_id = 'QAF1' AND NOT deleted;
 
