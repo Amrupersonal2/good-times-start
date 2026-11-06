@@ -1,9 +1,9 @@
 # POS expansion
 
 ## Restore merged GitHub fixes (#24–33)
-- [ ] Restore missing merged code and CI changes; exclude unmerged #34 and preserve numbering.
-- [ ] Apply membership and paid-bill approval safeguards to Lovable Cloud.
-- [ ] Run regression tests and signed-in preview checks.
+- [x] Restore missing merged code and CI changes; exclude unmerged #34 and preserve numbering.
+- [x] Apply membership and paid-bill approval safeguards to Lovable Cloud.
+- [x] Run regression tests and signed-in preview checks (238 tests; Sync close/Escape/outside and sign-in links).
 
 ## Counter bill numbering
 - [ ] Add owner-authorized reset with collision protection and durable counter series metadata.
