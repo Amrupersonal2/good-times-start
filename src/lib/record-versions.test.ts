@@ -21,6 +21,20 @@ describe("mergeLines", () => {
   it("flags edit-vs-removal instead of guessing", () => {
     expect(mergeLines([l("a", 1)], [], [l("a", 3)]).conflicts).toHaveLength(1);
   });
+  it("treats different portions and add-ons as separate lines", () => {
+    const base = [l("dish", 1, { variant: "half" })];
+    const local = [...base, l("dish", 1, { variant: "full" })];
+    const remote = [...base, l("dish", 2, { addons: [{ name: "Cheese", price: 20 }] })];
+    const merged = mergeLines(base, local, remote);
+    expect(merged.conflicts).toEqual([]);
+    expect(merged.lines).toHaveLength(3);
+  });
+  it("flags simultaneous changes to tax or kitchen station", () => {
+    const base = [l("dish", 1)];
+    const local = [l("dish", 2, { gstRate: 12 })];
+    const remote = [l("dish", 3, { station: "Tandoor" })];
+    expect(mergeLines(base, local, remote).conflicts).toHaveLength(1);
+  });
   it("flags repeated dish rows", () => {
     expect(mergeLines([], [l("a", 1), l("a", 1)], []).conflicts).toHaveLength(1);
   });
