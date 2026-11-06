@@ -65,6 +65,8 @@ export interface Order {
   /** Global id shared by every device of the restaurant. Local `id` differs per device. */
   uid?: string;
   billNo: string;
+  /** UUID receipt key returned to the server allocator for this bill. */
+  numberRequestId?: string;
   orderType: OrderType;
   tableId?: string | undefined;
   /** Table name as printed, e.g. "T4"; kept with the bill in case the table is renamed later. */
@@ -90,6 +92,8 @@ export interface Order {
   /** Tax rules this bill was made under. */
   tax?: { inclusive?: boolean; exempt?: boolean; roundToRupee?: boolean };
   customer?: { name?: string; phone?: string; gstin?: string };
+  /** Number of guests covered by this bill. */
+  guestCount?: number;
   /** Guest's phone as the last 10 digits, kept indexed so their visits load quickly. */
   customerId?: string;
   /** Who settled or voided the bill, for the staff report. */
@@ -112,6 +116,8 @@ export interface CartDraft {
   orderUid?: string | undefined;
   lines: CartLine[];
   discountPct: number;
+  customer?: { name?: string; phone?: string; gstin?: string };
+  guestCount?: number;
   updatedAt: number;
   /** What the kitchen had of this bill when the draft was saved, to tell this device's unsent items apart. */
   sentQty?: Record<string, number> | undefined;
@@ -154,6 +160,8 @@ export interface Kot {
   tableLabel?: string | undefined;
   tableSection?: string | undefined;
   submissionId?: string;
+  /** UUID receipt key returned to the server allocator for this KOT submission. */
+  numberRequestId?: string;
   kotNo?: string;
   orderType?: OrderType;
   billNo: string;

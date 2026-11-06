@@ -76,11 +76,13 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     : undefined;
 
   // Reuse the order UID as the allocator idempotency key.
-  const orderUid = base?.uid ?? newUid();
+  // Guest-order UUID is stable across a failed acceptance retry.
+  const orderUid = base?.uid ?? guest.id;
   const billNo = base ? base.billNo : await allocateRestaurantNumber("POS", orderUid);
   const order = withCustomerId(billWithGuestLines(base, lines, {
     uid: orderUid,
     billNo,
+    numberRequestId: base?.numberRequestId ?? (base ? undefined : orderUid),
     orderType, tableId, tableLabel: table?.label ?? guest.table_label ?? undefined, tableSection: table?.section,
     discountPct: 0, serviceChargePct: 0, tax: taxOptionsFor(settings, orderType),
     payments: [], status: "held", createdAt: now, synced: false,
@@ -96,14 +98,15 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     : guest.note ? `${guest.code}: ${guest.note}` : "";
 
   let kots: Kot[] = [];
-  const submissionId = newUid();
+  // A guest order UUID is stable across acceptance retries and cloud response loss.
+  const submissionId = guest.id;
   const kotNo = await allocateRestaurantNumber("KOT", submissionId);
   await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
     const id = order.id ?? Number(await db.orders.add(order));
     order.id = id;
     await db.orders.put(order);
     kots = Array.from(byStation, ([station, stationLines], index): Kot => ({
-      uid: newUid(), submissionId, kotNo, tableSection: order.tableSection, orderId: id, orderUid: order.uid ?? "", billNo: order.billNo, station, kind: "order",
+      uid: newUid(), submissionId, numberRequestId: submissionId, kotNo, tableSection: order.tableSection, orderId: id, orderUid: order.uid ?? "", billNo: order.billNo, station, kind: "order",
       tableId: order.tableId, tableLabel: order.tableLabel ?? (guest.channel === "online" ? `${guest.code} ${guest.customer_name}`.trim() : undefined), orderType,
       lines: stationLines.map((l, i) => ({ itemId: l.itemId, name: l.name, qty: l.qty, note: index === 0 && i === 0 && pickupNote ? [l.note, pickupNote].filter(Boolean).join(" · ") : l.note })),
       status: "new", createdAt: now,

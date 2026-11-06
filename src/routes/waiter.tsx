@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VegMark } from "@/components/VegMark";
 import { ItemOptions } from "@/components/ItemOptions";
+import { GuestDetailsFields } from "@/components/GuestDetailsFields";
 import { InstallButton } from "@/components/AppInstall";
 import { queueCounterPrint } from "@/lib/counter-print";
 import { useStaff } from "@/lib/auth-context";
@@ -146,7 +147,8 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
   const activeCat = cat || categories[0] || "";
   const term = q.trim().toLowerCase();
   const items = menu.filter((m) => m.available && (term ? m.name.toLowerCase().includes(term) : m.category === activeCat));
-  const sent = cart.activeOrder?.kotSubmittedQty ?? {};
+  // Use persisted KOT rows as the source of truth; the order snapshot can lag after printing.
+  const pendingById = new Map(cart.pendingKitchenLines.map((line) => [line.itemId, line.qty]));
   const unsent = cart.pendingKitchenLines.reduce((s, l) => s + l.qty, 0);
   const cancels = cart.pendingCancelLines.reduce((s, l) => s + l.qty, 0);
 
@@ -250,11 +252,15 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
             <div className="text-2xl font-extrabold">{formatINR(cart.totals.total, 0)}</div>
           </div>
         </div>
+        <div className="px-3 pb-2">
+          <GuestDetailsFields customer={cart.customer} setCustomer={cart.setCustomer} guestCount={cart.guestCount}
+            setGuestCount={cart.setGuestCount} orderType="dine-in" tableSeats={table?.seats} />
+        </div>
         <ul className="flex-1 space-y-2 overflow-y-auto px-3">
           {cart.lines.length === 0 ? <li className="py-10 text-center text-sm text-muted-foreground">Tap dishes to start this table's order</li> : null}
           {cart.lines.map((l) => {
-            const kitchenHas = sent[l.itemId] ?? 0;
-            const fresh = Math.max(0, l.qty - kitchenHas);
+            const fresh = pendingById.get(l.itemId) ?? 0;
+            const kitchenHas = Math.max(0, l.qty - fresh);
             return (
               <li key={l.itemId} className={`rounded-xl p-3 ${fresh ? "bg-primary/15 ring-1 ring-primary/50" : "bg-card"}`}>
                 <div className="flex items-start gap-2">

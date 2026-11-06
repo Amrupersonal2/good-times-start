@@ -14,6 +14,11 @@ describe("printing", () => {
   it("defaults new devices to 2 inch and requires local silent-browser setup", () => {
     expect(normalisePrintConfig(null).paper).toBe(58);
     expect(normalisePrintConfig(null).silentBrowserReady).toBe(false);
+    expect(normalisePrintConfig(null).endFeedMm).toBe(5);
+    // Existing devices that only stored the old 50 mm default are migrated too.
+    expect(normalisePrintConfig({ endFeedMm: 50 }).endFeedMm).toBe(5);
+    // A deliberately selected non-default feed remains unchanged.
+    expect(normalisePrintConfig({ endFeedMm: 25 }).endFeedMm).toBe(25);
     expect(normalisePrintConfig({ paper: 80, silentBrowserReady: true })).toMatchObject({ paper: 80, silentBrowserReady: true });
   });
   it("fills in defaults and clamps bad values", () => {

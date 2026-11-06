@@ -1,4 +1,4 @@
-import type { CartLine } from "./types";
+import type { CartLine, Kot } from "./types";
 
 /**
  * Lines to show when a device reopens a running bill it had a draft for: the shared bill
@@ -93,4 +93,36 @@ export function removeCancelled(lines: CartLine[], cancelled: CartLine[]): CartL
     const qty = line.qty - cut;
     return qty > 0 ? [{ ...line, qty }] : [];
   });
+}
+
+
+/** Guest identity and party size are required before a bill can be sent to the kitchen or settled. */
+export function guestDetailsError(customer: { name?: string; phone?: string }, guestCount?: number, tableCapacity?: number): string | null {
+  if (!customer.name?.trim()) return "Enter the guest name.";
+  const mobile = (customer.phone ?? "").replace(/\D/g, "");
+  if (mobile.length !== 10) return "Enter a valid 10-digit mobile number.";
+  if (!Number.isInteger(guestCount) || (guestCount ?? 0) < 1 || (guestCount ?? 0) > 50) {
+    return "Select the total number of guests (1–50).";
+  }
+  if (tableCapacity !== undefined && guestCount! > tableCapacity) {
+    return `Guest count exceeds this table's capacity (${tableCapacity}).`;
+  }
+  return null;
+}
+
+/**
+ * KOT rows are the durable evidence of what reached the kitchen. Derive net
+ * submitted quantities from them so a newly printed ticket immediately clears
+ * the unsent section even if an older order snapshot has stale kotSubmittedQty.
+ */
+export function submittedQuantitiesFromKots(kots: Kot[]): Record<string, number> {
+  const submitted: Record<string, number> = {};
+  for (const kot of kots) {
+    for (const line of kot.lines) {
+      if (!line.itemId) continue;
+      const sign = kot.kind === "cancel" ? -1 : 1;
+      submitted[line.itemId] = Math.max(0, (submitted[line.itemId] ?? 0) + sign * line.qty);
+    }
+  }
+  return Object.fromEntries(Object.entries(submitted).filter(([, qty]) => qty > 0));
 }

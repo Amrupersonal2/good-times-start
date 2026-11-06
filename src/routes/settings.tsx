@@ -2,20 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { RotateCcw, Trash2, UserPlus } from "lucide-react";
+import { Trash2, UserPlus } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABELS, isAdmin, useStaff, type StaffRole } from "@/lib/auth-context";
-import { getDb, loadSampleData, resetDevice, saveSettings, setDeviceCode } from "@/lib/db";
-import { billNumber, computeTotals } from "@/lib/billing";
+import { getDb, loadSampleData, resetDevice, saveSettings } from "@/lib/db";
+import { computeTotals } from "@/lib/billing";
 import { ALL_PAYMENT_MODES, GST_MODES, RESTAURANT_SAC } from "@/lib/billing-config";
 import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
 import { PrinterMethod } from "@/components/PrinterMethod";
 import type { PrintConfig } from "@/lib/print-logic";
 import { printKots } from "@/components/PrintHost";
 import { Switch } from "@/components/ui/switch";
-import { normaliseDeviceCode } from "@/lib/sync-core";
 import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
 import type { PaymentMode, RestaurantSettings } from "@/lib/types";
 import { OrderingSettings } from "@/components/OrderingSettings";
@@ -26,9 +25,6 @@ import { cn } from "@/lib/utils";
 import { Dropdown } from "@/components/Dropdown";
 import { Segmented } from "@/components/Segmented";
 import { can } from "@/lib/permissions";
-import { useDeviceCode } from "@/lib/use-device-code";
-import { useFirstSyncDone } from "@/lib/use-first-sync";
-import { ownerCanReset, resetBillNumbers } from "@/lib/bill-number-reset";
 import { useAppMode } from '@/lib/app-mode';
 import { managerSettingAllowed } from '@/lib/print-routing';
 import { designateCounterPrinter } from '@/lib/counter-print';
@@ -322,38 +318,13 @@ function PrintingSettings() {
 
 function ThisDevice() {
   const { user } = useStaff();
-  const code = useDeviceCode();
-  const seq = useLiveQuery(async () => (await getDb().meta.get("billSeq"))?.value, [], 0);
   const menuCount = useLiveQuery(() => getDb().menu.count(), [], 0);
-  const [draft, setDraft] = useState("");
-  const [resetBusy, setResetBusy] = useState(false);
-  const [keepUid, setKeepUid] = useState("");
-  const bills = useLiveQuery(() => getDb().orders.toArray(), [], []);
-  useEffect(() => { setDraft(code); }, [code]);
-  const next = normaliseDeviceCode(draft);
   const canReset = can(user, "device.reset");
-
-  const saveCode = async () => {
-    if (!next || next === code) return;
-    await setDeviceCode(next);
-    toast.success(`New bill series ${next} starts at 0001`);
-  };
   const reset = async () => {
     if (!window.confirm("Clear this device? Bills not yet synced will be lost. The restaurant's cloud copy is not affected.")) return;
     await resetDevice();
     toast.success("This device has been cleared");
     window.location.reload();
-  };
-  const synced = useFirstSyncDone();
-  const resetNumbers = async () => {
-    if (!user?.restaurantId || !ownerCanReset(user.role)) return;
-    if (!window.confirm(keepUid ? "Renumber the selected bill to TBX/26-27/0001 and start the next bill at 0002? No amounts or items will change." : "Reset this counter to TBX with next bill 0001? This is blocked if existing numbers would be reused.")) return;
-    setResetBusy(true);
-    try {
-      await resetBillNumbers(user.restaurantId, user.role, keepUid || undefined);
-      toast.success(keepUid ? "Retained bill is 0001. Next bill is TBX/26-27/0002." : "Next bill is TBX/26-27/0001.");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't reset bill numbers"); }
-    finally { setResetBusy(false); }
   };
   const loadSample = async () => {
     try { await loadSampleData(); toast.success("Sample menu and tables added"); }
@@ -361,24 +332,9 @@ function ThisDevice() {
   };
 
   return (
-    <Section title="This device" description="Each counter needs its own bill code so numbers never repeat.">
+    <Section title="This device" description="Restaurant-wide bill and kitchen ticket numbering shared across all counters.">
       <div className="space-y-5">
-        <div className="flex flex-wrap items-end gap-3">
-          <Field label="Bill series code" hint={`Next bill: ${billNumber(next === code ? (typeof seq === "number" ? seq : 0) + 1 : 1, new Date(), next || code)}`}>
-            <input value={draft} maxLength={4} disabled={!can(user, "settings.series")} onChange={(event) => setDraft(normaliseDeviceCode(event.target.value))} className={`${inputClass} w-32 uppercase`} />
-          </Field>
-          {can(user, "settings.series") ? <Button variant="secondary" disabled={!next || next === code} onClick={() => void saveCode()}>Start new series</Button>
-            : <p className="pb-2 text-xs text-muted-foreground">Only the owner or a manager can change it.</p>}
-        </div>
-        {ownerCanReset(user?.role) ? <div className="space-y-3 border-t border-border pt-4">
-          <Field label="Bill to keep as 0001">
-            <Dropdown ariaLabel="Bill to keep as 0001" value={keepUid} onChange={setKeepUid} options={[
-              { value: "", label: "No bill — next number 0001" },
-              ...bills.filter((bill) => bill.uid).map((bill) => ({ value: bill.uid ?? "", label: bill.billNo })),
-            ]} />
-          </Field>
-          <Button variant="outline" disabled={resetBusy || !synced} onClick={() => void resetNumbers()}><RotateCcw />{resetBusy ? "Resetting…" : "Reset bill numbers"}</Button>
-        </div> : null}
+        <p className="rounded-lg bg-secondary px-3 py-2 text-sm text-muted-foreground">Bills and KOTs use restaurant-wide POS/0001 and KOT/0001 sequences shared across all counters. Sequences are centrally allocated and cannot be reset per device.</p>
         {menuCount === 0 && synced && can(user, "menu.edit") ? (
           <div className="rounded-lg border border-dashed border-border p-4">
             <p className="text-sm font-medium">Your menu is empty.</p>

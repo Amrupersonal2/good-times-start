@@ -9,7 +9,7 @@ import { gstModeOf, exemptionNote } from "./billing-config";
 import type { Kot, Order, RestaurantSettings } from "./types";
 
 export type Paper = 58 | 80;
-export const columnsFor = (paper: Paper) => (paper === 58 ? 32 : 48);
+export const columnsFor = (paper: Paper) => (paper === 58 ? 30 : 45);
 
 export interface SlipLine {
   text: string;
@@ -18,7 +18,7 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export const KOT_END_FEED_MM = 50;
+export const KOT_END_FEED_MM = 5;
 export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
@@ -71,7 +71,7 @@ function itemColumns(cols: number) {
 }
 
 /** The customer bill: header, guest and table, items, totals, payment, UPI QR and footer. */
-export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper, endFeedMm = 50): Slip {
+export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper, endFeedMm = 5): Slip {
   const cols = columnsFor(paper);
   const L: SlipLine[] = [];
   const center = (text: string, extra: Partial<SlipLine> = {}) => { for (const t of wrap(text, extra.size === "big" ? cols / 2 : cols)) L.push({ text: t, align: "center", ...extra }); };
