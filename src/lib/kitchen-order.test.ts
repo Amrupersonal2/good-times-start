@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import type { CartLine } from "./types";
 
 const lines: CartLine[] = [
@@ -76,5 +76,38 @@ describe("reopening a running bill on another device's changes", () => {
   it("never removes items for an older draft that didn't record what it had sent", () => {
     const lines = reopenedLines([l("tea", 1)], undefined, [l("tea", 1), l("cake", 1)], { tea: 1, cake: 1 });
     expect(lines.map((x) => [x.itemId, x.qty])).toEqual([["tea", 1], ["cake", 1]]);
+  });
+});
+
+
+describe("guest details required for POS actions", () => {
+  it("requires a name, a valid 10-digit mobile and a party size", () => {
+    expect(guestDetailsError({}, undefined)).toBe("Enter the guest name.");
+    expect(guestDetailsError({ name: "Guest" }, undefined)).toBe("Enter a valid 10-digit mobile number.");
+    expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, undefined)).toBe("Select the total number of guests (1–50).");
+    expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, 2)).toBeNull();
+  });
+
+  it("rejects invalid party sizes and malformed mobile numbers", () => {
+    expect(guestDetailsError({ name: "Guest", phone: "12345" }, 2)).toBe("Enter a valid 10-digit mobile number.");
+    expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, 0)).toBe("Select the total number of guests (1–50).");
+    expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, 51)).toBe("Select the total number of guests (1–50).");
+  });
+});
+
+describe("KOT-backed submitted quantities", () => {
+  const kot = (kind: "order" | "cancel", itemId: string, qty: number) => ({
+    orderId: 1, billNo: "POS/0001", station: "Kitchen", kind,
+    lines: [{ itemId, name: itemId, qty }], status: "new" as const, createdAt: 1,
+  });
+
+  it("treats printed KOT order tickets as submitted, even if the order snapshot is stale", () => {
+    const submitted = submittedQuantitiesFromKots([kot("order", "paneer", 2), kot("order", "naan", 1)]);
+    expect(unsentKitchenLines([{ ...lines[0], qty: 2 }, lines[1]], submitted)).toEqual([{ ...lines[0], qty: 2 }]);
+  });
+
+  it("subtracts cancellation tickets from the net submitted quantity", () => {
+    const submitted = submittedQuantitiesFromKots([kot("order", "paneer", 3), kot("cancel", "paneer", 1)]);
+    expect(submitted).toEqual({ paneer: 2 });
   });
 });
