@@ -174,7 +174,7 @@ function TablesPage() {
     return [...DEFAULT_SECTIONS.filter((s) => used.includes(s)), ...used.filter((s) => !DEFAULT_SECTIONS.includes(s)).sort()];
   }, [tables]);
   const live = selected ? tables.find((t) => t.id === selected.id) ?? null : null;
-  const counts = (["free", "occupied", "billed", "reserved"] as TableStatus[]).map((s) => [s, tables.filter((t) => t.status === s).length] as const);
+  const counts = (["free", "occupied", "reserved"] as TableStatus[]).map((s) => [s, tables.filter((t) => t.status === s).length] as const);
 
   return (
     <AppShell>
