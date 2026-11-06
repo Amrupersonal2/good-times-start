@@ -34,7 +34,7 @@ BEGIN
     RAISE EXCEPTION 'Expected only running/held TAB Bistro bills. Reconcile any settled or void records before renumbering.';
   END IF;
 END;
-$;
+$$;
 
 CREATE TEMP TABLE _tab_bistro_pos_map ON COMMIT DROP AS
 SELECT
@@ -129,7 +129,7 @@ WHERE rr.restaurant_id = m.restaurant_id
   AND rr.kind = 'order'
   AND rr.record_id = m.record_id;
 
-DO $
+DO $$
 BEGIN
   IF EXISTS (
     SELECT 1
@@ -146,6 +146,9 @@ BEGIN
           AND running_order.kind = 'order'
           AND NOT running_order.deleted
           AND running_order.payload->>'status' = 'held'
+          AND coalesce(running_order.payload->>'tableLabel', '') <> 'QAF1'
+          AND coalesce(running_order.payload->>'tableId', '') <> 'QAF1'
+          AND lower(coalesce(running_order.payload->>'tableSection', '')) <> 'floor verification'
           AND running_order.record_id = kot.payload->>'orderUid'
       )
   ) THEN
@@ -162,7 +165,7 @@ BEGIN
     RAISE EXCEPTION 'A KOT submission has no mapped parent POS bill; refusing partial renumbering.';
   END IF;
 END;
-$;
+$$;
 
 UPDATE public.restaurant_records rr
 SET payload = jsonb_set(
