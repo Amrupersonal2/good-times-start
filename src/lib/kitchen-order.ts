@@ -97,12 +97,15 @@ export function removeCancelled(lines: CartLine[], cancelled: CartLine[]): CartL
 
 
 /** Guest identity and party size are required before a bill can be sent to the kitchen or settled. */
-export function guestDetailsError(customer: { name?: string; phone?: string }, guestCount?: number): string | null {
+export function guestDetailsError(customer: { name?: string; phone?: string }, guestCount?: number, tableCapacity?: number): string | null {
   if (!customer.name?.trim()) return "Enter the guest name.";
   const mobile = (customer.phone ?? "").replace(/\D/g, "");
   if (mobile.length !== 10) return "Enter a valid 10-digit mobile number.";
   if (!Number.isInteger(guestCount) || (guestCount ?? 0) < 1 || (guestCount ?? 0) > 50) {
     return "Select the total number of guests (1–50).";
+  }
+  if (tableCapacity !== undefined && guestCount! > tableCapacity) {
+    return `Guest count exceeds this table's capacity (${tableCapacity}).`;
   }
   return null;
 }
