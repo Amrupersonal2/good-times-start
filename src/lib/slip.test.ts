@@ -97,7 +97,7 @@ describe("thermal slips", () => {
     expect(slip.endFeedMm).toBe(50);
     const bytes = escPos(slip);
     // 50 mm at 203 dots per inch rounds to 400 dots.
-    expect(Array.from(bytes.slice(-10))).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 255, 0x1b, 0x4a, 145, 0x1d, 0x56, 0]);
+    expect(Array.from(bytes.slice(-13))).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 255, 0x1b, 0x4a, 145, 0x1d, 0x56, 0]);
     expect(billSlip(bill, settings, 58).endFeedMm).toBe(50);
   });
 

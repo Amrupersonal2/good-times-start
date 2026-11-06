@@ -29,6 +29,7 @@ export function SlipView({ slip, qrDataUrl }: { slip: Slip; qrDataUrl?: string |
         return <div key={i} style={style}>{line.text || " "}</div>;
       })}
       {qrDataUrl ? <img src={qrDataUrl} alt="UPI QR code" width={140} height={140} style={{ display: "block", margin: "2mm auto", width: "32mm", height: "32mm" }} /> : null}
+      {slip.endFeedMm ? <div aria-hidden="true" style={{ height: String(slip.endFeedMm) + "mm" }} /> : null}
     </div>
   );
 }

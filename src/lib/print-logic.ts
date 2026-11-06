@@ -108,6 +108,6 @@ export function printCss(paper: 58 | 80): string {
   #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
   #print-root .print-ticket:last-child { break-after: auto; page-break-after: auto; }
   #print-root .print-ticket:has(.kot-print-slip) { padding-bottom: 0; }
-  #print-root .kot-print-slip::after { content: ""; display: block; height: var(--kot-end-feed); }
+  #print-root .kot-print-slip::after { content: ""; display: block; height: 0; }
 }`;
 }
