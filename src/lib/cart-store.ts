@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
-import { computeTotals, billNumber } from "./billing";
-import { getDb, getDeviceCode, markDirty, nextSeq, nextKotNumber } from "./db";
+import { computeTotals } from "./billing";
+import { getDb, markDirty } from "./db";
+import { allocateRestaurantNumber } from "./restaurant-numbering";
 import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
@@ -35,8 +36,8 @@ async function orderByUid(uid: string): Promise<Order | null> {
   return (await getDb().orders.where("uid").equals(uid).first()) ?? null;
 }
 
-async function newBillNumber(at: Date): Promise<string> {
-  return billNumber(await nextSeq(), at, await getDeviceCode());
+async function newBillNumber(requestId: string): Promise<string> {
+  return allocateRestaurantNumber("POS", requestId);
 }
 
 export function useCart(initialTableId?: string) {
@@ -286,10 +287,11 @@ export function useCart(initialTableId?: string) {
     const tableLabel = await tableLabelOf(tableId);
     const tableSection = tableId ? (await db.restTables.get(tableId))?.section : base?.tableSection;
     const extras = { serviceChargePct, tableSection, tax, taxable: t.taxable, ...(customer.name || customer.phone || customer.gstin ? { customer } : {}) };
+    const newOrderUid = base?.uid ?? newUid();
     const order: Order = withCustomerId(base
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
-          uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
+          uid: newOrderUid, billNo: await newBillNumber(newOrderUid), orderType, tableId, tableLabel, lines: merged,
           ...(user?.login === "waiter" ? { source: "waiter" as const } : {}),
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
@@ -304,10 +306,9 @@ export function useCart(initialTableId?: string) {
     };
 
     let kots: Kot[] = [];
-    const deviceId = await getDeviceId();
     const submissionId = newUid();
+    const kotNo = await allocateRestaurantNumber("KOT", submissionId);
     await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
-      const kotNo = await nextKotNumber(deviceId, now);
       const id = saved.id ?? Number(await db.orders.add(saved));
       saved.id = id;
       await db.orders.put(saved);
@@ -379,10 +380,11 @@ export function useCart(initialTableId?: string) {
       toast.error(`This bill is now ${t.total.toLocaleString("en-IN")}. Take payment again.`);
       return null;
     }
+    const newOrderUid = latest?.uid ?? newUid();
     const order: Order = withCustomerId({
       ...(latest ?? ({} as Order)),
-      uid: latest?.uid ?? newUid(),
-      billNo: latest?.billNo ?? await newBillNumber(new Date()),
+      uid: newOrderUid,
+      billNo: latest?.billNo ?? await newBillNumber(newOrderUid),
       orderType, tableId: tableId ?? latest?.tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines: billLines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
       serviceChargePct, serviceCharge: t.serviceCharge, cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
       taxable: t.taxable, tax,
@@ -415,8 +417,9 @@ export function useCart(initialTableId?: string) {
     const now = Date.now();
     const t = computeTotals(split, discountPct, serviceChargePct, tax);
     const label = latest?.tableLabel ?? await tableLabelOf(tableId);
+    const partUid = newUid();
     const part: Order = withCustomerId({
-      uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId: tableId ?? latest?.tableId, tableLabel: label, lines: split,
+      uid: partUid, billNo: await newBillNumber(partUid), orderType, tableId: tableId ?? latest?.tableId, tableLabel: label, lines: split,
       subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
       taxable: t.taxable, tax,

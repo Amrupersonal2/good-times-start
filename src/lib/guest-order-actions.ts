@@ -1,8 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { CartLine, Kot, Order } from "./types";
-import { billNumber } from "./billing";
-import { getDb, getDeviceCode, getSettings, markDirty, nextSeq, nextKotNumber } from "./db";
-import { getDeviceId } from "./terminal-actions";
+import { getDb, getSettings, markDirty } from "./db";
+import { allocateRestaurantNumber } from "./restaurant-numbering";
 import { newUid, type RecordKind } from "./sync-core";
 import { latestHeldOrder } from "./table-actions";
 import { taxOptionsFor } from "./billing-config";
@@ -76,10 +75,11 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     ? { ...(guest.customer_name ? { name: guest.customer_name } : {}), ...(guest.customer_phone ? { phone: guest.customer_phone } : {}) }
     : undefined;
 
-  // A bill number is used only when a new bill opens, so the series never skips.
-  const billNo = base ? base.billNo : billNumber(await nextSeq(), new Date(now), await getDeviceCode());
+  // Reuse the order UID as the allocator idempotency key.
+  const orderUid = base?.uid ?? newUid();
+  const billNo = base ? base.billNo : await allocateRestaurantNumber("POS", orderUid);
   const order = withCustomerId(billWithGuestLines(base, lines, {
-    uid: newUid(),
+    uid: orderUid,
     billNo,
     orderType, tableId, tableLabel: table?.label ?? guest.table_label ?? undefined, tableSection: table?.section,
     discountPct: 0, serviceChargePct: 0, tax: taxOptionsFor(settings, orderType),
@@ -96,10 +96,9 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     : guest.note ? `${guest.code}: ${guest.note}` : "";
 
   let kots: Kot[] = [];
-  const deviceId = await getDeviceId();
   const submissionId = newUid();
+  const kotNo = await allocateRestaurantNumber("KOT", submissionId);
   await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
-    const kotNo = await nextKotNumber(deviceId, now);
     const id = order.id ?? Number(await db.orders.add(order));
     order.id = id;
     await db.orders.put(order);
