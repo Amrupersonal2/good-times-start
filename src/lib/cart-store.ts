@@ -381,14 +381,26 @@ export function useCart(initialTableId?: string) {
   const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
     const detailsError = guestDetailsError(customer, guestCount, await tableCapacityOf(tableId));
     if (detailsError) { toast.error(detailsError); return false; }
-    const effectiveSubmitted = submitted;
-    if (unsentKitchenLines(lines, effectiveSubmitted).length || cancelledKitchenLines(lines, effectiveSubmitted, activeOrder?.lines).length) {
-      toast.error("Send the kitchen ticket before settling this bill");
+    const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : null;
+    if (activeOrder?.uid && !latest) {
+      toast.error("This bill is no longer available. Refresh the table before settling.");
       return false;
     }
-    const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : null;
     if (latest && latest.status !== "held") {
       toast.error(`Bill ${latest.billNo} was already ${latest.status === "settled" ? "settled" : "voided"} on another device`);
+      return false;
+    }
+    const latestKots = latest?.id === undefined
+      ? storedKots
+      : await getDb().kots.where("orderId").equals(latest.id).toArray();
+    const rawSubmitted = latestKots.length
+      ? submittedQuantitiesFromKots(latestKots)
+      : latest?.kotSubmittedQty ?? submitted;
+    const effectiveSubmitted = latestKots.length
+      ? subtractSettledQuantities(rawSubmitted, latest?.kotSettledQty ?? {})
+      : rawSubmitted;
+    if (unsentKitchenLines(lines, effectiveSubmitted).length || cancelledKitchenLines(lines, effectiveSubmitted, latest?.lines ?? activeOrder?.lines).length) {
+      toast.error("Send the kitchen ticket before settling this bill");
       return false;
     }
     return latest;
@@ -461,6 +473,9 @@ export function useCart(initialTableId?: string) {
     if (!split.length) { toast.error("Choose at least one item to split off"); return null; }
     if (!remaining.length) return settle(payment, closedBy);
 
+    const db = getDb();
+    const latestKots = latest.id === undefined ? [] : await db.kots.where("orderId").equals(latest.id).toArray();
+    const latestRawSubmitted = latestKots.length ? submittedQuantitiesFromKots(latestKots) : undefined;
     const now = Date.now();
     const t = computeTotals(split, discountPct, serviceChargePct, tax);
     const label = latest?.tableLabel ?? await tableLabelOf(tableId);
@@ -475,14 +490,13 @@ export function useCart(initialTableId?: string) {
       customer, guestCount,
       ...(closedBy ? { closedBy } : {}),
     });
-    const db = getDb();
     part.id = Number(await db.orders.add(part));
     const changes: [RecordKind, string][] = [["order", part.uid ?? ""]];
 
     const rest = computeTotals(remaining, discountPct, serviceChargePct, tax);
     if (latest?.id !== undefined) {
-      const effectiveSent = storedKots.length
-        ? subtractSettledQuantities(persistedSubmitted, latest.kotSettledQty ?? {})
+      const effectiveSent = latestRawSubmitted
+        ? subtractSettledQuantities(latestRawSubmitted, latest.kotSettledQty ?? {})
         : { ...(latest.kotSubmittedQty ?? {}) };
       const sent: Record<string, number> = { ...effectiveSent };
       const kotSettledQty: Record<string, number> = { ...(latest.kotSettledQty ?? {}) };
