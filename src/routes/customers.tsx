@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { Download, Search, Send, Star } from "lucide-react";
@@ -13,7 +13,7 @@ import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { formatINR } from "@/lib/billing";
 import { customerStats, normalisePhone, ordersByCustomer, type CustomerStats } from "@/lib/customer-logic";
-import { adjustPoints, recordDuePayment, updateCustomer } from "@/lib/customer-actions";
+import { adjustPoints, recordDuePayment, rememberGuestsFromBills, updateCustomer } from "@/lib/customer-actions";
 import { guestsWorkbook } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import type { Customer, Order, PaymentMode } from "@/lib/types";
@@ -151,6 +151,9 @@ function CustomersPage() {
   const customers = useLiveQuery(() => getDb().customers.toArray(), [], []);
   // Only bills with a guest attached, straight from the guest index; not the whole year's bills.
   const orders = useLiveQuery(async () => (await getDb().orders.where("customerId").above("").toArray()).filter((o) => o.status === "settled"), [], []);
+  // Guests on running bills (hotel stays pay later) belong on the list too.
+  const billGuestCount = useLiveQuery(() => getDb().orders.where("customerId").above("").count(), [], 0);
+  useEffect(() => { void rememberGuestsFromBills(); }, [billGuestCount]);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
