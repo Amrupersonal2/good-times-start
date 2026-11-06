@@ -54,6 +54,8 @@ async function newBillNumber(requestId: string): Promise<string> {
   return allocateRestaurantNumber("POS", requestId);
 }
 
+export { kotsForOrder };
+
 export function useCart(initialTableId?: string) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [orderType, setOrderType] = useState<OrderType>("dine-in");
