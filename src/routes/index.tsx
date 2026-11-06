@@ -276,7 +276,7 @@ function PosPage() {
               onChange={(e) => cart.setGuestCount(e.target.value ? Number(e.target.value) : undefined)}
               className="h-8 min-w-0 rounded-md border border-input bg-background px-1.5 text-xs">
               <option value="">Guests *</option>
-              {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} {n === 1 ? "guest" : "guests"}</option>)}
+              {Array.from({ length: 50 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} {n === 1 ? "guest" : "guests"}</option>)}
             </select>
           </div>
           {guestDetailsIssue ? <p className="mt-1 text-[10px] text-destructive" role="status">{guestDetailsIssue}</p> : null}
