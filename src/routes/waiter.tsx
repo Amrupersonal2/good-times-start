@@ -24,6 +24,7 @@ import { useRestaurantSettings } from "@/lib/use-settings";
 import type { MenuItem, RestaurantTable } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { holdLabel } from "@/lib/table-hold";
+import { getDeviceId } from '@/lib/terminal-actions';
 
 export const Route = createFileRoute("/waiter")({
   head: () => ({
@@ -170,7 +171,9 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
   const askForBill = async () => {
     if (!(await allow(user, "bill.print", "Print the bill"))) return;
     // The guest gets the running bill at the table; the counter sees the table is ready to pay.
-    if (cart.activeOrder) void printBill(cart.activeOrder);
+    if (!cart.activeOrder) return;
+    // Await durable queueing before marking the table's bill as requested.
+    await printBill(cart.activeOrder);
     if (table?.status !== "billed") {
       await getDb().restTables.update(tableId, { status: "billed" });
       await markDirty(["table", tableId]);

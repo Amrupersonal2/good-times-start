@@ -178,7 +178,7 @@ export function CounterPrintWatcher() {
       busy = true;
       try {
         await flushCounterPrints(restaurant);
-        if (app !== 'pos' || (config.method === 'browser' && !config.silentBrowserReady)) return;
+        if (app !== 'pos' || jobs.length || (config.method === 'browser' && !config.silentBrowserReady)) return;
         const device = await getDeviceId();
         const { data, error } = await supabase.rpc('claim_counter_print', { _restaurant: restaurant, _device: device });
         if (error || !data || stopped) return;
