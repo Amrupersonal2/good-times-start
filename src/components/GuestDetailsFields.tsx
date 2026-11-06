@@ -16,7 +16,7 @@ export function GuestDetailsFields({
   const [customMode, setCustomMode] = useState(false);
   const maxGuests = orderType === "dine-in" ? Math.max(1, Math.min(50, tableSeats ?? 6)) : 50;
   const quickMax = Math.min(6, maxGuests);
-  const custom = customMode || (guestCount ?? 0) > 6;
+  const custom = maxGuests > 6 && (customMode || (guestCount ?? 0) > 6);
 
   return (
     <div className="mt-2 space-y-1">
