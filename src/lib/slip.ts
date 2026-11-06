@@ -18,7 +18,7 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined }
+export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; topFeedMm?: number; bottomFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
 const PAY: Record<string, string> = { cash: "Cash", upi: "UPI", card: "Card", wallet: "Wallet", credit: "Due", points: "Points" };
@@ -142,9 +142,7 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
   center("TAB Bistro by XTSY", { bold: true, size: "tall" });
   center("POS by XTSY", { bold: true, size: "tall" });
   if (qr) { L.push({ text: "" }); L.push({ text: `Scan to pay Rs.${money(due)} by UPI`, align: "center", bold: true }); }
-  // About 3 cm of tear-off space after the customer-facing footer.
-  for (let i = 0; i < 8; i++) L.push({ text: "" });
-  return { paper, lines: L, qr };
+  return { paper, lines: L, qr, bottomFeedMm: 30 };
 }
 
 /** A kitchen ticket: big order type and table, then items in tall bold text with their quantities. */
@@ -154,8 +152,6 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   const L: SlipLine[] = [];
   if (!first) return { paper, lines: L };
   const cancel = first.kind === "cancel";
-  // About 3 cm of leading paper before each kitchen ticket.
-  for (let i = 0; i < 8; i++) L.push({ text: "" });
   const restaurant = header.trim() || "TAB Bistro by XTSY";
   for (const t of wrap(restaurant, cols)) L.push({ text: t, align: "center", bold: true, size: "tall" });
   L.push({ text: cancel ? "CANCEL KOT" : "Running KOT", align: "center", bold: true, size: cancel ? "big" : "normal" });
@@ -184,9 +180,7 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
     L.push(rule(cols));
   }
   L.push(pair("Total Qty", qtyText(total), cols, { bold: true }));
-  // About 1 cm of trailing paper after the kitchen ticket.
-  for (let i = 0; i < 3; i++) L.push({ text: "" });
-  return { paper, lines: L };
+  return { paper, lines: L, topFeedMm: 30, bottomFeedMm: 10 };
 }
 
 /* ---------------- ESC/POS ---------------- */
@@ -201,6 +195,12 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
   const one = () => {
     push(ESC, 0x40); // initialise
     push(ESC, 0x74, 0x00); // code page PC437 (ASCII-safe)
+    const feedMm = (mm: number) => {
+      // ESC J feeds n vertical dots; 203 dpi thermal heads are ~8 dots/mm.
+      let dots = Math.max(0, Math.round(mm * 8));
+      while (dots > 0) { const chunk = Math.min(255, dots); push(ESC, 0x4a, chunk); dots -= chunk; }
+    };
+    feedMm(slip.topFeedMm ?? 0);
     for (const line of slip.lines) {
       push(ESC, 0x61, line.align === "center" ? 1 : line.align === "right" ? 2 : 0);
       push(ESC, 0x45, line.bold ? 1 : 0);
@@ -221,8 +221,8 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
       push(GS, 0x28, 0x6b, 3, 0, 0x31, 0x51, 0x30);
       push(LF, ESC, 0x61, 0);
     }
-    push(LF, LF, LF, LF);
-    push(GS, 0x56, 0x42, 0x00); // feed and cut (printers without a cutter ignore it)
+    feedMm(slip.bottomFeedMm ?? 4);
+    push(GS, 0x56, 0x42, 0x00); // cut after the requested bottom margin (printers without a cutter ignore it)
   };
   for (let i = 0; i < Math.max(1, Math.min(5, opts.copies ?? 1)); i++) one();
   return Uint8Array.from(out);
