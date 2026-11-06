@@ -57,6 +57,13 @@
       "when": 1793953785260,
       "tag": "0007_restore_pr26_membership_security",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793953848625,
+      "tag": "0008_restore_pr28_rotating_void_approval",
+      "breakpoints": true
     }
   ]
 }
