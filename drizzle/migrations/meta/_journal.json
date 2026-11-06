@@ -134,6 +134,13 @@
       "when": 1793960007000,
       "tag": "0018_tab_bistro_pos_kot_renumber",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793960008000,
+      "tag": "0019_tab_bistro_pending_bill_number_reconcile",
+      "breakpoints": true
     }
   ]
 }
