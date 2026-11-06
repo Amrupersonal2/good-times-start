@@ -56,11 +56,27 @@ function useGuestOrders(restaurantId: string | null, enabled: boolean) {
   });
   useEffect(() => {
     if (!enabled || !restaurantId) return;
-    const channel = supabase.channel(`guest-orders-${restaurantId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "guest_orders", filter: `restaurant_id=eq.${restaurantId}` },
-        () => { void queryClient.invalidateQueries({ queryKey: key }); })
-      // On (re)connect, fetch anything that arrived while the connection was down.
-      .subscribe((status: string) => { if (status === "SUBSCRIBED") void queryClient.invalidateQueries({ queryKey: key }); });
+
+    // A stable topic can briefly resolve to an existing channel during React
+    // StrictMode remounts or fast refresh while removeChannel() is still pending.
+    // Supabase rejects .on() when that channel has already been subscribed.
+    // Give every effect instance its own topic so callbacks are always attached
+    // before subscribe(), even when cleanup and remount overlap.
+    const instanceId = globalThis.crypto?.randomUUID?.()
+      ?? `1793995796193-${Math.random().toString(36).slice(2)}`;
+    const channel = supabase.channel(`guest-orders-${restaurantId}-${instanceId}`);
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "guest_orders", filter: `restaurant_id=eq.${restaurantId}` },
+      () => { void queryClient.invalidateQueries({ queryKey: key }); },
+    );
+
+    // On (re)connect, fetch anything that arrived while the connection was down.
+    channel.subscribe((status: string) => {
+      if (status === "SUBSCRIBED") void queryClient.invalidateQueries({ queryKey: key });
+    });
+
     return () => { void supabase.removeChannel(channel); };
   }, [enabled, restaurantId, queryClient, key]);
   return query;
