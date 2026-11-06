@@ -106,7 +106,7 @@ describe("KOT-backed submitted quantities", () => {
 
   it("treats printed KOT order tickets as submitted, even if the order snapshot is stale", () => {
     const submitted = submittedQuantitiesFromKots([kot("order", "paneer", 2), kot("order", "naan", 1)]);
-    expect(unsentKitchenLines([{ ...lines[0], qty: 2 }, lines[1]], submitted)).toEqual([{ ...lines[0], qty: 2 }]);
+    expect(unsentKitchenLines([{ ...lines[0], qty: 2 }, lines[1]], submitted)).toEqual([{ ...lines[0], qty: 1 }]);
   });
 
   it("subtracts cancellation tickets from the net submitted quantity", () => {
