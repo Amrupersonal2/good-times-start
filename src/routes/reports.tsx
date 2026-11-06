@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, useEffect, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import { Download, Printer, Search } from "lucide-react";
@@ -31,6 +31,9 @@ import { Segmented } from "@/components/Segmented";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
+import { getDeviceId } from "@/lib/terminal-actions";
+import { counterPayments, counterCanClose } from "@/lib/counter-logic";
+import { dateLabel, dayBounds } from "@/lib/orders-history";
 import { useDeviceCode } from "@/lib/use-device-code";
 
 export const Route = createFileRoute("/reports")({
@@ -236,36 +239,44 @@ function Staff({ orders }: { orders: Order[] }) {
 }
 
 function DayCloseTab() {
+  const settings = useRestaurantSettings();
+  const [deviceId, setDeviceId] = useState("");
+  useEffect(() => { void getDeviceId().then(setDeviceId); }, []);
+  const [period, setPeriod] = useState("today");
+  const [customDate, setCustomDate] = useState(dateLabel());
+  const historyDate = period === "custom" ? customDate : dateLabel(period === "yesterday" ? -1 : period === "before" ? -2 : 0);
   const { user } = useStaff();
   const today = dayKey(Date.now());
   const myCode = useDeviceCode();
-  const todays = useLiveQuery(() => getDb().orders.where("createdAt").aboveOrEqual(presetRange("today").from).toArray(), [], []);
-  const closes = useLiveQuery(() => getDb().dayCloses.orderBy("day").reverse().limit(30).toArray(), [], []);
-  const seriesToday = [...new Set(todays.map((o) => seriesOf(o.billNo)).filter(Boolean))];
-  const [series, setSeries] = useState("");
-  const chosen = series || myCode;
+  const allOrders = useLiveQuery(() => getDb().orders.toArray(), [], []);
+  const todays = counterPayments(allOrders, presetRange("today"), deviceId, myCode);
+  const closes = useLiveQuery(() => getDb().dayCloses.where("day").equals(historyDate).toArray(), [historyDate], []);
+  const chosen = myCode;
   const [opening, setOpening] = useState("");
   const [counted, setCounted] = useState("");
   const [note, setNote] = useState("");
-  const already = closes.find((c) => c.id === `${today}:${chosen}`);
+  const already = closes.find((c) => c.id === `${today}:${deviceId}`);
   const openingValue = Number(opening) || 0;
-  const expected = expectedCash(todays, chosen, openingValue);
+  const expected = Math.round((openingValue + todays.reduce((n, o) => n + o.payments.filter((p) => p.mode === "cash").reduce((a, p) => a + p.amount, 0), 0)) * 100) / 100;
   const countedValue = counted.trim() ? Number(counted) : null;
   const difference = countedValue === null || !Number.isFinite(countedValue) ? null : Math.round((countedValue - expected) * 100) / 100;
-  const mine = todays.filter((o) => o.status === "settled" && seriesOf(o.billNo) === chosen);
-  const running = todays.filter((o) => o.status === "held").length;
+  const mine = todays;
+  const running = allOrders.filter((o) => o.status === "held").length;
+  const canClose = counterCanClose(settings.businessType ?? "restaurant", running);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (countedValue === null || !Number.isFinite(countedValue) || countedValue < 0) { toast.error("Enter the cash you counted in the drawer."); return; }
+    if (!deviceId || !canClose) { toast.error("This counter cannot close yet."); return; }
     const record: DayClose = {
-      id: `${today}:${chosen}`, day: today, series: chosen, openingCash: openingValue, expectedCash: expected, countedCash: countedValue,
+      id: `${today}:${deviceId}`, deviceId, day: today, series: chosen, openingCash: openingValue, expectedCash: expected, countedCash: countedValue,
       bills: mine.length, net: Math.round(mine.reduce((s, o) => s + o.total, 0) * 100) / 100, at: Date.now(),
       ...(note.trim() ? { note: note.trim() } : {}), ...(user ? { closedBy: user.displayName } : {}),
     };
     await getDb().dayCloses.put(record);
     await markDirty(["day_close", record.id]);
     toast.success(`Counter ${chosen} closed for ${today}`);
+    setPeriod("today");
     setCounted("");
     setNote("");
   };
@@ -274,11 +285,8 @@ function DayCloseTab() {
     <div className="grid gap-4 lg:grid-cols-2">
       <form className="card-elevated space-y-3 p-4" onSubmit={(event) => void submit(event)}>
         <h2 className="text-sm font-semibold">Close today's cash drawer</h2>
-        {running ? <p className="rounded-lg bg-gold/20 p-2 text-sm text-gold-foreground">{running} running bill{running === 1 ? " is" : "s are"} still open. Settle or cancel {running === 1 ? "it" : "them"} first for an exact count.</p> : null}
-        <label className="block text-sm font-medium">Counter (bill series)
-          <Dropdown ariaLabel="Bill series" className="mt-1" value={chosen} onChange={setSeries}
-            options={[...new Set([myCode, ...seriesToday])].filter(Boolean).map((s) => ({ value: s, label: s, ...(s === myCode ? { hint: "This device" } : {}) }))} />
-        </label>
+        {running && !canClose ? <p className="rounded-lg bg-gold/20 p-2 text-sm text-gold-foreground">{running} running bills remain open.</p> : null}
+        <div className="text-sm"><span className="font-medium">Counter {chosen}</span><span className="ml-2 text-muted-foreground">{deviceId.slice(0, 8).toUpperCase()}</span></div>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm font-medium">Opening float<input inputMode="decimal" value={opening} onChange={(e) => setOpening(e.target.value)} placeholder="₹0" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" /></label>
           <label className="block text-sm font-medium">Cash counted now<input inputMode="decimal" value={counted} onChange={(e) => setCounted(e.target.value)} placeholder="₹" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" /></label>
@@ -289,13 +297,15 @@ function DayCloseTab() {
           {difference !== null ? <div className={`flex justify-between font-bold ${difference === 0 ? "text-success" : "text-destructive"}`}><span>{difference === 0 ? "Matches" : difference > 0 ? "Extra cash" : "Short"}</span><span>{formatINR(Math.abs(difference))}</span></div> : null}
         </div>
         <label className="block text-sm font-medium">Note<input maxLength={160} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Gave ₹500 change float to the night shift…" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" /></label>
-        <ConfirmButton id="close-counter" submit className={cn(buttonVariants(), "w-full")} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again to close the counter">{already ? "Close again (replaces earlier close)" : "Close counter"}</ConfirmButton>
+        <ConfirmButton id="close-counter" disabled={!deviceId || !canClose} submit className={cn(buttonVariants(), "w-full")} armedClassName="!bg-gold !text-gold-foreground" confirm="Tap again to close the counter">{already ? "Close again (replaces earlier close)" : "Close counter"}</ConfirmButton>
       </form>
       <div className="card-elevated p-4">
-        <h2 className="mb-2 text-sm font-semibold">Recent closes</h2>
-        {closes.length ? (
+        <h2 className="mb-2 text-sm font-semibold">Counter history</h2>
+        <Segmented ariaLabel="Counter history dates" value={period} onChange={setPeriod} options={[{ value: "today", label: "Today" }, { value: "yesterday", label: "Yesterday" }, { value: "before", label: "Day before" }, { value: "custom", label: "Custom" }]} />
+        {period === "custom" ? <input type="date" aria-label="Counter history date" value={customDate} onChange={(e) => { if (e.target.value) setCustomDate(e.target.value); }} className="my-3 rounded-md border border-input bg-card p-2" /> : null}
+        {closes.filter((c) => c.deviceId ? c.deviceId === deviceId : c.series === chosen).length ? (
           <ul className="divide-y divide-border text-sm">
-            {closes.map((c) => {
+            {closes.filter((c) => c.deviceId ? c.deviceId === deviceId : c.series === chosen).map((c) => {
               const diff = Math.round((c.countedCash - c.expectedCash) * 100) / 100;
               return (
                 <li key={c.id} className="py-2">
@@ -322,7 +332,7 @@ function ReportsPage() {
   usePolicy();
   // Reception sees what Settings → Roles allows: the daily summary and/or the Sales Summary.
   const staffTabs: { v: Tab; l: string }[] = [
-    ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Close day" }] : []),
+    ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Cash Counter" }] : []),
     ...(can(user, "reports.summary") ? [{ v: "summary" as const, l: "Sales Summary" }] : []),
   ];
   const [preset, setPreset] = useState<Preset>("today");
@@ -348,7 +358,7 @@ function ReportsPage() {
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
   ];
   const tabs: { v: Tab; l: string }[] = full ? [
-    { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Close day" },
+    { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Cash Counter" },
   ] : staffTabs;
 
   return (
@@ -356,7 +366,7 @@ function ReportsPage() {
       <div className="p-4 lg:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{full ? "Reports" : tab === "summary" ? "Sales Summary" : "Close day"}</h1>
+            <h1 className="text-2xl font-bold">{full ? "Reports" : tab === "summary" ? "Sales Summary" : "Cash Counter"}</h1>
             <p className="text-sm text-muted-foreground">{full || tab === "summary" ? "Bills from every device in the restaurant that has synced." : "Count the cash drawer and close your counter."}</p>
           </div>
           {full && can(user, "reports.export") ? <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button> : null}
