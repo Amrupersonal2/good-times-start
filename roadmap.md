@@ -1,5 +1,10 @@
 # POS expansion
 
+## Counter bill numbering
+- [ ] Add owner-authorized reset with collision protection and durable counter series metadata.
+- [ ] Rename the retained bill and linked references to TBX/26-27/0001; next number 0002.
+- [ ] Run numbering, permission and sync tests; verify the owner reset through the screen.
+
 ## Live app completion
 - [ ] Finish guest table selection and verify checkout reaches the signed-in POS and another device.
 - [ ] Add GSTR-1 and sales exports to the standalone live reports app.
