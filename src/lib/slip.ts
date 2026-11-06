@@ -71,7 +71,7 @@ function itemColumns(cols: number) {
 }
 
 /** The customer bill: header, guest and table, items, totals, payment, UPI QR and footer. */
-export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper, endFeedMm = 50): Slip {
+export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper, endFeedMm = 5): Slip {
   const cols = columnsFor(paper);
   const L: SlipLine[] = [];
   const center = (text: string, extra: Partial<SlipLine> = {}) => { for (const t of wrap(text, extra.size === "big" ? cols / 2 : cols)) L.push({ text: t, align: "center", ...extra }); };
