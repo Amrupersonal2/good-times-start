@@ -42,7 +42,7 @@ export function GuestDetailsFields({
       </div>
       {custom && maxGuests > 6 ? (
         <label className="block text-[11px] text-muted-foreground">
-          Custom guest count (table capacity: {maxGuests})
+          {orderType === "dine-in" ? `Custom guest count (table capacity: ${maxGuests})` : "Custom guest count"}
           <input aria-label="Custom total number of guests" type="number" inputMode="numeric" min={7} max={maxGuests}
             required value={(guestCount ?? 0) > 6 ? guestCount : ""}
             onChange={(e) => setGuestCount(e.target.value ? Number(e.target.value) : undefined)}
