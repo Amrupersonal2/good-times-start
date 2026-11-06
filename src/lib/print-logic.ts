@@ -43,7 +43,7 @@ export const DEFAULT_PRINT_CONFIG: PrintConfig = {
   autoPrintBill: false,
   stations: [],
   largeKotText: true,
-  endFeedMm: 50,
+  endFeedMm: 5,
   cutter: "none",
 };
 
