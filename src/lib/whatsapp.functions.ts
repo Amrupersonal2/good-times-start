@@ -50,11 +50,8 @@ export const sendWhatsappCampaign = createServerFn({ method: "POST" })
     const { data: already } = await ctx.supabase.from("marketing_sends").select("phone").eq("campaign_id", data.campaignId).eq("status", "sent");
     const done = new Set(((already ?? []) as { phone: string }[]).map((r) => r.phone));
     // Only message guests of this restaurant who agreed to WhatsApp messages; never caller-chosen numbers.
-    const wanted = data.recipients.map((r) => r.wa);
-    const local = wanted.map((w) => (w.startsWith("91") && w.length === 12 ? w.slice(2) : w));
     const { data: optedIn } = await ctx.supabase.from("guest_orders").select("customer_phone")
-      .eq("restaurant_id", data.restaurantId).eq("whatsapp_opt_in", true)
-      .in("customer_phone", [...new Set([...wanted, ...local])]);
+      .eq("restaurant_id", data.restaurantId).eq("whatsapp_opt_in", true).limit(10000);
     const allowed = new Set(((optedIn ?? []) as { customer_phone: string }[]).map((g) => {
       const d = g.customer_phone.replace(/\D/g, "");
       return d.length === 10 ? `91${d}` : d;
