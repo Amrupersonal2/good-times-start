@@ -93,7 +93,8 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
 
   const when = dateTime(order.createdAt);
   L.push({ text: plain(`Bill: ${order.billNo}`) });
-  L.push({ text: `Date: ${when.date} ${when.time}` });
+  L.push({ text: `Date: ${when.date}` });
+  L.push({ text: `Time: ${when.time}` });
   const guest = [order.customer?.name, order.customer?.phone].filter(Boolean).join("/");
   if (guest) for (const t of wrap(`Guest: ${guest}`, cols)) L.push({ text: t });
   if (order.customer?.gstin) L.push({ text: plain(`Guest GSTIN: ${order.customer.gstin}`) });
@@ -137,8 +138,12 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
   const due = order.status === "held" ? order.total : order.payments.filter((p) => p.mode === "credit").reduce((s, p) => s + p.amount, 0);
   const qr = settings.upiVpa && order.status !== "void" && due > 0 ? "upi" : undefined;
   L.push({ text: "" });
-  center(settings.billFooter || "Thank you! Visit again.");
+  center("Thank you for visiting", { bold: true });
+  center("TAB Bistro by XTSY", { bold: true, size: "tall" });
+  center("POS by XTSY", { bold: true, size: "tall" });
   if (qr) { L.push({ text: "" }); L.push({ text: `Scan to pay Rs.${money(due)} by UPI`, align: "center", bold: true }); }
+  // About 3 cm of tear-off space after the customer-facing footer.
+  for (let i = 0; i < 8; i++) L.push({ text: "" });
   return { paper, lines: L, qr };
 }
 
@@ -149,7 +154,10 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   const L: SlipLine[] = [];
   if (!first) return { paper, lines: L };
   const cancel = first.kind === "cancel";
-  if (header) for (const t of wrap(header, cols)) L.push({ text: t, align: "center" });
+  // About 3 cm of leading paper before each kitchen ticket.
+  for (let i = 0; i < 8; i++) L.push({ text: "" });
+  const restaurant = header.trim() || "TAB Bistro by XTSY";
+  for (const t of wrap(restaurant, cols)) L.push({ text: t, align: "center", bold: true, size: "tall" });
   L.push({ text: cancel ? "CANCEL KOT" : "Running KOT", align: "center", bold: true, size: cancel ? "big" : "normal" });
   L.push({ text: ORDER_TYPE[first.orderType ?? "dine-in"] ?? "DINE IN", align: "left", bold: true, size: "big" });
   const table = first.tableLabel ?? first.tableId;
@@ -157,7 +165,8 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   L.push(rule(cols));
   const when = dateTime(first.createdAt);
   L.push({ text: plain(`Bill: ${first.billNo}`) });
-  L.push({ text: `Date: ${when.date}  Time: ${when.time}` });
+  L.push({ text: `Date: ${when.date}` });
+  L.push({ text: `Time: ${when.time}` });
   L.push(rule(cols));
   const qtyW = 5;
   let total = 0;
@@ -175,6 +184,8 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
     L.push(rule(cols));
   }
   L.push(pair("Total Qty", qtyText(total), cols, { bold: true }));
+  // About 1 cm of trailing paper after the kitchen ticket.
+  for (let i = 0; i < 3; i++) L.push({ text: "" });
   return { paper, lines: L };
 }
 
