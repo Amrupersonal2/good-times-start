@@ -43,9 +43,9 @@ function minutesSince(since?: number) {
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
-function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable | null; sections: string[]; taken: string[]; onDone: () => void }) {
+function TableForm({ table, sections, taken, onDone, newSection = false }: { table: RestaurantTable | null; sections: string[]; taken: string[]; onDone: () => void; newSection?: boolean }) {
   const [label, setLabel] = useState(table?.label ?? "");
-  const [section, setSection] = useState(table?.section ?? sections[0] ?? "Dine-in");
+  const [section, setSection] = useState(newSection ? "" : table?.section ?? sections[0] ?? "Dine-in");
   const [seats, setSeats] = useState(String(table?.seats ?? 4));
   const [error, setError] = useState("");
 
@@ -55,9 +55,14 @@ function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable 
     if (!label.trim()) { setError("Enter a table name, like T7."); return; }
     if (!section.trim()) { setError("Enter a section, like Rooms or Dine-in."); return; }
     if (!Number.isInteger(n) || n < 1 || n > 50) { setError("Seats must be between 1 and 50."); return; }
-    await saveTable({ id: table?.id ?? tableIdFor(label, taken), label: label.trim().slice(0, 12), section: section.trim().slice(0, 30), seats: n });
-    toast.success(table ? `${label.trim()} updated` : `${label.trim()} added`);
-    onDone();
+    if (newSection && sections.some((s) => s.toLowerCase() === section.trim().toLowerCase())) { setError("This section already exists. Use Add table to add a table to it."); return; }
+    try {
+      await saveTable({ id: table?.id ?? tableIdFor(label, taken), label: label.trim().slice(0, 12), section: section.trim().slice(0, 30), seats: n });
+      toast.success(newSection ? `${section.trim()} created with ${label.trim()}` : table ? `${label.trim()} updated` : `${label.trim()} added`);
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save this table.");
+    }
   };
   const remove = async () => {
     if (!table) return;
@@ -73,7 +78,7 @@ function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable 
   return (
     <form className="space-y-3" onSubmit={(event) => void submit(event)}>
       <div className="grid grid-cols-3 gap-3">
-        <label className="col-span-1 block text-sm font-medium">Name
+        <label className="col-span-1 block text-sm font-medium">{newSection ? "First table" : "Name"}
           <input autoFocus required maxLength={12} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="T7" className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm" />
         </label>
         <label className="col-span-1 block text-sm font-medium">Section
@@ -86,7 +91,7 @@ function TableForm({ table, sections, taken, onDone }: { table: RestaurantTable 
       <datalist id="floor-sections">{sections.map((s) => <option key={s} value={s} />)}</datalist>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       <div className="flex gap-2">
-        <Button type="submit">{table ? "Save table" : "Add table"}</Button>
+        <Button type="submit">{newSection ? "Create section & table" : table ? "Save table" : "Add table"}</Button>
         <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
         {table ? <ConfirmButton id={`delete-table-${table.id}`} className={cn(buttonVariants({ variant: "ghost" }), "ml-auto text-destructive hover:text-destructive")} armedClassName="!bg-destructive !text-destructive-foreground"
           onConfirm={remove} confirm={<><Trash2 />Tap again to delete</>}><Trash2 />Delete</ConfirmButton> : null}
@@ -162,7 +167,7 @@ function TablesPage() {
   const openBill = (t: RestaurantTable) => void navigate({ to: "/", search: { table: t.id } });
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<RestaurantTable | null>(null);
-  const [form, setForm] = useState<RestaurantTable | "new" | null>(null);
+  const [form, setForm] = useState<RestaurantTable | "new" | "section" | null>(null);
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = window.setInterval(() => setTick((t) => t + 1), 60_000);
@@ -188,7 +193,8 @@ function TablesPage() {
           </div>
           {canEdit ? (
             <div className="flex gap-2">
-              {editing ? <Button variant="outline" onClick={() => setForm("new")}><Plus />Add table</Button> : null}
+              <Button variant="outline" onClick={() => setForm("section")}><Plus />Add section</Button>
+              <Button variant="outline" onClick={() => setForm("new")}><Plus />Add table</Button>
               <Button variant={editing ? "default" : "outline"} onClick={() => setEditing(!editing)}><Pencil />{editing ? "Done" : "Edit floor"}</Button>
             </div>
           ) : null}
@@ -228,7 +234,7 @@ function TablesPage() {
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No tables yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">{canEdit ? "Choose Edit floor, then Add table. Takeaway and delivery bills work without tables." : "Ask the owner or a manager to set up the floor."}</p>
+            {!canEdit ? <p className="mt-1 text-sm text-muted-foreground">Ask the owner or a manager to set up the floor.</p> : null}
           </div>
         ) : null}
 
@@ -277,9 +283,9 @@ function TablesPage() {
 
       <Dialog open={form !== null} onOpenChange={(open) => { if (!open) setForm(null); }}>
         <DialogContent className="max-w-md">
-          <DialogTitle>{form === "new" ? "Add table" : form ? `Edit ${form.label}` : ""}</DialogTitle>
+          <DialogTitle>{form === "section" ? "Add section" : form === "new" ? "Add table" : form ? `Edit ${form.label}` : ""}</DialogTitle>
           {form !== null ? (
-            <TableForm key={form === "new" ? "new" : form.id} table={form === "new" ? null : form} sections={sections.length ? sections : DEFAULT_SECTIONS}
+            <TableForm key={typeof form === "string" ? form : form.id} table={typeof form === "string" ? null : form} sections={sections} newSection={form === "section"}
               taken={tables.map((t) => t.id)} onDone={() => setForm(null)} />
           ) : null}
         </DialogContent>
