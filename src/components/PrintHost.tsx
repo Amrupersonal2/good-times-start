@@ -56,7 +56,7 @@ export async function printBill(order: Order): Promise<void> {
   if (await routeWirelessPrint('bill', order)) return;
   const [config, settings] = await Promise.all([getPrintConfig(), getSettings()]);
   if (config.method === "browser" && !config.silentBrowserReady) { notifyPrinterSetup(); return; }
-  const slip = billSlip(order, settings, config.paper, config.endFeedMm);
+  const slip = billSlip(order, settings, config.paper);
   const copies = Math.max(1, config.billCopies);
   const due = order.status === "held" ? order.total : order.payments.filter((p) => p.mode === "credit").reduce((s, p) => s + p.amount, 0);
   const link = slip.qr && settings.upiVpa ? upiLink({ vpa: settings.upiVpa, name: settings.name || "Restaurant", amount: due, billNo: order.billNo }) : undefined;
@@ -82,7 +82,7 @@ export async function printKots(kots: Kot[], source: "sent" | "incoming" | "repr
   if (!mine.length) return;
   const settings = await getSettings();
   const groups = withCopies(kotPrintGroups(mine, settings.kotByStation ?? true), Math.max(1, config.kotCopies));
-  const slips = groups.map((g) => kotSlip(g, config.paper, settings.kotHeader ?? "", config.largeKotText, config.endFeedMm));
+  const slips = groups.map((g) => kotSlip(g, config.paper, settings.kotHeader ?? "", config.largeKotText));
   if (config.method === "rawbt") { sendToRawbt(slips.map((slip) => escPos(slip, { cutter: config.cutter }))); return; }
   printDocuments(slips.map((slip, i) => <div key={`${groups[i]?.[0]?.uid ?? i}-${i}`} className="kot-print-slip"><SlipView slip={slip} /></div>));
 }

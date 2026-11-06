@@ -18,8 +18,11 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export const KOT_END_FEED_MM = 5;
-export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number }
+/** Blank paper before a KOT (3 cm), after a KOT (1 cm) and after the main bill (3 cm). */
+export const KOT_START_FEED_MM = 30;
+export const KOT_END_FEED_MM = 10;
+export const BILL_END_FEED_MM = 30;
+export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number; startFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
 const PAY: Record<string, string> = { cash: "Cash", upi: "UPI", card: "Card", wallet: "Wallet", credit: "Due", points: "Points" };
@@ -71,7 +74,7 @@ function itemColumns(cols: number) {
 }
 
 /** The customer bill: header, guest and table, items, totals, payment, UPI QR and footer. */
-export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper, endFeedMm = 5): Slip {
+export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper, endFeedMm = BILL_END_FEED_MM): Slip {
   const cols = columnsFor(paper);
   const L: SlipLine[] = [];
   const center = (text: string, extra: Partial<SlipLine> = {}) => { for (const t of wrap(text, extra.size === "big" ? cols / 2 : cols)) L.push({ text: t, align: "center", ...extra }); };
@@ -182,7 +185,7 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true, en
   }
   L.push(pair("Total Qty", qtyText(total), cols, { bold: true }));
   L.push(rule(cols));
-  return { paper, lines: L, endFeedMm };
+  return { paper, lines: L, startFeedMm: KOT_START_FEED_MM, endFeedMm };
 }
 
 /* ---------------- ESC/POS ---------------- */
@@ -199,6 +202,11 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number; cu
     push(ESC, 0x4d, 0); // Font A: 32 columns on 58 mm / 48 on 80 mm
     push(ESC, 0x32); // standard line spacing, independent of a previous job
     push(ESC, 0x74, 0x00); // code page PC437 (ASCII-safe)
+    if (slip.startFeedMm) {
+      push(GS, 0x50, 203, 203);
+      let lead = Math.round(slip.startFeedMm * 203 / 25.4);
+      while (lead > 0) { const chunk = Math.min(255, lead); push(ESC, 0x4a, chunk); lead -= chunk; }
+    }
     for (const line of slip.lines) {
       push(ESC, 0x61, line.align === "center" ? 1 : line.align === "right" ? 2 : 0);
       push(ESC, 0x45, line.bold ? 1 : 0);
