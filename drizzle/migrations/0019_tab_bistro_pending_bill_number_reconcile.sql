@@ -201,7 +201,12 @@ numbered_groups AS (
     g.old_bill_no,
     g.existing_kot_no AS new_kot_no,
     CASE
-      WHEN coalesce(g.first_request_id, '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+      WHEN coalesce(g.first_request_id, '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        THEN g.first_request_id::uuid
+      ELSE md5(g.restaurant_id::text || ':KOT:' || g.group_key)::uuid
+    END AS request_id,
+    substring(g.existing_kot_no from '/([0-9]+)$')::bigint AS sequence_number,
+    g.canonical_number_count
   FROM (
     SELECT
       g.*,
