@@ -101,6 +101,7 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
   if (order.closedBy) L.push({ text: plain(`Cashier: ${order.closedBy}`) });
   const table = order.tableLabel ?? order.tableId;
   if (table) L.push({ text: plain(`Table: ${table}${order.source === "qr" ? " (QR order)" : ""}`), bold: true });
+  if (order.tableSection) for (const text of wrap(`Section: ${order.tableSection}`, cols)) L.push({ text, bold: true });
   L.push(rule(cols));
 
   const c = itemColumns(cols);
@@ -158,6 +159,8 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   L.push(rule(cols));
   const when = dateTime(first.createdAt);
   L.push({ text: plain(`Bill: ${first.billNo}`) });
+  if (first.kotNo) for (const text of wrap(first.kotNo, cols)) L.push({ text, bold: true });
+  if (first.tableSection) for (const text of wrap(`Section: ${first.tableSection}`, cols)) L.push({ text, bold: true });
   const stamp = `Date: ${when.date}  Time: ${when.time}`;
   for (const t of stamp.length <= cols ? [stamp] : wrap(stamp, cols)) L.push({ text: t });
   L.push(rule(cols));

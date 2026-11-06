@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import type { CartDraft, Customer, DayClose, InventoryItem, Kot, Material, MenuItem, Order, RestaurantSettings, RestaurantTable, StockEntry, Supplier } from "./types";
+import { kotNumber } from "./kot-history";
 import { SEED_MENU, SEED_TABLES } from "./seed";
 import { normalisePhone } from "./customer-logic";
 import { stockLevels } from "./stock-logic";
@@ -257,6 +258,18 @@ export async function nextSeq(): Promise<number> {
     await db.meta.put({ key: "billSeq", value: cur + 1 });
     return cur + 1;
   });
+}
+
+/** Call inside the same rw transaction as the KOT write, including meta. */
+export async function nextKotNumber(deviceId: string, at: number): Promise<string> {
+  const d = new Date(at);
+  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const db = getDb();
+  const key = `kotSeq:${deviceId}:${day}`;
+  const stored = (await db.meta.get(key))?.value;
+  const seq = (typeof stored === "number" ? stored : 0) + 1;
+  await db.meta.put({ key, value: seq });
+  return kotNumber(deviceId, day, seq);
 }
 
 /* ---------- restaurant settings ---------- */

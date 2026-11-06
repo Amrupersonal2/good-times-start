@@ -1,7 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { CartLine, Kot, Order } from "./types";
 import { billNumber } from "./billing";
-import { getDb, getDeviceCode, getSettings, markDirty, nextSeq } from "./db";
+import { getDb, getDeviceCode, getSettings, markDirty, nextSeq, nextKotNumber } from "./db";
+import { getDeviceId } from "./terminal-actions";
 import { newUid, type RecordKind } from "./sync-core";
 import { latestHeldOrder } from "./table-actions";
 import { taxOptionsFor } from "./billing-config";
@@ -80,7 +81,7 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
   const order = withCustomerId(billWithGuestLines(base, lines, {
     uid: newUid(),
     billNo,
-    orderType, tableId, tableLabel: table?.label ?? guest.table_label ?? undefined,
+    orderType, tableId, tableLabel: table?.label ?? guest.table_label ?? undefined, tableSection: table?.section,
     discountPct: 0, serviceChargePct: 0, tax: taxOptionsFor(settings, orderType),
     payments: [], status: "held", createdAt: now, synced: false,
     source: guest.channel === "table" ? "qr" : "online",
@@ -95,12 +96,15 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     : guest.note ? `${guest.code}: ${guest.note}` : "";
 
   let kots: Kot[] = [];
-  await db.transaction("rw", db.orders, db.kots, async () => {
+  const deviceId = await getDeviceId();
+  const submissionId = newUid();
+  await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
+    const kotNo = await nextKotNumber(deviceId, now);
     const id = order.id ?? Number(await db.orders.add(order));
     order.id = id;
     await db.orders.put(order);
     kots = Array.from(byStation, ([station, stationLines], index): Kot => ({
-      uid: newUid(), orderId: id, orderUid: order.uid ?? "", billNo: order.billNo, station, kind: "order",
+      uid: newUid(), submissionId, kotNo, tableSection: order.tableSection, orderId: id, orderUid: order.uid ?? "", billNo: order.billNo, station, kind: "order",
       tableId: order.tableId, tableLabel: order.tableLabel ?? (guest.channel === "online" ? `${guest.code} ${guest.customer_name}`.trim() : undefined), orderType,
       lines: stationLines.map((l, i) => ({ itemId: l.itemId, name: l.name, qty: l.qty, note: index === 0 && i === 0 && pickupNote ? [l.note, pickupNote].filter(Boolean).join(" · ") : l.note })),
       status: "new", createdAt: now,

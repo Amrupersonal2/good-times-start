@@ -69,6 +69,9 @@ export interface Order {
   tableId?: string | undefined;
   /** Table name as printed, e.g. "T4"; kept with the bill in case the table is renamed later. */
   tableLabel?: string | undefined;
+  tableSection?: string;
+  settledAt?: number;
+  settledDeviceId?: string;
   lines: CartLine[];
   subtotal: number;
   discountPct: number;
@@ -147,6 +150,9 @@ export interface Kot {
   orderUid?: string;
   tableId?: string | undefined;
   tableLabel?: string | undefined;
+  tableSection?: string;
+  submissionId?: string;
+  kotNo?: string;
   orderType?: OrderType;
   billNo: string;
   station: string;
@@ -159,6 +165,7 @@ export interface Kot {
 
 export interface RestaurantSettings {
   name: string;
+  businessType?: "hotel" | "restaurant";
   legalName?: string;
   address?: string;
   phone?: string;
@@ -257,6 +264,7 @@ export interface DayClose {
   id: string;
   day: string;
   series: string;
+  deviceId?: string;
   openingCash: number;
   expectedCash: number;
   countedCash: number;
