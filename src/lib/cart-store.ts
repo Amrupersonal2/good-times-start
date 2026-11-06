@@ -5,7 +5,7 @@ import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./t
 import { computeTotals } from "./billing";
 import { getDb, markDirty } from "./db";
 import { allocateRestaurantNumber } from "./restaurant-numbering";
-import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSettledQuantities, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
 import { buildLine, priceFor } from "./menu-logic";
@@ -57,6 +57,7 @@ export function useCart(initialTableId?: string) {
   const [submittedOverride, setSubmittedOverride] = useState<{ orderUid: string; quantities: Record<string, number> } | null>(null);
   const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : getDb().kots.where("orderId").equals(activeOrder.id).toArray(), [activeOrder?.id], [] as Kot[]);
   const persistedSubmitted = submittedQuantitiesFromKots(storedKots);
+  const persistedEffectiveSubmitted = subtractSettledQuantities(persistedSubmitted, activeOrder?.kotSettledQty ?? {});
   useEffect(() => {
     if (!submittedOverride || submittedOverride.orderUid !== activeOrder?.uid) return;
     const keys = new Set([...Object.keys(persistedSubmitted), ...Object.keys(submittedOverride.quantities)]);
@@ -269,8 +270,8 @@ export function useCart(initialTableId?: string) {
 
   const totals = computeTotals(lines, discountPct, serviceChargePct, tax);
   const submitted = submittedOverride?.orderUid === activeOrder?.uid
-    ? submittedOverride.quantities
-    : storedKots.length ? persistedSubmitted : activeOrder?.kotSubmittedQty ?? {};
+    ? subtractSettledQuantities(submittedOverride.quantities, activeOrder?.kotSettledQty ?? {})
+    : storedKots.length ? persistedEffectiveSubmitted : activeOrder?.kotSubmittedQty ?? {};
   const pendingKitchenLines = unsentKitchenLines(lines, submitted);
   const pendingCancelLines = cancelledKitchenLines(lines, submitted, activeOrder?.lines ?? []);
 
@@ -358,7 +359,11 @@ export function useCart(initialTableId?: string) {
       if (!base) await db.meta.delete(pendingOrderKey);
     });
     await markDirty(["order", orderUid], ...kots.map((kot): [RecordKind, string] => ["kot", kot.uid ?? ""]));
-    setSubmittedOverride({ orderUid, quantities: nextSubmitted });
+    const persistedOverride = { ...nextSubmitted };
+    for (const [itemId, qty] of Object.entries(base?.kotSettledQty ?? {})) {
+      persistedOverride[itemId] = (persistedOverride[itemId] ?? 0) + qty;
+    }
+    setSubmittedOverride({ orderUid, quantities: persistedOverride });
     if (allCancelled) {
       await finishTable([]);
       toast.success(`Cancellation sent to the kitchen; bill ${saved.billNo} closed with nothing to pay`);
@@ -376,7 +381,7 @@ export function useCart(initialTableId?: string) {
   const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
     const detailsError = guestDetailsError(customer, guestCount, await tableCapacityOf(tableId));
     if (detailsError) { toast.error(detailsError); return false; }
-    const effectiveSubmitted = storedKots.length ? submittedQuantitiesFromKots(storedKots) : activeOrder?.kotSubmittedQty ?? {};
+    const effectiveSubmitted = submitted;
     if (unsentKitchenLines(lines, effectiveSubmitted).length || cancelledKitchenLines(lines, effectiveSubmitted, activeOrder?.lines).length) {
       toast.error("Send the kitchen ticket before settling this bill");
       return false;
@@ -387,7 +392,7 @@ export function useCart(initialTableId?: string) {
       return false;
     }
     return latest;
-  }, [activeOrder, customer, guestCount, lines, storedKots]);
+  }, [activeOrder, customer, guestCount, lines, storedKots, submitted]);
 
   const settle = useCallback(async (
     payment: PaymentMode | Payment[],
@@ -451,6 +456,7 @@ export function useCart(initialTableId?: string) {
   const settlePart = useCallback(async (quantities: Record<string, number>, payment: Payment[], closedBy?: string): Promise<Order | null> => {
     const latest = await checkStillOpen();
     if (latest === false) return null;
+    if (!latest) { toast.error("This running bill is no longer available. Refresh the table before splitting payment."); return null; }
     const { split, remaining } = splitLines(lines, quantities);
     if (!split.length) { toast.error("Choose at least one item to split off"); return null; }
     if (!remaining.length) return settle(payment, closedBy);
@@ -460,7 +466,7 @@ export function useCart(initialTableId?: string) {
     const label = latest?.tableLabel ?? await tableLabelOf(tableId);
     const partUid = newUid();
     const part: Order = withCustomerId({
-      uid: partUid, billNo: await newBillNumber(partUid), orderType, tableId: tableId ?? latest?.tableId, tableLabel: label, lines: split,
+      uid: partUid, billNo: await newBillNumber(partUid), numberRequestId: partUid, orderType, tableId: tableId ?? latest.tableId, tableLabel: label, lines: split,
       subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
       taxable: t.taxable, tax,
@@ -475,9 +481,20 @@ export function useCart(initialTableId?: string) {
 
     const rest = computeTotals(remaining, discountPct, serviceChargePct, tax);
     if (latest?.id !== undefined) {
-      const sent: Record<string, number> = { ...(latest.kotSubmittedQty ?? {}) };
-      for (const line of split) sent[line.itemId] = Math.max(0, (sent[line.itemId] ?? 0) - line.qty);
-      const updated: Order = { ...latest, lines: remaining, kotSubmittedQty: sent, subtotal: rest.subtotal, discountAmt: rest.discountAmt,
+      const effectiveSent = storedKots.length
+        ? subtractSettledQuantities(persistedSubmitted, latest.kotSettledQty ?? {})
+        : { ...(latest.kotSubmittedQty ?? {}) };
+      const sent: Record<string, number> = { ...effectiveSent };
+      const kotSettledQty: Record<string, number> = { ...(latest.kotSettledQty ?? {}) };
+      for (const line of split) {
+        const previouslySent = Math.max(0, sent[line.itemId] ?? 0);
+        const allocatedFromKitchen = Math.min(previouslySent, line.qty);
+        if (allocatedFromKitchen > 0) kotSettledQty[line.itemId] = (kotSettledQty[line.itemId] ?? 0) + allocatedFromKitchen;
+        const stillSent = previouslySent - line.qty;
+        if (stillSent > 0) sent[line.itemId] = stillSent;
+        else delete sent[line.itemId];
+      }
+      const updated: Order = { ...latest, lines: remaining, kotSubmittedQty: sent, kotSettledQty, subtotal: rest.subtotal, discountAmt: rest.discountAmt,
         serviceCharge: rest.serviceCharge, taxable: rest.taxable, cgst: rest.cgst, sgst: rest.sgst, roundOff: rest.roundOff, total: rest.total, synced: false };
       await db.orders.put(updated);
       setActiveOrder(updated);
