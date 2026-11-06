@@ -18,7 +18,7 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export const KOT_END_FEED_MM = 50;
+export const KOT_END_FEED_MM = 5;
 export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
