@@ -5,7 +5,7 @@ import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./t
 import { computeTotals } from "./billing";
 import { getDb, markDirty } from "./db";
 import { allocateRestaurantNumber } from "./restaurant-numbering";
-import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
 import { buildLine, priceFor } from "./menu-logic";
@@ -47,7 +47,9 @@ export function useCart(initialTableId?: string) {
   const [discountPct, setDiscountPct] = useState(0);
   const [serviceChargePct, setServiceChargePct] = useState(0);
   const [customer, setCustomer] = useState<{ name?: string; phone?: string; gstin?: string }>({});
+  const [guestCount, setGuestCount] = useState<number | undefined>();
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : getDb().kots.where("orderId").equals(activeOrder.id).toArray(), [activeOrder?.id], [] as Kot[]);
   const [draftReady, setDraftReady] = useState(false);
   const settings = useRestaurantSettings();
   const { user } = useStaff();
@@ -79,6 +81,7 @@ export function useCart(initialTableId?: string) {
     setDiscountPct(draft?.discountPct ?? openOrder?.discountPct ?? 0);
     setServiceChargePct(openOrder?.serviceChargePct ?? 0);
     setCustomer(openOrder?.customer ?? {});
+    setGuestCount(draft?.guestCount ?? openOrder?.guestCount);
     setActiveOrder(openOrder);
     if (id) setOrderType("dine-in");
     setDraftReady(true);
@@ -89,7 +92,7 @@ export function useCart(initialTableId?: string) {
   useEffect(() => {
     if (!draftReady) return;
     const timeout = window.setTimeout(() => {
-      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, baseLines: activeOrder?.lines ?? [], lines, discountPct, updatedAt: Date.now() });
+      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, baseLines: activeOrder?.lines ?? [], lines, discountPct, guestCount, updatedAt: Date.now() });
       if (tableId && lines.length) {
         const total = computeTotals(lines, discountPct, serviceChargePct, tax).total;
         void getDb().restTables.get(tableId).then(async (table) => {
@@ -116,7 +119,7 @@ export function useCart(initialTableId?: string) {
     }, 150);
     return () => window.clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- tax is tracked by taxKey
-  }, [draftReady, tableId, lines, discountPct, serviceChargePct, activeOrder?.uid, taxKey, myDevice, staffName]);
+  }, [draftReady, tableId, lines, discountPct, guestCount, serviceChargePct, activeOrder?.uid, taxKey, myDevice, staffName]);
 
   // Who else is taking this table's first order, if anyone.
   const liveTable = useLiveQuery(async () => (tableId ? getDb().restTables.get(tableId) : undefined), [tableId]);
@@ -228,6 +231,7 @@ export function useCart(initialTableId?: string) {
     setDiscountPct(order.discountPct);
     setServiceChargePct(order.serviceChargePct ?? 0);
     setCustomer(order.customer ?? {});
+    setGuestCount(order.guestCount);
     setOrderType(order.orderType);
     setDraftReady(true);
   }, [setTableId]);
@@ -243,13 +247,14 @@ export function useCart(initialTableId?: string) {
     setDiscountPct(0);
     setServiceChargePct(0);
     setCustomer({});
+    setGuestCount(undefined);
     setTableIdState(undefined);
     setActiveOrder(null);
     setDraftReady(true);
   }, [activeOrder, tableId]);
 
   const totals = computeTotals(lines, discountPct, serviceChargePct, tax);
-  const submitted = activeOrder?.kotSubmittedQty ?? {};
+  const submitted = storedKots.length ? submittedQuantitiesFromKots(storedKots) : activeOrder?.kotSubmittedQty ?? {};
   const pendingKitchenLines = unsentKitchenLines(lines, submitted);
   const pendingCancelLines = cancelledKitchenLines(lines, submitted, activeOrder?.lines ?? []);
 
@@ -266,6 +271,7 @@ export function useCart(initialTableId?: string) {
     setDiscountPct(0);
     setServiceChargePct(0);
     setCustomer({});
+    setGuestCount(undefined);
     setActiveOrder(null);
     setTableIdState(undefined);
   }, [tableId]);
@@ -273,6 +279,8 @@ export function useCart(initialTableId?: string) {
   /** Send unsent items (and cancellations) to the kitchen; returns the tickets and the saved running bill. */
   const sendKitchenWithOrder = useCallback(async (): Promise<{ kots: Kot[]; order: Order } | null> => {
     if (!pendingKitchenLines.length && !pendingCancelLines.length) return null;
+    const detailsError = guestDetailsError(customer, guestCount);
+    if (detailsError) { toast.error(detailsError); return null; }
     const db = getDb();
     const now = Date.now();
     // Re-read the shared order: another device may have sent items for this table meanwhile.
@@ -286,7 +294,7 @@ export function useCart(initialTableId?: string) {
     const t = computeTotals(merged, discountPct, serviceChargePct, tax);
     const tableLabel = await tableLabelOf(tableId);
     const tableSection = tableId ? (await db.restTables.get(tableId))?.section : base?.tableSection;
-    const extras = { serviceChargePct, tableSection, tax, taxable: t.taxable, ...(customer.name || customer.phone || customer.gstin ? { customer } : {}) };
+    const extras = { serviceChargePct, tableSection, tax, taxable: t.taxable, guestCount, customer };
     const pendingOrderKey = `pendingOrderUid:${tableId ?? "walkin"}`;
     const storedPendingOrderUid = (await db.meta.get(pendingOrderKey))?.value;
     const newOrderUid = base?.uid ?? (typeof storedPendingOrderUid === "string" ? storedPendingOrderUid : newUid());
@@ -349,7 +357,8 @@ export function useCart(initialTableId?: string) {
 
   /** Re-read the shared order before closing it, in case another device already did. */
   const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
-    if (unsentKitchenLines(lines, activeOrder?.kotSubmittedQty).length || cancelledKitchenLines(lines, activeOrder?.kotSubmittedQty, activeOrder?.lines).length) {
+    const effectiveSubmitted = storedKots.length ? submittedQuantitiesFromKots(storedKots) : activeOrder?.kotSubmittedQty ?? {};
+    if (unsentKitchenLines(lines, effectiveSubmitted).length || cancelledKitchenLines(lines, effectiveSubmitted, activeOrder?.lines).length) {
       toast.error("Send the kitchen ticket before settling this bill");
       return false;
     }
@@ -359,7 +368,7 @@ export function useCart(initialTableId?: string) {
       return false;
     }
     return latest;
-  }, [activeOrder, lines]);
+  }, [activeOrder, lines, storedKots]);
 
   const settle = useCallback(async (
     payment: PaymentMode | Payment[],
@@ -367,6 +376,8 @@ export function useCart(initialTableId?: string) {
     options: { autoKot?: boolean; onKots?: (kots: Kot[]) => void } = {},
   ): Promise<Order | null> => {
     if (!lines.length) return null;
+    const detailsError = guestDetailsError(customer, guestCount);
+    if (detailsError) { toast.error(detailsError); return null; }
     let latest: Order | null;
     let billLines = lines;
     const unsent = pendingKitchenLines.length > 0 || pendingCancelLines.length > 0;
@@ -401,7 +412,7 @@ export function useCart(initialTableId?: string) {
       taxable: t.taxable, tax,
       payments, status: "settled", settledAt: Date.now(), settledDeviceId: await getDeviceId(), createdAt: latest?.createdAt ?? Date.now(), synced: false,
       tableSection: latest?.tableSection ?? (tableId ? (await getDb().restTables.get(tableId))?.section : undefined),
-      ...(customer.name || customer.phone || customer.gstin ? { customer } : {}),
+      customer, guestCount,
       ...(closedBy ? { closedBy } : {}),
     });
     const db = getDb();
@@ -412,7 +423,7 @@ export function useCart(initialTableId?: string) {
     await finishTable([["order", order.uid ?? ""]]);
     toast.success(`Bill ${order.billNo} settled`);
     return order;
-  }, [checkStillOpen, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, sendKitchenWithOrder, serviceChargePct, tableId, taxKey]);
+  }, [checkStillOpen, customer, guestCount, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, sendKitchenWithOrder, serviceChargePct, tableId, taxKey]);
 
   /**
    * Settle part of a running bill now (guests paying separately). The chosen
@@ -436,7 +447,7 @@ export function useCart(initialTableId?: string) {
       taxable: t.taxable, tax,
       status: "settled", settledAt: now, settledDeviceId: await getDeviceId(), tableSection: latest?.tableSection ?? (tableId ? (await getDb().restTables.get(tableId))?.section : undefined), createdAt: now, synced: false,
       kotSubmittedQty: Object.fromEntries(split.map((l) => [l.itemId, l.qty])),
-      ...(customer.name || customer.phone || customer.gstin ? { customer } : {}),
+      customer, guestCount,
       ...(closedBy ? { closedBy } : {}),
     });
     const db = getDb();
@@ -463,7 +474,7 @@ export function useCart(initialTableId?: string) {
     setLines(remaining);
     toast.success(`Bill ${part.billNo} settled; the rest stays on the table`);
     return part;
-  }, [checkStillOpen, customer, discountPct, lines, orderType, serviceChargePct, settle, tableId, taxKey]);
+  }, [checkStillOpen, customer, guestCount, discountPct, lines, orderType, serviceChargePct, settle, tableId, taxKey]);
 
   /** Cancel a running order (nothing was paid). Kept as a void bill with the reason. */
   const cancelOrder = useCallback(async (reason: string, closedBy?: string) => {
@@ -479,7 +490,7 @@ export function useCart(initialTableId?: string) {
 
   return {
     lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct, tax,
-    serviceChargePct, setServiceChargePct, customer, setCustomer, addItem, setQty, setNote, clear, totals,
+    serviceChargePct, setServiceChargePct, customer, setCustomer, guestCount, setGuestCount, addItem, setQty, setNote, clear, totals,
     settle, settlePart, cancelOrder, sendKitchen, pendingKitchenLines, pendingCancelLines, activeOrder, openOrder, restoreLine,
     hold, takeOver,
   };
