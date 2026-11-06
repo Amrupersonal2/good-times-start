@@ -80,9 +80,15 @@ export async function loadTabBistroMenu(removeOthers: boolean): Promise<ApplyMen
  * intentionally immutable.
  */
 export async function syncPrintedTabMenuPrices(): Promise<{ dishesUpdated: number }> {
-  const { TAB_CATEGORIES, TAB_MENU } = await import("@/data/tab-bistro");
-  const current = await getDb().menu.toArray();
+  const { TAB_CATEGORIES, TAB_MATERIALS, TAB_MENU } = await import("@/data/tab-bistro");
+  const [current, currentMaterials] = await Promise.all([getDb().menu.toArray(), getDb().materials.toArray()]);
   const printedById = new Map(TAB_MENU.map((item) => [item.id, item]));
+  const currentIds = new Set(current.map((item) => item.id));
+  const existingMaterials = new Map(currentMaterials.map((material) => [material.id, material]));
+  const materials = TAB_MATERIALS.map((material) => {
+    const existing = existingMaterials.get(material.id);
+    return existing ? { ...material, ...(existing.costPerUnit !== undefined ? { costPerUnit: existing.costPerUnit } : {}), lowStockLevel: existing.lowStockLevel } : material;
+  });
   let dishesUpdated = 0;
 
   const updated = current.map((item) => {
@@ -106,13 +112,20 @@ export async function syncPrintedTabMenuPrices(): Promise<{ dishesUpdated: numbe
       ...(variants ? { variants } : {}), ...(addons ? { addons } : {}) };
   });
 
+  for (const item of TAB_MENU) {
+    if (!currentIds.has(item.id)) {
+      updated.push(item);
+      dishesUpdated += 1;
+    }
+  }
+
   const settings = await getSettings();
   const nextSettings = { ...settings, pricesIncludeGst: false, categoryOrder: TAB_CATEGORIES };
   const settingsChanged = settings.pricesIncludeGst !== false ||
     JSON.stringify(settings.categoryOrder ?? []) !== JSON.stringify(TAB_CATEGORIES);
   if (settingsChanged) await saveSettings(nextSettings);
   if (dishesUpdated || settingsChanged) {
-    await applyMenuImport(updated, [], { removeOthers: false, refreshHeldBillTax: true });
+    await applyMenuImport(updated, materials, { removeOthers: false, refreshHeldBillTax: true });
   }
   return { dishesUpdated };
 }
