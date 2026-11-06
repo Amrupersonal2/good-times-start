@@ -257,6 +257,9 @@ const SECTIONS: { category: string; station: string; hours?: { from: string; to:
       { name: "Paneer Paratha", price: 169, veg: true, recipe: { atta: 0.1, paneer: 0.07, spices: 0.004, butter: 0.015, curd: 0.05 } },
       { name: "Pancake with Maple Syrup", price: 179, veg: false, recipe: { maida: 0.08, milk: 0.1, eggs: 1, sugar: 0.015, butter: 0.015, maple: 0.03 } },
       { name: "Pancake Sundae with Ice Cream", price: 269, veg: false, recipe: { maida: 0.08, milk: 0.1, eggs: 1, sugar: 0.015, butter: 0.015, "ice-cream": 0.1, "choco-syrup": 0.02 } },
+      { name: "Puri Sabji", price: 160, veg: true, recipe: { atta: 0.1, potato: 0.12, onion: 0.02, tomato: 0.03, oil: 0.025, spices: 0.004, coriander: 0.002 } },
+      { name: "Egg Dosa", price: 160, veg: false, recipe: { rice: 0.08, "urad-whole": 0.025, eggs: 1, oil: 0.01 } },
+      { name: "Masala Dosa", price: 180, veg: true, recipe: { rice: 0.08, "urad-whole": 0.025, potato: 0.1, onion: 0.03, spices: 0.004, oil: 0.01 } },
       { name: "American Breakfast", price: 389, veg: false,
         description: "English vegetables sauté, eggs (fried or poached), chicken sausage, grilled bread, honey & butter, seasonal fruits",
         recipe: mix(B.vegSaute, { eggs: 2, "chicken-sausage": 2, bread: 2, honey: 0.015, butter: 0.01, fruits: 0.1 }),
@@ -372,7 +375,7 @@ const SECTIONS: { category: string; station: string; hours?: { from: string; to:
     ],
   },
   {
-    category: "XTSY Dum Biryani", station: STATION.indian, dishes: [
+    category: "XTSY Dum Biryani's", station: STATION.indian, dishes: [
       { name: "XTSY Egg Biryani", price: 299, veg: false, recipe: mix(B.biryani, { eggs: 2 }) },
       { name: "XTSY Chicken Biryani", price: 329, veg: false, popular: true, recipe: mix(B.biryani, { "chicken-curry-cut": 0.25 }) },
       { name: "XTSY Chicken Mandi Biryani", price: 639, veg: false, popular: true, recipe: {},
@@ -420,7 +423,7 @@ const SECTIONS: { category: string; station: string; hours?: { from: string; to:
     ],
   },
   {
-    category: "XTSY Hand Crafted Pastas", station: STATION.conti, dishes: [
+    category: "XTSY Hand Crafted Pasta's", station: STATION.conti, dishes: [
       { name: "Alfredo White Pasta", price: 329, veg: false, recipe: { pasta: 0.1, butter: 0.015, maida: 0.01, milk: 0.12, cream: 0.04, cheese: 0.025, garlic: 0.005 },
         variants: proteinPortions("alfredo", [329, 349, 389], { veg: { mushroom: 0.04, broccoli: 0.03, capsicum: 0.02 }, chicken: { "chicken-boneless": 0.08 }, seafood: { "seafood-mix": 0.08 } }), addons: ADDONS.seafood },
       { name: "Arrabbiata Red Pasta", price: 329, veg: false, recipe: { pasta: 0.1, tomato: 0.15, garlic: 0.008, oil: 0.015, "chilli-sauce": 0.005, cheese: 0.01 },
@@ -428,7 +431,7 @@ const SECTIONS: { category: string; station: string; hours?: { from: string; to:
     ],
   },
   {
-    category: "Chopsuey's with Love", station: STATION.chinese, dishes: [
+    category: "Chopsuey's with Love!", station: STATION.chinese, dishes: [
       { name: "American Chopsuey", price: 289, veg: false, recipe: mix(B.vegMix, { noodles: 0.08, oil: 0.05, ketchup: 0.04, sugar: 0.01, vinegar: 0.005, cornflour: 0.015 }),
         variants: proteinPortions("american-chopsuey", [289, 329, 379], { veg: { mushroom: 0.03 }, chicken: { "chicken-boneless": 0.08 }, seafood: { "seafood-mix": 0.08 } }), addons: ADDONS.eggSeafood },
       { name: "Chinese Garlic Chopsuey", price: 299, veg: false, recipe: mix(B.vegMix, { noodles: 0.08, oil: 0.05, garlic: 0.015, "soy-sauce": 0.012, cornflour: 0.015 }),
@@ -439,7 +442,17 @@ const SECTIONS: { category: string; station: string; hours?: { from: string; to:
     category: "Snack Corner", station: STATION.conti, dishes: [
       { name: "French Fries", price: 149, veg: true, recipe: { fries: 0.2, oil: 0.03, ketchup: 0.02 }, addons: ADDONS.snack },
       { name: "Peri Peri Fries", price: 179, veg: true, recipe: { fries: 0.2, oil: 0.03, ketchup: 0.02, "peri-peri": 0.006 }, addons: ADDONS.snack },
+      { name: "Peri Peri Cheesy Fries", price: 249, veg: true, recipe: { fries: 0.2, oil: 0.03, cheese: 0.05, "peri-peri": 0.006 }, addons: ADDONS.snack },
+      { name: "Papad", price: 150, veg: true, recipe: { papad: 2, oil: 0.01 } },
       { name: "Papad Masala", price: 159, veg: true, recipe: { papad: 2, onion: 0.04, tomato: 0.04, coriander: 0.003, spices: 0.002, lemon: 0.25, oil: 0.02 }, addons: ADDONS.snack },
+      { name: "Boiled Eggs (3 Eggs)", price: 150, veg: false, recipe: { eggs: 3 } },
+      { name: "Butter Bread Toast (3 Pcs)", price: 150, veg: true, recipe: { bread: 3, butter: 0.02 } },
+      { name: "Veg/Chicken/Paneer Pakoda", price: 200, veg: true, recipe: { maida: 0.05, onion: 0.03, oil: 0.03 },
+        variants: [
+          opt("pakoda-veg", "Veg", 200, { potato: 0.06, capsicum: 0.03 }),
+          opt("pakoda-chicken", "Chicken", 200, { "chicken-boneless": 0.08 }),
+          opt("pakoda-paneer", "Paneer", 200, { paneer: 0.08 }),
+        ] },
       { name: "Peanut Masala", price: 169, veg: true, recipe: { peanuts: 0.12, onion: 0.04, tomato: 0.03, "green-chilli": 0.003, lemon: 0.25, spices: 0.002, coriander: 0.002 }, addons: ADDONS.snack },
     ],
   },
@@ -494,7 +507,7 @@ const PRINTED_MENU_PRICES: Record<string, number> = {
   "Paneer Manchurian Gravy": 300, "Mushroom Chilli Gravy": 300, "Mushroom Manchurian Gravy": 320,
   "Chilli Chicken Gravy": 320, "Chicken Schezwan Gravy": 340, "Chicken Manchurian Gravy": 340,
   "Chicken Cheese Manchurian Gravy": 360, "Honey Chilli Chicken Gravy": 380, "Chef's Special Chicken Gravy": 380,
-  "French Fries": 150, "Peri Peri Fries": 200, "Papad Masala": 150,
+  "French Fries": 150, "Peri Peri Fries": 200, "Peri Peri Cheesy Fries": 250, "Papad": 150, "Papad Masala": 150, "Boiled Eggs (3 Eggs)": 150, "Butter Bread Toast (3 Pcs)": 150, "Veg/Chicken/Paneer Pakoda": 200,
   "Choice of Ice Cream": 160, "Fruit Bowl": 180, "Fruit Bowl with Cream": 240, "Fruit Salad": 180,
 };
 
@@ -520,29 +533,14 @@ const PRINTED_VARIANT_PRICES: Record<string, Record<string, number>> = {
 };
 
 export const TAB_CATEGORIES = [
-  "Assam Tea & Coffee",
-  "Lemonades",
-  "Mocktails & Mojitos",
-  "Signature Beverages",
-  "Non Veg Appetizers",
-  "Veg Appetizers",
-  "Tandoori Appetizers",
-  "Breakfast & Bites",
-  "XTSY Signature Soups",
-  "Signature South Indian",
-  "Pulao & Rice",
-  "XTSY Hand Crafted Pastas",
-  "Chopsuey's with Love",
-  "XTSY Dum Biryani",
-  "Chinese Fried Rice & Noodles",
-  "Chinese Gravy - Veg",
-  "Chinese Gravy - Non Veg",
-  "Indian Gravies - Veg",
-  "Indian Gravies - Non Veg",
-  "Dal Specials",
-  "Hot Tandoori Breads",
-  "Snack Corner",
-  "Desserts",
+  "Assam Tea & Coffee", "Lemonades", "Mocktails & Mojitos", "Signature Beverages",
+  "Non Veg Appetizers", "Veg Appetizers", "Tandoori Appetizers",
+  "Breakfast & Bites", "XTSY Signature Soups", "Signature South Indian",
+  "Pulao & Rice", "XTSY Hand Crafted Pasta's", "Chopsuey's with Love!",
+  "XTSY Dum Biryani's", "Chinese Fried Rice & Noodles",
+  "Chinese Gravy - Veg", "Chinese Gravy - Non Veg",
+  "Indian Gravies - Veg", "Indian Gravies - Non Veg",
+  "Dal Specials", "Hot Tandoori Breads", "Snack Corner", "Desserts",
 ];
 
 export const TAB_MENU: MenuItem[] = SECTIONS.flatMap((section) =>
