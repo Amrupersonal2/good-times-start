@@ -71,7 +71,8 @@ export async function printKots(kots: Kot[], source: "sent" | "incoming" | "repr
   if (!mine.length) return;
   const settings = await getSettings();
   const groups = withCopies(kotPrintGroups(mine, settings.kotByStation ?? true), Math.max(1, config.kotCopies));
-  const slips = groups.map((g) => kotSlip(g, config.paper, settings.kotHeader ?? "", config.largeKotText));
+  const kotHeading = [settings.name || "TAB Bistro by XTSY", settings.kotHeader].filter(Boolean).join(" · ");
+  const slips = groups.map((g) => kotSlip(g, config.paper, kotHeading, config.largeKotText));
   if (config.method === "rawbt") { sendToRawbt(slips.map((slip) => escPos(slip))); return; }
   printDocuments(slips.map((slip, i) => <SlipView key={`${groups[i]?.[0]?.uid ?? i}-${i}`} slip={slip} />));
 }
