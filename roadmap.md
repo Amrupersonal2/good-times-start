@@ -3,7 +3,8 @@
 ## Wireless waiter printing
 - [x] Queue explicit waiter KOT/bill requests for a designated connected POS device; preserve offline requests and avoid peer printing.
 - [x] Remove Business Manager tables and thermal-printer access while preserving report printing.
-- [ ] Test routing and access rules, publish, and verify the live counter flow; physical output requires the connected printer.
+- [x] Test routing and access rules: 260 regression tests pass; signed-in manager gates and retained waiter Room 7A bill-print request verified without runtime errors.
+- [ ] Publishing requested; fresh live counter opened Room 7A and reports without errors, but still served previous printer/manager controls. New deployed routing needs verification after rollout. Real counter must save silent printer setup and select Receive waiter printing here; physical output remains unverified. No bill settled or test sale added.
 
 ## Hotel counter corrections
 - [x] Count KOT submissions rather than station tickets; add independent daily device-safe KOT numbering and table/section print context.
