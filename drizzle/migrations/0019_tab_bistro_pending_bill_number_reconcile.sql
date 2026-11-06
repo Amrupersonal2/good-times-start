@@ -307,7 +307,7 @@ DELETE FROM public.restaurant_number_allocations a
 USING _tab_bistro_reconcile_orders m
 WHERE a.restaurant_id = m.restaurant_id
   AND a.series = 'POS'
-  AND a.sequence_number = m.sequence_number;
+  AND (a.sequence_number = m.sequence_number OR a.request_id = m.request_id);
 
 INSERT INTO public.restaurant_number_allocations
   (restaurant_id, series, request_id, sequence_number)
@@ -318,7 +318,7 @@ DELETE FROM public.restaurant_number_allocations a
 USING _tab_bistro_reconcile_kots m
 WHERE a.restaurant_id = m.restaurant_id
   AND a.series = 'KOT'
-  AND a.sequence_number = m.sequence_number;
+  AND (a.sequence_number = m.sequence_number OR a.request_id = m.request_id);
 
 INSERT INTO public.restaurant_number_allocations
   (restaurant_id, series, request_id, sequence_number)
