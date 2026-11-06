@@ -163,6 +163,7 @@ export function useCart(initialTableId?: string) {
 
   /** Add one of a dish, with an optional portion and add-ons, priced for the current order type. */
   const addItem = useCallback((item: MenuItem, variantId?: string, addonIds: string[] = []) => {
+    if (activeOrder?.source === "qr" || activeOrder?.source === "online") { toast.error("Guest orders can only be placed through QR Scan & Order."); return; }
     const held = holdRef.current;
     if (held) { toast.error(`${held.by} is taking this table's order. It opens for everyone once it reaches the kitchen.`); return; }
     const line = buildLine(item, orderType, variantId, addonIds);
@@ -176,7 +177,7 @@ export function useCart(initialTableId?: string) {
       }
       return [...prev, line];
     });
-  }, [orderType]);
+  }, [orderType, activeOrder?.source]);
 
   /** Switching to takeaway, delivery or an aggregator reprices plain dishes not yet sent to the kitchen. */
   const changeOrderType = useCallback((next: OrderType) => {
@@ -192,8 +193,9 @@ export function useCart(initialTableId?: string) {
   }, [activeOrder]);
 
   const setQty = useCallback((itemId: string, qty: number) => {
+    if (activeOrder?.source === "qr" || activeOrder?.source === "online") return;
     setLines((prev) => (qty <= 0 ? prev.filter((line) => line.itemId !== itemId) : prev.map((line) => (line.itemId === itemId ? { ...line, qty } : line))));
-  }, []);
+  }, [activeOrder?.source]);
 
   /** Put back items marked for cancellation before the cancel ticket goes out. */
   const restoreLine = useCallback((line: CartLine) => {
