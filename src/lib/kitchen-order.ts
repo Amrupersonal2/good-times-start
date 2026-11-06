@@ -126,3 +126,16 @@ export function submittedQuantitiesFromKots(kots: Kot[]): Record<string, number>
   }
   return Object.fromEntries(Object.entries(submitted).filter(([, qty]) => qty > 0));
 }
+
+
+/** Remove quantities already financially settled from the KOT quantities attributed to the remaining running bill. */
+export function subtractSettledQuantities(
+  submitted: Record<string, number> = {},
+  settled: Record<string, number> = {},
+): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(submitted)
+      .map(([itemId, qty]) => [itemId, Math.max(0, qty - (settled[itemId] ?? 0))] as const)
+      .filter(([, qty]) => qty > 0),
+  );
+}

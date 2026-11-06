@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSettledQuantities, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import type { CartLine } from "./types";
 
 const lines: CartLine[] = [
@@ -112,5 +112,21 @@ describe("KOT-backed submitted quantities", () => {
   it("subtracts cancellation tickets from the net submitted quantity", () => {
     const submitted = submittedQuantitiesFromKots([kot("order", "paneer", 3), kot("cancel", "paneer", 1)]);
     expect(submitted).toEqual({ paneer: 2 });
+  });
+});
+
+
+describe("split settlement and kitchen quantities", () => {
+  it("keeps settled split portions out of the remaining bill's KOT quantity", () => {
+    const sent = { naan: 3, dal: 1 };
+    const settled = { naan: 1, dal: 1 };
+    const remaining = subtractSettledQuantities(sent, settled);
+    expect(remaining).toEqual({ naan: 2 });
+    expect(cancelledKitchenLines([{ ...lines[0], qty: 2 }], remaining)).toEqual([]);
+    expect(unsentKitchenLines([{ ...lines[0], qty: 2 }], remaining)).toEqual([]);
+  });
+
+  it("does not subtract more settled quantity than was sent", () => {
+    expect(subtractSettledQuantities({ naan: 1 }, { naan: 4, dal: 2 })).toEqual({});
   });
 });

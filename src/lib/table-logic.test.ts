@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { combineOrders, placeName, tableIdFor, withOpenBills } from "./table-logic";
+import { addQuantityMaps, combineOrders, placeName, tableCanAccommodateOrder, tableIdFor, withOpenBills } from "./table-logic";
 import type { CartLine, Order, RestaurantTable } from "./types";
 
 const line = (itemId: string, qty: number): CartLine => ({ itemId, name: itemId, price: 100, qty, veg: true, gstRate: 5, station: "Main Course" });
@@ -58,5 +58,23 @@ describe("place names", () => {
   it("names short codes as tables and named places as themselves", () => {
     expect(["D1", "D2", "4", "T4", "2A", "Room 3A", "Room 666", "Bonfire 1", "Hut 2", "Family Table"].map(placeName))
       .toEqual(["Table D1", "Table D2", "Table 4", "Table T4", "Table 2A", "Room 3A", "Room 666", "Bonfire 1", "Hut 2", "Family Table"]);
+  });
+});
+
+
+describe("table capacity and merged bill accounting", () => {
+  it("adds party sizes and settled KOT allocations when bills merge", () => {
+    const into = { ...order([line("naan", 1)], { naan: 1 }), guestCount: 2, kotSettledQty: { naan: 1 } };
+    const from = { ...order([line("dal", 1)], { dal: 1 }), guestCount: 3, kotSettledQty: { dal: 1 } };
+    const merged = combineOrders(into, from);
+    expect(merged.guestCount).toBe(5);
+    expect(merged.kotSettledQty).toEqual({ naan: 1, dal: 1 });
+    expect(addQuantityMaps({ naan: 1 }, { naan: 2, dal: 1 })).toEqual({ naan: 3, dal: 1 });
+  });
+
+  it("rejects moving or merging a party onto a table with insufficient seats", () => {
+    expect(tableCanAccommodateOrder({ seats: 4 }, { guestCount: 4 })).toBe(true);
+    expect(tableCanAccommodateOrder({ seats: 4 }, { guestCount: 5 })).toBe(false);
+    expect(tableCanAccommodateOrder({ seats: 4 }, {})).toBe(true);
   });
 });

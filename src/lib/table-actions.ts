@@ -1,6 +1,6 @@
 import { getDb, markDirty } from "./db";
 import type { RecordKind } from "./sync-core";
-import { combineOrders } from "./table-logic";
+import { combineOrders, tableCanAccommodateOrder } from "./table-logic";
 import type { Order, RestaurantTable } from "./types";
 
 export { combineOrders, tableIdFor } from "./table-logic";
@@ -20,13 +20,23 @@ export async function latestHeldOrder(tableId: string, side: BillSide = "staff")
   return held.sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
 }
 
-async function retargetKots(orderUid: string | undefined, to: RestaurantTable, newOrderUid?: string): Promise<[RecordKind, string][]> {
+async function retargetKots(
+  orderUid: string | undefined,
+  to: RestaurantTable,
+  target?: { orderUid?: string; orderId?: number; billNo?: string },
+): Promise<[RecordKind, string][]> {
   if (!orderUid) return [];
   const db = getDb();
   const kots = await db.kots.filter((k) => k.orderUid === orderUid).toArray();
   for (const kot of kots) {
     if (kot.id === undefined) continue;
-    await db.kots.update(kot.id, { tableId: to.id, tableLabel: to.label, ...(newOrderUid ? { orderUid: newOrderUid } : {}) });
+    await db.kots.update(kot.id, {
+      tableId: to.id,
+      tableLabel: to.label,
+      ...(target?.orderUid ? { orderUid: target.orderUid } : {}),
+      ...(target?.orderId !== undefined ? { orderId: target.orderId } : {}),
+      ...(target?.billNo ? { billNo: target.billNo } : {}),
+    });
   }
   return kots.flatMap((k): [RecordKind, string][] => (k.uid ? [["kot", k.uid]] : []));
 }
@@ -47,6 +57,9 @@ export async function moveTable(fromId: string, toId: string): Promise<void> {
   ]);
   if (!from || !to) throw new Error("That table no longer exists.");
   if (busy || to.status === "occupied" || to.status === "billed") throw new Error(`${to.label} already has guests. Use Merge instead.`);
+  if (order && !tableCanAccommodateOrder(to, order)) {
+    throw new Error(`${to.label} has only ${to.seats} seats; this bill has ${order.guestCount} guests.`);
+  }
   const changes: [RecordKind, string][] = [["table", fromId], ["table", toId]];
 
   if (order?.id !== undefined) {
@@ -71,6 +84,9 @@ export async function mergeTables(fromId: string, intoId: string): Promise<void>
   if (!intoOrder) return moveTable(fromId, intoId);
 
   const combined = combineOrders(intoOrder, fromOrder);
+  if (!tableCanAccommodateOrder(into, combined)) {
+    throw new Error(`${into.label} has only ${into.seats} seats; the merged party has ${combined.guestCount} guests.`);
+  }
   const changes: [RecordKind, string][] = [["table", fromId], ["table", intoId]];
   await db.transaction("rw", db.orders, async () => {
     await db.orders.put(combined);
@@ -80,7 +96,11 @@ export async function mergeTables(fromId: string, intoId: string): Promise<void>
   });
   if (combined.uid) changes.push(["order", combined.uid]);
   if (fromOrder.uid) changes.push(["order", fromOrder.uid]);
-  changes.push(...await retargetKots(fromOrder.uid, into, combined.uid));
+  changes.push(...await retargetKots(fromOrder.uid, into, {
+    orderUid: combined.uid,
+    orderId: intoOrder.id,
+    billNo: intoOrder.billNo,
+  }));
   await db.restTables.update(intoId, { status: "occupied", runningTotal: combined.total, since: into.since ?? from.since ?? Date.now() });
   await db.restTables.update(fromId, { status: "free", runningTotal: 0, since: undefined, heldBy: undefined, heldDevice: undefined, heldAt: undefined });
   await db.drafts.delete(fromId);

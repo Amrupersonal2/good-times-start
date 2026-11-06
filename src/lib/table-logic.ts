@@ -39,6 +39,24 @@ export function withOpenBills(tables: RestaurantTable[], held: Order[]): FloorTa
   });
 }
 
+/** Add per-item quantity maps without mutating either input. */
+export function addQuantityMaps(
+  left: Record<string, number> = {},
+  right: Record<string, number> = {},
+): Record<string, number> {
+  const combined = { ...left };
+  for (const [itemId, qty] of Object.entries(right)) combined[itemId] = (combined[itemId] ?? 0) + qty;
+  return combined;
+}
+
+/** Whether a table can accommodate the known party size on a running order. */
+export function tableCanAccommodateOrder(
+  table: Pick<RestaurantTable, "seats">,
+  order: Pick<Order, "guestCount">,
+): boolean {
+  return order.guestCount === undefined || order.guestCount <= table.seats;
+}
+
 /** Combine one table's running order into another's: items, kitchen-sent counts and totals. */
 export function combineOrders(into: Order, from: Order): Order {
   const lines = mergeSentLines(into.lines, from.lines);
@@ -49,6 +67,10 @@ export function combineOrders(into: Order, from: Order): Order {
     ...into,
     lines,
     kotSubmittedQty: sent,
+    kotSettledQty: addQuantityMaps(into.kotSettledQty, from.kotSettledQty),
+    guestCount: into.guestCount === undefined && from.guestCount === undefined
+      ? undefined
+      : (into.guestCount ?? 0) + (from.guestCount ?? 0),
     subtotal: totals.subtotal,
     discountAmt: totals.discountAmt,
     serviceCharge: totals.serviceCharge,
