@@ -14,7 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { LiveSync } from "@/components/LiveSync";
-import { PrintHost, IncomingKotWatcher } from "@/components/PrintHost";
+import { PrintHost, IncomingKotWatcher, CounterPrintWatcher } from "@/components/PrintHost";
 import { AppInstall } from "@/components/AppInstall";
 import { PersistentFrame } from "@/components/AppShell";
 import { PreloadScreens } from "@/components/PreloadScreens";
@@ -155,6 +155,7 @@ function RootComponent() {
         <LiveSync />
         <PrintHost />
         <IncomingKotWatcher />
+        <CounterPrintWatcher />
         <AppInstall />
         <PreloadScreens />
         <Toaster position="top-center" richColors closeButton />

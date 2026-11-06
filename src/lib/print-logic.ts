@@ -12,6 +12,8 @@ export interface PrintConfig {
   /** Thermal paper width in mm. */
   paper: 58 | 80;
   method: PrintMethod;
+  /** Explicit local confirmation that Chrome was launched with kiosk printing. */
+  silentBrowserReady: boolean;
   billCopies: number;
   kotCopies: number;
   /** Print KOTs when this device sends them. */
@@ -27,8 +29,9 @@ export interface PrintConfig {
 }
 
 export const DEFAULT_PRINT_CONFIG: PrintConfig = {
-  paper: 80,
+  paper: 58,
   method: "browser",
+  silentBrowserReady: false,
   billCopies: 1,
   kotCopies: 1,
   printKotOnSend: true,
@@ -43,16 +46,22 @@ export function normalisePrintConfig(raw: unknown): PrintConfig {
   const r = raw && typeof raw === "object" ? (raw as Partial<PrintConfig>) : {};
   const copies = (n: unknown) => (typeof n === "number" && Number.isInteger(n) ? Math.min(5, Math.max(0, n)) : 1);
   return {
-    paper: r.paper === 58 ? 58 : 80,
+    paper: r.paper === 80 ? 80 : 58,
     method: r.method === "rawbt" ? "rawbt" : "browser",
+    silentBrowserReady: r.silentBrowserReady === true,
     billCopies: r.billCopies === undefined ? DEFAULT_PRINT_CONFIG.billCopies : copies(r.billCopies),
     kotCopies: r.kotCopies === undefined ? DEFAULT_PRINT_CONFIG.kotCopies : copies(r.kotCopies),
     printKotOnSend: typeof r.printKotOnSend === "boolean" ? r.printKotOnSend : DEFAULT_PRINT_CONFIG.printKotOnSend,
-    printIncomingKots: typeof r.printIncomingKots === "boolean" ? r.printIncomingKots : DEFAULT_PRINT_CONFIG.printIncomingKots,
+    printIncomingKots: false,
     autoPrintBill: typeof r.autoPrintBill === "boolean" ? r.autoPrintBill : DEFAULT_PRINT_CONFIG.autoPrintBill,
     stations: Array.isArray(r.stations) ? r.stations.filter((s): s is string => typeof s === "string") : [],
     largeKotText: typeof r.largeKotText === "boolean" ? r.largeKotText : DEFAULT_PRINT_CONFIG.largeKotText,
   };
+}
+
+/** Incoming cloud mirrors are never print commands, even with legacy settings. */
+export function shouldPrintKot(source: "sent" | "incoming" | "reprint", config: PrintConfig): boolean {
+  return source !== "incoming" && (source === "reprint" || config.printKotOnSend);
 }
 
 /** KOTs this device should print. */
@@ -91,11 +100,14 @@ export function printCss(paper: 58 | 80): string {
   const content = paper === 58 ? 48 : 72;
   return `@media print {
   @page { size: ${paper}mm auto; margin: 0; }
-  html, body { background: #fff !important; }
-  body * { visibility: hidden; }
+  html, body { background: #fff !important; margin: 0 !important; min-height: 0 !important; height: auto !important; }
+  body *:not(:has(#print-root)):not(#print-root):not(#print-root *) { display: none !important; }
+  body *:has(#print-root) { display: contents !important; }
   #print-root, #print-root * { visibility: visible; }
   #print-root { position: absolute; left: 0; top: 0; width: ${content}mm; }
-  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
+  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0 0 4mm; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
   #print-root .print-ticket:last-child { break-after: auto; page-break-after: auto; }
+  #print-root .print-ticket:has(.kot-print-slip) { padding-bottom: 0; }
+  #print-root .kot-print-slip::after { content: ""; display: block; height: var(--kot-end-feed); }
 }`;
 }

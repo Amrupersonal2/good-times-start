@@ -129,6 +129,120 @@ export type Database = {
         }
         Relationships: []
       }
+      counter_numbering: {
+        Row: {
+          financial_year: string
+          last_sequence: number
+          reset_at: string
+          restaurant_id: string
+          retained_uid: string | null
+          series: string
+          source_series: string
+        }
+        Insert: {
+          financial_year: string
+          last_sequence?: number
+          reset_at?: string
+          restaurant_id: string
+          retained_uid?: string | null
+          series: string
+          source_series: string
+        }
+        Update: {
+          financial_year?: string
+          last_sequence?: number
+          reset_at?: string
+          restaurant_id?: string
+          retained_uid?: string | null
+          series?: string
+          source_series?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_numbering_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      counter_print_jobs: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          dispatched_at: string | null
+          id: string
+          kind: string
+          payload: Json
+          requested_by: string
+          restaurant_id: string
+          status: string
+          target_device: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          dispatched_at?: string | null
+          id: string
+          kind: string
+          payload: Json
+          requested_by: string
+          restaurant_id: string
+          status?: string
+          target_device: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          dispatched_at?: string | null
+          id?: string
+          kind?: string
+          payload?: Json
+          requested_by?: string
+          restaurant_id?: string
+          status?: string
+          target_device?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_print_jobs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      counter_print_routes: {
+        Row: {
+          configured_by: string
+          device_id: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          configured_by: string
+          device_id: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          configured_by?: string
+          device_id?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_print_routes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_orders: {
         Row: {
           bill_no: string | null
@@ -599,6 +713,76 @@ export type Database = {
           },
         ]
       }
+      restaurant_void_approvals: {
+        Row: {
+          bill_uid: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          bill_uid: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          bill_uid?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          restaurant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_void_approvals_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_void_totp: {
+        Row: {
+          created_at: string
+          created_by: string
+          enabled: boolean
+          restaurant_id: string
+          secret: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          enabled?: boolean
+          restaurant_id: string
+          secret: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          enabled?: boolean
+          restaurant_id?: string
+          secret?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_void_totp_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           account_id: string | null
@@ -769,6 +953,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _void_totp_code: {
+        Args: { _secret: string; _step: number }
+        Returns: string
+      }
       accept_restaurant_invites: { Args: never; Returns: undefined }
       account_feature: {
         Args: { _account: string; _feature: string }
@@ -809,6 +997,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      claim_counter_print: {
+        Args: { _device: string; _restaurant: string }
+        Returns: Json
+      }
+      configure_counter_printer: {
+        Args: { _device: string; _restaurant: string }
+        Returns: undefined
+      }
       create_outlet: {
         Args: {
           _account: string
@@ -819,6 +1015,20 @@ export type Database = {
         Returns: string
       }
       create_restaurant: { Args: { _name: string }; Returns: string }
+      enqueue_counter_print: {
+        Args: {
+          _id: string
+          _kind: string
+          _payload: Json
+          _restaurant: string
+        }
+        Returns: undefined
+      }
+      finish_counter_print: {
+        Args: { _device: string; _id: string }
+        Returns: undefined
+      }
+      get_void_approval_code: { Args: never; Returns: Json }
       guest_order_marketing: {
         Args: {
           _id: string
@@ -901,6 +1111,15 @@ export type Database = {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: undefined
       }
+      reset_counter_bill_numbers: {
+        Args: {
+          _keep?: string
+          _restaurant: string
+          _source: string
+          _year: string
+        }
+        Returns: Json
+      }
       restaurant_role_of: {
         Args: { _restaurant_id: string }
         Returns: Database["public"]["Enums"]["restaurant_role"]
@@ -913,6 +1132,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      setup_void_approval_code: { Args: never; Returns: Json }
       slugify: { Args: { _text: string }; Returns: string }
       touch_terminal: {
         Args: {
@@ -934,6 +1154,10 @@ export type Database = {
           _phone: string
         }
         Returns: undefined
+      }
+      verify_void_approval_code: {
+        Args: { _bill_uid: string; _code: string; _restaurant_id: string }
+        Returns: boolean
       }
     }
     Enums: {

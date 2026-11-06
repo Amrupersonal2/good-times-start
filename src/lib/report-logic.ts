@@ -29,8 +29,8 @@ export function presetRange(preset: "today" | "yesterday" | "7d" | "month", now 
   return { from: today, to: today + day - 1 };
 }
 
-export function inRange<T extends { createdAt: number }>(rows: T[], range: Range): T[] {
-  return rows.filter((r) => r.createdAt >= range.from && r.createdAt <= range.to);
+export function inRange<T extends { createdAt: number; settledAt?: number }>(rows: T[], range: Range): T[] {
+  return rows.filter((r) => (r.settledAt ?? r.createdAt) >= range.from && (r.settledAt ?? r.createdAt) <= range.to);
 }
 
 export interface SalesSummary {
@@ -174,7 +174,7 @@ export function staffSales(orders: Order[]): { name: string; bills: number; net:
 export function dailySales(orders: Order[], range: Range): { day: string; net: number }[] {
   const out: { day: string; net: number }[] = [];
   const totals = new Map<string, number>();
-  for (const o of orders.filter((x) => x.status === "settled")) totals.set(dayKey(o.createdAt), r2((totals.get(dayKey(o.createdAt)) ?? 0) + o.total));
+  for (const o of orders.filter((x) => x.status === "settled")) totals.set(dayKey(o.settledAt ?? o.createdAt), r2((totals.get(dayKey(o.settledAt ?? o.createdAt)) ?? 0) + o.total));
   for (let t = dayStart(range.from); t <= range.to; t = dayStart(t + 36 * 60 * 60 * 1000)) out.push({ day: dayKey(t), net: totals.get(dayKey(t)) ?? 0 });
   return out;
 }
@@ -206,7 +206,8 @@ export function expectedCash(orders: Order[], series: string, openingCash: numbe
 }
 
 const csvCell = (value: unknown) => {
-  const text = value === undefined || value === null ? "" : String(value);
+  const raw = value === undefined || value === null ? "" : String(value);
+  const text = typeof value === "string" && /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 

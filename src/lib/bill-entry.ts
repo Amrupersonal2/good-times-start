@@ -7,8 +7,6 @@ import type { OrderType } from "./types";
 export const COUNTER_TYPES: { v: Exclude<OrderType, "dine-in">; l: string }[] = [
   { v: "takeaway", l: "Takeaway" },
   { v: "delivery", l: "Delivery" },
-  { v: "swiggy", l: "Swiggy" },
-  { v: "zomato", l: "Zomato" },
 ];
 
 export function isCounterType(value: unknown): value is Exclude<OrderType, "dine-in"> {

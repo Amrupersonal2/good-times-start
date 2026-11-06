@@ -235,7 +235,7 @@ function TablesStep({ onNext }: { onNext: () => void }) {
     <div>
       <p className="text-sm text-muted-foreground">{existing ? `You have ${existing} tables. Add another section here, or arrange them in Tables.` : "Add your dining tables. Each one gets its own QR code for guest ordering."}</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-4">
-        <Field label="Section"><input maxLength={30} value={section} onChange={(e) => setSection(e.target.value)} placeholder="Main, Rooftop, Garden" className={inputClass} /></Field>
+        <Field label="Section"><input maxLength={30} value={section} onChange={(e) => setSection(e.target.value)} placeholder="Rooms, Dine-in, Garden" className={inputClass} /></Field>
         <Field label="Name prefix" hint={`Tables will be ${prefix.toUpperCase() || "T"}1, ${prefix.toUpperCase() || "T"}2…`}><input maxLength={3} value={prefix} onChange={(e) => setPrefix(e.target.value)} className={`${inputClass} uppercase`} /></Field>
         <Field label="How many"><input type="number" min={1} max={80} value={count} onChange={(e) => setCount(Number(e.target.value) || 1)} className={inputClass} /></Field>
         <Field label="Seats each"><input type="number" min={1} max={20} value={seats} onChange={(e) => setSeats(Number(e.target.value) || 1)} className={inputClass} /></Field>

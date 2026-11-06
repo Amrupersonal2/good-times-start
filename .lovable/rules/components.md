@@ -44,6 +44,8 @@ import { DialogClose } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2
 import { DialogContent } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-b2302a6aa07d"
 ```
 
+Use inside Dialog for a modal task. Outside-pointer dismissal preserves opener focus without scrolling; preventDefault on the outside event keeps the window open.
+
 **Props:**
 
 | Prop | Type | Default |
@@ -54,6 +56,18 @@ import { DialogContent } from "@ws-ml8w3ceizoxcbfhy3qtb/1af0545d-85c8-432a-9d4a-
 | `onInteractOutside` | function | `—` |
 | `onOpenAutoFocus` | function | `—` |
 | `onCloseAutoFocus` | function | `—` |
+
+**Examples:**
+
+_Confirm an action_
+```tsx
+<Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogTitle>Confirm cancellation</DialogTitle><DialogDescription>Review this action before continuing.</DialogDescription><Button onClick={confirm}>Confirm</Button></DialogContent></Dialog>
+```
+
+**Avoid:**
+
+- Do not replace the self-contained modal with Radix Presence.
+- Do not restore focus without preventScroll or intercept outside clicks without respecting preventDefault.
 
 ### DialogDescription
 

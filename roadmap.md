@@ -1,5 +1,47 @@
 # POS expansion
 
+## Wireless waiter printing
+- [x] Queue explicit waiter KOT/bill requests for a designated connected POS device; preserve offline requests and avoid peer printing.
+- [x] Remove Business Manager tables and thermal-printer access while preserving report printing.
+- [x] Test routing and access rules: 260 regression tests pass; signed-in manager gates and retained waiter Room 7A bill-print request verified without runtime errors.
+- [ ] Publishing requested; fresh live counter opened Room 7A and reports without errors, but still served previous printer/manager controls. New deployed routing needs verification after rollout. Real counter must save silent printer setup and select Receive waiter printing here; physical output remains unverified. No bill settled or test sale added.
+
+## Hotel counter corrections
+- [x] Count KOT submissions rather than station tickets; add independent daily device-safe KOT numbering and table/section print context.
+- [x] Add guest-only QR requests entry under Counter orders; preserve POS/waiter acceptance and admin-only controls.
+- [x] Remove builder cleanup diagnostics from staff Sync screens.
+- [x] Add Hotel declaration, stable device-bound Cash Counter, settled-day close accounting and dated close history.
+- [ ] Complete published end-to-end verification after deployment: publishing scheduled, but fresh live check still serves the previous controls. Preview Reception Orders/QR/Cash Counter verified with zero runtime errors; 252 tests pass. No test sale or cash-close record created.
+- [x] Review completed security findings and verify existing staff access without broadening privileged roles; Reception and Waiter already active. Basic checks clear; deep scan retains the owner/manager campaign-recipient warning.
+
+## Counter rollout and floor creation
+- [x] Add direct Add section / Add table forms; verified create, refresh, second table and test-table cleanup under owner session.
+- [ ] Connect real Swiggy/Zomato orders; blocked pending approved partner API access and documentation.
+- [ ] Publishing requested; current preview opens Room 666 and safely gates unconfigured KOT printing (24 tests passed). Published end-to-end check awaits deployment: live check still showed older controls.
+- [ ] Check actual 2-inch thermal paper; requires access to the user's counter printer.
+- [ ] Complete security clearance; remaining campaign-recipient warning needs a decision on restricting owner/manager sends to saved opted-in guests.
+
+## Orders window
+- [x] Hide unconnected aggregator entry buttons; keep historical bills.
+- [x] Default to running bills; add dated bill/KOT/settled/cancelled history and preserve guest acceptance.
+- [x] Verify history filters and running-bill opening (3 tests and signed-in preview).
+
+## Device-local thermal printing
+- [x] Block incoming-order printing and unconfigured browser print dialogs; preserve local direct transports.
+- [x] Standardize thermal typography and preserve per-device 58/80 mm choices.
+- [x] Verify local print dispatch and no print jobs on a second signed-in device at both paper widths (16 tests passed).
+- [ ] Verify physical silent output; requires the printer device launched with the silent Chrome shortcut or configured RawBT.
+
+## Restore merged GitHub fixes (#24–33)
+- [x] Restore missing merged code and CI changes; exclude unmerged #34 and preserve numbering.
+- [x] Apply membership and paid-bill approval safeguards to Lovable Cloud.
+- [x] Run regression tests and signed-in preview checks (238 tests; Sync close/Escape/outside and sign-in links).
+
+## Counter bill numbering
+- [ ] Add owner-authorized reset with collision protection and durable counter series metadata.
+- [ ] Rename the retained bill and linked references to TBX/26-27/0001; next number 0002.
+- [ ] Run numbering, permission and sync tests; verify the owner reset through the screen.
+
 ## Live app completion
 - [ ] Finish guest table selection and verify checkout reaches the signed-in POS and another device.
 - [ ] Add GSTR-1 and sales exports to the standalone live reports app.

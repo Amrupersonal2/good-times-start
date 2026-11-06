@@ -293,6 +293,29 @@ async function syncOnce(restaurantId: string): Promise<void> {
   }
   if (!bound) await db.meta.put({ key: "restaurantId", value: restaurantId });
 
+  // Fetch owner-issued numbering before pushing so old offline copies cannot
+  // put the retained invoice back under its previous number.
+  const numbering = await supabase.from("counter_numbering").select("*").eq("restaurant_id", restaurantId);
+  if (numbering.error) throw numbering.error;
+  for (const rule of numbering.data ?? []) {
+    await db.transaction("rw", db.meta, db.orders, db.kots, async () => {
+      const key = `billSeries:${rule.source_series}:${rule.financial_year}`;
+      const already = (await db.meta.get(key))?.value;
+      const source = (await db.meta.get("deviceCode"))?.value;
+      await db.meta.put({ key, value: rule.series });
+      if (source === rule.source_series || source === rule.series) {
+        await db.meta.put({ key: `billSeries:${rule.series}:${rule.financial_year}`, value: rule.series });
+        const seq = (await db.meta.get("billSeq"))?.value;
+        await db.meta.put({ key: "billSeq", value: already ? Math.max(typeof seq === "number" ? seq : 0, rule.last_sequence) : rule.last_sequence });
+      }
+      if (rule.retained_uid) {
+        const billNo = `${rule.series}/${rule.financial_year}/0001`;
+        await db.orders.where("uid").equals(rule.retained_uid).modify({ billNo });
+        await db.kots.toCollection().filter((kot) => kot.orderUid === rule.retained_uid).modify({ billNo });
+      }
+    });
+  }
+
   await push(restaurantId);
   await pull(restaurantId);
   await db.meta.put({ key: "lastSyncAt", value: Date.now() });

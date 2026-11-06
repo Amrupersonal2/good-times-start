@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { setAppMode, syncAppModeFromUrl, useChosenApp } from "@/lib/app-mode";
 import { useStaff } from "@/lib/auth-context";
 import { APPS, LOGINS, appsFor, emailFromInput, loginForEmail, passwordProblem, type AppKind, type LoginId } from "@/lib/staff-login-logic";
-import { confirmResetCode, ensureInternalLogins, requestResetCode } from "@/lib/staff-logins.functions";
+import { confirmResetCode, requestResetCode } from "@/lib/staff-logins.functions";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 
@@ -61,12 +61,7 @@ function AuthPage() {
     setSubmitting(true);
     setMessage("");
     try {
-      let result = await supabase.auth.signInWithPassword({ email, password });
-      // First ever sign-in: the three internal logins are created (already confirmed) and linked, then we try once more.
-      if (result.error && loginForEmail(email) && /invalid login credentials/i.test(result.error.message)) {
-        try { await ensureInternalLogins(); } catch { /* the original error still explains it */ }
-        result = await supabase.auth.signInWithPassword({ email, password });
-      }
+      const result = await supabase.auth.signInWithPassword({ email, password });
       if (result.error) {
         setMessage(/invalid login credentials/i.test(result.error.message) ? "That login or password isn't right." : /fetch|network/i.test(result.error.message) ? "No internet. The first sign-in on a device needs a connection." : result.error.message);
         return;

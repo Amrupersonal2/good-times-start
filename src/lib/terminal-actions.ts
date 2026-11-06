@@ -19,11 +19,13 @@ const db = () => supabase as unknown as { from: (t: string) => any; rpc: (f: str
 
 export async function getDeviceId(): Promise<string> {
   const meta = getDb().meta;
-  const stored = (await meta.get("deviceId"))?.value;
-  if (typeof stored === "string" && /^[a-z0-9-]{8,64}$/.test(stored)) return stored;
-  const id = crypto.randomUUID().toLowerCase();
-  await meta.put({ key: "deviceId", value: id });
-  return id;
+  return getDb().transaction("rw", meta, async () => {
+    const stored = (await meta.get("deviceId"))?.value;
+    if (typeof stored === "string" && /^[a-z0-9-]{8,64}$/.test(stored)) return stored;
+    const id = crypto.randomUUID().toLowerCase();
+    await meta.put({ key: "deviceId", value: id });
+    return id;
+  });
 }
 
 /* This device's status, remembered so a blocked device stays blocked offline. */

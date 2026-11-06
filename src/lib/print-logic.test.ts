@@ -1,10 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PRINT_CONFIG, kotPrintGroups, kotsForDevice, normalisePrintConfig, printCss, withCopies } from "./print-logic";
+import { DEFAULT_PRINT_CONFIG, kotPrintGroups, kotsForDevice, normalisePrintConfig, printCss, withCopies, shouldPrintKot } from "./print-logic";
 import type { Kot } from "./types";
 
 const kot = (station: string, kind: "order" | "cancel" = "order"): Kot => ({ orderId: 1, billNo: "C1/26-27/0001", station, kind, lines: [], status: "new", createdAt: 1 });
 
 describe("printing", () => {
+  it("never prints incoming orders even with old incoming-print settings enabled", () => {
+    expect(shouldPrintKot("incoming", { ...DEFAULT_PRINT_CONFIG, printIncomingKots: true })).toBe(false);
+    expect(normalisePrintConfig({ printIncomingKots: true }).printIncomingKots).toBe(false);
+    expect(shouldPrintKot("sent", DEFAULT_PRINT_CONFIG)).toBe(true);
+    expect(shouldPrintKot("reprint", DEFAULT_PRINT_CONFIG)).toBe(true);
+  });
+  it("defaults new devices to 2 inch and requires local silent-browser setup", () => {
+    expect(normalisePrintConfig(null).paper).toBe(58);
+    expect(normalisePrintConfig(null).silentBrowserReady).toBe(false);
+    expect(normalisePrintConfig({ paper: 80, silentBrowserReady: true })).toMatchObject({ paper: 80, silentBrowserReady: true });
+  });
   it("fills in defaults and clamps bad values", () => {
     expect(normalisePrintConfig(null)).toEqual(DEFAULT_PRINT_CONFIG);
     expect(normalisePrintConfig({ paper: 58, kotCopies: 9, billCopies: -2, stations: ["Tandoor", 4] })).toMatchObject({ paper: 58, kotCopies: 5, billCopies: 0, stations: ["Tandoor"] });
@@ -20,6 +31,15 @@ describe("printing", () => {
     const kots = [kot("Tandoor"), kot("Chinese"), kot("Chinese", "cancel")];
     expect(kotPrintGroups(kots, true)).toHaveLength(3);
     expect(kotPrintGroups(kots, false).map((g) => g.map((k) => k.station))).toEqual([["Tandoor", "Chinese"], ["Chinese"]]);
+  });
+
+  it("combines multiple new KOTs at the same station without mixing cancellation tickets", () => {
+    const first = kot("Chinese");
+    const second = kot("Chinese");
+    const cancellation = kot("Chinese", "cancel");
+    expect(kotPrintGroups([first, second, cancellation, kot("Tandoor")], true)).toEqual([
+      [first, second], [cancellation], [kot("Tandoor")],
+    ]);
   });
 
   it("repeats documents for copies and sizes paper", () => {
