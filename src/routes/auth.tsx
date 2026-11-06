@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { setAppMode, syncAppModeFromUrl, useChosenApp } from "@/lib/app-mode";
 import { useStaff } from "@/lib/auth-context";
 import { APPS, LOGINS, appsFor, emailFromInput, loginForEmail, passwordProblem, type AppKind, type LoginId } from "@/lib/staff-login-logic";
-import { confirmResetCode, ensureInternalLogins, requestResetCode } from "@/lib/staff-logins.functions";
+import { confirmResetCode, requestResetCode } from "@/lib/staff-logins.functions";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 
