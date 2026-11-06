@@ -41,6 +41,15 @@ async function orderByUid(uid: string): Promise<Order | null> {
   return (await getDb().orders.where("uid").equals(uid).first()) ?? null;
 }
 
+/** A bill's kitchen tickets, including ones synced before the bill reached this device (not yet linked). */
+async function kotsForOrder(orderId: number, orderUid: string | undefined): Promise<Kot[]> {
+  const db = getDb();
+  const linked = await db.kots.where("orderId").equals(orderId).toArray();
+  if (!orderUid) return linked;
+  const orphans = await db.kots.where("orderId").equals(0).filter((k) => k.orderUid === orderUid).toArray();
+  return orphans.length ? [...linked, ...orphans] : linked;
+}
+
 async function newBillNumber(requestId: string): Promise<string> {
   return allocateRestaurantNumber("POS", requestId);
 }
