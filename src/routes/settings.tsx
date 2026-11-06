@@ -98,6 +98,7 @@ function RestaurantDetails() {
     const clean: RestaurantSettings = {
       ...saved,
       name: form.name.trim(),
+      businessType: form.businessType ?? "restaurant",
       legalName: form.legalName?.trim() ?? "",
       address: form.address?.trim() ?? "",
       phone: form.phone?.trim() ?? "",
@@ -119,6 +120,7 @@ function RestaurantDetails() {
     <Section title="Restaurant details" description="Printed on every bill. Your GSTIN and FSSAI number must match your registration.">
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => void submit(event)}>
         <Field label="Restaurant name"><input required maxLength={120} disabled={!canEdit} value={form.name} onChange={set("name")} className={inputClass} /></Field>
+        <Field label="Business model"><Dropdown ariaLabel="Business model" value={form.businessType ?? "restaurant"} onChange={(businessType: "hotel" | "restaurant") => setForm((prev) => ({ ...prev, businessType }))} disabled={!canEdit} options={[{ value: "hotel", label: "Hotel" }, { value: "restaurant", label: "Restaurant" }]} /></Field>
         <Field label="Legal business name" hint="If different, e.g. XTSY Ventures Private Limited"><input maxLength={160} disabled={!canEdit} value={form.legalName ?? ""} onChange={set("legalName")} className={inputClass} /></Field>
         <div className="sm:col-span-2"><Field label="Address"><textarea rows={2} maxLength={300} disabled={!canEdit} value={form.address ?? ""} onChange={set("address")} className={inputClass} /></Field></div>
         <Field label="Phone"><input type="tel" maxLength={20} disabled={!canEdit} value={form.phone ?? ""} onChange={set("phone")} className={inputClass} /></Field>
