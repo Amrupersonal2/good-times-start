@@ -1,0 +1,1 @@
+COMMENT ON FUNCTION public.push_restaurant_records(uuid, jsonb) IS 'Versioned, atomic restaurant record push (PR #48).';

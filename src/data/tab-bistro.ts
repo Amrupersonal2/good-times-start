@@ -474,7 +474,7 @@ const SECTIONS: { category: string; station: string; hours?: { from: string; to:
 /** Retail prices transcribed from the approved TAB Bistro printed menu (pre-GST). */
 const PRINTED_MENU_PRICES: Record<string, number> = {
   "Black Tea": 40, "Red Tea": 40, "Lemon Honey Tea": 60, "Milk Chai": 60, "Espresso": 60, "Cappuccino": 100,
-  "Fresh Lime": 120, "Fresh Lemon Soda": 140, "Fresh Lemon Mint": 160, "Peri Peri Cheesy Fries": 250,
+  "Fresh Lime": 120, "Fresh Lemon Soda": 140, "Fresh Lemon Mint": 160,
   "Virgin Mojito": 160, "Lychee Fruit Mojito": 180, "Passion Fruit Mojito": 180, "Green Apple Mojito": 180,
   "Oh Kiwi Rita": 200, "Pina Colada": 200, "XTSY Blue Lagoon": 200, "Awesome Shillong": 200,
   "Chocolate Shake": 180, "Oreo Shake": 200, "Caramel KitKat Shake": 240, "Strawberry Shake": 240,
