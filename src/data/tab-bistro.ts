@@ -268,7 +268,7 @@ const SECTIONS: { category: string; station: string; hours?: { from: string; to:
     ],
   },
   {
-    category: "Soups", station: STATION.chinese, dishes: [
+    category: "XTSY Signature Soups", station: STATION.chinese, dishes: [
       { name: "Lemon Coriander Soup (Veg)", price: 149, veg: true, recipe: mix(B.soup, { cabbage: 0.02, carrot: 0.02, beans: 0.01, lemon: 0.5, coriander: 0.005 }) },
       { name: "Sweet Corn Soup (Veg)", price: 159, veg: true, recipe: mix(B.soup, { "sweet-corn": 0.05, carrot: 0.01, sugar: 0.003 }) },
       { name: "Hot & Sour Soup (Veg)", price: 169, veg: true, recipe: mix(B.soup, B.vegMix, { "soy-sauce": 0.01, vinegar: 0.01, "chilli-sauce": 0.01 }) },
@@ -516,7 +516,31 @@ const PRINTED_VARIANT_PRICES: Record<string, Record<string, number>> = {
   "Chinese Garlic Chopsuey": { Veg: 300, Chicken: 340, Seafood: 400 },
 };
 
-export const TAB_CATEGORIES = SECTIONS.map((s) => s.category);
+export const TAB_CATEGORIES = [
+  "Assam Tea & Coffee",
+  "Lemonades",
+  "Mocktails & Mojitos",
+  "Signature Beverages",
+  "Non Veg Appetizers",
+  "Veg Appetizers",
+  "Tandoori Appetizers",
+  "Breakfast & Bites",
+  "XTSY Signature Soups",
+  "Signature South Indian",
+  "Pulao & Rice",
+  "XTSY Hand Crafted Pastas",
+  "Chopsuey's with Love",
+  "XTSY Dum Biryani",
+  "Chinese Fried Rice & Noodles",
+  "Chinese Gravy - Veg",
+  "Chinese Gravy - Non Veg",
+  "Indian Gravies - Veg",
+  "Indian Gravies - Non Veg",
+  "Dal Specials",
+  "Hot Tandoori Breads",
+  "Snack Corner",
+  "Desserts",
+];
 
 export const TAB_MENU: MenuItem[] = SECTIONS.flatMap((section) =>
   section.dishes.map((dish): MenuItem => {
