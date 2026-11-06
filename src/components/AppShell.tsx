@@ -22,6 +22,7 @@ import { currentDevice, setAppMode, syncAppModeFromUrl, useAppMode } from "@/lib
 import { touchTerminal, useTerminalStatus } from "@/lib/terminal-actions";
 import { APPS, APP_LINKS, accessProblem, appsFor, type AppKind } from "@/lib/staff-login-logic";
 import { isTestBrowser } from "@/lib/test-browser";
+import { SyncConflictAlert } from "@/components/SyncConflictAlert";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -384,6 +385,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
           </Link>
         ) : null}
         <main className="min-w-0 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+          <SyncConflictAlert />
           {needsRestaurant ? <NotLinked /> : blocked ? (
             <div className="mx-auto max-w-md p-8 text-center">
               <p className="font-semibold">This screen isn't part of {APPS[app].name}</p>

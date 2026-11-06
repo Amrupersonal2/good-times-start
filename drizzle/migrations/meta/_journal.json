@@ -141,6 +141,13 @@
       "when": 1793960008000,
       "tag": "0019_tab_bistro_pending_bill_number_reconcile",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794000000000,
+      "tag": "0020_versioned_records_atomic_settlement",
+      "breakpoints": true
     }
   ]
 }

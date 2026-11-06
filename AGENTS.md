@@ -29,3 +29,5 @@
 - Persist KOT submission identity and device/day sequence atomically with station tickets; history groups submissions while keeping every station record for printing and sync.
 - Snapshot table sections on orders and KOTs so printed history survives floor edits.
 - Record settlement time and receiving device on bills; cash closes bind to durable device identity and never settle hotel room bills implicitly.
+
+- Restaurant record writes go through the versioned `push_restaurant_records` RPC (server-owned `version`, stale-write conflicts, settlement units committed atomically) with automatic fallback to the legacy upsert when the RPC is absent, so builds can ship before the migration is applied.
