@@ -130,3 +130,13 @@ describe("split settlement and kitchen quantities", () => {
     expect(subtractSettledQuantities({ naan: 1 }, { naan: 4, dal: 2 })).toEqual({});
   });
 });
+
+describe("Room 666: bill counter ahead of saved tickets", () => {
+  it("sends the items that have no kitchen ticket, even when the bill says they were sent", () => {
+    const water = { itemId: "water", name: "Drinking Water (1 L)", price: 24, qty: 6, veg: true, gstRate: 5, station: "Beverages" } as CartLine;
+    // The bill claims 6 sent, but only one ticket for 2 exists.
+    const tickets = [{ kind: "order", lines: [{ itemId: "water", name: "Drinking Water (1 L)", qty: 2 }] }] as Parameters<typeof submittedQuantitiesFromKots>[0];
+    const unsent = unsentKitchenLines([water], submittedQuantitiesFromKots(tickets));
+    expect(unsent.map((l) => l.qty)).toEqual([4]);
+  });
+});

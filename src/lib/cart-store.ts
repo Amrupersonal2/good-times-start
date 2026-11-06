@@ -41,9 +41,20 @@ async function orderByUid(uid: string): Promise<Order | null> {
   return (await getDb().orders.where("uid").equals(uid).first()) ?? null;
 }
 
+/** A bill's kitchen tickets, including ones synced before the bill reached this device (not yet linked). */
+async function kotsForOrder(orderId: number, orderUid: string | undefined): Promise<Kot[]> {
+  const db = getDb();
+  const linked = await db.kots.where("orderId").equals(orderId).toArray();
+  if (!orderUid) return linked;
+  const orphans = await db.kots.where("orderId").equals(0).filter((k) => k.orderUid === orderUid).toArray();
+  return orphans.length ? [...linked, ...orphans] : linked;
+}
+
 async function newBillNumber(requestId: string): Promise<string> {
   return allocateRestaurantNumber("POS", requestId);
 }
+
+export { kotsForOrder };
 
 export function useCart(initialTableId?: string) {
   const [lines, setLines] = useState<CartLine[]>([]);
@@ -55,7 +66,7 @@ export function useCart(initialTableId?: string) {
   const [guestCount, setGuestCount] = useState<number | undefined>();
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [submittedOverride, setSubmittedOverride] = useState<{ orderUid: string; quantities: Record<string, number> } | null>(null);
-  const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : getDb().kots.where("orderId").equals(activeOrder.id).toArray(), [activeOrder?.id], [] as Kot[]);
+  const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : kotsForOrder(activeOrder.id, activeOrder.uid), [activeOrder?.id, activeOrder?.uid], [] as Kot[]);
   const persistedSubmitted = submittedQuantitiesFromKots(storedKots);
   const persistedEffectiveSubmitted = subtractSettledQuantities(persistedSubmitted, activeOrder?.kotSettledQty ?? {});
   useEffect(() => {
@@ -304,9 +315,21 @@ export function useCart(initialTableId?: string) {
     const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : tableId ? await latestHeldOrder(tableId) : null;
     const base = latest && latest.status === "held" ? latest : null;
     const localAdditions = base ? additionsNotInShared(base.lines, lines) : pendingKitchenLines;
+    // Saved kitchen tickets are the evidence of what reached the kitchen — the same rule
+    // the screen uses to show "not sent". The bill's own counter can be ahead of the
+    // tickets (a ticket the cloud refused), which used to make KOT send nothing.
+    const baseKots = base?.id !== undefined ? await kotsForOrder(base.id, base.uid) : [];
+    const baseRawSubmitted = baseKots.length ? submittedQuantitiesFromKots(baseKots) : base?.kotSubmittedQty ?? {};
+    const baseSubmitted = baseKots.length
+      ? subtractSettledQuantities(baseRawSubmitted, base?.kotSettledQty ?? {})
+      : baseRawSubmitted;
     const ticketsToSend = base
-      ? [...unsentKitchenLines(base.lines, base.kotSubmittedQty ?? {}), ...localAdditions]
+      ? [...unsentKitchenLines(base.lines, baseSubmitted), ...localAdditions]
       : pendingKitchenLines;
+    if (!ticketsToSend.length && !pendingCancelLines.length) {
+      toast.error("Nothing new to send — refresh the table and try again.");
+      return null;
+    }
     const merged = base ? removeCancelled(mergeSentLines(base.lines, localAdditions), pendingCancelLines) : lines;
     const t = computeTotals(merged, discountPct, serviceChargePct, tax);
     const tableLabel = await tableLabelOf(tableId);
@@ -328,7 +351,7 @@ export function useCart(initialTableId?: string) {
         });
     const orderUid = order.uid ?? newUid();
     order.uid = orderUid;
-    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base?.kotSubmittedQty ?? {}, ticketsToSend), pendingCancelLines);
+    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base ? baseRawSubmitted : {}, ticketsToSend), pendingCancelLines);
     const allCancelled = merged.length === 0;
     const saved: Order = {
       ...order, kotSubmittedQty: nextSubmitted, synced: false,
@@ -340,7 +363,14 @@ export function useCart(initialTableId?: string) {
     const existingSubmission = (await db.meta.get(submissionKey))?.value;
     const submissionId = typeof existingSubmission === "string" ? existingSubmission : newUid();
     if (typeof existingSubmission !== "string") await db.meta.put({ key: submissionKey, value: submissionId });
-    const kotNo = await allocateRestaurantNumber("KOT", submissionId);
+    let kotNo: string;
+    try {
+      kotNo = await allocateRestaurantNumber("KOT", submissionId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't get a KOT number. Check the internet and try again.");
+      return null;
+    }
+    void rememberCustomer(customer);
     await db.transaction("rw", db.orders, db.kots, db.meta, async () => {
       const id = saved.id ?? Number(await db.orders.add(saved));
       saved.id = id;
@@ -392,7 +422,7 @@ export function useCart(initialTableId?: string) {
     }
     const latestKots = latest?.id === undefined
       ? storedKots
-      : await getDb().kots.where("orderId").equals(latest.id).toArray();
+      : await kotsForOrder(latest.id, latest.uid);
     const rawSubmitted = latestKots.length
       ? submittedQuantitiesFromKots(latestKots)
       : latest?.kotSubmittedQty ?? submitted;
@@ -474,7 +504,7 @@ export function useCart(initialTableId?: string) {
     if (!remaining.length) return settle(payment, closedBy);
 
     const db = getDb();
-    const latestKots = latest.id === undefined ? [] : await db.kots.where("orderId").equals(latest.id).toArray();
+    const latestKots = latest.id === undefined ? [] : await kotsForOrder(latest.id, latest.uid);
     const latestRawSubmitted = latestKots.length ? submittedQuantitiesFromKots(latestKots) : undefined;
     const now = Date.now();
     const t = computeTotals(split, discountPct, serviceChargePct, tax);

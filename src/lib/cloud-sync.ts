@@ -436,7 +436,11 @@ async function applyRemote(rows: RemoteRow[]): Promise<void> {
           const order: Order = withCustomerId(existing?.id !== undefined
             ? { ...rest, id: existing.id, uid: id, synced: true }
             : { ...rest, uid: id, synced: true });
-          await db.orders.put(order);
+          const orderId = Number(await db.orders.put(order));
+          // Tickets can arrive before their bill (they are older); link them now, otherwise
+          // the counter would treat already-sent items as "not sent" and offer to send them again.
+          await db.kots.where("orderId").equals(0).filter((k) => k.orderUid === id)
+            .modify((k) => { k.orderId = orderId; });
           break;
         }
         case "kot": {

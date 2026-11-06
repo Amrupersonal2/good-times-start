@@ -17,6 +17,24 @@ export async function rememberCustomer(details: { name?: string; phone?: string 
   return customer;
 }
 
+/**
+ * Save every guest named on a bill — running or settled — who isn't on the Guests list
+ * yet, so guests staying on open room bills show up before they pay. Returns how many were added.
+ */
+export async function rememberGuestsFromBills(): Promise<number> {
+  const db = getDb();
+  const orders = await db.orders.filter((o) => (o.status === "held" || o.status === "settled") && !!normalisePhone(o.customer?.phone)).toArray();
+  let added = 0;
+  for (const o of orders) {
+    const id = normalisePhone(o.customer?.phone);
+    if (!id) continue;
+    const before = await db.customers.get(id);
+    if (before && (before.name || !o.customer?.name?.trim())) continue;
+    if (await rememberCustomer(o.customer)) added += before ? 0 : 1;
+  }
+  return added;
+}
+
 export async function updateCustomer(customer: Customer): Promise<void> {
   await getDb().customers.put(customer);
   await markDirty(["customer", customer.id]);

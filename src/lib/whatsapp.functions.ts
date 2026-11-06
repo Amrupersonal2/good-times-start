@@ -56,6 +56,14 @@ export const sendWhatsappCampaign = createServerFn({ method: "POST" })
       const d = g.customer_phone.replace(/\D/g, "");
       return d.length === 10 ? `91${d}` : d;
     }));
+    // Guests saved at the counter whose WhatsApp consent staff recorded on the Guests page.
+    const { data: savedGuests } = await ctx.supabase.from("restaurant_records").select("payload")
+      .eq("restaurant_id", data.restaurantId).eq("kind", "customer").eq("deleted", false)
+      .eq("payload->whatsapp->>optIn", "true").limit(10000);
+    for (const g of (savedGuests ?? []) as { payload: { phone?: string } }[]) {
+      const d = String(g.payload?.phone ?? "").replace(/\D/g, "");
+      if (d.length >= 10) allowed.add(`91${d.slice(-10)}`);
+    }
 
     const results: { wa: string; ok: boolean; error?: string }[] = [];
     for (const r of data.recipients) {
