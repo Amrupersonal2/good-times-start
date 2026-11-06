@@ -1,3 +1,4 @@
+import { useFirstSyncDone } from "@/lib/use-first-sync";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
