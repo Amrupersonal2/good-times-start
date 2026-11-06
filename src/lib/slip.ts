@@ -18,7 +18,7 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export const KOT_END_FEED_MM = 30;
+export const KOT_END_FEED_MM = 50;
 export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
@@ -71,7 +71,7 @@ function itemColumns(cols: number) {
 }
 
 /** The customer bill: header, guest and table, items, totals, payment, UPI QR and footer. */
-export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper): Slip {
+export function billSlip(order: Order, settings: RestaurantSettings, paper: Paper, endFeedMm = 50): Slip {
   const cols = columnsFor(paper);
   const L: SlipLine[] = [];
   const center = (text: string, extra: Partial<SlipLine> = {}) => { for (const t of wrap(text, extra.size === "big" ? cols / 2 : cols)) L.push({ text: t, align: "center", ...extra }); };
@@ -140,12 +140,13 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
   const qr = settings.upiVpa && order.status !== "void" && due > 0 ? "upi" : undefined;
   L.push({ text: "" });
   center(settings.billFooter || "Thank you! Visit again.");
+  center(order.source === "waiter" ? "Printed through XTSY Waiter" : "Billed with XTSY POS");
   if (qr) { L.push({ text: "" }); L.push({ text: `Scan to pay Rs.${money(due)} by UPI`, align: "center", bold: true }); }
-  return { paper, lines: L, qr };
+  return { paper, lines: L, qr, endFeedMm };
 }
 
 /** A kitchen ticket: big order type and table, then items in tall bold text with their quantities. */
-export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): Slip {
+export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true, endFeedMm = KOT_END_FEED_MM): Slip {
   const cols = columnsFor(paper);
   const first = kots[0];
   const L: SlipLine[] = [];
@@ -181,7 +182,7 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   }
   L.push(pair("Total Qty", qtyText(total), cols, { bold: true }));
   L.push(rule(cols));
-  return { paper, lines: L, endFeedMm: KOT_END_FEED_MM };
+  return { paper, lines: L, endFeedMm };
 }
 
 /* ---------------- ESC/POS ---------------- */
@@ -189,7 +190,7 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
 const ESC = 0x1b, GS = 0x1d, LF = 0x0a;
 
 /** ESC/POS bytes for a slip: works with practically every 58/80 mm thermal printer. */
-export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } = {}): Uint8Array {
+export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number; cutter?: "none" | "full" | "partial" } = {}): Uint8Array {
   const out: number[] = [];
   const push = (...b: number[]) => { out.push(...b); };
   const text = (s: string) => { for (const ch of plain(s)) out.push(ch.charCodeAt(0)); };
@@ -219,15 +220,17 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
       push(LF, ESC, 0x61, 0);
     }
     if (slip.endFeedMm !== undefined) {
-      // Set the vertical motion unit to 1/203 inch, then feed 30 mm in dots.
-      // ESC J feeds without a cutter; GS V 0 cuts without requesting extra feed.
+      // Set the vertical motion unit to 1/203 inch, then feed the configured tear-off gap.
+      // ESC J feeds without cutting. Cutter commands are opt-in after model-level verification.
       push(GS, 0x50, 203, 203);
       let dots = Math.round(slip.endFeedMm * 203 / 25.4);
       while (dots > 0) { const chunk = Math.min(255, dots); push(ESC, 0x4a, chunk); dots -= chunk; }
-      push(GS, 0x56, 0x00);
+      if (opts.cutter === "full") push(GS, 0x56, 0x00);
+      else if (opts.cutter === "partial") push(GS, 0x56, 0x01);
     } else {
       push(LF, LF, LF, LF);
-      push(GS, 0x56, 0x42, 0x00); // bill feed and cut unchanged
+      if (opts.cutter === "full") push(GS, 0x56, 0x00);
+      else if (opts.cutter === "partial") push(GS, 0x56, 0x01);
     }
   };
   for (let i = 0; i < Math.max(1, Math.min(5, opts.copies ?? 1)); i++) one();

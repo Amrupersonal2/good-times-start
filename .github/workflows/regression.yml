@@ -37,10 +37,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - name: Install app
         run: bun install --frozen-lockfile || bun install
-      - name: Install Playwright (test-only, not saved)
-        run: |
-          bun add -d @playwright/test@1.56.0 jsqr@1.4.0 pngjs@7.0.0 @types/pngjs@6.0.5
-          bunx playwright install --with-deps chromium
       - name: Check E2E Supabase configuration
         id: e2e_config
         run: |
@@ -54,6 +50,12 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Install Playwright (test-only, not saved)
+        if: steps.e2e_config.outputs.enabled == 'true'
+        timeout-minutes: 15
+        run: |
+          bun add -d @playwright/test@1.56.0 jsqr@1.4.0 pngjs@7.0.0 @types/pngjs@6.0.5
+          bunx playwright install --with-deps chromium
       - name: Production build
         run: bunx vite build
         env:

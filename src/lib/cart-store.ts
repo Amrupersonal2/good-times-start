@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
 import { computeTotals, billNumber } from "./billing";
 import { getDb, getDeviceCode, markDirty, nextSeq, nextKotNumber } from "./db";
-import { accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, removeCancelled, reopenedLines, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
 import { buildLine, priceFor } from "./menu-logic";
@@ -73,7 +73,7 @@ export function useCart(initialTableId?: string) {
     // A table opened on this device for the first time shows what other devices already sent.
     // Start from the shared bill: other devices may have added to it since this draft was saved.
     setLines(draft?.lines.length
-      ? (openOrder ? reopenedLines(draft.lines, draft.sentQty, openOrder.lines, openOrder.kotSubmittedQty) : draft.lines)
+      ? (openOrder ? reopenedLines(draft.lines, draft.sentQty, openOrder.lines, openOrder.kotSubmittedQty, draft.baseLines) : draft.lines)
       : openOrder?.lines ?? []);
     setDiscountPct(draft?.discountPct ?? openOrder?.discountPct ?? 0);
     setServiceChargePct(openOrder?.serviceChargePct ?? 0);
@@ -88,7 +88,7 @@ export function useCart(initialTableId?: string) {
   useEffect(() => {
     if (!draftReady) return;
     const timeout = window.setTimeout(() => {
-      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, lines, discountPct, updatedAt: Date.now() });
+      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, baseLines: activeOrder?.lines ?? [], lines, discountPct, updatedAt: Date.now() });
       if (tableId && lines.length) {
         const total = computeTotals(lines, discountPct, serviceChargePct, tax).total;
         void getDb().restTables.get(tableId).then(async (table) => {
@@ -277,7 +277,11 @@ export function useCart(initialTableId?: string) {
     // Re-read the shared order: another device may have sent items for this table meanwhile.
     const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : tableId ? await latestHeldOrder(tableId) : null;
     const base = latest && latest.status === "held" ? latest : null;
-    const merged = base ? removeCancelled(mergeSentLines(base.lines, pendingKitchenLines), pendingCancelLines) : lines;
+    const localAdditions = base ? additionsNotInShared(base.lines, lines) : pendingKitchenLines;
+    const ticketsToSend = base
+      ? [...unsentKitchenLines(base.lines, base.kotSubmittedQty ?? {}), ...localAdditions]
+      : pendingKitchenLines;
+    const merged = base ? removeCancelled(mergeSentLines(base.lines, localAdditions), pendingCancelLines) : lines;
     const t = computeTotals(merged, discountPct, serviceChargePct, tax);
     const tableLabel = await tableLabelOf(tableId);
     const tableSection = tableId ? (await db.restTables.get(tableId))?.section : base?.tableSection;
@@ -286,12 +290,13 @@ export function useCart(initialTableId?: string) {
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
           uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
+          ...(user?.login === "waiter" ? { source: "waiter" as const } : {}),
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
         });
     const orderUid = order.uid ?? newUid();
     order.uid = orderUid;
-    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base?.kotSubmittedQty ?? {}, pendingKitchenLines), pendingCancelLines);
+    const nextSubmitted = subtractSubmittedQuantities(accumulateSubmittedQuantities(base?.kotSubmittedQty ?? {}, ticketsToSend), pendingCancelLines);
     const allCancelled = merged.length === 0;
     const saved: Order = {
       ...order, kotSubmittedQty: nextSubmitted, synced: false,
@@ -312,7 +317,7 @@ export function useCart(initialTableId?: string) {
         status: "new", createdAt: now,
       });
       kots = [
-        ...Array.from(kotGroups(pendingKitchenLines), ticket("order")),
+        ...Array.from(kotGroups(ticketsToSend), ticket("order")),
         ...Array.from(kotGroups(pendingCancelLines), ticket("cancel")),
       ];
       await db.kots.bulkAdd(kots);
@@ -327,7 +332,7 @@ export function useCart(initialTableId?: string) {
     setLines(merged);
     toast.success(`${kots.length} kitchen ticket${kots.length === 1 ? "" : "s"} sent`);
     return { kots, order: saved };
-  }, [activeOrder, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, serviceChargePct, tableId, taxKey]);
+  }, [activeOrder, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, serviceChargePct, tableId, taxKey, user?.login]);
 
   const sendKitchen = useCallback(async (): Promise<Kot[]> => (await sendKitchenWithOrder())?.kots ?? [], [sendKitchenWithOrder]);
 

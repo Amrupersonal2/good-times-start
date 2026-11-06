@@ -14,10 +14,19 @@ describe("customers", () => {
     expect(normalisePhone("12345")).toBeNull();
   });
 
-  it("earns points only on the part not paid with points", () => {
-    expect(earnedPoints(bill("x", 1000, [{ mode: "cash", amount: 1000 }]), 5)).toBe(50);
-    expect(earnedPoints(bill("x", 1000, [{ mode: "points", amount: 200 }, { mode: "upi", amount: 800 }]), 5)).toBe(40);
-    expect(earnedPoints(bill("x", 1000, [{ mode: "cash", amount: 1000 }]), 0)).toBe(0);
+  it("earns 1% on discounted settled value from the sixth visit, excluding points redeemed", () => {
+    const order = bill("x", 1180, [{ mode: "points", amount: 20 }, { mode: "upi", amount: 1160 }], { subtotal: 1500, discountAmt: 300, taxable: 1200 });
+    expect(earnedPoints(order, 1, false)).toBe(0);
+    expect(earnedPoints(order, 1, true)).toBe(11);
+    expect(earnedPoints(order, 0, true)).toBe(0);
+  });
+
+  it("awards loyalty only from the sixth settled visit, in chronological order", () => {
+    const orders = Array.from({ length: 6 }, (_, index) => bill("9876543210", 1000, [{ mode: "cash", amount: 1000 }], { createdAt: (6 - index) * 10, subtotal: 1000, taxable: 1000 }));
+    const stats = customerStats({ id: "9876543210", pointsAdjustment: 0, duesPaid: [] }, orders, 1);
+    expect(stats.visits).toBe(6);
+    expect(stats.pointsEarned).toBe(10);
+    expect(stats.points).toBe(10);
   });
 
   it("works out visits, points, dues and ratings from bills", () => {
@@ -28,6 +37,6 @@ describe("customers", () => {
       bill("1111111111", 500, [{ mode: "cash", amount: 500 }]),
     ];
     const stats = customerStats({ id: "9876543210", pointsAdjustment: 5, duesPaid: [{ id: "p", amount: 200, mode: "upi", at: 30 }] }, orders, 5);
-    expect(stats).toMatchObject({ visits: 2, spent: 1600, lastVisit: 20, pointsEarned: 78, pointsRedeemed: 30, points: 53, dueOwed: 570, duePaid: 200, due: 370, averageRating: 4.5 });
+    expect(stats).toMatchObject({ visits: 2, spent: 1600, lastVisit: 20, pointsEarned: 0, pointsRedeemed: 30, points: 0, dueOwed: 570, duePaid: 200, due: 370, averageRating: 4.5 });
   });
 });

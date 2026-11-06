@@ -47,5 +47,8 @@ describe("printing", () => {
     expect(withCopies(["a"], 0)).toEqual([]);
     expect(printCss(58)).toContain("size: 58mm auto");
     expect(printCss(58)).toContain("width: 48mm");
+    expect(printCss(58)).not.toContain("height: 50mm");
+    expect(normalisePrintConfig({ cutter: "full", endFeedMm: 25 })).toMatchObject({ cutter: "full", endFeedMm: 25 });
+    expect(normalisePrintConfig({ cutter: "auto", endFeedMm: 999 })).toMatchObject({ cutter: "none", endFeedMm: 100 });
   });
 });

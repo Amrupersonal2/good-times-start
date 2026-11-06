@@ -100,7 +100,7 @@ export interface Order {
   cloudUserId?: string;
   kotSubmittedQty?: Record<string, number>;
   /** Placed by the guest: from a table QR code or the online ordering page. */
-  source?: "qr" | "online";
+  source?: "qr" | "online" | "waiter";
   /** Guest order codes (e.g. Q-4821) that make up this bill. */
   guestCodes?: string[];
 }
@@ -115,6 +115,8 @@ export interface CartDraft {
   updatedAt: number;
   /** What the kitchen had of this bill when the draft was saved, to tell this device's unsent items apart. */
   sentQty?: Record<string, number> | undefined;
+  /** Shared order lines when this local draft was saved; distinguishes local deltas from shared unsent items. */
+  baseLines?: CartLine[] | undefined;
 }
 
 export interface InventoryItem {

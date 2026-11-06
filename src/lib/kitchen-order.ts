@@ -5,8 +5,12 @@ import type { CartLine } from "./types";
  * (which may hold items other devices added since), plus only the items this device added
  * and has not sent yet. The draft alone is never trusted for items already in the kitchen.
  */
-export function reopenedLines(draftLines: CartLine[], draftSent: Record<string, number> | undefined, shared: CartLine[], sharedSent: Record<string, number> = {}): CartLine[] {
-  const pending = unsentKitchenLines(draftLines, draftSent ?? sharedSent);
+export function reopenedLines(draftLines: CartLine[], draftSent: Record<string, number> | undefined, shared: CartLine[], sharedSent: Record<string, number> = {}, draftBaseLines?: CartLine[]): CartLine[] {
+  // New drafts persist the shared snapshot. Only merge additions made after that
+  // snapshot; legacy drafts fall back to the submitted-quantity calculation.
+  const pending = draftBaseLines
+    ? additionsNotInShared(draftBaseLines, draftLines)
+    : unsentKitchenLines(draftLines, draftSent ?? sharedSent);
   const merged = shared.map((line) => ({ ...line }));
   for (const add of pending) {
     const existing = merged.find((line) => line.itemId === add.itemId);
@@ -22,6 +26,19 @@ export function reopenedLines(draftLines: CartLine[], draftSent: Record<string, 
     }
   }
   return merged.filter((line) => line.qty > 0);
+}
+
+/**
+ * Return only positive quantity deltas that are present on this device but not
+ * in the latest shared bill. This prevents reopening an unsent held bill from
+ * adding its existing unsent lines to itself a second time.
+ */
+export function additionsNotInShared(shared: CartLine[], current: CartLine[]): CartLine[] {
+  const sharedQty = new Map(shared.map((line) => [line.itemId, line.qty]));
+  return current.flatMap((line) => {
+    const delta = line.qty - (sharedQty.get(line.itemId) ?? 0);
+    return delta > 0 ? [{ ...line, qty: delta }] : [];
+  });
 }
 
 export function unsentKitchenLines(lines: CartLine[], submitted: Record<string, number> = {}): CartLine[] {

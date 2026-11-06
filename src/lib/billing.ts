@@ -69,9 +69,12 @@ export function financialYear(d: Date): string {
   return `${String(start).slice(-2)}-${String(start + 1).slice(-2)}`;
 }
 
-/** Bill number in the restaurant's sequential device series, e.g. XTSY/D1/0001. */
+/** Bill number in the restaurant's sequential series. Legacy/custom device codes retain the XTSY namespace. */
 export function billNumber(seq: number, _d: Date, device = "D1"): string {
-  return `XTSY/${device.slice(0, 4)}/${String(seq).padStart(4, "0")}`;
+  const raw = device.trim().toUpperCase();
+  const series = raw === "D1" || raw === "SJT" || raw === "POS" ? "POS" : raw;
+  const prefix = series === "POS" || /^POS\d+$/.test(series) ? "" : "XTSY/";
+  return `${prefix}${series}/${String(seq).padStart(4, "0")}`;
 }
 
 export function upiLink(opts: { vpa: string; name: string; amount: number; billNo: string }): string {
