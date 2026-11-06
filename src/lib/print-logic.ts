@@ -62,7 +62,7 @@ export function normalisePrintConfig(raw: unknown): PrintConfig {
     autoPrintBill: typeof r.autoPrintBill === "boolean" ? r.autoPrintBill : DEFAULT_PRINT_CONFIG.autoPrintBill,
     stations: Array.isArray(r.stations) ? r.stations.filter((s): s is string => typeof s === "string") : [],
     largeKotText: typeof r.largeKotText === "boolean" ? r.largeKotText : DEFAULT_PRINT_CONFIG.largeKotText,
-    endFeedMm: typeof r.endFeedMm === "number" && Number.isFinite(r.endFeedMm) ? Math.min(100, Math.max(0, r.endFeedMm)) : DEFAULT_PRINT_CONFIG.endFeedMm,
+    endFeedMm: typeof r.endFeedMm === "number" && Number.isFinite(r.endFeedMm) && r.endFeedMm !== 50 ? Math.min(100, Math.max(0, r.endFeedMm)) : DEFAULT_PRINT_CONFIG.endFeedMm,
     cutter: r.cutter === "full" || r.cutter === "partial" ? r.cutter : "none",
   };
 }
