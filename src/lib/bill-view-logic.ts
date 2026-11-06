@@ -11,7 +11,9 @@ export function shortCode(name: string): string {
 
 export interface SentGroup {
   key: string;
-  /** 1 for the bill's first ticket, 2 for the next… */
+  /** Stable, official restaurant-wide number printed on the ticket when available. */
+  kotNo?: string;
+  /** Fallback ordinal for legacy tickets without an allocated KOT number. */
   number: number;
   at: number;
   cancel: boolean;
@@ -22,23 +24,47 @@ export interface SentGroup {
 
 /**
  * The bill's tickets in the order they went to the kitchen. Tickets sent in the
- * same moment (one per station) count as one KOT number, as the cashier sees it.
+ * same logical submission count as one KOT. Prefer the allocated restaurant-wide
+ * KOT number; timestamps are only a compatibility fallback for legacy records.
+ * Explicit submission IDs prevent unrelated sends with matching timestamps from
+ * being merged, and station rows for one submission remain grouped together.
  */
 export function sentGroups(kots: Kot[]): SentGroup[] {
   const sorted = [...kots].sort((a, b) => a.createdAt - b.createdAt);
-  const groups: SentGroup[] = [];
+  const groups = new Map<string, SentGroup>();
+  let legacyNumber = 0;
+
   for (const k of sorted) {
     const cancel = k.kind === "cancel";
-    const last = groups[groups.length - 1];
-    if (last && last.at === k.createdAt && last.cancel === cancel) {
-      last.kots.push(k);
-      last.lines.push(...k.lines.map((l) => ({ ...l })));
-      last.station = `${last.station}, ${k.station}`;
+    const submissionKey = k.submissionId
+      ? `submission:${k.submissionId}:${cancel ? "cancel" : "order"}`
+      : k.kotNo
+        ? `number:${k.kotNo}:${cancel ? "cancel" : "order"}`
+        : `legacy:${k.orderUid ?? k.billNo}:${k.createdAt}:${cancel ? "cancel" : "order"}`;
+    const group = groups.get(submissionKey);
+
+    if (group) {
+      group.kots.push(k);
+      group.lines.push(...k.lines.map((l) => ({ ...l })));
+      if (!group.station.split(", ").includes(k.station)) group.station = `${group.station}, ${k.station}`;
+      group.kotNo ??= k.kotNo;
       continue;
     }
-    groups.push({ key: k.uid ?? `${k.createdAt}-${k.station}`, number: groups.filter((g) => !g.cancel).length + (cancel ? 0 : 1), at: k.createdAt, cancel, station: k.station, kots: [k], lines: k.lines.map((l) => ({ ...l })) });
+
+    if (!cancel) legacyNumber += 1;
+    groups.set(submissionKey, {
+      key: submissionKey,
+      ...(k.kotNo ? { kotNo: k.kotNo } : {}),
+      number: legacyNumber,
+      at: k.createdAt,
+      cancel,
+      station: k.station,
+      kots: [k],
+      lines: k.lines.map((l) => ({ ...l })),
+    });
   }
-  return groups;
+
+  return [...groups.values()];
 }
 
 /** Minutes since a moment, as "just now", "12 min" or "1 h 5 min". */

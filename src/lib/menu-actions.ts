@@ -1,6 +1,7 @@
 import { getDb, getSettings, markDirty, saveSettings } from "./db";
 import type { RecordKind } from "./sync-core";
 import { computeTotals } from "./billing";
+import { taxOptionsFor } from "./billing-config";
 import { buildLine, parseLineId } from "./menu-logic";
 import type { Material, MenuItem } from "./types";
 
@@ -11,7 +12,7 @@ export interface ApplyMenuResult { dishes: number; ingredients: number; removed:
  * Existing dishes with the same id are replaced; with `removeOthers`, dishes
  * not in the import are deleted (past bills keep their copies).
  */
-export async function applyMenuImport(items: MenuItem[], materials: Material[], options: { removeOthers?: boolean } = {}): Promise<ApplyMenuResult> {
+export async function applyMenuImport(items: MenuItem[], materials: Material[], options: { removeOthers?: boolean; refreshHeldBillTax?: boolean } = {}): Promise<ApplyMenuResult> {
   const db = getDb();
   const keep = new Set(items.map((i) => i.id));
   const changes: [RecordKind, string][] = [];
@@ -23,6 +24,7 @@ export async function applyMenuImport(items: MenuItem[], materials: Material[], 
     // current menu price when the imported menu changes that item/variant.
     const byId = new Map(items.map((item) => [item.id, item]));
     const held = await db.orders.where("status").equals("held").toArray();
+    const settings = options.refreshHeldBillTax ? await getSettings() : undefined;
     for (const order of held) {
       let changed = false;
       const lines = order.lines.map((line) => {
@@ -34,9 +36,11 @@ export async function applyMenuImport(items: MenuItem[], materials: Material[], 
         changed = true;
         return { ...line, price: repriced.price };
       });
-      if (!changed) continue;
-      const totals = computeTotals(lines, order.discountPct, order.serviceChargePct ?? 0, order.tax);
-      const updated = { ...order, lines, ...totals, synced: false };
+      const tax = settings ? taxOptionsFor(settings, order.orderType) : order.tax;
+      const taxChanged = JSON.stringify(tax ?? {}) !== JSON.stringify(order.tax ?? {});
+      if (!changed && !taxChanged) continue;
+      const totals = computeTotals(lines, order.discountPct, order.serviceChargePct ?? 0, tax);
+      const updated = { ...order, lines, tax, ...totals, synced: false };
       await db.orders.put(updated);
       if (updated.uid) changes.push(["order", updated.uid]);
     }
@@ -67,4 +71,61 @@ export async function loadTabBistroMenu(removeOthers: boolean): Promise<ApplyMen
   const settings = await getSettings();
   await saveSettings({ ...settings, name: settings.name || "TAB Bistro by XTSY", categoryOrder: TAB_CATEGORIES });
   return result;
+}
+
+/**
+ * Apply only the printed TAB Bistro prices to matching menu IDs. Preserve
+ * restaurant-specific names, availability, recipes, tax settings and custom
+ * dishes. applyMenuImport also reprices every held bill; settled bills are
+ * intentionally immutable.
+ */
+export async function syncPrintedTabMenuPrices(): Promise<{ dishesUpdated: number }> {
+  const { TAB_CATEGORIES, TAB_MATERIALS, TAB_MENU } = await import("@/data/tab-bistro");
+  const [current, currentMaterials] = await Promise.all([getDb().menu.toArray(), getDb().materials.toArray()]);
+  const printedById = new Map(TAB_MENU.map((item) => [item.id, item]));
+  const currentIds = new Set(current.map((item) => item.id));
+  const existingMaterials = new Map(currentMaterials.map((material) => [material.id, material]));
+  const materials = TAB_MATERIALS.map((material) => {
+    const existing = existingMaterials.get(material.id);
+    return existing ? { ...material, ...(existing.costPerUnit !== undefined ? { costPerUnit: existing.costPerUnit } : {}), lowStockLevel: existing.lowStockLevel } : material;
+  });
+  let dishesUpdated = 0;
+
+  const updated = current.map((item) => {
+    const printed = printedById.get(item.id);
+    if (!printed) return item;
+
+    const variants = item.variants?.map((variant) => {
+      const printedVariant = printed.variants?.find((candidate) => candidate.id === variant.id);
+      return printedVariant ? { ...variant, price: printedVariant.price } : variant;
+    });
+    const addons = item.addons?.map((addon) => {
+      const printedAddon = printed.addons?.find((candidate) => candidate.id === addon.id);
+      return printedAddon ? { ...addon, price: printedAddon.price } : addon;
+    });
+    const changed = item.price !== printed.price || item.category !== printed.category || item.station !== printed.station ||
+      (variants ?? []).some((variant, index) => variant.price !== item.variants?.[index]?.price) ||
+      (addons ?? []).some((addon, index) => addon.price !== item.addons?.[index]?.price);
+    if (!changed) return item;
+    dishesUpdated += 1;
+    return { ...item, price: printed.price, category: printed.category, station: printed.station,
+      ...(variants ? { variants } : {}), ...(addons ? { addons } : {}) };
+  });
+
+  for (const item of TAB_MENU) {
+    if (!currentIds.has(item.id)) {
+      updated.push(item);
+      dishesUpdated += 1;
+    }
+  }
+
+  const settings = await getSettings();
+  const nextSettings = { ...settings, pricesIncludeGst: false, categoryOrder: TAB_CATEGORIES };
+  const settingsChanged = settings.pricesIncludeGst !== false ||
+    JSON.stringify(settings.categoryOrder ?? []) !== JSON.stringify(TAB_CATEGORIES);
+  if (settingsChanged) await saveSettings(nextSettings);
+  if (dishesUpdated || settingsChanged) {
+    await applyMenuImport(updated, materials, { removeOthers: false, refreshHeldBillTax: true });
+  }
+  return { dishesUpdated };
 }

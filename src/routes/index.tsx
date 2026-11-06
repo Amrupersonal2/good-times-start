@@ -328,8 +328,8 @@ function PosPage() {
               </BillGroup>
             ) : null}
             {[...sent].reverse().map((g) => (
-              <BillGroup key={g.key} title={g.cancel ? `Cancelled after KOT ${g.number}` : `KOT ${g.number}`} tone={g.cancel ? "cancelled" : "sent"} note={`${since(g.at)}${since(g.at) === "just now" ? "" : " ago"} · ${g.station}`}
-                action={can(user, "kot.reprint") ? <button type="button" aria-label={`Print KOT ${g.number} again`} title="Print again" onClick={() => void allow(user, "kot.reprint", `Reprint KOT ${g.number}`).then((ok) => { if (ok) void printKots(g.kots, "reprint"); })} className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"><Printer className="size-3.5" /></button> : undefined}>
+              <BillGroup key={g.key} title={g.cancel ? `Cancelled after ${g.kotNo ?? `KOT ${g.number}`}` : (g.kotNo ?? `KOT ${g.number}`)} tone={g.cancel ? "cancelled" : "sent"} note={`${since(g.at)}${since(g.at) === "just now" ? "" : " ago"} · ${g.station}`}
+                action={can(user, "kot.reprint") ? <button type="button" aria-label={`Print ${g.kotNo ?? `KOT ${g.number}`} again`} title="Print again" onClick={() => void allow(user, "kot.reprint", `Reprint ${g.kotNo ?? `KOT ${g.number}`}`).then((ok) => { if (ok) void printKots(g.kots, "reprint"); })} className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"><Printer className="size-3.5" /></button> : undefined}>
                 {g.lines.map((sl, i) => {
                   const line = g.cancel ? undefined : lineFor(cart.lines, sl.itemId, sl.name);
                   return (

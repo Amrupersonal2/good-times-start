@@ -24,6 +24,19 @@ import {
   type RecordKind,
 } from "@/lib/sync-core";
 import type { InventoryItem, Kot, Order } from "@/lib/types";
+import {
+  baseKey,
+  buildUnits,
+  isMissingRpc,
+  isPushResults,
+  keepsBasePayload,
+  mergeOrder,
+  parseBase,
+  parseConflicts,
+  type PushResult,
+  type SyncConflict,
+  type UnitRow,
+} from "@/lib/record-versions";
 
 /**
  * Live sync for a restaurant's devices.
@@ -44,6 +57,36 @@ interface RemoteRow {
   payload: Json;
   deleted: boolean;
   updated_at: string;
+  /** Server-owned version (migration 0020); absent on servers without it. */
+  version?: number;
+}
+
+/**
+ * null = not probed yet, true = push_restaurant_records is deployed, false =
+ * legacy server: keep the old upsert path so this build can ship before the migration.
+ */
+let versionedServer: boolean | null = null;
+/** Test hook. */
+export function resetVersionedServerProbe() { versionedServer = null; }
+
+const CONFLICTS_KEY = "syncConflicts";
+const MAX_MERGES_PER_SYNC = 3;
+
+async function readConflicts(): Promise<SyncConflict[]> {
+  return parseConflicts((await getDb().meta.get(CONFLICTS_KEY))?.value);
+}
+
+async function writeConflicts(list: SyncConflict[]) {
+  if (list.length) await getDb().meta.put({ key: CONFLICTS_KEY, value: JSON.stringify(list) });
+  else await getDb().meta.delete(CONFLICTS_KEY);
+}
+
+async function readBaseVersion(kind: RecordKind, recordId: string) {
+  return parseBase((await getDb().meta.get(baseKey(kind, recordId)))?.value);
+}
+
+async function writeBase(kind: RecordKind, recordId: string, version: number, payload: unknown) {
+  await getDb().meta.put({ key: baseKey(kind, recordId), value: JSON.stringify(keepsBasePayload(kind) ? { version, payload } : { version }) });
 }
 
 const isKind = (kind: string): kind is RecordKind => (RECORD_KINDS as readonly string[]).includes(kind);
@@ -143,6 +186,12 @@ async function push(restaurantId: string): Promise<void> {
       });
     }
 
+    if (versionedServer !== false) {
+      const outcome = await pushVersioned(restaurantId, entries, rows);
+      if (outcome === "done") continue;
+      if (outcome === "stalled") return;
+    }
+
     // A refused change is dropped and the cloud's copy restored, never retried forever:
     // one change this device isn't allowed to make must not hold up every other change.
     const refused = await upsertAllowed(rows);
@@ -158,15 +207,169 @@ async function push(restaurantId: string): Promise<void> {
   }
 }
 
+const mergeAttempts = new Map<string, number>();
+
+/**
+ * Versioned push (migration 0020). Returns "legacy" when the server doesn't have
+ * the function yet, "stalled" when nothing could leave the outbox this round
+ * (e.g. a unit waiting on a conflict), otherwise "done".
+ */
+async function pushVersioned(restaurantId: string, entries: OutboxEntry[], rows: PushRow[]): Promise<"legacy" | "stalled" | "done"> {
+  const db = getDb();
+  const unitRows: UnitRow[] = [];
+  for (const row of rows) {
+    const base = await readBaseVersion(row.kind as RecordKind, row.record_id);
+    unitRows.push({ kind: row.kind as RecordKind, record_id: row.record_id, payload: row.payload, deleted: row.deleted, base_version: base?.version ?? null });
+  }
+  const grouped = buildUnits(unitRows);
+  const units = grouped.map((unit) => ({ rows: unit }));
+  const siblingsOf = new Map<string, string[]>();
+  for (const unit of grouped) {
+    const keys = unit.map((r) => outboxKey(r.kind, r.record_id));
+    for (const k of keys) siblingsOf.set(k, keys.filter((x) => x !== k));
+  }
+  const rowByKey = new Map(rows.map((r) => [outboxKey(r.kind as RecordKind, r.record_id), r]));
+  const { data, error } = await supabase.rpc("push_restaurant_records" as never, { _restaurant_id: restaurantId, _units: units } as never);
+  if (error && isMissingRpc(error)) { versionedServer = false; return "legacy"; }
+  if (error) throw error;
+  if (!isPushResults(data)) { versionedServer = false; return "legacy"; }
+  versionedServer = true;
+
+  const results = data as PushResult[];
+  const done = new Set<string>();
+  const refused: RefusedRow[] = [];
+  const conflicts = await readConflicts();
+  let progressed = false;
+
+  for (const result of results) {
+    if (!isKind(result.kind)) continue;
+    const key = outboxKey(result.kind, result.record_id);
+    const sent = rows.find((r) => r.kind === result.kind && r.record_id === result.record_id);
+    switch (result.status) {
+      case "applied":
+        await writeBase(result.kind, result.record_id, result.version, sent?.payload);
+        done.add(key);
+        mergeAttempts.delete(key);
+        break;
+      case "duplicate": {
+        // The kitchen already has this ticket from an earlier attempt: drop the local copy.
+        const local = await db.kots.where("uid").equals(result.record_id).first();
+        if (local?.id !== undefined) await db.kots.delete(local.id);
+        done.add(key);
+        break;
+      }
+      case "rolled_back":
+        break; // stays queued; retried with its unit
+      case "error":
+        if (!isRefusal(result)) throw Object.assign(new Error(result.message ?? "Sync failed"), { code: result.code });
+        if (sent) refused.push(/made before launch/i.test(result.message ?? "") ? { ...sent, prelaunch: true } : sent);
+        done.add(key);
+        // A settlement unit is all-or-nothing: its stock entry and table go back to the cloud copy too.
+        for (const sib of siblingsOf.get(key) ?? []) { const r = rowByKey.get(sib); if (r) { refused.push(r); done.add(sib); } }
+        break;
+      case "conflict": {
+        if (result.race || typeof result.version !== "number") break; // insert race: just retry
+        const remote = { version: result.version, payload: result.payload ?? {}, deleted: !!result.deleted };
+        const attempts = (mergeAttempts.get(key) ?? 0) + 1;
+        mergeAttempts.set(key, attempts);
+        const resolved = attempts <= MAX_MERGES_PER_SYNC && await tryAutoMerge(result.kind, result.record_id, remote);
+        if (resolved) { progressed = true; break; } // re-queued against the new base
+        const local = await readLocal(result.kind, result.record_id);
+        const reasons = result.kind === "order" && isOrderPayload(local) && isOrderPayload(remote.payload)
+          ? mergeOrder(parseBaseOrder(await readBaseVersion(result.kind, result.record_id)), local, remote.payload).conflicts
+          : [`${result.kind} changed on another device`];
+        const label = result.kind === "order" && isOrderPayload(local) ? `Bill ${local.billNo}` : `${result.kind} ${result.record_id}`;
+        const next = conflicts.filter((c) => c.key !== key);
+        const related = siblingsOf.get(key) ?? [];
+        next.push({ key, kind: result.kind, recordId: result.record_id, label, reasons: reasons.length ? reasons : ["Changed on another device"], local: local ?? null, remote, at: Date.now(), ...(related.length ? { related } : {}) });
+        for (const sib of related) done.add(sib); // held back with the bill so stock/table never commit without it
+        conflicts.splice(0, conflicts.length, ...next);
+        done.add(key); // leaves the outbox; local copy is kept and shown in the conflict alert
+        break;
+      }
+    }
+  }
+  await writeConflicts(conflicts);
+
+  await db.transaction("rw", db.outbox, async () => {
+    for (const entry of entries) {
+      if (!done.has(entry.key)) continue;
+      const current = await db.outbox.get(entry.key);
+      if (current && current.at === entry.at) await db.outbox.delete(entry.key);
+    }
+  });
+  if (refused.length) await restoreRefused(restaurantId, refused);
+  return done.size || progressed ? "done" : "stalled";
+}
+
+function parseBaseOrder(base: { payload?: unknown } | null): Order | undefined {
+  return base && isOrderPayload(base.payload) ? base.payload : undefined;
+}
+
+/** Merge a running bill edited on two devices; on success the merged copy is queued again. */
+async function tryAutoMerge(kind: RecordKind, recordId: string, remote: { version: number; payload: unknown; deleted: boolean }): Promise<boolean> {
+  const db = getDb();
+  if (kind !== "order") {
+    // Tables, menu, stock and other records keep their established last-writer-wins rule,
+    // now applied explicitly on top of the newest server version instead of blindly.
+    await writeBase(kind, recordId, remote.version, undefined);
+    await markDirty([kind, recordId]);
+    return true;
+  }
+  if (remote.deleted || !isOrderPayload(remote.payload)) return false;
+  const local = await db.orders.where("uid").equals(recordId).first();
+  if (!local) return false;
+  const base = parseBaseOrder(await readBaseVersion(kind, recordId));
+  const { order } = mergeOrder(base, local, { ...remote.payload, uid: recordId });
+  if (!order) return false;
+  await db.orders.put({ ...order, ...(local.id !== undefined ? { id: local.id } : {}), uid: recordId, synced: false });
+  await writeBase(kind, recordId, remote.version, remote.payload);
+  await markDirty(["order", recordId]);
+  return true;
+}
+
+/**
+ * Staff decision on a conflict. "mine" re-sends this device's copy on top of the
+ * latest cloud version; "cloud" discards the local copy and shows the cloud's.
+ */
+export async function resolveSyncConflict(key: string, choice: "mine" | "cloud"): Promise<void> {
+  const conflicts = await readConflicts();
+  const conflict = conflicts.find((c) => c.key === key);
+  if (!conflict) return;
+  await writeConflicts(conflicts.filter((c) => c.key !== key));
+  const related = (conflict.related ?? []).map((k) => { const at = k.indexOf(":"); return [k.slice(0, at), k.slice(at + 1)] as [RecordKind, string]; });
+  if (choice === "mine") {
+    if (conflict.remote) await writeBase(conflict.kind, conflict.recordId, conflict.remote.version, conflict.remote.payload);
+    await markDirty([conflict.kind, conflict.recordId], ...related);
+    return;
+  }
+  if (conflict.remote) {
+    await applyRemote([{ kind: conflict.kind, record_id: conflict.recordId, payload: conflict.remote.payload as Json, deleted: conflict.remote.deleted, updated_at: new Date().toISOString(), version: conflict.remote.version }]);
+  }
+  // Held-back stock entry / table: replace with the cloud's copies (local-only ones are removed).
+  const restaurantId = (await getDb().meta.get("restaurantId"))?.value;
+  if (related.length && typeof restaurantId === "string" && restaurantId) {
+    await restoreRefused(restaurantId, related.map(([kind, record_id]) => ({ restaurant_id: restaurantId, kind, record_id, payload: {} as Json, deleted: false })));
+  }
+}
+
+export async function listSyncConflicts(): Promise<SyncConflict[]> { return readConflicts(); }
+
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
   // The outbox is read inside the same transaction, so a local edit can't slip in between the check and the write.
   await db.transaction("rw", [db.outbox, db.menu, db.restTables, db.inventory, db.orders, db.kots, db.meta, db.materials, db.suppliers, db.stockEntries, db.customers, db.dayCloses, db.materialLevels], async () => {
     const pending = new Set((await db.outbox.toCollection().primaryKeys()).map(String));
+    const conflicted = new Set(parseConflicts((await db.meta.get(CONFLICTS_KEY))?.value).map((c) => c.key));
     for (const row of rows) {
       if (!isKind(row.kind)) continue;
-      // Local edits that haven't been pushed yet win; they'll overwrite the cloud copy next push.
-      if (pending.has(outboxKey(row.kind, row.record_id))) continue;
+      const key = outboxKey(row.kind, row.record_id);
+      // Local edits that haven't been pushed yet win; they'll be pushed against their recorded base version.
+      // Records awaiting a staff conflict decision keep this device's copy on screen.
+      if (pending.has(key) || conflicted.has(key)) continue;
+      if (typeof row.version === "number") {
+        await db.meta.put({ key: baseKey(row.kind, row.record_id), value: JSON.stringify(keepsBasePayload(row.kind) ? { version: row.version, payload: row.payload } : { version: row.version }) });
+      }
       const payload: unknown = row.payload;
       const id = row.record_id;
 
@@ -262,14 +465,15 @@ async function pull(restaurantId: string): Promise<void> {
   for (;;) {
     let query = supabase
       .from("restaurant_records")
-      .select("kind,record_id,payload,deleted,updated_at")
+      .select(versionedServer === false ? "kind,record_id,payload,deleted,updated_at" : "kind,record_id,payload,deleted,updated_at,version")
       .eq("restaurant_id", restaurantId)
       .order("updated_at", { ascending: true })
       .limit(PULL_PAGE);
     if (from) query = firstPage ? query.gte("updated_at", from) : query.gt("updated_at", from);
     const { data, error } = await query;
+    if (error && error.code === "42703" && versionedServer !== false) { versionedServer = false; continue; } // column not deployed yet
     if (error) throw error;
-    const rows = (data ?? []) as RemoteRow[];
+    const rows = (data ?? []) as unknown as RemoteRow[];
     if (rows.length) {
       await applyRemote(rows);
       const last = rows[rows.length - 1]!.updated_at;

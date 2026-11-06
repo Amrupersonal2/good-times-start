@@ -20,6 +20,7 @@ import type { GstRate, InventoryItem, Material, MenuItem } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
+import { syncPrintedTabMenuPrices } from "@/lib/menu-actions";
 import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/menu")({
@@ -250,6 +251,9 @@ function MenuPage() {
           {canEdit ? (
             <div className="flex flex-wrap gap-2">
               <MenuExcel restaurant={settings.name} menuCount={menu.length} />
+              <ConfirmButton id="sync-printed-tab-prices" className={buttonVariants({ variant: "outline" })} armedClassName="!border-primary !text-primary"
+                onConfirm={() => void syncPrintedTabMenuPrices().then(({ dishesUpdated }) => toast.success(dishesUpdated ? `Updated ${dishesUpdated} menu items, sections and prices; repriced all running bills` : "Menu prices already match the printed menu")).catch(() => toast.error("Could not apply printed menu prices"))}
+                confirm="Tap again to update menu and running bills">Apply printed menu prices & sections</ConfirmButton>
               <Button onClick={() => setEditing("new")}><Plus />Add dish</Button>
             </div>
           ) : null}
