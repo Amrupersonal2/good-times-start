@@ -362,7 +362,7 @@ export function useCart(initialTableId?: string) {
 
   /** Re-read the shared order before closing it, in case another device already did. */
   const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
-    const detailsError = guestDetailsError(customer, guestCount);
+    const detailsError = guestDetailsError(customer, guestCount, await tableCapacityOf(tableId));
     if (detailsError) { toast.error(detailsError); return false; }
     const effectiveSubmitted = storedKots.length ? submittedQuantitiesFromKots(storedKots) : activeOrder?.kotSubmittedQty ?? {};
     if (unsentKitchenLines(lines, effectiveSubmitted).length || cancelledKitchenLines(lines, effectiveSubmitted, activeOrder?.lines).length) {
@@ -383,7 +383,7 @@ export function useCart(initialTableId?: string) {
     options: { autoKot?: boolean; onKots?: (kots: Kot[]) => void } = {},
   ): Promise<Order | null> => {
     if (!lines.length) return null;
-    const detailsError = guestDetailsError(customer, guestCount);
+    const detailsError = guestDetailsError(customer, guestCount, await tableCapacityOf(tableId));
     if (detailsError) { toast.error(detailsError); return null; }
     let latest: Order | null;
     let billLines = lines;
