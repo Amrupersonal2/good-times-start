@@ -59,7 +59,7 @@ legacy_held AS (
     row_number() OVER (
       PARTITION BY o.restaurant_id
       ORDER BY
-        CASE WHEN coalesce(o.payload->>'createdAt', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+        CASE WHEN coalesce(o.payload->>'createdAt', '') ~ '^[0-9]+([.][0-9]+)?$'
           THEN (o.payload->>'createdAt')::numeric
           ELSE extract(epoch FROM o.updated_at) * 1000
         END,
@@ -134,7 +134,7 @@ WITH kot_groups AS (
     min(k.payload->>'orderUid') AS order_uid,
     min(k.payload->>'billNo') AS old_bill_no,
     min(
-      CASE WHEN coalesce(k.payload->>'createdAt', '') ~ '^[0-9]+(\\.[0-9]+)?$'
+      CASE WHEN coalesce(k.payload->>'createdAt', '') ~ '^[0-9]+([.][0-9]+)?$'
         THEN (k.payload->>'createdAt')::numeric
         ELSE extract(epoch FROM k.updated_at) * 1000
       END
