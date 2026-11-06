@@ -97,7 +97,7 @@ export function AppInstall() {
   // React 19 hoists these into <head> and updates them when the app changes.
   return (
     <>
-      <link rel="manifest" href={`/manifest-${app}.webmanifest`} />
+      <link rel="manifest" href={`/manifest-${app}.webmanifest`} crossOrigin="use-credentials" />
       <link rel="apple-touch-icon" href={`/icons/${app}-apple-180.png`} />
       <meta name="theme-color" content={meta.theme} />
       <meta name="apple-mobile-web-app-capable" content="yes" />
