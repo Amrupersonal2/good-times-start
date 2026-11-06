@@ -27,6 +27,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmButton, pressShortcut } from "@/components/ConfirmButton";
 import { Dropdown } from "@/components/Dropdown";
 import { lineFor, sentGroups, shortCode, since } from "@/lib/bill-view-logic";
+import { guestDetailsError } from "@/lib/kitchen-order";
 import { moveTable } from "@/lib/table-actions";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
@@ -190,6 +191,8 @@ function PosPage() {
   };
 
   const sendToKitchen = async () => {
+    const detailsError = guestDetailsError(cart.customer, cart.guestCount);
+    if (detailsError) { toast.error(detailsError); return; }
     if (!(await allow(user, "kot.send", "Send the KOT"))) return;
     const tickets = await cart.sendKitchen();
     if (tickets.length) void printKots(tickets, "sent");
@@ -219,12 +222,13 @@ function PosPage() {
     return () => window.removeEventListener("keydown", h);
   });
 
+  const guestDetailsIssue = guestDetailsError(cart.customer, cart.guestCount);
   const count = cart.lines.reduce((s, l) => s + l.qty, 0);
   const unsentCount = cart.pendingKitchenLines.reduce((sum, line) => sum + line.qty, 0);
   const cancelCount = cart.pendingCancelLines.reduce((sum, line) => sum + line.qty, 0);
 
   const hasDiscountOrCharge = cart.totals.discountAmt > 0 || cart.totals.serviceCharge > 0;
-  const blocked = !cart.lines.length || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0));
+  const blocked = !cart.lines.length || !!guestDetailsIssue || (!settings.autoKotOnSettle && (unsentCount > 0 || cancelCount > 0));
   const tax = cart.totals.cgst + cart.totals.sgst;
   const currentTable = tables.find((t) => t.id === cart.tableId);
   /** A table's QR bill, opened on its own: guests' scanned orders, settled apart from the staff bill. */
@@ -260,14 +264,22 @@ function PosPage() {
             {qrBillOpen ? `QR bill · ${cart.activeOrder?.tableLabel ?? cart.activeOrder?.tableId ?? ""}` : cart.orderType === "dine-in" ? (currentTable ? `${currentTable.section} · ${currentTable.label}` : "Choose a table") : cart.customer.name && cart.activeOrder?.guestCodes ? `${cart.activeOrder.guestCodes[0]} ${cart.customer.name}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
           </div>
           <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}, opened ${since(cart.activeOrder.createdAt)}${since(cart.activeOrder.createdAt) === "just now" ? "" : " ago"}` : "New bill"}</div>
-          <div className="mt-2 flex gap-1.5">
-            <input aria-label="Guest name" placeholder="Guest name" maxLength={60} value={cart.customer.name ?? ""}
+          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5.5rem] gap-1.5">
+            <input aria-label="Guest name, required" aria-required="true" required placeholder="Guest name *" maxLength={60} value={cart.customer.name ?? ""}
               onChange={(e) => cart.setCustomer({ ...cart.customer, name: e.target.value })}
-              className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs" />
-            <input aria-label="Guest mobile number" placeholder="Mobile" inputMode="tel" maxLength={15} value={cart.customer.phone ?? ""}
-              onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/[^0-9+ ]/g, "") })}
-              className="h-8 w-28 rounded-md border border-input bg-background px-2 text-xs tabular-nums" />
+              className="h-8 min-w-0 rounded-md border border-input bg-background px-2 text-xs" />
+            <input aria-label="Guest mobile number, required" aria-required="true" required placeholder="Mobile *" type="tel" inputMode="numeric" maxLength={10}
+              value={(cart.customer.phone ?? "").replace(/\\D/g, "").slice(-10)}
+              onChange={(e) => cart.setCustomer({ ...cart.customer, phone: e.target.value.replace(/\\D/g, "").slice(0, 10) })}
+              className="h-8 min-w-0 rounded-md border border-input bg-background px-2 text-xs tabular-nums" />
+            <select aria-label="Total number of guests, required" aria-required="true" required value={cart.guestCount ?? ""}
+              onChange={(e) => cart.setGuestCount(e.target.value ? Number(e.target.value) : undefined)}
+              className="h-8 min-w-0 rounded-md border border-input bg-background px-1.5 text-xs">
+              <option value="">Guests *</option>
+              {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} {n === 1 ? "guest" : "guests"}</option>)}
+            </select>
           </div>
+          {guestDetailsIssue ? <p className="mt-1 text-[10px] text-destructive" role="status">{guestDetailsIssue}</p> : null}
         </div>
         {cart.activeOrder && canCancel ? (
           <button type="button" onClick={() => void allow(user, "bill.cancel", "Cancel this bill").then((ok) => { if (ok) setCancelOpen(true); })} aria-label="Cancel bill" title="Cancel bill" className="grid size-8 shrink-0 place-items-center rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="size-4" /></button>
