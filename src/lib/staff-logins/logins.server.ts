@@ -10,7 +10,13 @@ import { LOGINS, maskPhone, passwordProblem, type LoginId } from "@/lib/staff-lo
 const admin = () => supabaseAdmin as unknown as { from: (t: string) => any; auth: { admin: any } };
 
 /** First password for the three logins. Change it after the first sign-in (Settings → Logins). */
-const INITIAL_PASSWORD = () => process.env["XTSY_INITIAL_PASSWORD"] || "Xtsy123$$";
+const INITIAL_PASSWORD = () => {
+  const password = process.env["XTSY_INITIAL_PASSWORD"];
+  if (!password || password.length < 12) {
+    throw new Error("Set XTSY_INITIAL_PASSWORD to a unique password of at least 12 characters before creating internal logins.");
+  }
+  return password;
+};
 
 interface Row { login: LoginId; email: string; role: string; display_name: string; whatsapp: string; user_id: string | null; restaurant_id: string | null }
 
