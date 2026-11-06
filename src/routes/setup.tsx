@@ -7,17 +7,15 @@ import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABELS, isAdmin, useStaff, type StaffRole } from "@/lib/auth-context";
-import { getDb, loadSampleData, saveSettings, setDeviceCode } from "@/lib/db";
+import { getDb, loadSampleData, saveSettings } from "@/lib/db";
 import { GST_MODES } from "@/lib/billing-config";
 import { saveTable } from "@/lib/table-actions";
 import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
 import { loadTabBistroMenu } from "@/lib/menu-actions";
-import { normaliseDeviceCode } from "@/lib/sync-core";
 import { emailError, fssaiError, gstinError, upiError } from "@/lib/validation";
 import { APPS, DEVICE_LABELS, LOGINS, type LoginId } from "@/lib/staff-login-logic";
 import type { RestaurantSettings } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
-import { useDeviceCode } from "@/lib/use-device-code";
 import { useFirstSyncDone } from "@/lib/use-first-sync";
 
 export const Route = createFileRoute("/setup")({
@@ -247,33 +245,27 @@ function TablesStep({ onNext }: { onNext: () => void }) {
 
 function DeviceStep({ onNext }: { onNext: () => void }) {
   const config = usePrintConfig();
-  const current = useDeviceCode();
-  const [code, setCode] = useState("");
   const [paper, setPaper] = useState<58 | 80>(config.paper);
   const [autoBill, setAutoBill] = useState(config.autoPrintBill);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (current && !code) setCode(current); }, [current, code]);
   useEffect(() => { setPaper(config.paper); setAutoBill(config.autoPrintBill); }, [config.paper, config.autoPrintBill]);
   const save = async () => {
     setBusy(true);
-    const next = normaliseDeviceCode(code);
-    if (next && next !== current) await setDeviceCode(next);
     await savePrintConfig({ ...config, paper, autoPrintBill: autoBill });
     setBusy(false);
     onNext();
   };
   return (
     <div>
-      <p className="text-sm text-muted-foreground">Settings for this device. Do the same on each billing counter, with a different series code on each.</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <Field label="Bill series code" hint="Short and unique per counter, e.g. C1, C2"><input maxLength={4} value={code} onChange={(e) => setCode(normaliseDeviceCode(e.target.value))} className={`${inputClass} uppercase`} /></Field>
+      <p className="text-sm text-muted-foreground">All counters share the restaurant-wide POS bill and KOT numbering. Configure the receipt printer for this device here.</p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Field label="Receipt paper">
           <Dropdown<58 | 80> ariaLabel="Receipt paper" className="mt-1" value={paper} onChange={setPaper} options={[{ value: 80, label: "80 mm (3 inch)" }, { value: 58, label: "58 mm (2 inch)" }]} />
         </Field>
         <label className="mt-6 flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={autoBill} onChange={(e) => setAutoBill(e.target.checked)} />Print the bill as soon as it's settled</label>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">KOT copies, kitchen stations and printing incoming orders are in Settings → Printing.</p>
-      <NextBar busy={busy} disabled={!normaliseDeviceCode(code)} onClick={() => void save()} />
+      <NextBar busy={busy} onClick={() => void save()} />
     </div>
   );
 }
