@@ -95,7 +95,7 @@ export function printCss(paper: 58 | 80): string {
   body * { visibility: hidden; }
   #print-root, #print-root * { visibility: visible; }
   #print-root { position: absolute; left: 0; top: 0; width: ${content}mm; }
-  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0 0 4mm; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
+  #print-root .print-ticket { width: ${content}mm; max-width: none; margin: 0; padding: 0; break-inside: avoid; page-break-inside: avoid; break-after: auto; page-break-after: auto; }
   #print-root .print-ticket:last-child { break-after: auto; page-break-after: auto; }
 }`;
 }
