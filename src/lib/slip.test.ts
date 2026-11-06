@@ -99,14 +99,20 @@ describe("thermal slips", () => {
     expect(rawbtIntent(Uint8Array.from([0x1b, 0x40]))).toBe("intent:base64,G0A=#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;");
   });
 
-  it("ends each 2-inch KOT with a compact 5 mm feed and no additional cut feed", () => {
+  it("feeds 3 cm before each KOT, 1 cm after it, and 3 cm after the main bill", () => {
     const slip = kotSlip([kot], 58);
-    expect(slip.endFeedMm).toBe(5);
-    const bytes = escPos(slip);
-    // 5 mm at 203 dots per inch rounds to 40 dots.
-    expect(Array.from(bytes.slice(-6))).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 40].slice(-6));
+    expect(slip.startFeedMm).toBe(30);
+    expect(slip.endFeedMm).toBe(10);
+    const bytes = Array.from(escPos(slip));
+    // 30 mm at 203 dpi = 240 dots, fed right after the printer set-up.
+    expect(bytes.slice(9, 16)).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 240]);
+    // 10 mm = 80 dots at the end.
+    expect(bytes.slice(-7)).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 80]);
     expect(Array.from(escPos(slip, { cutter: "partial" }).slice(-3))).toEqual([0x1d, 0x56, 0x01]);
-    expect(billSlip(bill, settings, 58).endFeedMm).toBe(5);
+    const bill58 = billSlip(bill, settings, 58);
+    expect(bill58.endFeedMm).toBe(30);
+    expect(bill58.startFeedMm).toBeUndefined();
+    expect(Array.from(escPos(bill58)).slice(-7)).toEqual([0x1d, 0x50, 203, 203, 0x1b, 0x4a, 240]);
   });
 
   it("marks waiter-originated bills on the thermal receipt", () => {
