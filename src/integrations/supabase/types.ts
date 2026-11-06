@@ -129,6 +129,44 @@ export type Database = {
         }
         Relationships: []
       }
+      counter_numbering: {
+        Row: {
+          financial_year: string
+          last_sequence: number
+          reset_at: string
+          restaurant_id: string
+          retained_uid: string | null
+          series: string
+          source_series: string
+        }
+        Insert: {
+          financial_year: string
+          last_sequence?: number
+          reset_at?: string
+          restaurant_id: string
+          retained_uid?: string | null
+          series: string
+          source_series: string
+        }
+        Update: {
+          financial_year?: string
+          last_sequence?: number
+          reset_at?: string
+          restaurant_id?: string
+          retained_uid?: string | null
+          series?: string
+          source_series?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_numbering_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_orders: {
         Row: {
           bill_no: string | null
@@ -900,6 +938,15 @@ export type Database = {
       remove_member: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: undefined
+      }
+      reset_counter_bill_numbers: {
+        Args: {
+          _keep?: string
+          _restaurant: string
+          _source: string
+          _year: string
+        }
+        Returns: Json
       }
       restaurant_role_of: {
         Args: { _restaurant_id: string }
