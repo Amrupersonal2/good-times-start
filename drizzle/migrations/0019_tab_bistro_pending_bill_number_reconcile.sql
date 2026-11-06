@@ -104,6 +104,19 @@ WHERE o.kind = 'order'
   AND coalesce(o.payload->>'tableId', '') <> 'QAF1'
   AND lower(coalesce(o.payload->>'tableSection', '')) <> 'floor verification';
 
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM _tab_bistro_reconcile_orders
+    GROUP BY restaurant_id, sequence_number
+    HAVING count(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Duplicate POS sequence mapping detected; refusing pending-bill reconciliation.';
+  END IF;
+END;
+$;
+
 -- A pending bill that already has POS numbering is retained; a legacy bill is
 -- upgraded without touching its lines, totals, payments, or creation timestamp.
 UPDATE public.restaurant_records o
@@ -253,6 +266,14 @@ BEGIN
     HAVING count(*) > 1
   ) THEN
     RAISE EXCEPTION 'Duplicate logical KOT submission mapping detected.';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM _tab_bistro_reconcile_kots
+    GROUP BY restaurant_id, sequence_number
+    HAVING count(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Two KOT submissions resolve to the same KOT number.';
   END IF;
 END;
 $$;
