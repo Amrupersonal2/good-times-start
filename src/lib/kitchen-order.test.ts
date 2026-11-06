@@ -86,6 +86,9 @@ describe("guest details required for POS actions", () => {
     expect(guestDetailsError({ name: "Guest" }, undefined)).toBe("Enter a valid 10-digit mobile number.");
     expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, undefined)).toBe("Select the total number of guests (1–50).");
     expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, 2)).toBeNull();
+    expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, 6, 6)).toBeNull();
+    expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, 7, 8)).toBeNull();
+    expect(guestDetailsError({ name: "Guest", phone: "9876543210" }, 7, 6)).toBe("Guest count exceeds this table's capacity (6).");
   });
 
   it("rejects invalid party sizes and malformed mobile numbers", () => {
