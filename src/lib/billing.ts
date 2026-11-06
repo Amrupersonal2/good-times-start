@@ -71,7 +71,9 @@ export function financialYear(d: Date): string {
 
 /** Bill number in the restaurant's sequential device series, e.g. XTSY/D1/0001. */
 export function billNumber(seq: number, _d: Date, device = "D1"): string {
-  return `XTSY/${device.slice(0, 4)}/${String(seq).padStart(4, "0")}`;
+  const raw = device.trim().toUpperCase();
+  const series = raw === "D1" || raw === "SJT" || raw === "POS" ? "POS" : raw;
+  return `${series}/${String(seq).padStart(4, "0")}`;
 }
 
 export function upiLink(opts: { vpa: string; name: string; amount: number; billNo: string }): string {

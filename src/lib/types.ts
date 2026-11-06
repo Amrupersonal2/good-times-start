@@ -100,7 +100,7 @@ export interface Order {
   cloudUserId?: string;
   kotSubmittedQty?: Record<string, number>;
   /** Placed by the guest: from a table QR code or the online ordering page. */
-  source?: "qr" | "online";
+  source?: "qr" | "online" | "waiter";
   /** Guest order codes (e.g. Q-4821) that make up this bill. */
   guestCodes?: string[];
 }

@@ -286,6 +286,7 @@ export function useCart(initialTableId?: string) {
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
           uid: newUid(), billNo: await newBillNumber(new Date(now)), orderType, tableId, tableLabel, lines: merged,
+          ...(user?.login === "waiter" ? { source: "waiter" as const } : {}),
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
         });
