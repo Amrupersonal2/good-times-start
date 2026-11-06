@@ -357,6 +357,8 @@ export function useCart(initialTableId?: string) {
 
   /** Re-read the shared order before closing it, in case another device already did. */
   const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
+    const detailsError = guestDetailsError(customer, guestCount);
+    if (detailsError) { toast.error(detailsError); return false; }
     const effectiveSubmitted = storedKots.length ? submittedQuantitiesFromKots(storedKots) : activeOrder?.kotSubmittedQty ?? {};
     if (unsentKitchenLines(lines, effectiveSubmitted).length || cancelledKitchenLines(lines, effectiveSubmitted, activeOrder?.lines).length) {
       toast.error("Send the kitchen ticket before settling this bill");
@@ -368,7 +370,7 @@ export function useCart(initialTableId?: string) {
       return false;
     }
     return latest;
-  }, [activeOrder, lines, storedKots]);
+  }, [activeOrder, customer, guestCount, lines, storedKots]);
 
   const settle = useCallback(async (
     payment: PaymentMode | Payment[],
