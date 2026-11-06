@@ -1,5 +1,12 @@
 # POS expansion
 
+## Counter rollout and floor creation
+- [ ] Add direct Add section / Add table forms and verify saved tables.
+- [ ] Connect real Swiggy/Zomato orders; blocked pending approved partner API access and documentation.
+- [ ] Publish the current counter and verify its order/print flow.
+- [ ] Check actual 2-inch thermal paper; requires access to the user's counter printer.
+- [ ] Complete requested deep security review and address its findings when the scan finishes.
+
 ## Orders window
 - [x] Hide unconnected aggregator entry buttons; keep historical bills.
 - [x] Default to running bills; add dated bill/KOT/settled/cancelled history and preserve guest acceptance.
