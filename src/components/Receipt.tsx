@@ -123,6 +123,7 @@ export function KotTicket({ kots, large = true }: { kots: Kot[]; large?: boolean
       <div className="text-center">
         {settings.kotHeader ? <div className="text-xs">{settings.kotHeader}</div> : null}
         <div className={cancel ? "text-xl font-extrabold" : "text-xs"}>{cancel ? "CANCEL these items" : "Kitchen order ticket"}</div>
+        {first.kotNo ? <div className="text-xl font-extrabold">{first.kotNo}</div> : null}
         <div className="text-2xl font-extrabold">{table ? placeName(table) : ORDER_TYPE_LABEL[first.orderType ?? "dine-in"]}</div>
         {!combined ? <div className="text-base font-bold">{first.station}</div> : null}
       </div>
