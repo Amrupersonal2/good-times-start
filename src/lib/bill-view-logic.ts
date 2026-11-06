@@ -47,7 +47,7 @@ export function sentGroups(kots: Kot[]): SentGroup[] {
       group.kots.push(k);
       group.lines.push(...k.lines.map((l) => ({ ...l })));
       if (!group.station.split(", ").includes(k.station)) group.station = `${group.station}, ${k.station}`;
-      group.kotNo ??= k.kotNo;
+      if (group.kotNo === undefined && k.kotNo) group.kotNo = k.kotNo;
       continue;
     }
 

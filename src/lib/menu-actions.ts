@@ -40,7 +40,7 @@ export async function applyMenuImport(items: MenuItem[], materials: Material[], 
       const taxChanged = JSON.stringify(tax ?? {}) !== JSON.stringify(order.tax ?? {});
       if (!changed && !taxChanged) continue;
       const totals = computeTotals(lines, order.discountPct, order.serviceChargePct ?? 0, tax);
-      const updated = { ...order, lines, tax, ...totals, synced: false };
+      const updated: Order = { ...order, lines, ...(tax ? { tax } : {}), ...totals, synced: false };
       await db.orders.put(updated);
       if (updated.uid) changes.push(["order", updated.uid]);
     }
