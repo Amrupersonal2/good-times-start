@@ -252,27 +252,36 @@ export async function setDeviceCode(code: string): Promise<void> {
 export async function nextSeq(): Promise<number> {
   const db = getDb();
   const code = await getDeviceCode();
-  const prefix = `${code}/${financialYear(new Date())}/`;
   return db.transaction("rw", db.meta, db.orders, async () => {
-    const stored = (await db.meta.get("billSeq"))?.value;
-    const used = await db.orders.where("billNo").startsWith(prefix).toArray();
-    const floor = used.reduce((n, order) => Math.max(n, Number(order.billNo.slice(prefix.length)) || 0), 0);
-    const cur = Math.max(typeof stored === "number" ? stored : 0, floor);
-    await db.meta.put({ key: "billSeq", value: cur + 1 });
-    return cur + 1;
+    // Rebuild from bills that still exist. This deliberately ignores a stale
+    // counter left behind by deleted/test bills, so the next live bill is contiguous.
+    const orders = await db.orders.toArray();
+    const floor = orders.reduce((max, order) => {
+      const parts = order.billNo.split("/");
+      const belongsToSeries = order.billNo.startsWith(`XTSY/${code.slice(0, 4)}/`) || parts[0] === code;
+      const suffix = Number(parts.at(-1));
+      return belongsToSeries && Number.isSafeInteger(suffix) ? Math.max(max, suffix) : max;
+    }, 0);
+    const next = floor + 1;
+    await db.meta.put({ key: "billSeq", value: next });
+    return next;
   });
 }
 
 /** Call inside the same rw transaction as the KOT write, including meta. */
 export async function nextKotNumber(deviceId: string, at: number): Promise<string> {
-  const d = new Date(at);
-  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const db = getDb();
-  const key = `kotSeq:${deviceId}:${day}`;
-  const stored = (await db.meta.get(key))?.value;
-  const seq = (typeof stored === "number" ? stored : 0) + 1;
-  await db.meta.put({ key, value: seq });
-  return kotNumber(deviceId, day, seq);
+  const existing = await db.kots.toArray();
+  const submissions = new Set(existing.map((kot) => kot.submissionId ?? `legacy:${kot.orderUid ?? kot.billNo}:${kot.createdAt}`));
+  const printedMax = existing.reduce((max, kot) => {
+    const match = /^KOT\/(\\d+)$/.exec(kot.kotNo ?? "");
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  // Count surviving historical submissions (not station rows) to seed the new
+  // compact series, and ignore stale local counters from deleted test tickets.
+  const seq = Math.max(submissions.size, printedMax) + 1;
+  await db.meta.put({ key: "kotSeq", value: seq });
+  return kotNumber(deviceId, new Date(at).toISOString().slice(0, 10), seq);
 }
 
 /* ---------- restaurant settings ---------- */

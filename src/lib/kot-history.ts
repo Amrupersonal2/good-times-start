@@ -18,6 +18,7 @@ export function kotSubmissions(kots: Kot[]): KotSubmission[] {
   return [...groups.values()].sort((a, b) => b.first.createdAt - a.first.createdAt);
 }
 
-export function kotNumber(deviceId: string, day: string, seq: number): string {
-  return `KOT/${day.replaceAll("-", "")}/${deviceId.replaceAll("-", "").slice(0, 8).toUpperCase()}/${String(seq).padStart(4, "0")}`;
+/** Restaurant-wide display format. The sequence is allocated by the local POS counter. */
+export function kotNumber(_deviceId: string, _day: string, seq: number): string {
+  return `KOT/${String(seq).padStart(4, "0")}`;
 }
