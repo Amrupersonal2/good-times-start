@@ -287,7 +287,12 @@ export function useCart(initialTableId?: string) {
     const tableLabel = await tableLabelOf(tableId);
     const tableSection = tableId ? (await db.restTables.get(tableId))?.section : base?.tableSection;
     const extras = { serviceChargePct, tableSection, tax, taxable: t.taxable, ...(customer.name || customer.phone || customer.gstin ? { customer } : {}) };
-    const newOrderUid = base?.uid ?? newUid();
+    const pendingOrderKey = `pendingOrderUid:${tableId ?? "walkin"}`;
+    const storedPendingOrderUid = (await db.meta.get(pendingOrderKey))?.value;
+    const newOrderUid = base?.uid ?? (typeof storedPendingOrderUid === "string" ? storedPendingOrderUid : newUid());
+    if (!base && typeof storedPendingOrderUid !== "string") {
+      await db.meta.put({ key: pendingOrderKey, value: newOrderUid });
+    }
     const order: Order = withCustomerId(base
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
@@ -326,6 +331,7 @@ export function useCart(initialTableId?: string) {
       ];
       await db.kots.bulkAdd(kots);
       await db.meta.delete(submissionKey);
+      if (!base) await db.meta.delete(pendingOrderKey);
     });
     await markDirty(["order", orderUid], ...kots.map((kot): [RecordKind, string] => ["kot", kot.uid ?? ""]));
     if (allCancelled) {
