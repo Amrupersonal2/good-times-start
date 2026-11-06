@@ -1,8 +1,8 @@
 # POS expansion
 
 ## Wireless waiter printing
-- [ ] Queue explicit waiter KOT/bill requests for a designated connected POS device; preserve offline requests and avoid peer printing.
-- [ ] Remove Business Manager tables and thermal-printer access while preserving report printing.
+- [x] Queue explicit waiter KOT/bill requests for a designated connected POS device; preserve offline requests and avoid peer printing.
+- [x] Remove Business Manager tables and thermal-printer access while preserving report printing.
 - [ ] Test routing and access rules, publish, and verify the live counter flow; physical output requires the connected printer.
 
 ## Hotel counter corrections
