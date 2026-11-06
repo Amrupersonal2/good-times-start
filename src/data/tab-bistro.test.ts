@@ -14,13 +14,19 @@ describe("TAB Bistro menu", () => {
   });
 
   it("keeps printed prices, portions and add-ons", () => {
-    expect(byName("Tandoori Chicken").variants?.map((v) => [v.name, v.price])).toEqual([["Half", 399], ["Full", 789]]);
-    expect(byName("Drums of Heaven").variants?.map((v) => v.price)).toEqual([369, 739]);
-    expect(byName("Burned Garlic Hakka Noodles").variants?.map((v) => [v.name, v.price, v.veg])).toEqual([["Veg", 259, true], ["Chicken", 299, false], ["Seafood", 349, false]]);
-    expect(byName("XTSY Chicken Mandi Biryani").variants?.map((v) => v.price)).toEqual([639, 1229]);
+    expect(byName("Tandoori Chicken").variants?.map((v) => [v.name, v.price])).toEqual([["Half", 380], ["Full", 740]]);
+    expect(byName("Drums of Heaven").variants?.map((v) => v.price)).toEqual([340, 680]);
+    expect(byName("Burned Garlic Hakka Noodles").variants?.map((v) => [v.name, v.price, v.veg])).toEqual([["Veg", 260, true], ["Chicken", 280, false], ["Seafood", 340, false]]);
+    expect(byName("XTSY Chicken Mandi Biryani").variants?.map((v) => v.price)).toEqual([640, 1280]);
     expect(byName("Naan").addons?.map((a) => [a.name, a.price])).toEqual([["Extra butter", 20], ["Extra cheese", 25]]);
-    expect(byName("Masala Omelette")).toMatchObject({ veg: false, hours: { from: "08:45", to: "10:45" }, price: 139 });
+    expect(byName("Masala Omelette")).toMatchObject({ veg: false, hours: { from: "08:45", to: "10:45" }, price: 140 });
     expect(byName("Drinking Water").variants?.map((v) => v.price)).toEqual([12, 24]);
+    expect(byName("French Fries").price).toBe(150);
+    expect(byName("Milk Chai").price).toBe(60);
+    expect(byName("Cold Coffee").price).toBe(200);
+    expect(byName("Chicken Butter Masala").price).toBe(340);
+    expect(byName("Paneer Butter Masala").price).toBe(300);
+    expect(byName("XTSY Chicken Biryani").price).toBe(280);
   });
 
   it("uses only known ingredients, in positive amounts", () => {
