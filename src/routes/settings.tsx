@@ -1,3 +1,4 @@
+import { useFirstSyncDone } from "@/lib/use-first-sync";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -319,6 +320,7 @@ function PrintingSettings() {
 function ThisDevice() {
   const { user } = useStaff();
   const menuCount = useLiveQuery(() => getDb().menu.count(), [], 0);
+  const synced = useFirstSyncDone();
   const canReset = can(user, "device.reset");
   const reset = async () => {
     if (!window.confirm("Clear this device? Bills not yet synced will be lost. The restaurant's cloud copy is not affected.")) return;

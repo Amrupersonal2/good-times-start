@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSettledQuantities, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import type { CartLine } from "./types";
 
-const lines: CartLine[] = [
+const lines = [
   { itemId: "naan", name: "Butter Naan", price: 60, qty: 3, veg: true, gstRate: 5, station: "Tandoor" },
   { itemId: "paneer", name: "Paneer Butter Masala", price: 290, qty: 1, veg: true, gstRate: 5, station: "Main Course" },
-];
+] as [CartLine, CartLine];
 
 describe("kitchen ticket quantities", () => {
   it("does not treat already-shared unsent quantities as new local additions", () => {

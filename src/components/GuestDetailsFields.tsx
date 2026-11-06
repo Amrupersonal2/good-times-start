@@ -8,10 +8,10 @@ export function GuestDetailsFields({
 }: {
   customer: GuestDetails;
   setCustomer: (value: GuestDetails) => void;
-  guestCount?: number;
+  guestCount?: number | undefined;
   setGuestCount: (value: number | undefined) => void;
   orderType: OrderType;
-  tableSeats?: number;
+  tableSeats?: number | undefined;
 }) {
   const [customMode, setCustomMode] = useState(false);
   const maxGuests = orderType === "dine-in" ? Math.max(1, Math.min(50, tableSeats ?? 6)) : 50;
