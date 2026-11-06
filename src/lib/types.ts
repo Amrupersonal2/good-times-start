@@ -66,7 +66,7 @@ export interface Order {
   uid?: string;
   billNo: string;
   /** UUID receipt key returned to the server allocator for this bill. */
-  numberRequestId?: string;
+  numberRequestId?: string | undefined;
   orderType: OrderType;
   tableId?: string | undefined;
   /** Table name as printed, e.g. "T4"; kept with the bill in case the table is renamed later. */
@@ -93,7 +93,7 @@ export interface Order {
   tax?: { inclusive?: boolean; exempt?: boolean; roundToRupee?: boolean };
   customer?: { name?: string; phone?: string; gstin?: string };
   /** Number of guests covered by this bill. */
-  guestCount?: number;
+  guestCount?: number | undefined;
   /** Guest's phone as the last 10 digits, kept indexed so their visits load quickly. */
   customerId?: string;
   /** Who settled or voided the bill, for the staff report. */
@@ -119,7 +119,7 @@ export interface CartDraft {
   lines: CartLine[];
   discountPct: number;
   customer?: { name?: string; phone?: string; gstin?: string };
-  guestCount?: number;
+  guestCount?: number | undefined;
   updatedAt: number;
   /** What the kitchen had of this bill when the draft was saved, to tell this device's unsent items apart. */
   sentQty?: Record<string, number> | undefined;
@@ -163,7 +163,7 @@ export interface Kot {
   tableSection?: string | undefined;
   submissionId?: string;
   /** UUID receipt key returned to the server allocator for this KOT submission. */
-  numberRequestId?: string;
+  numberRequestId?: string | undefined;
   kotNo?: string;
   orderType?: OrderType;
   billNo: string;
