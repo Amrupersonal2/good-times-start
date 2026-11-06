@@ -21,6 +21,8 @@ function read(): AppKind | null {
   return mode;
 }
 
+export function getChosenApp(): AppKind | null { return read(); }
+
 export function setAppMode(app: AppKind): void {
   if (mode === app) return;
   mode = app;

@@ -102,6 +102,18 @@ beforeEach(() => {
 });
 
 describe("internal logins on the server", () => {
+  it("refuses provisioning without a configured initial password", async () => {
+    delete process.env["XTSY_INITIAL_PASSWORD"];
+    await expect(server.ensureLogins()).rejects.toThrow(/at least 12 characters/);
+    expect(users).toHaveLength(0);
+  });
+
+  it("refuses provisioning with an initial password shorter than 12 characters", async () => {
+    process.env["XTSY_INITIAL_PASSWORD"] = "Short-123";
+    await expect(server.ensureLogins()).rejects.toThrow(/at least 12 characters/);
+    expect(users).toHaveLength(0);
+  });
+
   it("creates the three logins once, confirmed, with the first password, and links them with their roles", async () => {
     expect(await server.ensureLogins()).toEqual({ created: 3 });
     expect(users.map((u) => [u.email, u.password, u.confirmed])).toEqual([

@@ -18,7 +18,8 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; topFeedMm?: number; bottomFeedMm?: number }
+export const KOT_END_FEED_MM = 30;
+export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
 const PAY: Record<string, string> = { cash: "Cash", upi: "UPI", card: "Card", wallet: "Wallet", credit: "Due", points: "Points" };
@@ -93,14 +94,14 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
 
   const when = dateTime(order.createdAt);
   L.push({ text: plain(`Bill: ${order.billNo}`) });
-  L.push({ text: `Date: ${when.date}` });
-  L.push({ text: `Time: ${when.time}` });
+  L.push({ text: `Date: ${when.date} ${when.time}` });
   const guest = [order.customer?.name, order.customer?.phone].filter(Boolean).join("/");
   if (guest) for (const t of wrap(`Guest: ${guest}`, cols)) L.push({ text: t });
   if (order.customer?.gstin) L.push({ text: plain(`Guest GSTIN: ${order.customer.gstin}`) });
   if (order.closedBy) L.push({ text: plain(`Cashier: ${order.closedBy}`) });
   const table = order.tableLabel ?? order.tableId;
   if (table) L.push({ text: plain(`Table: ${table}${order.source === "qr" ? " (QR order)" : ""}`), bold: true });
+  if (order.tableSection) for (const text of wrap(`Section: ${order.tableSection}`, cols)) L.push({ text, bold: true });
   L.push(rule(cols));
 
   const c = itemColumns(cols);
@@ -138,11 +139,9 @@ export function billSlip(order: Order, settings: RestaurantSettings, paper: Pape
   const due = order.status === "held" ? order.total : order.payments.filter((p) => p.mode === "credit").reduce((s, p) => s + p.amount, 0);
   const qr = settings.upiVpa && order.status !== "void" && due > 0 ? "upi" : undefined;
   L.push({ text: "" });
-  center("Thank you for visiting", { bold: true });
-  center("TAB Bistro by XTSY", { bold: true, size: "tall" });
-  center("POS by XTSY", { bold: true, size: "tall" });
+  center(settings.billFooter || "Thank you! Visit again.");
   if (qr) { L.push({ text: "" }); L.push({ text: `Scan to pay Rs.${money(due)} by UPI`, align: "center", bold: true }); }
-  return { paper, lines: L, qr, bottomFeedMm: 30 };
+  return { paper, lines: L, qr };
 }
 
 /** A kitchen ticket: big order type and table, then items in tall bold text with their quantities. */
@@ -152,8 +151,7 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   const L: SlipLine[] = [];
   if (!first) return { paper, lines: L };
   const cancel = first.kind === "cancel";
-  const restaurant = header.trim() || "TAB Bistro by XTSY";
-  for (const t of wrap(restaurant, cols)) L.push({ text: t, align: "center", bold: true, size: "tall" });
+  if (header) for (const t of wrap(header, cols)) L.push({ text: t, align: "center" });
   L.push({ text: cancel ? "CANCEL KOT" : "Running KOT", align: "center", bold: true, size: cancel ? "big" : "normal" });
   L.push({ text: ORDER_TYPE[first.orderType ?? "dine-in"] ?? "DINE IN", align: "left", bold: true, size: "big" });
   const table = first.tableLabel ?? first.tableId;
@@ -161,8 +159,10 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
   L.push(rule(cols));
   const when = dateTime(first.createdAt);
   L.push({ text: plain(`Bill: ${first.billNo}`) });
-  L.push({ text: `Date: ${when.date}` });
-  L.push({ text: `Time: ${when.time}` });
+  if (first.kotNo) for (const text of wrap(first.kotNo, cols)) L.push({ text, bold: true });
+  if (first.tableSection) for (const text of wrap(`Section: ${first.tableSection}`, cols)) L.push({ text, bold: true });
+  const stamp = `Date: ${when.date}  Time: ${when.time}`;
+  for (const t of stamp.length <= cols ? [stamp] : wrap(stamp, cols)) L.push({ text: t });
   L.push(rule(cols));
   const qtyW = 5;
   let total = 0;
@@ -180,7 +180,8 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
     L.push(rule(cols));
   }
   L.push(pair("Total Qty", qtyText(total), cols, { bold: true }));
-  return { paper, lines: L, topFeedMm: 30, bottomFeedMm: 10 };
+  L.push(rule(cols));
+  return { paper, lines: L, endFeedMm: KOT_END_FEED_MM };
 }
 
 /* ---------------- ESC/POS ---------------- */
@@ -194,13 +195,9 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
   const text = (s: string) => { for (const ch of plain(s)) out.push(ch.charCodeAt(0)); };
   const one = () => {
     push(ESC, 0x40); // initialise
+    push(ESC, 0x4d, 0); // Font A: 32 columns on 58 mm / 48 on 80 mm
+    push(ESC, 0x32); // standard line spacing, independent of a previous job
     push(ESC, 0x74, 0x00); // code page PC437 (ASCII-safe)
-    const feedMm = (mm: number) => {
-      // ESC J feeds n vertical dots; 203 dpi thermal heads are ~8 dots/mm.
-      let dots = Math.max(0, Math.round(mm * 8));
-      while (dots > 0) { const chunk = Math.min(255, dots); push(ESC, 0x4a, chunk); dots -= chunk; }
-    };
-    feedMm(slip.topFeedMm ?? 0);
     for (const line of slip.lines) {
       push(ESC, 0x61, line.align === "center" ? 1 : line.align === "right" ? 2 : 0);
       push(ESC, 0x45, line.bold ? 1 : 0);
@@ -221,8 +218,17 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
       push(GS, 0x28, 0x6b, 3, 0, 0x31, 0x51, 0x30);
       push(LF, ESC, 0x61, 0);
     }
-    feedMm(slip.bottomFeedMm ?? 4);
-    push(GS, 0x56, 0x42, 0x00); // cut after the requested bottom margin (printers without a cutter ignore it)
+    if (slip.endFeedMm !== undefined) {
+      // Set the vertical motion unit to 1/203 inch, then feed 30 mm in dots.
+      // ESC J feeds without a cutter; GS V 0 cuts without requesting extra feed.
+      push(GS, 0x50, 203, 203);
+      let dots = Math.round(slip.endFeedMm * 203 / 25.4);
+      while (dots > 0) { const chunk = Math.min(255, dots); push(ESC, 0x4a, chunk); dots -= chunk; }
+      push(GS, 0x56, 0x00);
+    } else {
+      push(LF, LF, LF, LF);
+      push(GS, 0x56, 0x42, 0x00); // bill feed and cut unchanged
+    }
   };
   for (let i = 0; i < Math.max(1, Math.min(5, opts.copies ?? 1)); i++) one();
   return Uint8Array.from(out);

@@ -30,7 +30,7 @@ const NAV = [
   { to: "/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/reports", label: "Cash Counter", icon: BarChart3 },
   { to: "/marketing", label: "Marketing", icon: Sparkles },
   { to: "/waiter", label: "Waiter", icon: Tablet },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -59,7 +59,7 @@ function policyAllows(role: string, to: NavPath): boolean {
 
 /** Screens each app shows, in menu order. */
 const APP_SCREENS: Record<AppKind, NavPath[]> = {
-  manager: ["/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
+  manager: ["/dashboard", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
   pos: ["/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/settings"],
   waiter: ["/waiter"],
 };
@@ -143,7 +143,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
     await navigate({ to: "/auth", replace: true });
   };
 
-  const tone = !online || snapshot.error || snapshot.notice ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
+  const tone = !online || snapshot.error ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
   const label = !online ? "Offline" : snapshot.error ? "Sync needs attention" : pending ? `${pending} to sync` : !staff ? "This device only" : live === "reconnecting" ? "Reconnecting…" : live === "live" ? "Live" : "Synced";
 
   return <>
@@ -175,7 +175,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         </div>
         <p className="text-sm text-muted-foreground">Last synced: {snapshot.lastSyncAt ? format(new Date(snapshot.lastSyncAt), "dd MMM yyyy, h:mm a") : "not yet"}</p>
         {snapshot.error ? <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"><strong className="flex items-center gap-2"><AlertTriangle className="size-4" />Sync needs attention</strong><p className="mt-1 break-words">{snapshot.error}</p></div> : null}
-        {snapshot.notice ? <div role="status" className="rounded-lg border border-gold/50 bg-gold/10 p-3 text-sm"><p className="break-words">{snapshot.notice}</p><Button size="sm" variant="ghost" className="mt-1 -ml-2" onClick={() => void clearSyncNotice()}>Got it</Button></div> : null}
+
         {!staff ? <p className="text-sm text-muted-foreground">Sign in to share bills, tables and kitchen tickets with your other devices.</p> : null}
         <Button onClick={() => void retry()} disabled={busy || !online || (!!staff && !restaurantId)} className="w-full"><RefreshCw className={`size-4 ${busy ? "animate-spin" : ""}`} />{busy ? "Syncing…" : staff ? "Sync now" : "Sign in to sync"}</Button>
         {isAdmin(staff) ? <section className="border-t border-border pt-4">
@@ -318,7 +318,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
   const app = useAppMode(user);
   usePolicy();
   const allowed = screensFor(user?.role, app);
-  const nav = allowed.map((to) => NAV.find((n) => n.to === to)!).filter(Boolean);
+  const nav = NAV.filter((n) => allowed.includes(n.to)).sort((a, b) => allowed.indexOf(a.to) - allowed.indexOf(b.to));
   const otherApps = (appsFor(user?.login ?? null, user?.role) as AppKind[]).filter((a) => a !== app && a !== "waiter");
   // A bill ("/") belongs to Tables: it only opens from a table or a counter order there.
   const current = pathname === "/" ? NAV.find((n) => n.to === "/tables") : NAV.find((n) => n.to !== "/" && pathname.startsWith(n.to));
@@ -373,7 +373,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
               <div className="text-[11px] text-muted-foreground">{APPS[app].name}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2"><GuestOrdersButton /><InstallButton /><SyncChip /></div>
+          <div className="flex items-center gap-2">{app !== "manager" ? <GuestOrdersButton /> : null}<InstallButton /><SyncChip /></div>
         </header>
         {needsDetails && !needsRestaurant ? (
           <Link to="/setup" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
@@ -384,7 +384,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
           {needsRestaurant ? <NotLinked /> : blocked ? (
             <div className="mx-auto max-w-md p-8 text-center">
               <p className="font-semibold">This screen isn't part of {APPS[app].name}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{isAdmin(user) ? "Open it from Business Manager." : "Ask the admin if you need it."}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{app === "manager" ? "Open tables and printing from Restro POS by XTSY." : "Ask the admin if you need it."}</p>
               <Link to={home} className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Go to {NAV.find((n) => n.to === home)?.label}</Link>
             </div>
           ) : children}

@@ -5,6 +5,7 @@ import { AlertTriangle, Ban, BadgePercent, Clock, Gift, HandCoins, IndianRupee, 
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Dropdown } from "@/components/Dropdown";
 import { getDb } from "@/lib/db";
+import { reportOrders } from "@/lib/report-orders";
 import { formatINR } from "@/lib/billing";
 import { PRESET_LABELS, businessOverview, dashboardRange, liveStatus, salesByDay, type Preset } from "@/lib/dashboard-logic";
 import { dayStart, type Range } from "@/lib/report-logic";
@@ -66,7 +67,7 @@ function Overview() {
   const data = useLiveQuery(async () => {
     const db = getDb();
     const [orders, kots, stock, lastSync] = await Promise.all([
-      db.orders.where("createdAt").between(span.from, span.to, true, false).toArray(),
+      reportOrders(span),
       db.kots.where("createdAt").between(range.from, range.to, true, false).toArray(),
       db.stockEntries.where("at").between(range.from, range.to, true, false).toArray(),
       db.meta.get("lastSyncAt"),

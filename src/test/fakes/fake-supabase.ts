@@ -55,6 +55,7 @@ function refusedForStaff(row: Omit<ServerRow, "updated_at">): boolean {
 }
 
 class Query implements PromiseLike<{ data: ServerRow[] | null; error: { message: string } | null }> {
+  constructor(private table: string = "restaurant_records") {}
   private filters: ((r: ServerRow) => boolean)[] = [];
   private max = Infinity;
   eq(col: keyof ServerRow, v: unknown) { this.filters.push((r) => r[col] === v); return this; }
@@ -64,6 +65,9 @@ class Query implements PromiseLike<{ data: ServerRow[] | null; error: { message:
   order() { return this; }
   limit(n: number) { this.max = n; return this; }
   then<A, B>(ok?: ((v: { data: ServerRow[] | null; error: { message: string } | null }) => A | PromiseLike<A>) | null, fail?: ((e: unknown) => B | PromiseLike<B>) | null) {
+    if (this.table === "counter_numbering") {
+      return Promise.resolve({ data: [], error: fakeServer.offline ? offlineError : null }).then(ok, fail);
+    }
     fakeServer.requests.select += 1;
     const result = fakeServer.offline
       ? { data: null, error: offlineError }
@@ -98,7 +102,7 @@ export const supabase = {
         }
         return { error: null };
       },
-      select(_cols: string) { return new Query(); },
+      select(_cols: string) { return new Query(_table); },
     };
   },
   auth: { async getUser() { return { data: { user: { id: `user-${fakeDevices.current}`, email: `${fakeDevices.current}@test` } }, error: null }; } },

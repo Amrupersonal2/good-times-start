@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { Trash2, UserPlus } from "lucide-react";
+import { RotateCcw, Trash2, UserPlus } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,10 @@ import { Segmented } from "@/components/Segmented";
 import { can } from "@/lib/permissions";
 import { useDeviceCode } from "@/lib/use-device-code";
 import { useFirstSyncDone } from "@/lib/use-first-sync";
+import { ownerCanReset, resetBillNumbers } from "@/lib/bill-number-reset";
+import { useAppMode } from '@/lib/app-mode';
+import { managerSettingAllowed } from '@/lib/print-routing';
+import { designateCounterPrinter } from '@/lib/counter-print';
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -97,6 +101,7 @@ function RestaurantDetails() {
     const clean: RestaurantSettings = {
       ...saved,
       name: form.name.trim(),
+      businessType: form.businessType ?? "restaurant",
       legalName: form.legalName?.trim() ?? "",
       address: form.address?.trim() ?? "",
       phone: form.phone?.trim() ?? "",
@@ -118,6 +123,7 @@ function RestaurantDetails() {
     <Section title="Restaurant details" description="Printed on every bill. Your GSTIN and FSSAI number must match your registration.">
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => void submit(event)}>
         <Field label="Restaurant name"><input required maxLength={120} disabled={!canEdit} value={form.name} onChange={set("name")} className={inputClass} /></Field>
+        <Field label="Business model"><Dropdown ariaLabel="Business model" value={form.businessType ?? "restaurant"} onChange={(businessType: "hotel" | "restaurant") => setForm((prev) => ({ ...prev, businessType }))} disabled={!canEdit} options={[{ value: "hotel", label: "Hotel" }, { value: "restaurant", label: "Restaurant" }]} /></Field>
         <Field label="Legal business name" hint="If different, e.g. XTSY Ventures Private Limited"><input maxLength={160} disabled={!canEdit} value={form.legalName ?? ""} onChange={set("legalName")} className={inputClass} /></Field>
         <div className="sm:col-span-2"><Field label="Address"><textarea rows={2} maxLength={300} disabled={!canEdit} value={form.address ?? ""} onChange={set("address")} className={inputClass} /></Field></div>
         <Field label="Phone"><input type="tel" maxLength={20} disabled={!canEdit} value={form.phone ?? ""} onChange={set("phone")} className={inputClass} /></Field>
@@ -259,6 +265,7 @@ function BillingSettings() {
 }
 
 function PrintingSettings() {
+  const { user } = useStaff();
   const saved = usePrintConfig();
   const [form, setForm] = useState<PrintConfig>(saved);
   const savedJson = JSON.stringify(saved);
@@ -284,8 +291,6 @@ function PrintingSettings() {
           </Field>
         </div>
         <Toggle label="Print KOTs sent from this device" checked={form.printKotOnSend} onChange={(v) => patch({ printKotOnSend: v })} />
-        <Toggle label="Print KOTs sent from other devices" hint="For a station with its own printer. Keep this app open on that device."
-          checked={form.printIncomingKots} onChange={(v) => patch({ printIncomingKots: v })} />
         <Toggle label="Print the bill as soon as it's settled" checked={form.autoPrintBill} onChange={(v) => patch({ autoPrintBill: v })} />
         <Toggle label="Large item text on KOTs" checked={form.largeKotText} onChange={(v) => patch({ largeKotText: v })} />
         {stations.length ? (
@@ -305,6 +310,10 @@ function PrintingSettings() {
         <PrinterMethod form={form} patch={patch} appPath={appPath} station={form.stations[0] ?? stations[0] ?? "Kitchen"} />
         <div className="flex flex-wrap gap-2">
           <Button disabled={!dirty} onClick={() => { void savePrintConfig(form).then(() => toast.success("Printer settings saved on this device")); }}>Save printer settings</Button>
+          <Button variant="outline" disabled={!user?.restaurantId || (saved.method === 'browser' && !saved.silentBrowserReady)} onClick={() => {
+            if (!user?.restaurantId) return;
+            void designateCounterPrinter(user.restaurantId).then(() => toast.success('Waiter printing is routed to this counter')).catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Could not connect counter'));
+          }}>Receive waiter printing here</Button>
         </div>
       </div>
     </Section>
@@ -317,6 +326,9 @@ function ThisDevice() {
   const seq = useLiveQuery(async () => (await getDb().meta.get("billSeq"))?.value, [], 0);
   const menuCount = useLiveQuery(() => getDb().menu.count(), [], 0);
   const [draft, setDraft] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [keepUid, setKeepUid] = useState("");
+  const bills = useLiveQuery(() => getDb().orders.toArray(), [], []);
   useEffect(() => { setDraft(code); }, [code]);
   const next = normaliseDeviceCode(draft);
   const canReset = can(user, "device.reset");
@@ -333,6 +345,16 @@ function ThisDevice() {
     window.location.reload();
   };
   const synced = useFirstSyncDone();
+  const resetNumbers = async () => {
+    if (!user?.restaurantId || !ownerCanReset(user.role)) return;
+    if (!window.confirm(keepUid ? "Renumber the selected bill to TBX/26-27/0001 and start the next bill at 0002? No amounts or items will change." : "Reset this counter to TBX with next bill 0001? This is blocked if existing numbers would be reused.")) return;
+    setResetBusy(true);
+    try {
+      await resetBillNumbers(user.restaurantId, user.role, keepUid || undefined);
+      toast.success(keepUid ? "Retained bill is 0001. Next bill is TBX/26-27/0002." : "Next bill is TBX/26-27/0001.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't reset bill numbers"); }
+    finally { setResetBusy(false); }
+  };
   const loadSample = async () => {
     try { await loadSampleData(); toast.success("Sample menu and tables added"); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't add the sample menu."); }
@@ -348,6 +370,15 @@ function ThisDevice() {
           {can(user, "settings.series") ? <Button variant="secondary" disabled={!next || next === code} onClick={() => void saveCode()}>Start new series</Button>
             : <p className="pb-2 text-xs text-muted-foreground">Only the owner or a manager can change it.</p>}
         </div>
+        {ownerCanReset(user?.role) ? <div className="space-y-3 border-t border-border pt-4">
+          <Field label="Bill to keep as 0001">
+            <Dropdown ariaLabel="Bill to keep as 0001" value={keepUid} onChange={setKeepUid} options={[
+              { value: "", label: "No bill — next number 0001" },
+              ...bills.filter((bill) => bill.uid).map((bill) => ({ value: bill.uid ?? "", label: bill.billNo })),
+            ]} />
+          </Field>
+          <Button variant="outline" disabled={resetBusy || !synced} onClick={() => void resetNumbers()}><RotateCcw />{resetBusy ? "Resetting…" : "Reset bill numbers"}</Button>
+        </div> : null}
         {menuCount === 0 && synced && can(user, "menu.edit") ? (
           <div className="rounded-lg border border-dashed border-border p-4">
             <p className="text-sm font-medium">Your menu is empty.</p>
@@ -387,8 +418,9 @@ const CARDS: SettingCard[] = [
 
 function SettingsPage() {
   const { user } = useStaff();
+  const app = useAppMode(user);
   const admin = isAdmin(user);
-  const cards = CARDS.filter((c) => admin || c.staff);
+  const cards = CARDS.filter((c) => (admin || c.staff) && managerSettingAllowed(app, c.v, c.to));
   const [tab, setTab] = useState<Tab | null>(() => {
     if (typeof window === "undefined") return null;
     const h = window.location.hash.slice(1) as Tab;

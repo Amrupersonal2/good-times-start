@@ -54,6 +54,7 @@ export function useInstallPrompt() {
   return { available, install };
 }
 
+const noopSubscribe = () => () => {};
 function isIos(): boolean {
   if (typeof navigator === "undefined") return false;
   return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -111,8 +112,8 @@ export function AppInstall() {
 export function InstallButton({ label = "Install", className = "" }: { label?: string; className?: string }) {
   const { available, install } = useInstallPrompt();
   const [iosHelp, setIosHelp] = useState(false);
-  const [standalone, setStandalone] = useState(true);
-  useEffect(() => { setStandalone(isStandalone()); }, []);
+  // Read without a state update on mount, so remounts can never chain re-renders.
+  const standalone = useSyncExternalStore(noopSubscribe, isStandalone, () => true);
   if (standalone) return null;
   if (available) return <Button size="sm" variant="outline" className={className} onClick={() => void install()}><Download />{label}</Button>;
   if (!isIos()) return null;

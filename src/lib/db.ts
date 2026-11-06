@@ -1,8 +1,10 @@
 import Dexie, { type Table } from "dexie";
 import type { CartDraft, Customer, DayClose, InventoryItem, Kot, Material, MenuItem, Order, RestaurantSettings, RestaurantTable, StockEntry, Supplier } from "./types";
+import { kotNumber } from "./kot-history";
 import { SEED_MENU, SEED_TABLES } from "./seed";
 import { normalisePhone } from "./customer-logic";
 import { stockLevels } from "./stock-logic";
+import { financialYear } from "./billing";
 import {
   SETTINGS_RECORD_ID,
   legacyKotUid,
@@ -160,6 +162,9 @@ class RestroDB extends Dexie {
       const levels = stockLevels(await tx.table<StockEntry, string>("stockEntries").toArray());
       await tx.table<{ materialId: string; qty: number }, string>("materialLevels").bulkPut([...levels].map(([materialId, qty]) => ({ materialId, qty })));
     });
+    this.version(8).stores({
+      orders: "++id, billNo, status, createdAt, settledAt, tableId, uid, customerId, [tableId+status]",
+    });
   }
 }
 
@@ -221,7 +226,10 @@ export async function markDirty(...changes: [RecordKind, string][]): Promise<voi
 export async function getDeviceCode(): Promise<string> {
   const db = getDb();
   const stored = (await db.meta.get("deviceCode"))?.value;
-  if (typeof stored === "string" && stored) return stored;
+  if (typeof stored === "string" && stored) {
+    const mapped = (await db.meta.get(`billSeries:${stored}:${financialYear(new Date())}`))?.value;
+    return typeof mapped === "string" && mapped ? mapped : stored;
+  }
   const code = randomDeviceCode();
   await db.meta.put({ key: "deviceCode", value: code });
   return code;
@@ -243,12 +251,28 @@ export async function setDeviceCode(code: string): Promise<void> {
 
 export async function nextSeq(): Promise<number> {
   const db = getDb();
-  return db.transaction("rw", db.meta, async () => {
+  const code = await getDeviceCode();
+  const prefix = `${code}/${financialYear(new Date())}/`;
+  return db.transaction("rw", db.meta, db.orders, async () => {
     const stored = (await db.meta.get("billSeq"))?.value;
-    const cur = typeof stored === "number" ? stored : 0;
+    const used = await db.orders.where("billNo").startsWith(prefix).toArray();
+    const floor = used.reduce((n, order) => Math.max(n, Number(order.billNo.slice(prefix.length)) || 0), 0);
+    const cur = Math.max(typeof stored === "number" ? stored : 0, floor);
     await db.meta.put({ key: "billSeq", value: cur + 1 });
     return cur + 1;
   });
+}
+
+/** Call inside the same rw transaction as the KOT write, including meta. */
+export async function nextKotNumber(deviceId: string, at: number): Promise<string> {
+  const d = new Date(at);
+  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const db = getDb();
+  const key = `kotSeq:${deviceId}:${day}`;
+  const stored = (await db.meta.get(key))?.value;
+  const seq = (typeof stored === "number" ? stored : 0) + 1;
+  await db.meta.put({ key, value: seq });
+  return kotNumber(deviceId, day, seq);
 }
 
 /* ---------- restaurant settings ---------- */

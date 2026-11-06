@@ -12,10 +12,6 @@ import { VegMark } from "@/components/VegMark";
 import { ItemOptions } from "@/components/ItemOptions";
 import { InstallButton } from "@/components/AppInstall";
 import { printBill, printKots } from "@/components/PrintHost";
-import { PrinterMethod } from "@/components/PrinterMethod";
-import { Dropdown } from "@/components/Dropdown";
-import { savePrintConfig, usePrintConfig } from "@/lib/print-config";
-import type { PrintConfig } from "@/lib/print-logic";
 import { useStaff } from "@/lib/auth-context";
 import { allow } from "@/lib/pin-gate";
 import { useCart } from "@/lib/cart-store";
@@ -73,6 +69,7 @@ function WaiterApp() {
   useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30_000); return () => window.clearInterval(t); }, []);
 
   const tables = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
+  const printStatus = useLiveQuery(async () => ({ pending: await getDb().meta.where('key').startsWith('counterPrint:').count(), error: (await getDb().meta.get('counterPrintError'))?.value }), [], { pending: 0, error: undefined });
   const sections = useMemo(() => { const used = [...new Set(tables.map((t) => t.section))]; return [...["Rooms", "Dine-in"].filter((s) => used.includes(s)), ...used.filter((s) => s !== "Rooms" && s !== "Dine-in").sort()]; }, [tables]);
 
   const signOut = async () => {
@@ -91,11 +88,11 @@ function WaiterApp() {
         </div>
         <div className="flex items-center gap-2">
           <InstallButton />
-          {user ? <WaiterPrinter /> : null}
           {user ? <SyncChip statusOnly /> : null}
           {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>
+      {printStatus.pending ? <p role="status" className="border-b border-border px-4 py-2 text-sm">{printStatus.pending} print request{printStatus.pending === 1 ? '' : 's'} waiting for the counter{printStatus.error ? ` · ${printStatus.error}` : ''}</p> : null}
 
       <div className="flex min-h-0 flex-1">
         <aside className={`${tableId ? "hidden md:flex" : "flex w-full"} shrink-0 flex-col overflow-y-auto border-r border-border p-3 md:w-56 xl:w-64`} aria-label="Tables">
@@ -175,12 +172,14 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
   const askForBill = async () => {
     if (!(await allow(user, "bill.print", "Print the bill"))) return;
     // The guest gets the running bill at the table; the counter sees the table is ready to pay.
-    if (cart.activeOrder) void printBill(cart.activeOrder);
+    if (!cart.activeOrder) return;
+    // Await durable queueing before marking the table's bill as requested.
+    await printBill(cart.activeOrder);
     if (table?.status !== "billed") {
       await getDb().restTables.update(tableId, { status: "billed" });
       await markDirty(["table", tableId]);
     }
-    toast.success(`Bill printed for ${placeName(table?.label ?? tableId)}. The counter has been told.`);
+    toast.success(`Bill requested for ${placeName(table?.label ?? tableId)}. Printing is queued at the counter.`);
   };
 
   const count = cart.lines.reduce((s, l) => s + l.qty, 0);
@@ -305,32 +304,3 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
   );
 }
 
-/** This tablet's printer: how it prints with no print box, paper width and copies. */
-function WaiterPrinter() {
-  const saved = usePrintConfig();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<PrintConfig>(saved);
-  useEffect(() => { if (open) setForm(saved); }, [open, saved]);
-  const patch = (p: Partial<PrintConfig>) => setForm((prev) => ({ ...prev, ...p }));
-  return (
-    <>
-      <Button size="icon" variant="ghost" aria-label="Printer setup" title="Printer setup" onClick={() => setOpen(true)}><Printer /></Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-          <h2 className="pr-8 text-lg font-bold">Printer for this tablet</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm font-medium">Paper width
-              <Dropdown<58 | 80> ariaLabel="Paper width" className="mt-1" value={form.paper} onChange={(paper) => patch({ paper })} options={[{ value: 80, label: "80 mm (3 inch)" }, { value: 58, label: "58 mm (2 inch)" }]} />
-            </label>
-            <label className="text-sm font-medium">KOT copies
-              <input type="number" min={0} max={5} value={form.kotCopies} onChange={(e) => patch({ kotCopies: Number(e.target.value) })} className="mt-1 h-10 w-full rounded-[10px] border border-input bg-card px-3" />
-            </label>
-          </div>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.printKotOnSend} onChange={(e) => patch({ printKotOnSend: e.target.checked })} />Print the KOT when I send to the kitchen</label>
-          <PrinterMethod form={form} patch={patch} appPath="/waiter?app=waiter" />
-          <Button className="w-full" onClick={() => { void savePrintConfig(form).then(() => { toast.success("Printer saved on this tablet"); setOpen(false); }); }}>Save printer</Button>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}

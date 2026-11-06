@@ -50,7 +50,7 @@ export interface Overview {
 
 export function businessOverview(orders: Order[], kots: Kot[], stock: StockEntry[], range: Range): Overview {
   const within = <T extends { createdAt: number }>(rows: T[]) => rows.filter((r) => r.createdAt >= range.from && r.createdAt < range.to);
-  const inRange = within(orders);
+  const inRange = orders.filter((o) => (o.settledAt ?? o.createdAt) >= range.from && (o.settledAt ?? o.createdAt) < range.to);
   const s = salesSummary(inRange);
   const settled = inRange.filter((o) => o.status === "settled");
   const guest = settled.filter((o) => o.source === "qr" || o.source === "online");
@@ -128,8 +128,9 @@ export function salesByDay(orders: Order[], range: Range): { day: number; net: n
   for (let d = dayStart(range.from); d < range.to; d = dayStart(d + DAY + 3_600_000)) out.push({ day: d, net: 0, bills: 0 });
   const index = new Map(out.map((r, i) => [r.day, i]));
   for (const o of orders) {
-    if (o.status !== "settled" || o.createdAt < range.from || o.createdAt >= range.to) continue;
-    const row = out[index.get(dayStart(o.createdAt)) ?? -1];
+    const at = o.settledAt ?? o.createdAt;
+    if (o.status !== "settled" || at < range.from || at >= range.to) continue;
+    const row = out[index.get(dayStart(at)) ?? -1];
     if (row) { row.net = r2(row.net + o.total); row.bills += 1; }
   }
   return out;

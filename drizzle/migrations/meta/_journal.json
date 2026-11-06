@@ -43,6 +43,41 @@
       "when": 1792176457354,
       "tag": "0005_restaurant_team_sharing",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793941600816,
+      "tag": "0006_owner_counter_numbering_reset",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793953785260,
+      "tag": "0007_restore_pr26_membership_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793953848625,
+      "tag": "0008_restore_pr28_rotating_void_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793953877978,
+      "tag": "0009_restore_pr30_atomic_void_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793957809682,
+      "tag": "0010_targeted_waiter_print_queue",
+      "breakpoints": true
     }
   ]
 }
