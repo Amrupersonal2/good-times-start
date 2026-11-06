@@ -22,6 +22,8 @@
 - Restore merged GitHub changes selectively without replacing generated Cloud configuration or local numbering protections; apply database safeguards through managed migrations so the preview and Cloud stay consistent.
 - Keep KOT end-feed in the shared slip model and use it for browser and ESC/POS output; printer-driver paper length and cutter offsets remain device-controlled.
 - Treat cloud order mirrors as data only, never print commands; gate browser thermal printing on device-local silent transport confirmation because browsers cannot bypass their print dialog programmatically.
+- Route explicit waiter print commands through a durable local outbox and authenticated, designated-counter claim queue; do not replay ambiguous claimed dispatches, because physical printing cannot be acknowledged by browsers.
+- Separate Business Manager from tables and thermal printing while keeping report exports, because administration does not own the counter printer.
 - Keep Orders history in indexed local bill/KOT reads and preserve guest acceptance separately; hide aggregator entry until an actual order-sync integration exists, retaining historical order types.
 - Create floor sections together with their first table through the existing table save/sync path, so section creation works offline without a parallel registry.
 - Persist KOT submission identity and device/day sequence atomically with station tickets; history groups submissions while keeping every station record for printing and sync.

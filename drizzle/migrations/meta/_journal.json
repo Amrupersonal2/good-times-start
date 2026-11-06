@@ -71,6 +71,13 @@
       "when": 1793953877978,
       "tag": "0009_restore_pr30_atomic_void_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793957809682,
+      "tag": "0010_targeted_waiter_print_queue",
+      "breakpoints": true
     }
   ]
 }

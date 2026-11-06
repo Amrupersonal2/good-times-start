@@ -29,6 +29,9 @@ import { can } from "@/lib/permissions";
 import { useDeviceCode } from "@/lib/use-device-code";
 import { useFirstSyncDone } from "@/lib/use-first-sync";
 import { ownerCanReset, resetBillNumbers } from "@/lib/bill-number-reset";
+import { useAppMode } from '@/lib/app-mode';
+import { managerSettingAllowed } from '@/lib/print-routing';
+import { designateCounterPrinter } from '@/lib/counter-print';
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -262,6 +265,7 @@ function BillingSettings() {
 }
 
 function PrintingSettings() {
+  const { user } = useStaff();
   const saved = usePrintConfig();
   const [form, setForm] = useState<PrintConfig>(saved);
   const savedJson = JSON.stringify(saved);
@@ -306,6 +310,10 @@ function PrintingSettings() {
         <PrinterMethod form={form} patch={patch} appPath={appPath} station={form.stations[0] ?? stations[0] ?? "Kitchen"} />
         <div className="flex flex-wrap gap-2">
           <Button disabled={!dirty} onClick={() => { void savePrintConfig(form).then(() => toast.success("Printer settings saved on this device")); }}>Save printer settings</Button>
+          <Button variant="outline" disabled={!user?.restaurantId || (saved.method === 'browser' && !saved.silentBrowserReady)} onClick={() => {
+            if (!user?.restaurantId) return;
+            void designateCounterPrinter(user.restaurantId).then(() => toast.success('Waiter printing is routed to this counter')).catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Could not connect counter'));
+          }}>Receive waiter printing here</Button>
         </div>
       </div>
     </Section>
@@ -410,8 +418,9 @@ const CARDS: SettingCard[] = [
 
 function SettingsPage() {
   const { user } = useStaff();
+  const app = useAppMode(user);
   const admin = isAdmin(user);
-  const cards = CARDS.filter((c) => admin || c.staff);
+  const cards = CARDS.filter((c) => (admin || c.staff) && managerSettingAllowed(app, c.v, c.to));
   const [tab, setTab] = useState<Tab | null>(() => {
     if (typeof window === "undefined") return null;
     const h = window.location.hash.slice(1) as Tab;

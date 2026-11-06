@@ -59,7 +59,7 @@ function policyAllows(role: string, to: NavPath): boolean {
 
 /** Screens each app shows, in menu order. */
 const APP_SCREENS: Record<AppKind, NavPath[]> = {
-  manager: ["/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
+  manager: ["/dashboard", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
   pos: ["/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/settings"],
   waiter: ["/waiter"],
 };
@@ -318,7 +318,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
   const app = useAppMode(user);
   usePolicy();
   const allowed = screensFor(user?.role, app);
-  const nav = allowed.map((to) => NAV.find((n) => n.to === to)!).filter(Boolean);
+  const nav = NAV.filter((n) => allowed.includes(n.to)).sort((a, b) => allowed.indexOf(a.to) - allowed.indexOf(b.to));
   const otherApps = (appsFor(user?.login ?? null, user?.role) as AppKind[]).filter((a) => a !== app && a !== "waiter");
   // A bill ("/") belongs to Tables: it only opens from a table or a counter order there.
   const current = pathname === "/" ? NAV.find((n) => n.to === "/tables") : NAV.find((n) => n.to !== "/" && pathname.startsWith(n.to));
@@ -373,7 +373,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
               <div className="text-[11px] text-muted-foreground">{APPS[app].name}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2"><GuestOrdersButton /><InstallButton /><SyncChip /></div>
+          <div className="flex items-center gap-2">{app !== "manager" ? <GuestOrdersButton /> : null}<InstallButton /><SyncChip /></div>
         </header>
         {needsDetails && !needsRestaurant ? (
           <Link to="/setup" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">
@@ -384,7 +384,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
           {needsRestaurant ? <NotLinked /> : blocked ? (
             <div className="mx-auto max-w-md p-8 text-center">
               <p className="font-semibold">This screen isn't part of {APPS[app].name}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{isAdmin(user) ? "Open it from Business Manager." : "Ask the admin if you need it."}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{app === "manager" ? "Open tables and printing from Restro POS by XTSY." : "Ask the admin if you need it."}</p>
               <Link to={home} className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Go to {NAV.find((n) => n.to === home)?.label}</Link>
             </div>
           ) : children}

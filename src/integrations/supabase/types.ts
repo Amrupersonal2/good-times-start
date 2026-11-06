@@ -167,6 +167,82 @@ export type Database = {
           },
         ]
       }
+      counter_print_jobs: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          dispatched_at: string | null
+          id: string
+          kind: string
+          payload: Json
+          requested_by: string
+          restaurant_id: string
+          status: string
+          target_device: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          dispatched_at?: string | null
+          id: string
+          kind: string
+          payload: Json
+          requested_by: string
+          restaurant_id: string
+          status?: string
+          target_device: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          dispatched_at?: string | null
+          id?: string
+          kind?: string
+          payload?: Json
+          requested_by?: string
+          restaurant_id?: string
+          status?: string
+          target_device?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_print_jobs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      counter_print_routes: {
+        Row: {
+          configured_by: string
+          device_id: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          configured_by: string
+          device_id: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          configured_by?: string
+          device_id?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_print_routes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_orders: {
         Row: {
           bill_no: string | null
@@ -921,6 +997,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      claim_counter_print: {
+        Args: { _device: string; _restaurant: string }
+        Returns: Json
+      }
+      configure_counter_printer: {
+        Args: { _device: string; _restaurant: string }
+        Returns: undefined
+      }
       create_outlet: {
         Args: {
           _account: string
@@ -931,6 +1015,19 @@ export type Database = {
         Returns: string
       }
       create_restaurant: { Args: { _name: string }; Returns: string }
+      enqueue_counter_print: {
+        Args: {
+          _id: string
+          _kind: string
+          _payload: Json
+          _restaurant: string
+        }
+        Returns: undefined
+      }
+      finish_counter_print: {
+        Args: { _device: string; _id: string }
+        Returns: undefined
+      }
       get_void_approval_code: { Args: never; Returns: Json }
       guest_order_marketing: {
         Args: {
