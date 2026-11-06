@@ -1,8 +1,10 @@
 -- TAB Bistro numbering cutover.
--- Re-number genuine POS bills and logical KOT submissions from 0001.
--- QAF1 / Floor verification is operational test data: remove its active held
--- floor records, preserve settled/void audit history, and exclude it from the
--- numbering sequence. The section is derived from active table records.
+-- The verified live dataset contains four running (held), unpaid bills and
+-- nine logical KOT submissions (16 station tickets); there are no settled bills.
+-- Renumber only those running bills and their active KOT tickets from 0001.
+-- Abort if a settled/void/non-running bill appears before deployment, so this
+-- migration cannot silently rewrite a later settlement or historical report.
+-- QAF1 / Floor verification is operational test data and is excluded entirely.
 
 CREATE TEMP TABLE _tab_bistro_target ON COMMIT DROP AS
 SELECT id
@@ -18,8 +20,21 @@ BEGIN
      OR to_regclass('public.restaurant_number_allocations') IS NULL THEN
     RAISE EXCEPTION 'Run migration 0016 before TAB Bistro numbering cutover.';
   END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.restaurant_records rr
+    JOIN _tab_bistro_target target ON target.id = rr.restaurant_id
+    WHERE rr.kind = 'order'
+      AND NOT rr.deleted
+      AND coalesce(rr.payload->>'tableLabel', '') <> 'QAF1'
+      AND coalesce(rr.payload->>'tableId', '') <> 'QAF1'
+      AND lower(coalesce(rr.payload->>'tableSection', '')) <> 'floor verification'
+      AND coalesce(rr.payload->>'status', '') <> 'held'
+  ) THEN
+    RAISE EXCEPTION 'Expected only running/held TAB Bistro bills. Reconcile any settled or void records before renumbering.';
+  END IF;
 END;
-$$;
+$;
 
 CREATE TEMP TABLE _tab_bistro_pos_map ON COMMIT DROP AS
 SELECT
@@ -47,6 +62,7 @@ FROM public.restaurant_records rr
 JOIN _tab_bistro_target target ON target.id = rr.restaurant_id
 WHERE rr.kind = 'order'
   AND NOT rr.deleted
+  AND rr.payload->>'status' = 'held'
   AND coalesce(rr.payload->>'tableLabel', '') <> 'QAF1'
   AND coalesce(rr.payload->>'tableId', '') <> 'QAF1'
   AND lower(coalesce(rr.payload->>'tableSection', '')) <> 'floor verification';
@@ -69,6 +85,15 @@ WITH kot_groups AS (
   JOIN _tab_bistro_target target ON target.id = rr.restaurant_id
   WHERE rr.kind = 'kot'
     AND NOT rr.deleted
+    AND rr.payload->>'status' = 'new'
+    AND EXISTS (
+      SELECT 1 FROM public.restaurant_records running_order
+      WHERE running_order.restaurant_id = rr.restaurant_id
+        AND running_order.kind = 'order'
+        AND NOT running_order.deleted
+        AND running_order.payload->>'status' = 'held'
+        AND running_order.record_id = rr.payload->>'orderUid'
+    )
     AND coalesce(rr.payload->>'tableLabel', '') <> 'QAF1'
     AND coalesce(rr.payload->>'tableId', '') <> 'QAF1'
     AND lower(coalesce(rr.payload->>'tableSection', '')) <> 'floor verification'
