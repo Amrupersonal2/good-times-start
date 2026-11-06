@@ -139,7 +139,7 @@ function PosPage() {
   const [moveOpen, setMoveOpen] = useState(false);
   // Tickets already sent for this bill, grouped as the kitchen got them.
   const activeId = cart.activeOrder?.id;
-  const sentKots = useLiveQuery(async () => (activeId === undefined ? [] : getDb().kots.where("orderId").equals(activeId).toArray()), [activeId], [] as Kot[]);
+  const sentKots = useLiveQuery(async () => (activeId === undefined ? [] : kotsForOrder(activeId, cart.activeOrder?.uid)), [activeId, cart.activeOrder?.uid], [] as Kot[]);
   const sent = useMemo(() => sentGroups(sentKots), [sentKots]);
   usePolicy();
   const maxDiscount = maxDiscountFor(user?.role ?? "unknown", settings.staffDiscountLimit ?? 10);

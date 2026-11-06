@@ -422,7 +422,7 @@ export function useCart(initialTableId?: string) {
     }
     const latestKots = latest?.id === undefined
       ? storedKots
-      : await getDb().kots.where("orderId").equals(latest.id).toArray();
+      : await kotsForOrder(latest.id, latest.uid);
     const rawSubmitted = latestKots.length
       ? submittedQuantitiesFromKots(latestKots)
       : latest?.kotSubmittedQty ?? submitted;
@@ -504,7 +504,7 @@ export function useCart(initialTableId?: string) {
     if (!remaining.length) return settle(payment, closedBy);
 
     const db = getDb();
-    const latestKots = latest.id === undefined ? [] : await db.kots.where("orderId").equals(latest.id).toArray();
+    const latestKots = latest.id === undefined ? [] : await kotsForOrder(latest.id, latest.uid);
     const latestRawSubmitted = latestKots.length ? submittedQuantitiesFromKots(latestKots) : undefined;
     const now = Date.now();
     const t = computeTotals(split, discountPct, serviceChargePct, tax);
