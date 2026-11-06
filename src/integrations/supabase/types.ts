@@ -105,6 +105,50 @@ export type Database = {
           },
         ]
       }
+      bill_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          mode: string
+          order_uid: string
+          payment_key: string
+          recorded_by: string | null
+          restaurant_id: string
+          settled_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          mode: string
+          order_uid: string
+          payment_key: string
+          recorded_by?: string | null
+          restaurant_id: string
+          settled_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          mode?: string
+          order_uid?: string
+          payment_key?: string
+          recorded_by?: string | null
+          restaurant_id?: string
+          settled_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_payments_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cloud_orders: {
         Row: {
           bill_no: string
@@ -367,6 +411,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      kot_submission_tickets: {
+        Row: {
+          created_at: string
+          record_id: string
+          restaurant_id: string
+          station: string
+          submission_id: string
+          ticket_kind: string
+        }
+        Insert: {
+          created_at?: string
+          record_id: string
+          restaurant_id: string
+          station: string
+          submission_id: string
+          ticket_kind?: string
+        }
+        Update: {
+          created_at?: string
+          record_id?: string
+          restaurant_id?: string
+          station?: string
+          submission_id?: string
+          ticket_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kot_submission_tickets_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketing_campaigns: {
         Row: {
@@ -745,6 +824,7 @@ export type Database = {
           restaurant_id: string
           updated_at: string
           updated_by: string | null
+          version: number
         }
         Insert: {
           deleted?: boolean
@@ -754,6 +834,7 @@ export type Database = {
           restaurant_id: string
           updated_at?: string
           updated_by?: string | null
+          version?: number
         }
         Update: {
           deleted?: boolean
@@ -763,6 +844,7 @@ export type Database = {
           restaurant_id?: string
           updated_at?: string
           updated_by?: string | null
+          version?: number
         }
         Relationships: [
           {
@@ -1172,6 +1254,10 @@ export type Database = {
       }
       public_storefront: { Args: { _slug: string }; Returns: Json }
       push_menu: { Args: { _from: string; _to: string[] }; Returns: number }
+      push_restaurant_records: {
+        Args: { _restaurant_id: string; _units: Json }
+        Returns: Json
+      }
       remove_member: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: undefined

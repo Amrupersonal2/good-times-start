@@ -148,6 +148,13 @@
       "when": 1794000000000,
       "tag": "0020_versioned_records_atomic_settlement",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794000000001,
+      "tag": "0021_confirm_versioned_records",
+      "breakpoints": true
     }
   ]
 }
