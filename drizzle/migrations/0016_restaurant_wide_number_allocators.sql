@@ -41,6 +41,7 @@ SET search_path = pg_catalog, public
 AS $$
 DECLARE
   allocated bigint;
+  current_max bigint := 0;
 BEGIN
   IF auth.uid() IS NULL OR NOT public.is_restaurant_member(_restaurant_id) THEN
     RAISE EXCEPTION 'Restaurant membership required to allocate a number.'
@@ -66,8 +67,57 @@ BEGIN
     RETURN _series || '/' || CASE WHEN allocated < 10000 THEN lpad(allocated::text, 4, '0') ELSE allocated::text END;
   END IF;
 
+  IF _series = 'POS' THEN
+    SELECT coalesce(max(((regexp_match(payload->>'billNo', '([0-9]+)
+  ON CONFLICT (restaurant_id, series)
+  DO UPDATE SET
+    last_sequence = seq.last_sequence + 1,
+    updated_at = clock_timestamp()
+  RETURNING last_sequence INTO allocated;
+
+  INSERT INTO public.restaurant_number_allocations
+    (restaurant_id, series, request_id, sequence_number)
+  VALUES (_restaurant_id, _series, _request_id, allocated);
+
+  RETURN _series || '/' || CASE WHEN allocated < 10000 THEN lpad(allocated::text, 4, '0') ELSE allocated::text END;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.allocate_restaurant_number(uuid, text, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.allocate_restaurant_number(uuid, text, uuid) TO authenticated;
+))[1])::bigint), 0)
+      INTO current_max
+    FROM public.restaurant_records
+    WHERE restaurant_id = _restaurant_id AND kind = 'order' AND NOT deleted;
+  ELSE
+    SELECT greatest(
+      coalesce(max(((regexp_match(payload->>'kotNo', '^KOT/([0-9]+)
+  ON CONFLICT (restaurant_id, series)
+  DO UPDATE SET
+    last_sequence = seq.last_sequence + 1,
+    updated_at = clock_timestamp()
+  RETURNING last_sequence INTO allocated;
+
+  INSERT INTO public.restaurant_number_allocations
+    (restaurant_id, series, request_id, sequence_number)
+  VALUES (_restaurant_id, _series, _request_id, allocated);
+
+  RETURN _series || '/' || CASE WHEN allocated < 10000 THEN lpad(allocated::text, 4, '0') ELSE allocated::text END;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.allocate_restaurant_number(uuid, text, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.allocate_restaurant_number(uuid, text, uuid) TO authenticated;
+))[1])::bigint), 0),
+      count(DISTINCT coalesce(payload->>'submissionId',
+        'legacy:' || coalesce(payload->>'orderUid', '') || ':' || coalesce(payload->>'createdAt', '')))
+    ) INTO current_max
+    FROM public.restaurant_records
+    WHERE restaurant_id = _restaurant_id AND kind = 'kot' AND NOT deleted;
+  END IF;
+
   INSERT INTO public.restaurant_number_sequences AS seq (restaurant_id, series, last_sequence)
-  VALUES (_restaurant_id, _series, 1)
+  VALUES (_restaurant_id, _series, current_max + 1)
   ON CONFLICT (restaurant_id, series)
   DO UPDATE SET
     last_sequence = seq.last_sequence + 1,
