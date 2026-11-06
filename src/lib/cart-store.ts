@@ -5,7 +5,7 @@ import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./t
 import { computeTotals } from "./billing";
 import { getDb, markDirty } from "./db";
 import { allocateRestaurantNumber } from "./restaurant-numbering";
-import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
+import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSettledKitchenQuantities, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
 import { buildLine, priceFor } from "./menu-logic";
@@ -56,7 +56,7 @@ export function useCart(initialTableId?: string) {
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [submittedOverride, setSubmittedOverride] = useState<{ orderUid: string; quantities: Record<string, number> } | null>(null);
   const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : getDb().kots.where("orderId").equals(activeOrder.id).toArray(), [activeOrder?.id], [] as Kot[]);
-  const persistedSubmitted = submittedQuantitiesFromKots(storedKots);
+  const persistedSubmitted = submittedQuantitiesFromKots(storedKots, activeOrder?.kotSettledQty);
   useEffect(() => {
     if (!submittedOverride || submittedOverride.orderUid !== activeOrder?.uid) return;
     const keys = new Set([...Object.keys(persistedSubmitted), ...Object.keys(submittedOverride.quantities)]);
@@ -376,7 +376,9 @@ export function useCart(initialTableId?: string) {
   const checkStillOpen = useCallback(async (): Promise<Order | null | false> => {
     const detailsError = guestDetailsError(customer, guestCount, await tableCapacityOf(tableId));
     if (detailsError) { toast.error(detailsError); return false; }
-    const effectiveSubmitted = storedKots.length ? submittedQuantitiesFromKots(storedKots) : activeOrder?.kotSubmittedQty ?? {};
+    const effectiveSubmitted = storedKots.length
+      ? submittedQuantitiesFromKots(storedKots, activeOrder?.kotSettledQty)
+      : subtractSettledKitchenQuantities(activeOrder?.kotSubmittedQty ?? {}, activeOrder?.kotSettledQty ?? {});
     if (unsentKitchenLines(lines, effectiveSubmitted).length || cancelledKitchenLines(lines, effectiveSubmitted, activeOrder?.lines).length) {
       toast.error("Send the kitchen ticket before settling this bill");
       return false;
@@ -460,7 +462,7 @@ export function useCart(initialTableId?: string) {
     const label = latest?.tableLabel ?? await tableLabelOf(tableId);
     const partUid = newUid();
     const part: Order = withCustomerId({
-      uid: partUid, billNo: await newBillNumber(partUid), orderType, tableId: tableId ?? latest?.tableId, tableLabel: label, lines: split,
+      uid: partUid, billNo: await newBillNumber(partUid), numberRequestId: partUid, orderType, tableId: tableId ?? latest?.tableId, tableLabel: label, lines: split,
       subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
       taxable: t.taxable, tax,
@@ -477,7 +479,8 @@ export function useCart(initialTableId?: string) {
     if (latest?.id !== undefined) {
       const sent: Record<string, number> = { ...(latest.kotSubmittedQty ?? {}) };
       for (const line of split) sent[line.itemId] = Math.max(0, (sent[line.itemId] ?? 0) - line.qty);
-      const updated: Order = { ...latest, lines: remaining, kotSubmittedQty: sent, subtotal: rest.subtotal, discountAmt: rest.discountAmt,
+      const settledQty = accumulateSubmittedQuantities(latest.kotSettledQty ?? {}, split);
+      const updated: Order = { ...latest, lines: remaining, kotSubmittedQty: sent, kotSettledQty: settledQty, subtotal: rest.subtotal, discountAmt: rest.discountAmt,
         serviceCharge: rest.serviceCharge, taxable: rest.taxable, cgst: rest.cgst, sgst: rest.sgst, roundOff: rest.roundOff, total: rest.total, synced: false };
       await db.orders.put(updated);
       setActiveOrder(updated);
