@@ -12,7 +12,7 @@ describe("Excel menu", () => {
     const result = parseMenuWorkbook(await roundTrip(TAB_MENU), TAB_MENU, TAB_MATERIALS);
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual([]);
-    expect(result.stats).toMatchObject({ newDishes: 0, updatedDishes: 131, newIngredients: 0 });
+    expect(result.stats).toMatchObject({ newDishes: 0, updatedDishes: 139, newIngredients: 0 });
     const back = new Map(result.items.map((i) => [i.id, i]));
     for (const item of TAB_MENU) expect(strip(back.get(item.id)!), item.name).toEqual(strip(item));
   });
@@ -20,7 +20,7 @@ describe("Excel menu", () => {
   it("builds a whole menu, ingredients and recipes from an empty restaurant", async () => {
     const result = parseMenuWorkbook(await roundTrip(TAB_MENU), [], []);
     expect(result.errors).toEqual([]);
-    expect(result.stats).toMatchObject({ newDishes: 131, updatedDishes: 0, newIngredients: TAB_MATERIALS.length });
+    expect(result.stats).toMatchObject({ newDishes: 139, updatedDishes: 0, newIngredients: TAB_MATERIALS.length });
     const naan = result.items.find((i) => i.name === "Naan")!;
     expect(naan.variants?.map((v) => [v.name, v.price])).toEqual([["Plain", 59], ["Butter", 69]]);
     const butter = result.materials.find((m) => m.name === "Butter")!;
