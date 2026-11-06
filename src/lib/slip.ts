@@ -18,7 +18,8 @@ export interface SlipLine {
   /** "tall" doubles the height (same width: readable without losing columns); "big" doubles both. */
   size?: "normal" | "tall" | "big";
 }
-export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined }
+export const KOT_END_FEED_MM = 30;
+export interface Slip { paper: Paper; lines: SlipLine[]; qr?: string | undefined; endFeedMm?: number }
 
 const ORDER_TYPE: Record<string, string> = { "dine-in": "DINE IN", takeaway: "TAKEAWAY", delivery: "DELIVERY", swiggy: "SWIGGY", zomato: "ZOMATO" };
 const PAY: Record<string, string> = { cash: "Cash", upi: "UPI", card: "Card", wallet: "Wallet", credit: "Due", points: "Points" };
@@ -175,7 +176,8 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true): S
     L.push(rule(cols));
   }
   L.push(pair("Total Qty", qtyText(total), cols, { bold: true }));
-  return { paper, lines: L };
+  L.push(rule(cols));
+  return { paper, lines: L, endFeedMm: KOT_END_FEED_MM };
 }
 
 /* ---------------- ESC/POS ---------------- */
@@ -210,8 +212,17 @@ export function escPos(slip: Slip, opts: { upiLink?: string; copies?: number } =
       push(GS, 0x28, 0x6b, 3, 0, 0x31, 0x51, 0x30);
       push(LF, ESC, 0x61, 0);
     }
-    push(LF, LF, LF, LF);
-    push(GS, 0x56, 0x42, 0x00); // feed and cut (printers without a cutter ignore it)
+    if (slip.endFeedMm !== undefined) {
+      // Set the vertical motion unit to 1/203 inch, then feed 30 mm in dots.
+      // ESC J feeds without a cutter; GS V 0 cuts without requesting extra feed.
+      push(GS, 0x50, 203, 203);
+      let dots = Math.round(slip.endFeedMm * 203 / 25.4);
+      while (dots > 0) { const chunk = Math.min(255, dots); push(ESC, 0x4a, chunk); dots -= chunk; }
+      push(GS, 0x56, 0x00);
+    } else {
+      push(LF, LF, LF, LF);
+      push(GS, 0x56, 0x42, 0x00); // bill feed and cut unchanged
+    }
   };
   for (let i = 0; i < Math.max(1, Math.min(5, opts.copies ?? 1)); i++) one();
   return Uint8Array.from(out);

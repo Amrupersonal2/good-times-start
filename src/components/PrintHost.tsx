@@ -6,7 +6,7 @@ import { getDb, getSettings } from "@/lib/db";
 import type { Kot, Order } from "@/lib/types";
 import QRCode from "qrcode";
 import { upiLink } from "@/lib/billing";
-import { billSlip, escPos, kotSlip, rawbtIntent } from "@/lib/slip";
+import { billSlip, escPos, kotSlip, rawbtIntent, KOT_END_FEED_MM } from "@/lib/slip";
 import { SlipView } from "./Slip";
 
 /**
@@ -73,7 +73,7 @@ export async function printKots(kots: Kot[], source: "sent" | "incoming" | "repr
   const groups = withCopies(kotPrintGroups(mine, settings.kotByStation ?? true), Math.max(1, config.kotCopies));
   const slips = groups.map((g) => kotSlip(g, config.paper, settings.kotHeader ?? "", config.largeKotText));
   if (config.method === "rawbt") { sendToRawbt(slips.map((slip) => escPos(slip))); return; }
-  printDocuments(slips.map((slip, i) => <SlipView key={`${groups[i]?.[0]?.uid ?? i}-${i}`} slip={slip} />));
+  printDocuments(slips.map((slip, i) => <div key={`${groups[i]?.[0]?.uid ?? i}-${i}`} className="kot-print-slip"><SlipView slip={slip} /></div>));
 }
 
 /** Mark KOTs as already handled on this device (e.g. ones present when a screen opens). */
@@ -123,7 +123,7 @@ export function PrintHost() {
 
   return (
     <>
-      <style>{`#print-root { position: fixed; left: -10000px; top: 0; width: 80mm; }\n${printCss(config.paper)}`}</style>
+      <style>{`#print-root { position: fixed; left: -10000px; top: 0; width: 80mm; --kot-end-feed: ${KOT_END_FEED_MM}mm; }\n${printCss(config.paper)}`}</style>
       <div id="print-root" aria-hidden="true">
         {docs.map((d, i) => <div key={i} className="print-ticket">{d}</div>)}
       </div>
