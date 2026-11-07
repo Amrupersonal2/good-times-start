@@ -121,7 +121,12 @@ export function useCart(initialTableId?: string) {
     setDraftReady(true);
   }, []);
 
-  useEffect(() => { void restoreDraft(initialTableId); }, [initialTableId, restoreDraft]);
+  // The link decides the table: when it changes on an open bill screen (a bill link redirecting to its
+  // table, Bookings → Open bill), switch tables too, or the bill loads under "Choose a table".
+  useEffect(() => {
+    setTableIdState(initialTableId);
+    void restoreDraft(initialTableId);
+  }, [initialTableId, restoreDraft]);
 
   useEffect(() => {
     if (!draftReady) return;
