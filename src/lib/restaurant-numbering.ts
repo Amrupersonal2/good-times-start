@@ -5,9 +5,9 @@ import { consumeReservedNumber, NUMBER_RESERVE_TARGET, readNumberCache, type Res
 export type RestaurantNumberSeries = "POS" | "KOT";
 
 const online = () => typeof navigator === "undefined" || navigator.onLine;
-// v2: spare numbers reserved before Nov 2026's numbering reset are abandoned, so an
-// old 20-number reserve can never collide with the restarted sequence.
-const cacheKey = (restaurantId: string, series: RestaurantNumberSeries) => `reservedNumbers:v2:${restaurantId}:${series}`;
+// v3: spare numbers reserved before the Nov 2026 numbering reset (and the later 3-number
+// spares) are abandoned, so no old reserve can collide with the restarted sequence.
+const cacheKey = (restaurantId: string, series: RestaurantNumberSeries) => `reservedNumbers:v3:${restaurantId}:${series}`;
 
 async function boundRestaurant(): Promise<string> {
   const restaurantId = (await getDb().meta.get("restaurantId"))?.value;
@@ -39,7 +39,7 @@ async function cloudNumber(restaurantId: string, series: RestaurantNumberSeries,
 }
 
 /** How long a bill waits for the cloud number before using a spare offline number. */
-const CLOUD_NUMBER_WAIT_MS = 5000;
+const CLOUD_NUMBER_WAIT_MS = 15000;
 
 function withinWait<T>(work: Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -87,7 +87,7 @@ export async function allocateRestaurantNumber(series: RestaurantNumberSeries, r
   });
   if (reserved) return reserved.number;
   if (cloudFailure) throw cloudFailure;
-  throw new Error("This device has used all its reserved offline numbers. Your items are saved; reconnect once to refill numbers, then send again.");
+  throw new Error("Bill and KOT numbers are given online so they stay in order. Your items are saved; try again when the internet is back.");
 }
 
 /** The guard validates the original cloud reservation identity, not the local bill/submission UID. */
@@ -99,7 +99,7 @@ export async function allocatedNumberRequestId(series: RestaurantNumberSeries, r
 
 /** Serialize refill across tabs; interrupted reservations retain their idempotency IDs. */
 export async function prepareOfflineNumbers(): Promise<void> {
-  if (!online()) return;
+  if (!online() || NUMBER_RESERVE_TARGET <= 0) return;
   const restaurantId = await boundRestaurant();
   const refill = async () => {
     const db = getDb();

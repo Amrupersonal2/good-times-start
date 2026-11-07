@@ -5,8 +5,12 @@ export interface NumberCache {
   pending: string[];
 }
 
-/** Spare numbers each device keeps for internet outages; online bills never use them. */
-export const NUMBER_RESERVE_TARGET = 3;
+/**
+ * Spare numbers each device reserves for internet outages. Zero: spares come from the same
+ * counter as real bills, so holding any would make POS and KOT numbers skip. Numbers are
+ * given online only, keeping the sequence strict.
+ */
+export const NUMBER_RESERVE_TARGET = 0;
 
 export function readNumberCache(value: unknown): NumberCache {
   if (typeof value !== "string") return { available: [], assigned: {}, pending: [] };
