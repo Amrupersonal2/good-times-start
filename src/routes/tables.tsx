@@ -220,7 +220,7 @@ function TablesPage() {
     { label: "free", count: tables.filter((t) => t.status === "free").length, tone: "text-success" },
     { label: "occupied", count: tables.filter((t) => t.status === "occupied" || t.status === "billed").length, tone: "text-primary" },
     { label: "booked", count: tables.filter((t) => t.booking || t.status === "reserved").length, tone: "text-warning" },
-    { label: "settled today", count: tables.filter((t) => t.settledAt !== undefined).length, tone: "text-success" },
+    { label: "settled today", count: activity.closed.filter((o) => o.status === "settled" && (o.settledAt ?? o.createdAt) >= start && (o.settledAt ?? o.createdAt) < end).length, tone: "text-success" },
   ];
 
   return (
