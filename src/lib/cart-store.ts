@@ -109,8 +109,12 @@ export function useCart(initialTableId?: string) {
       : openOrder?.lines ?? []);
     setDiscountPct(draft?.discountPct ?? openOrder?.discountPct ?? 0);
     setServiceChargePct(openOrder?.serviceChargePct ?? 0);
-    setCustomer(draft?.customer ?? openOrder?.customer ?? {});
-    setGuestCount(draft?.guestCount ?? openOrder?.guestCount);
+    // Field by field: an empty local draft must never hide guest details saved on the shared bill.
+    const pick = (a?: string, b?: string) => (a?.trim() ? a : b?.trim() ? b : undefined);
+    const dc = draft?.customer, oc = openOrder?.customer;
+    const name = pick(dc?.name, oc?.name), phone = pick(dc?.phone, oc?.phone), gstin = pick(dc?.gstin, oc?.gstin);
+    setCustomer({ ...(name ? { name } : {}), ...(phone ? { phone } : {}), ...(gstin ? { gstin } : {}) });
+    setGuestCount(draft?.guestCount || openOrder?.guestCount);
     setReservationId(draft?.reservationId ?? openOrder?.reservationId);
     setActiveOrder(openOrder);
     if (id) setOrderType("dine-in");
