@@ -194,6 +194,10 @@ function TablesPage() {
   const openBill = async (t: (typeof tables)[number]) => {
     try {
       if (t.booking && t.status === "reserved") await startReservationOrder(t.booking);
+      const staffBill = counterBills.some((o) => o.tableId === t.id && o.source !== "qr");
+      // A room/table served only by guest QR orders opens that QR bill, with the guest's saved details.
+      if (t.qrBill && !staffBill) { await navigate({ to: "/", search: { bill: t.qrBill } }); return; }
+      if (t.awaitingBill) toast.warning(`${t.label}'s bill hasn't reached this device yet. Open Sync on the counter that punched it.`);
       await navigate({ to: "/", search: { table: t.id } });
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not open this table."); }
   };
@@ -248,7 +252,7 @@ function TablesPage() {
               <Button variant="outline" onClick={openQrRequests}><QrCode />QR Scan & Order</Button>
             </div>
             <div className="mt-3 grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {counterBills.map((o) => (
+              {counterBills.filter((o) => o.source !== "qr").map((o) => (
                 <div key={o.uid ?? o.billNo} className="flex min-h-16 min-w-0 items-center gap-2"><Button variant="outline" className="grid h-full min-h-16 min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] justify-start border-primary/40 bg-primary-tint py-2 text-left" asChild>
                   <Link to="/" search={{ bill: o.uid ?? "" }} title={hasBillNumber(o) ? `Running bill ${o.billNo}` : "Running bill"}>
                     <ShoppingBag className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{o.tableId ? `${o.tableSection ?? tables.find((t) => t.id === o.tableId)?.section ?? ""} · ${o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.tableId}` : o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? "Counter"}</span><span className="block text-xs text-muted-foreground">{o.qrNo ?? o.guestCodes?.[0] ?? (shortBillNo(o) || `${o.lines.reduce((n, l) => n + l.qty, 0)} items`)}{o.tableId && o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span>
@@ -302,7 +306,7 @@ function TablesPage() {
                   {t.cancelledAt !== undefined ? <span className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">Last order cancelled by restaurant</span> : null}
                   {t.closedWithoutPaymentAt !== undefined ? <span className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">Last bill closed without payment</span> : null}
                   {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
-                    <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
+                    <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{t.awaitingBill ? "Bill not synced yet" : minutesSince(t.since)}</span></span>
                   ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Booked</span> : null}
                   {t.booking ? <><span className="mt-1 max-w-full break-words text-sm font-bold text-primary">{t.booking.guest_name}</span><span className="text-xs font-semibold text-success">Table allotted</span><span className="text-xs text-muted-foreground">{new Date(t.booking.arrival_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></> : null}
                   {t.qrTotal ? <span className="mt-0.5 rounded bg-primary/15 px-1.5 text-[10px] font-bold text-primary">QR {formatINR(t.qrTotal, 0)}</span> : null}
