@@ -39,6 +39,8 @@ import { useFirstSyncDone } from "@/lib/use-first-sync";
 import { billLabel, hasBillNumber } from "@/lib/bill-numbering";
 
 export const Route = createFileRoute("/")({
+  // Staff screens read this device's saved data, so skip server rendering and open straight from the device.
+  ssr: false,
   // A bill opens only from Tables: a table, a running counter bill, or a new counter order.
   validateSearch: (search: Record<string, unknown>): { table?: string; bill?: string; type?: OrderType } => ({
     ...(typeof search["table"] === "string" ? { table: search["table"] } : {}),
