@@ -251,6 +251,11 @@ function TablesPage() {
                   </Link>
                 </Button>
               ))}
+              {tables.filter((t) => t.booking && !counterBills.some((o) => o.tableId === t.id)).map((t) => (
+                <Button key={`allotted-${t.id}`} variant="outline" className="h-auto min-h-12 max-w-full border-gold bg-gold/15 py-2 text-left" onClick={() => void openBill(t)}>
+                  <Users className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{t.section} · {t.label}</span><span className="block text-xs">{t.booking?.guest_name} · Table allotted</span></span>
+                </Button>
+              ))}
             </div>
             {qrBills.length ? (
               <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="QR bills">
