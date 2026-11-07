@@ -22,6 +22,7 @@ import { Dropdown } from "@/components/Dropdown";
 import { activeOffers, brandPalette, cleanSource, waLink, LINK_LABELS, type BrandLinks, type Offer } from "@/lib/marketing-logic";
 import { logScan, recordGuestChoice } from "@/lib/marketing-actions";
 import type { CSSProperties } from "react";
+import { guestCanCancel } from "@/lib/guest-cancellation";
 
 interface OrderSearch { table?: string; o?: string; k?: string; s?: string }
 
@@ -517,6 +518,8 @@ function OrderStatus({ store, id, token, table }: { store: Storefront; id: strin
     },
   });
   const o: StatusView | null | undefined = status.data;
+  const [cancelClock, setCancelClock] = useState(() => Date.now());
+  useEffect(() => { const timer = window.setInterval(() => setCancelClock(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   const items = useMemo(() => store.menu.map(asMenuItem), [store.menu]);
   if (status.isLoading) return <div className="p-5"><div className="h-40 animate-pulse rounded-2xl bg-card" /></div>;
   if (status.isError) return <Notice icon={Clock} title="Order updates are unavailable" body="Your order may still be with the restaurant. Check your connection; do not place it again." action={<Button onClick={() => void status.refetch()}>Refresh status</Button>} />;
@@ -595,7 +598,7 @@ function OrderStatus({ store, id, token, table }: { store: Storefront; id: strin
       {error ? <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p> : null}
       {!ended ? <StayConnected store={store} code={o.code} /> : null}
       <div className="mt-4 flex flex-col gap-2">
-        {o.status === "new" ? <Button variant="outline" className="text-destructive" onClick={() => void cancel()}><X />Cancel this order</Button> : null}
+        {guestCanCancel(o.status, o.createdAt, cancelClock) ? <Button variant="outline" className="text-destructive" onClick={() => void cancel()}><X />Cancel this order · {Math.max(0, Math.ceil((Date.parse(o.createdAt) + 60_000 - cancelClock) / 1000))}s</Button> : null}
         {o.channel === "table" || ended ? <Button variant="secondary" onClick={backToMenu}><Plus />Order more</Button> : null}
         {store.phone ? <a href={`tel:${store.phone}`} className="text-center text-sm font-semibold text-primary">Call the restaurant</a> : null}
       </div>

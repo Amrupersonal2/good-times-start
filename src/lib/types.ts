@@ -85,6 +85,7 @@ export interface Order {
   payments: { mode: PaymentMode; amount: number }[];
   status: "held" | "settled" | "void";
   voidReason?: string;
+  cancelledAt?: number;
   serviceChargePct?: number;
   serviceCharge?: number;
   /** Value before GST after discount (excludes service charge). */
@@ -94,6 +95,8 @@ export interface Order {
   customer?: { name?: string; phone?: string; gstin?: string };
   /** Number of guests covered by this bill. */
   guestCount?: number | undefined;
+  /** Exact guest arrival linked by explicit Start order. */
+  reservationId?: string | undefined;
   /** Guest's phone as the last 10 digits, kept indexed so their visits load quickly. */
   customerId?: string;
   /** Who settled or voided the bill, for the staff report. */
@@ -113,6 +116,7 @@ export interface Order {
 
 export interface CartDraft {
   id: string;
+  reservationId?: string | undefined;
   tableId?: string | undefined;
   /** The running bill this draft builds on; a draft for a bill that has since closed is discarded. */
   orderUid?: string | undefined;

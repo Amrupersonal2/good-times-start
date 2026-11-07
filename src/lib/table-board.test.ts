@@ -19,6 +19,18 @@ describe("live table status board", () => {
     expect(boardTables([floor], [closed], 100, 200)[0]?.settledAt).toBe(120);
     expect(boardTables([floor], [closed], 0, 100)[0]?.settledAt).toBeUndefined();
   });
+  it("shows the latest restaurant cancellation instead of an earlier settlement", () => {
+    const cancelled = { ...closed, status: "void", cancelledAt: 150 } as Order;
+    const table = boardTables([floor], [closed, cancelled], 100, 200)[0];
+    expect(table?.cancelledAt).toBe(150);
+    expect(table?.settledAt).toBeUndefined();
+    expect(table?.status).toBe("free");
+  });
+  it("never calls a zero-total bill with no payment settled", () => {
+    const table = boardTables([floor], [{ ...closed, total: 0, payments: [{ mode: "cash", amount: 0 }] }], 100, 200)[0];
+    expect(table?.closedWithoutPaymentAt).toBe(120);
+    expect(table?.settledAt).toBeUndefined();
+  });
   it.each(["occupied", "billed", "reserved"] as const)("preserves %s instead of a settled annotation", (status) => {
     expect(boardTables([{ ...floor, status }], [closed], 100, 200)[0]?.settledAt).toBeUndefined();
   });

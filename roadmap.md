@@ -1,5 +1,10 @@
 # POS expansion
 
+## Booking cancellation audit
+- [x] Show latest restaurant cancellation instead of an earlier settlement, distinguish zero-total closures without payment, and enforce a token-scoped 60-second guest cancellation deadline through an applied migration. Accepted kitchen orders remain staff-managed.
+- [x] Audit public QR guest requests and POS/admin controls without production record writes: token-scoped status, safe public occupancy, separate QR bills and admin ordering switches verified in source; restrict staff QR mutations to floor roles and add stale-status checks. Physical scans, all role sign-ins and real guest cancellation remain unverified.
+- [x] Carry exact reservation identity into drafts/bills; queue cancellation cleanup offline and remove only the linked booking after authoritative readback. Isolated signed-in floor cleanup/label checks pass without reload; 43 focused tests and automatic build pass. Existing malformed zero-value payment records are not rewritten; future zero-total settlements record no payments. Frontend changes not published.
+
 ## Orders KOT printing
 - [x] Add per-submission and per-station print controls using existing authorized device routing. 29 print/history tests pass; signed-in Orders shows saved KOT controls and dispatches item names/quantities to the browser print host with printing intercepted. No production record writes or physical printing; not published.
 

@@ -181,7 +181,7 @@ export function OrderingSettings({ className, ref, ...props }: OrderingSettingsP
           <p className="mt-1 text-sm text-muted-foreground">Guests order from their phone. Accepting an order sends the KOT and opens the bill.</p>
         </div>
         <div className="space-y-3">
-          <Row title="QR ordering at tables" hint="Each table's QR code opens its menu. Orders join the table's bill.">
+          <Row title="QR ordering at tables" hint="Each table's QR code opens its menu. Accepted orders use a separate QR bill.">
             <Switch checked={!!form.table} disabled={!canEdit || !qrAllowed} onCheckedChange={(v) => set({ table: v })} className="mt-0.5" />
           </Row>
           <Row title="Online ordering for pickup" hint="Share the link on WhatsApp, Instagram and Google. Guests order ahead and collect.">

@@ -17,14 +17,17 @@ export async function readBoardKots(kots: Table<Kot, number>, open: Order[]): Pr
 }
 
 export type BoardFilter = "all" | "booked" | "settled" | "occupied" | "free";
-export type BoardTable = FloorTable & { booking?: Reservation; settledAt?: number };
+export type BoardTable = FloorTable & { booking?: Reservation; settledAt?: number; cancelledAt?: number; closedWithoutPaymentAt?: number };
 
 /** Settlement is a display annotation, never a new occupancy state or financial write. */
 export function boardTables(tables: BoardTable[], closed: Order[], start: number, end: number): BoardTable[] {
   return tables.map((table) => {
-    const latest = closed.filter((o) => o.tableId === table.id && o.status === "settled")
-      .map((o) => o.settledAt ?? o.createdAt).filter((at) => at >= start && at < end).sort((a, b) => b - a)[0];
-    return table.status === "free" && !table.booking && !table.heldDevice && latest !== undefined ? { ...table, settledAt: latest } : table;
+    const at = (o: Order) => o.status === "void" ? o.cancelledAt ?? o.createdAt : o.settledAt ?? o.createdAt;
+    const latest = closed.filter((o) => o.tableId === table.id && (o.status === "settled" || o.status === "void") && at(o) >= start && at(o) < end).sort((a, b) => at(b) - at(a))[0];
+    if (table.status !== "free" || table.booking || table.heldDevice || !latest) return table;
+    if (latest.status === "void") return { ...table, cancelledAt: at(latest) };
+    if (latest.total === 0 && !latest.payments?.some((p) => p.amount > 0)) return { ...table, closedWithoutPaymentAt: at(latest) };
+    return { ...table, settledAt: at(latest) };
   });
 }
 

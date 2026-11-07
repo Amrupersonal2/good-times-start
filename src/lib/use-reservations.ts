@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDb } from "./db";
 import { useStaff } from "./auth-context";
 import type { Reservation } from "./reservations";
+import { applyBookingCancellations, flushBookingCancellations, queueBillBookingCancellation } from "./booking-cancellation";
 
 export function useReservations() {
   const { user } = useStaff();
@@ -14,7 +15,7 @@ export function useReservations() {
   const cache = useLiveQuery(async () => {
     const row = await getDb().meta.get(key);
     if (!row || typeof row.value !== "string") return { rows: [] as Reservation[], at: 0 };
-    try { return JSON.parse(row.value) as { rows: Reservation[]; at: number }; } catch { return { rows: [] as Reservation[], at: 0 }; }
+    try { const cached = JSON.parse(row.value) as { rows: Reservation[]; at: number }; return { ...cached, rows: restaurant ? await applyBookingCancellations(restaurant, cached.rows) : [] }; } catch { return { rows: [] as Reservation[], at: 0 }; }
   }, [key], { rows: [] as Reservation[], at: 0 });
   useEffect(() => {
     if (!restaurant) return;
@@ -24,11 +25,15 @@ export function useReservations() {
       if (running || !navigator.onLine) { if (alive && !navigator.onLine) setConnected(false); return; }
       running = true;
       try {
+        const voids = await getDb().orders.where("status").equals("void").toArray();
+        for (const order of voids.filter((o) => o.reservationId)) await queueBillBookingCancellation(restaurant, order);
+        let cleanupError = "";
+        try { await flushBookingCancellations(restaurant); } catch (e) { cleanupError = e instanceof Error ? e.message : "Booking cleanup pending."; }
         const result = await supabase.from("guest_reservations").select("id,restaurant_id,table_id,table_label,section,guest_name,guest_phone,party_size,arrival_at,end_at,status,created_at").eq("restaurant_id", restaurant).order("arrival_at").limit(1000);
         if (result.error) throw result.error;
         if (!alive) return;
         await getDb().meta.put({ key, value: JSON.stringify({ rows: result.data, at: Date.now() }) });
-        setConnected(true); setError("");
+        setConnected(true); setError(cleanupError);
       } catch { if (alive) { setConnected(false); setError("Bookings unavailable — showing saved arrivals."); } }
       finally { running = false; }
     };

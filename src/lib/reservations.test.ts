@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookingInputError, bookingUrl, overlaps, reservationsForDate, withReservations, reservationDraft, newBookingRequests, type Reservation } from "./reservations";
+import { bookingInputError, bookingUrl, overlaps, reservationsForDate, withReservations, reservationDraft, newBookingRequests, cancelledBillBooking, type Reservation } from "./reservations";
 describe("guest reservations", () => {
   it("shows confirmed bookings before arrival without freeing running bills", () => {
     const at = Date.parse("2026-11-07T11:00Z");
@@ -20,7 +20,7 @@ describe("guest reservations", () => {
   });
   it("hands confirmed guest identity to a local order draft without numbered records", () => {
     const row = { table_id: "r1", status: "confirmed", guest_name: "Guest One", guest_phone: "9000000000", party_size: 2 } as Reservation;
-    expect(reservationDraft(row, undefined, undefined, 123)).toEqual({ id: "r1", tableId: "r1", lines: [], discountPct: 0, customer: { name: "Guest One", phone: "9000000000" }, guestCount: 2, updatedAt: 123 });
+    expect(reservationDraft(row, undefined, undefined, 123)).toEqual({ id: "r1", tableId: "r1", reservationId: row.id, lines: [], discountPct: 0, customer: { name: "Guest One", phone: "9000000000" }, guestCount: 2, updatedAt: 123 });
   });
   it("never overwrites another guest's unsent draft", () => {
     const row = { table_id: "r1", status: "confirmed", guest_name: "Guest One", guest_phone: "9000000000", party_size: 2 } as Reservation;
@@ -49,5 +49,20 @@ describe("guest reservations", () => {
   it("lists arrivals by arrival date, independently of settlement", () => {
     const row = { arrival_at: "2026-11-07T10:00Z" } as Reservation;
     expect(reservationsForDate([row], Date.parse("2026-11-07T00:00Z"), Date.parse("2026-11-08T00:00Z"))).toEqual([row]);
+  });
+  it("clears only the cancelled bill's exact booking, not a later reservation", () => {
+    const rows = [{ id: "current", table_id: "r1", status: "confirmed" }, { id: "later", table_id: "r1", status: "confirmed" }] as Reservation[];
+    const bill = { status: "void", tableId: "r1", reservationId: "current" } as import("./types").Order;
+    expect(cancelledBillBooking(bill, rows)?.id).toBe("current");
+    expect(cancelledBillBooking({ ...bill, source: "qr" }, rows)).toBeUndefined();
+    expect(cancelledBillBooking({ ...bill, status: "held" }, rows)).toBeUndefined();
+  });
+  it("does not infer a booking cancellation from table identity alone", () => {
+    const bill = { status: "void", tableId: "r1", createdAt: 100 } as import("./types").Order;
+    expect(cancelledBillBooking(bill, [{ id: "later", table_id: "r1", status: "confirmed" }] as Reservation[])).toBeUndefined();
+  });
+  it("does not start an expired allotted booking", () => {
+    const row = { id: "expired", table_id: "r1", status: "confirmed", end_at: "2026-11-07T12:00:00Z" } as Reservation;
+    expect(() => reservationDraft(row, undefined, undefined, Date.parse("2026-11-07T12:00:00Z"))).toThrow("has ended");
   });
 });
