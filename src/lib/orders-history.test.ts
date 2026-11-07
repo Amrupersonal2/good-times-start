@@ -22,4 +22,11 @@ describe("Orders history", () => {
     expect(historyBills([room], "bills", yesterday)).toEqual([room]);
     expect(historyBills([room], "bills", today)).toEqual([]);
   });
+  it("lists bills in the order they were settled or cancelled, running bills last", () => {
+    const held = { uid: "run", status: "held", createdAt: 1 } as Order;
+    const late = { uid: "late", status: "settled", createdAt: 2, settledAt: 900 } as Order;
+    const early = { uid: "early", status: "settled", createdAt: 5, settledAt: 300 } as Order;
+    const voided = { uid: "void", status: "void", createdAt: 3, cancelledAt: 600 } as Order;
+    expect(historyBills([held, late, early, voided], "bills").map((o) => o.uid)).toEqual(["early", "void", "late", "run"]);
+  });
 });

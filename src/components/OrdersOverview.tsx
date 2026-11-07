@@ -42,7 +42,8 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
   const history = useLiveQuery(async () => ({ bills: await reportOrders({ from: start, to: end - 1 }), kots: await getDb().kots.where("createdAt").between(start, end, true, false).reverse().toArray() }), [start, end], { bills: [], kots: [] });
   const datedBills = (type: HistoryKind) => historyBills(history.bills, type, [start, end]);
-  const submissions = kotSubmissions(history.kots);
+  // Oldest first, matching the bills list: the day reads in the order it happened.
+  const submissions = kotSubmissions(history.kots).reverse();
   const settings = useRestaurantSettings(); const config = usePrintConfig();
   const { user } = useStaff();
   const app = useAppMode(user);
