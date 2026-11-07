@@ -1,5 +1,14 @@
 # POS expansion
 
+## November 7 startup and deep release audit
+- [x] Repair the reproducible blank homepage without changing restaurant data; verified signed-out and signed-in entry.
+- [x] Run existing unit/sync/printing checks: 317 tests across 58 files, typecheck and automatic build passed; release gaps recorded in docs/DEEP_RELEASE_AUDIT_2026-11-07.md.
+- [x] Implement the audit's Windows browser print-dialog fallback without enabling peer printing; both readiness states dispatch once in tests.
+- [x] Publish the loading repair; live root returns 307 to Tables, existing Room 10A bill and Orders load with no page errors and all restaurant writes blocked.
+- [ ] Harden unresolved sync contract fallback, crash-atomic conflict decisions and uncertain printer claims; requires reviewed changes and disposable database/browser regression, not production experiments.
+- [ ] Complete Lighthouse/React profiles, real IndexedDB quota/upgrade/cross-tab tests, installed-worker deployment recovery and full authorized Manager/Waiter E2E; current evidence is limited to automated browser entry checks and mocked sync tests.
+- [ ] Native Android packages and physical printing validation: blocked by signing credentials, device/printer access, and native packaging outside the supported web stack.
+
 ## Wireless waiter printing
 - [x] Queue explicit waiter KOT/bill requests for a designated connected POS device; preserve offline requests and avoid peer printing.
 - [x] Remove Business Manager tables and thermal-printer access while preserving report printing.

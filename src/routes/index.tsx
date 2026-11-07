@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { placeName } from "@/lib/table-logic";
 import { useLiveQuery } from "dexie-react-hooks";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { Search, Minus, Plus, Trash2, Banknote, Smartphone, CreditCard, Printer, ShoppingBag, X, Star, ChefHat, Wallet, UserRound, ArrowLeftRight, BadgePercent, HandCoins, ArrowLeft, Check } from "lucide-react";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { PaymentPanel, ReasonPrompt, UpiPay } from "@/components/PaymentDialogs";
@@ -34,7 +34,6 @@ import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
 import { allow } from "@/lib/pin-gate";
 import { usePolicy } from "@/components/PinGate";
-import { syncAppModeFromUrl } from "@/lib/app-mode";
 import { COUNTER_TYPES, isCounterType } from "@/lib/bill-entry";
 import { useFirstSyncDone } from "@/lib/use-first-sync";
 
@@ -45,6 +44,16 @@ export const Route = createFileRoute("/")({
     ...(typeof search["bill"] === "string" ? { bill: search["bill"] } : {}),
     ...(isCounterType(search["type"]) ? { type: search["type"] } : {}),
   }),
+  beforeLoad: ({ search, location }) => {
+    // Resolve the empty entry before rendering billing hooks or hoisted resources.
+    // Preserve the installed screen identity without mounting a walk-in draft.
+    if (!search.table && !search.bill && !search.type) {
+      const identity = new URLSearchParams(location.searchStr).get("app");
+      if (identity === "manager") throw redirect({ href: "/manager?app=manager", replace: true });
+      if (identity === "waiter") throw redirect({ href: "/waiter?app=waiter", replace: true });
+      throw redirect({ href: "/tables?app=pos", replace: true });
+    }
+  },
   head: () => ({
     meta: [
       { title: "Bill — XTSY POS" },
@@ -62,12 +71,6 @@ function PosPage() {
   const navigate = useNavigate();
   const toFloor = () => void navigate({ to: "/tables" });
   const entry = !!(search.table || search.bill || search.type);
-  // Nothing chosen: bills start on the floor.
-  useEffect(() => {
-    if (entry) return;
-    syncAppModeFromUrl();
-    void navigate({ to: "/tables", replace: true });
-  }, [entry, navigate]);
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
   const firstSync = useFirstSyncDone();
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);

@@ -55,7 +55,6 @@ function sendToRawbt(chunks: Uint8Array[]): void {
 export async function printBill(order: Order): Promise<void> {
   if (await routeWirelessPrint('bill', order)) return;
   const [config, settings] = await Promise.all([getPrintConfig(), getSettings()]);
-  if (config.method === "browser" && !config.silentBrowserReady) { notifyPrinterSetup(); return; }
   const slip = billSlip(order, settings, config.paper);
   const copies = Math.max(1, config.billCopies);
   const due = order.status === "held" ? order.total : order.payments.filter((p) => p.mode === "credit").reduce((s, p) => s + p.amount, 0);
@@ -75,7 +74,6 @@ export async function printKots(kots: Kot[], source: "sent" | "incoming" | "repr
   if (await routeWirelessPrint('kot', kots)) return;
   const config = await getPrintConfig();
   if (!shouldPrintKot(source, config)) return;
-  if (config.method === "browser" && !config.silentBrowserReady) { notifyPrinterSetup(); return; }
   let mine = source === "reprint" ? kots : kotsForDevice(kots, config);
   if (source !== "reprint") mine = mine.filter((k) => !k.uid || !printedKots.has(k.uid));
   for (const k of mine) if (k.uid) printedKots.add(k.uid);
@@ -125,13 +123,12 @@ export function PrintHost() {
     if (!docs.length) return;
     // Give QR codes and fonts a moment to render before the print dialog takes over.
     const timer = window.setTimeout(() => {
-      if (!config.silentBrowserReady) { notifyPrinterSetup(); jobs = []; emit(); return; }
       try { window.print(); } catch { /* printing unavailable; bill is already saved */ }
     }, 450);
     const clear = () => { jobs = []; emit(); };
     window.addEventListener("afterprint", clear, { once: true });
     return () => { window.clearTimeout(timer); window.removeEventListener("afterprint", clear); };
-  }, [docs, config.silentBrowserReady]);
+  }, [docs]);
 
   return (
     <>
@@ -141,10 +138,6 @@ export function PrintHost() {
       </div>
     </>
   );
-}
-
-function notifyPrinterSetup(): void {
-  toast.error("Set up silent printing on this device in Settings → Printing & KOT. No print window was opened.", { id: "printer-setup" });
 }
 
 async function routeWirelessPrint(kind: 'bill' | 'kot', payload: Order | Kot[]): Promise<boolean> {
@@ -178,7 +171,7 @@ export function CounterPrintWatcher() {
       busy = true;
       try {
         await flushCounterPrints(restaurant);
-        if (app !== 'pos' || jobs.length || (config.method === 'browser' && !config.silentBrowserReady)) return;
+        if (app !== 'pos' || jobs.length) return;
         const device = await getDeviceId();
         const { data, error } = await supabase.rpc('claim_counter_print', { _restaurant: restaurant, _device: device });
         if (error || !data || stopped) return;

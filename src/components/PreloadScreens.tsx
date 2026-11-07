@@ -4,7 +4,7 @@ import { useStaff } from "@/lib/auth-context";
 import { isFramedPath } from "@/components/AppShell";
 
 /** Staff screens in the order people usually open them. */
-const SCREENS = ["/", "/dashboard", "/tables", "/menu", "/reports", "/stock", "/customers", "/settings", "/waiter", "/marketing"] as const;
+const SCREENS = ["/tables", "/menu", "/stock", "/customers", "/settings"] as const;
 
 type IdleWindow = Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number; cancelIdleCallback?: (h: number) => void };
 
@@ -20,7 +20,7 @@ export function PreloadScreens() {
   const staffScreen = isFramedPath(pathname) || pathname === "/waiter";
 
   useEffect(() => {
-    if (!staffScreen || typeof window === "undefined") return;
+    if (!signedIn || !staffScreen || typeof window === "undefined") return;
     const w = window as IdleWindow;
     const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
     if (saveData) return;
