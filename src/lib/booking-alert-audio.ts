@@ -9,18 +9,19 @@ export async function unlockBookingAudio(): Promise<boolean> {
   } catch { return false; }
 }
 export async function playBookingChime(): Promise<boolean> {
-  if (!context) return false;
+  const audio = context;
+  if (!audio) return false;
   try {
-    await context.resume();
-    if (context.state !== "running") return false;
-    const now = context.currentTime;
+    await audio.resume();
+    if (audio.state !== "running") return false;
+    const now = audio.currentTime;
     [660, 990, 1320].forEach((frequency, i) => {
-      const oscillator = context.createOscillator(); const gain = context.createGain();
+      const oscillator = audio.createOscillator(); const gain = audio.createGain();
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(0.0001, now + i * 0.16);
       gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.16 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.16 + 0.22);
-      oscillator.connect(gain).connect(context.destination);
+      oscillator.connect(gain).connect(audio.destination);
       oscillator.start(now + i * 0.16); oscillator.stop(now + i * 0.16 + 0.26);
     });
     return true;

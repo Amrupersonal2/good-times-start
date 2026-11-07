@@ -70,6 +70,11 @@ function WaiterApp() {
   const queryClient = useQueryClient();
   const [tableId, setTableIdState] = useState<string | undefined>(undefined);
   const [showBookings, setShowBookings] = useState(false);
+  useEffect(() => {
+    const open = () => setShowBookings(true);
+    window.addEventListener("pos:bookings", open);
+    return () => window.removeEventListener("pos:bookings", open);
+  }, []);
   const bookings = useReservations();
   const [, tick] = useState(0);
   useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30_000); return () => window.clearInterval(t); }, []);
@@ -100,7 +105,7 @@ function WaiterApp() {
           {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>
-      <Dialog open={showBookings} onOpenChange={setShowBookings}><DialogContent aria-label="Guest reservations" className="max-h-screen overflow-y-auto"><DialogTitle>Guest arrivals</DialogTitle><ReservationsPanel /></DialogContent></Dialog>
+      <Dialog open={showBookings} onOpenChange={setShowBookings}><DialogContent aria-label="Guest reservations" className="max-h-screen overflow-y-auto"><DialogTitle>Guest arrivals</DialogTitle><ReservationsPanel upcoming onOpenOrder={() => setShowBookings(false)} /></DialogContent></Dialog>
       {printStatus.pending ? <p role="status" className="border-b border-border px-4 py-2 text-sm">{printStatus.pending} print request{printStatus.pending === 1 ? '' : 's'} waiting for the counter{printStatus.error ? ` · ${printStatus.error}` : ''}</p> : null}
 
       <div className="flex min-h-0 flex-1">
