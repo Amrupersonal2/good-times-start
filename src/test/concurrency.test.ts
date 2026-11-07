@@ -333,3 +333,63 @@ describe("rollout compatibility", () => {
     expect(server.fakeServer.payments.size).toBe(1);
   });
 });
+
+describe("instant realtime apply", () => {
+  const notice = (kind: string, id: string) => {
+    const row = serverRow(kind, id) as { kind: string; record_id: string; payload: unknown; deleted: boolean; updated_at: string; version: number };
+    return { eventType: "UPDATE", new: { restaurant_id: R, ...row } };
+  };
+
+  it("shows another terminal's guest details from the notice itself, before any sync", async () => {
+    await on("counter", () => save(order("bill-live", { customer: { name: "", phone: "" } })));
+    await syncNow("counter");
+    await syncNow("admin");
+    // Admin renames the guest and pushes.
+    await on("admin", async () => {
+      const o = await db.getDb().orders.where("uid").equals("bill-live").first();
+      await save({ ...o!, customer: { name: "Amrudheen D", phone: "8837317070" }, guestCount: 1 });
+    });
+    await syncNow("admin");
+    // The counter only receives the realtime notice: no pull yet.
+    const applied = await on("counter", () => sync.applyLiveChange(notice("order", "bill-live")));
+    expect(applied).toBe(true);
+    const shown = await on("counter", () => db.getDb().orders.where("uid").equals("bill-live").first());
+    expect(shown?.customer?.name).toBe("Amrudheen D");
+    expect(shown?.guestCount).toBe(1);
+  });
+
+  it("never lets a late, older notice overwrite a newer copy", async () => {
+    await on("counter", () => save(order("bill-order", { guestCount: 1 })));
+    await syncNow("counter");
+    await syncNow("admin");
+    const old = notice("order", "bill-order");
+    await on("admin", async () => {
+      const o = await db.getDb().orders.where("uid").equals("bill-order").first();
+      await save({ ...o!, guestCount: 3 });
+    });
+    await syncNow("admin");
+    await syncNow("counter");
+    await on("counter", () => sync.applyLiveChange(old));
+    const shown = await on("counter", () => db.getDb().orders.where("uid").equals("bill-order").first());
+    expect(shown?.guestCount).toBe(3);
+  });
+
+  it("keeps this terminal's unsent edit and ignores incomplete notices", async () => {
+    await on("counter", () => save(order("bill-mine")));
+    await syncNow("counter");
+    await syncNow("admin");
+    await on("admin", async () => {
+      const o = await db.getDb().orders.where("uid").equals("bill-mine").first();
+      await save({ ...o!, guestCount: 4 });
+    });
+    await syncNow("admin");
+    await on("counter", async () => {
+      const o = await db.getDb().orders.where("uid").equals("bill-mine").first();
+      await save({ ...o!, guestCount: 2 }); // not pushed yet
+    });
+    await on("counter", () => sync.applyLiveChange(notice("order", "bill-mine")));
+    expect((await on("counter", () => db.getDb().orders.where("uid").equals("bill-mine").first()))?.guestCount).toBe(2);
+    expect(await on("counter", () => sync.applyLiveChange({ eventType: "UPDATE", new: { kind: "order", record_id: "x" } }))).toBe(false);
+    expect(await on("counter", () => sync.applyLiveChange({ eventType: "DELETE", new: {} }))).toBe(false);
+  });
+});

@@ -460,6 +460,22 @@ async function healConflicts(restaurantId: string): Promise<void> {
   }
 }
 
+/**
+ * Show another terminal's change the moment its realtime notice arrives, using the row the notice
+ * carries, instead of waiting for a push-then-pull round trip. Only complete, versioned rows are
+ * applied (applyRemote still skips local unsent edits, conflicts and older versions); the follow-up
+ * sync still runs and stays the source of truth.
+ */
+export async function applyLiveChange(change: { eventType?: string; new?: unknown }): Promise<boolean> {
+  if (change.eventType !== "INSERT" && change.eventType !== "UPDATE") return false;
+  const row = change.new as Partial<RemoteRow> | null | undefined;
+  if (!row || typeof row.kind !== "string" || typeof row.record_id !== "string" || typeof row.version !== "number" ||
+    typeof row.deleted !== "boolean" || row.payload === undefined || row.payload === null) return false;
+  if (!isKind(row.kind)) return false;
+  await applyRemote([row as RemoteRow]);
+  return true;
+}
+
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
   // The outbox is read inside the same transaction, so a local edit can't slip in between the check and the write.
@@ -473,6 +489,9 @@ async function applyRemote(rows: RemoteRow[]): Promise<void> {
       // Records awaiting a staff conflict decision keep this device's copy on screen.
       if (pending.has(key) || conflicted.has(key)) continue;
       if (typeof row.version === "number") {
+        // Realtime and pulls can arrive out of order: never let an older copy replace a newer one.
+        const known = parseBase((await db.meta.get(baseKey(row.kind, row.record_id)))?.value);
+        if (known && known.version > row.version) continue;
         await db.meta.put({ key: baseKey(row.kind, row.record_id), value: JSON.stringify(keepsBasePayload(row.kind) ? { version: row.version, payload: row.payload } : { version: row.version }) });
       }
       const payload: unknown = row.payload;
@@ -712,7 +731,7 @@ export function startLiveSync(restaurantId: string): () => void {
   );
 
   // Kitchen tickets push at once so the kitchen screen updates instantly; offline they stay in the outbox until "online" fires.
-  const stopLocal = onLocalChange((kinds) => scheduler.request(kinds.includes("kot") ? 0 : 800));
+  const stopLocal = onLocalChange((kinds) => scheduler.request(kinds.includes("kot") || kinds.includes("order") ? 0 : 250));
   const wake = () => scheduler.request(0);
   const onOnline = () => { void requeueHeldRecords().finally(wake); };
   void requeueHeldRecords();
@@ -731,7 +750,10 @@ export function startLiveSync(restaurantId: string): () => void {
     setLiveStatus(attempts ? "reconnecting" : "connecting");
     const current = supabase
       .channel(`restaurant-records-${restaurantId}-${Date.now()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_records", filter: `restaurant_id=eq.${restaurantId}` }, () => scheduler.request(0));
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_records", filter: `restaurant_id=eq.${restaurantId}` }, (change) => {
+        // Paint the change at once from the notice itself, then confirm with a full sync.
+        void applyLiveChange(change as { eventType?: string; new?: unknown }).catch(() => undefined).finally(() => scheduler.request(0));
+      });
     channel = current;
     current.subscribe((status: string) => {
       if (stopped || channel !== current) return;

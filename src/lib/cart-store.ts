@@ -233,7 +233,7 @@ export function useCart(initialTableId?: string) {
         void rememberCustomer(customer);
         setActiveOrder(updated);
       })();
-    }, 700);
+    }, 350);
     return () => window.clearTimeout(timer);
   }, [customer, guestCount, activeOrder, draftReady]);
 
