@@ -21,6 +21,7 @@ import { useRestaurantSettings } from "@/lib/use-settings";
 import { sendOrderReadyMessage } from "@/lib/whatsapp.functions";
 import { can } from "@/lib/permissions";
 import { OrdersOverview } from "./OrdersOverview";
+import { useReservations } from "@/lib/use-reservations";
 
 function chime(ctx: AudioContext) {
   const now = ctx.currentTime;
@@ -89,12 +90,17 @@ export function GuestOrdersButton() {
   const enabled = !!user?.restaurantId && user.role !== "kitchen" && (!!ordering.table || !!ordering.online);
   const orders: GuestOrder[] = useGuestOrders(user?.restaurantId ?? null, enabled).data ?? [];
   const waiting = orders.filter((o) => o.status === "new");
+  const bookings = useReservations();
+  const bookingRequests = bookings.rows.filter((r) => r.status === "pending" && Date.parse(r.end_at) > Date.now());
+  const requestCount = waiting.length + bookingRequests.length;
   const [open, setOpen] = useState(false);
-  const [initialView, setInitialView] = useState<"running" | "guest">("running");
+  const [initialView, setInitialView] = useState<"running" | "guest" | "bookings">("running");
   useEffect(() => {
     const show = () => { setInitialView("guest"); setOpen(true); };
+    const showBookings = () => { setInitialView("bookings"); setOpen(true); };
     window.addEventListener("pos:qr-requests", show);
-    return () => window.removeEventListener("pos:qr-requests", show);
+    window.addEventListener("pos:bookings", showBookings);
+    return () => { window.removeEventListener("pos:qr-requests", show); window.removeEventListener("pos:bookings", showBookings); };
   }, []);
   const audio = useRef<AudioContext | null>(null);
   const seen = useRef<Set<string> | null>(null);
@@ -124,11 +130,11 @@ export function GuestOrdersButton() {
   if (!user?.restaurantId || user.role === "kitchen") return null;
   return (
     <>
-      <Button size="sm" variant={waiting.length ? "default" : "outline"} onClick={() => { setInitialView("running"); setOpen(true); }} className={waiting.length ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : ""}
+      <Button size="sm" variant={requestCount ? "default" : "outline"} onClick={() => { setInitialView("running"); setOpen(true); }} className={requestCount ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : ""}
         aria-label="Orders">
         <BellRing className="size-4" />
         <span className="hidden sm:inline">Orders</span>
-        {waiting.length ? <span className="rounded-full bg-gold-foreground px-1.5 text-[11px] font-bold text-gold">{waiting.length}</span> : null}
+        {requestCount ? <span className="rounded-full bg-gold-foreground px-1.5 text-[11px] font-bold text-gold">{requestCount}</span> : null}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">

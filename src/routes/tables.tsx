@@ -248,7 +248,7 @@ function TablesPage() {
           </section>
         ) : null}
 
-        <ReservationsPanel />
+        <ReservationsPanel upcoming />
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No tables yet</p>
@@ -272,6 +272,7 @@ function TablesPage() {
                   {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
                     <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
                   ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Reserved</span> : null}
+                  {t.booking ? <span className="mt-1 max-w-full truncate text-xs font-semibold text-primary">{new Date(t.booking.arrival_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}
                   {t.qrTotal ? <span className="mt-0.5 rounded bg-primary/15 px-1.5 text-[10px] font-bold text-primary">QR {formatINR(t.qrTotal, 0)}</span> : null}
                   {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate text-[10px] font-semibold text-primary">{holdLabel(t, Date.now())}</span> : null}
                   {editing ? <Pencil className="absolute right-2 top-2 size-3.5 text-muted-foreground" /> : null}
@@ -328,8 +329,10 @@ function groupTables<T extends RestaurantTable>(list: T[]): T[][] {
 
 const RANK: Record<TableStatus, number> = { free: 0, reserved: 1, occupied: 2, billed: 3 };
 
-function TableGroup<T extends RestaurantTable & { runningTotal: number }>({ tables, onPick }: { tables: T[]; onPick: (t: T) => void }) {
-  const first = tables[0]!.label, last = tables[tables.length - 1]!.label;
+function TableGroup<T extends RestaurantTable & { runningTotal: number; booking?: import("@/lib/reservations").Reservation }>({ tables, onPick }: { tables: T[]; onPick: (t: T) => void }) {
+  const firstTable = tables[0], lastTable = tables[tables.length - 1];
+  if (!firstTable || !lastTable) return null;
+  const first = firstTable.label, last = lastTable.label;
   const top = tables.reduce((a, b) => (RANK[b.status] > RANK[a.status] ? b : a));
   const busy = tables.filter((t) => t.status === "occupied" || t.status === "billed");
   const total = busy.reduce((n, t) => n + t.runningTotal, 0);
@@ -337,12 +340,13 @@ function TableGroup<T extends RestaurantTable & { runningTotal: number }>({ tabl
     <label className={`relative flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-2 text-center hover:border-primary ${STATUS[top.status].cls}`}>
       <span className="text-lg font-extrabold leading-tight">{first}–{last.slice(-1)}</span>
       <span className="text-xs text-muted-foreground">{busy.length}/{tables.length} busy{total ? ` · ${formatINR(total, 0)}` : ""}</span>
+      {tables.some((t) => t.booking) ? <span className="text-xs font-semibold text-primary">{tables.filter((t) => t.booking).length} booked</span> : null}
       <span className="mt-1 text-[11px] font-semibold text-primary">Choose table ▾</span>
       <select aria-label={`Choose a table from ${first} to ${last}`} value=""
         onChange={(e) => { const t = tables.find((x) => x.id === e.target.value); if (t) onPick(t); }}
         className="absolute inset-0 cursor-pointer opacity-0">
         <option value="" disabled>Choose a table</option>
-        {tables.map((t) => <option key={t.id} value={t.id}>{t.label} — {STATUS[t.status].label}{t.runningTotal ? ` · ${formatINR(t.runningTotal, 0)}` : ""}</option>)}
+        {tables.map((t) => <option key={t.id} value={t.id}>{t.label} — {STATUS[t.status].label}{t.booking ? ` · ${new Date(t.booking.arrival_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}{t.runningTotal ? ` · ${formatINR(t.runningTotal, 0)}` : ""}</option>)}
       </select>
     </label>
   );
