@@ -21,7 +21,7 @@
 - Keep durable active-order drafts and sync health metadata in IndexedDB; only use cloud sync as a signed-in mirror so checkout and kitchen service remain available offline.
 - Reserve official POS/KOT numbers through the existing member-authorized allocator while connected; consume reservations atomically in IndexedDB, retain their cloud request identity on records, and never renumber them on reconnect or invent a number after reserve exhaustion.
 - Strict POS/KOT series: online devices take the next cloud number; NUMBER_RESERVE_TARGET stays 0. Offline, only the designated counter (counter_print_routes) continues from its last synced sequence; claim_offline_number confirms those in order before push, and a taken number uses the fresh-number fallback.
-- Running bills have an empty billNo; the official POS number is allocated (bill uid as request key) at settlement or first bill print via bill-numbering.ts and stamped on that bill's KOTs, so settled bills run in settlement order. Split parts are numbered when settled. The server guard (docs/migrations/2026-11-07-number-bills-at-settlement.sql) accepts unnumbered held/void bills and refuses settled bills without an allocated number.
+- Running bills stay unnumbered; bill-numbering.ts allocates the POS number at settlement or first print (bill uid as request key), and the server guard refuses settled bills without one.
 - Orders → History has KOTs, Settled (with All/Cash/UPI/Card & other filter), NC (settled with no payment) and Cancelled, each listed on the day it closed; running bills stay in the Running tab. Table reservations and QR order history live in the header Bookings dialog, not in Orders.
 - Guest QR orders get a server QR series (guest_orders.qr_no → QR/0001) until settlement assigns a POS number.
 - Room QR ordering is configured in restaurants.ordering.rooms (room-logic.ts); priority rooms stay on and the server refuses closed rooms.
@@ -49,11 +49,11 @@
 - Snapshot table sections on orders and KOTs so printed history survives floor edits.
 - Record settlement time and receiving device on bills; cash closes bind to durable device identity and never settle hotel room bills implicitly.
 
-- Restaurant record writes go through the versioned `push_restaurant_records` RPC (server-owned `version`, stale-write conflicts, settlement units committed atomically) with automatic fallback to the legacy upsert when the RPC is absent, so builds can ship before the migration is applied.
+- Record writes use the versioned `push_restaurant_records` RPC (stale-write conflicts, atomic settlement units), falling back to legacy upsert when absent.
 - Keep the generated Cloud `.env` (publishable keys only) tracked, never gitignored: published builds read it, and removing it blanks the live site.
 - Redirect empty billing entry in route beforeLoad before mounting cart hooks; preload only core operational screens after sign-in so startup never waits on unused billing or report resources.
 - Reconcile stale occupied floor tiles against closed bills for display only, preserving open bills, device holds and new unsent drafts; never rewrite financial records to repair occupancy.
-- Keep the kitchen screen read-only over indexed local KOTs and existing cloud mirroring; live hotel tickets remain visible across days, settlement summaries use payment timestamps, and invoice dates remain unchanged.
+- Kitchen screen is read-only over local KOTs; settlement summaries use payment time, invoice dates unchanged.
 - Derive floor counts from indexed local floor, accepted bookings and payment-day reads; pending reservations remain in header notifications, allotted guest entries stay nonfinancial until explicit order submission, and KOT presentation stays in Orders.
 - Orders KOT reprints use the shared PrintHost dispatch and existing reprint authorization; never create new tickets or numbers when printing saved history.
 - Carry reservation identity from guest drafts into counter bills; cancellation queues exact-booking cleanup in IndexedDB and masks stale annotations until authorized Cloud status reads back, preserving later reservations and financial history.
