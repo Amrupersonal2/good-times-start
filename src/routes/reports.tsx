@@ -138,7 +138,7 @@ function Overview({ orders, range }: { orders: Order[]; range: Range }) {
   );
 }
 
-function Items({ orders, file }: { orders: Order[]; file: string }) {
+function Items({ orders, file, canExport = true }: { orders: Order[]; file: string; canExport?: boolean }) {
   const menu = useLiveQuery(() => getDb().menu.toArray(), [], []);
   const items = useMemo(() => itemSales(orders, menu), [orders, menu]);
   const categories = categorySales(items);
@@ -146,7 +146,7 @@ function Items({ orders, file }: { orders: Order[]; file: string }) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="card-elevated p-4 lg:col-span-2">
-        <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Items sold</h2>{items.length ? <Button size="sm" variant="ghost" onClick={exportCsv}><Download />CSV</Button> : null}</div>
+        <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Items sold</h2>{items.length && canExport ? <Button size="sm" variant="ghost" onClick={exportCsv}><Download />CSV</Button> : null}</div>
         {items.length ? (
           <table className="w-full text-sm">
             <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-1 font-medium">Item</th><th className="text-right font-medium">Qty</th><th className="text-right font-medium">Sales</th></tr></thead>
@@ -332,9 +332,13 @@ function ReportsPage() {
   // Sales figures are for the owner and managers; a cashier only closes their counter here.
   const full = can(user, "reports.view");
   usePolicy();
+  const pos = !full && (can(user, "counter.close") || can(user, "bill.settle"));
   // Reception sees what Settings → Roles allows: the daily summary and/or the Sales Summary.
   const staffTabs: { v: Tab; l: string }[] = [
     ...(can(user, "reports.summary") ? [{ v: "overview" as const, l: "Overview" }, { v: "summary" as const, l: "Sales Summary" }] : []),
+    // Counter (POS) logins get a read-only view of bills, items and settlement — no exports, no voids.
+    ...(pos && !can(user, "reports.summary") ? [{ v: "overview" as const, l: "Overview" }] : []),
+    ...(pos ? [{ v: "items" as const, l: "Items" }, { v: "bills" as const, l: "Bills" }] : []),
     ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Cash counter" }] : []),
   ];
   const [preset, setPreset] = useState<Preset>("today");
@@ -342,10 +346,10 @@ function ReportsPage() {
   const [chosenTab, setChosenTab] = useState<Tab>(full ? "overview" : staffTabs[0]?.v ?? "close");
   const tab: Tab = full ? chosenTab : staffTabs.some((t) => t.v === chosenTab) ? chosenTab : staffTabs[0]?.v ?? "close";
   const setTab = (t: Tab) => {
-    if ((t === "summary" || t === "overview") && !full) void allow(user, "reports.summary", "Open the Sales Summary").then((ok) => { if (ok) setChosenTab(t); });
+    if ((t === "summary" || (t === "overview" && !pos)) && !full) void allow(user, "reports.summary", "Open the Sales Summary").then((ok) => { if (ok) setChosenTab(t); });
     else setChosenTab(t);
   };
-  const showDates = full || tab === "summary" || tab === "overview";
+  const showDates = full || tab !== "close";
   const range = preset === "custom" ? custom : presetRange(preset);
   const all = useLiveQuery(() => reportOrders(range), [range.from, range.to], []);
   const orders = inRange(all, range);
@@ -356,9 +360,9 @@ function ReportsPage() {
     downloadXlsx(`reports-${file}`, reportsWorkbook(orders, menu, closes, range, restaurant), { title: `${restaurant} reports` });
   };
   const file = `xtsy-pos-${dayKey(range.from)}${dayKey(range.from) === dayKey(range.to) ? "" : `-to-${dayKey(range.to)}`}`;
-  const presets: { v: Preset; l: string }[] = [
+  const presets: { v: Preset; l: string }[] = full || can(user, "reports.summary") ? [
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
-  ];
+  ] : [{ v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }];
   const tabs: { v: Tab; l: string }[] = full ? [
     { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Cash counter" },
   ] : staffTabs;
@@ -369,7 +373,7 @@ function ReportsPage() {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Summary</h1>
-            <p className="text-sm text-muted-foreground">{full ? "Bills from every device in the restaurant that has synced." : "Day-end cash for this counter."}</p>
+            <p className="text-sm text-muted-foreground">{full || pos ? "Bills from every device in the restaurant that has synced." : "Day-end cash for this counter."}</p>
           </div>
           {tab !== "close" && (full || staffTabs.some((t) => t.v === "close")) ? <Button size="sm" onClick={() => setTab("close")}><Wallet />Cash counter</Button> : null}
           {full && can(user, "reports.export") ? <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button> : null}
@@ -387,7 +391,7 @@ function ReportsPage() {
           </div>
         </div>
 
-        {full || can(user, "reports.summary") ? <LiveTotals /> : null}
+        {full || pos || can(user, "reports.summary") ? <LiveTotals /> : null}
         {tabs.length > 1 ? <Segmented ariaLabel="Report" className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} /> : null}
         {tab === "close" ? (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2">
@@ -404,7 +408,7 @@ function ReportsPage() {
 
         {tab === "overview" ? <Overview orders={orders} range={range} /> : null}
         {tab === "summary" ? <SalesSummary orders={orders} range={range} restaurant={restaurant} canExport={full ? can(user, "reports.export") : true} /> : null}
-        {tab === "items" ? <Items orders={orders} file={file} /> : null}
+        {tab === "items" ? <Items orders={orders} file={file} canExport={full ? can(user, "reports.export") : false} /> : null}
         {tab === "gst" ? <Gst orders={orders} file={file} /> : null}
         {tab === "staff" ? <Staff orders={orders} /> : null}
         {tab === "bills" ? <BillsList orders={orders} /> : null}
