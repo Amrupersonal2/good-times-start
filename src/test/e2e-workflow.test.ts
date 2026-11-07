@@ -292,4 +292,23 @@ describe("end-to-end service across counter, waiter and Business Manager", () =>
     await syncAll();
     await expectClean();
   });
+  it("renaming a guest on one counter renames their running bill on every terminal, settled bills keep their name", async () => {
+    const actions = await import("@/lib/customer-actions");
+    await on("counter", async () => {
+      await db.getDb().orders.put(newBill("bill-guest", { customer: { name: "Selva", phone: "9092920000" } }));
+      await db.getDb().orders.put(newBill("bill-old", { status: "settled", billNo: "POS/0001", customer: { name: "Selva", phone: "9092920000" } }));
+      await db.markDirty(["order", "bill-guest"], ["order", "bill-old"]);
+      await db.getDb().customers.put({ id: "9092920000", phone: "9092920000", name: "Selva", createdAt: 1 });
+    });
+    await syncAll();
+    await on("counter", async () => actions.updateCustomer({ ...(await db.getDb().customers.get("9092920000"))!, name: "Selva Karthik" }));
+    await syncNow("counter");
+    await broadcast("order", "bill-guest", "counter");
+    await broadcast("customer", "9092920000", "counter");
+    for (const d of DEVICES) {
+      expect((await localBill(d, "bill-guest"))?.customer?.name).toBe("Selva Karthik");
+      expect((await on(d, () => db.getDb().customers.get("9092920000")))?.name).toBe("Selva Karthik");
+    }
+    expect((await localBill("counter", "bill-old"))?.customer?.name).toBe("Selva");
+  });
 });
