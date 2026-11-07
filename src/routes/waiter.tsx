@@ -7,7 +7,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VegMark } from "@/components/VegMark";
 import { ItemOptions } from "@/components/ItemOptions";
 import { GuestDetailsFields } from "@/components/GuestDetailsFields";
@@ -100,7 +100,7 @@ function WaiterApp() {
           {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>
-      <Dialog open={showBookings} onOpenChange={setShowBookings}><DialogContent aria-label="Guest reservations" className="max-h-screen overflow-y-auto"><ReservationsPanel /></DialogContent></Dialog>
+      <Dialog open={showBookings} onOpenChange={setShowBookings}><DialogContent aria-label="Guest reservations" className="max-h-screen overflow-y-auto"><DialogTitle>Guest arrivals</DialogTitle><ReservationsPanel /></DialogContent></Dialog>
       {printStatus.pending ? <p role="status" className="border-b border-border px-4 py-2 text-sm">{printStatus.pending} print request{printStatus.pending === 1 ? '' : 's'} waiting for the counter{printStatus.error ? ` · ${printStatus.error}` : ''}</p> : null}
 
       <div className="flex min-h-0 flex-1">
