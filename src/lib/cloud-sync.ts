@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { allocateRestaurantNumber } from "@/lib/restaurant-numbering";
+import { allocateRestaurantNumber, allocatedNumberRequestId } from "@/lib/restaurant-numbering";
 import { SyncScheduler } from "./sync-scheduler";
 import type { Json } from "@/integrations/supabase/types";
 import { applyEntryToLevels, getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
@@ -148,12 +148,13 @@ async function renumberStuckKot(row: PushRow, message: string | undefined): Prom
     if (!local || local.id === undefined) return false;
     const submissionId = local.submissionId && /^[0-9a-f-]{36}$/i.test(local.submissionId) ? local.submissionId : crypto.randomUUID();
     const kotNo = await allocateRestaurantNumber("KOT", submissionId);
+    const numberRequestId = await allocatedNumberRequestId("KOT", submissionId);
     const siblings = local.submissionId
       ? await db.kots.filter((k) => k.submissionId === local.submissionId).toArray()
       : [local];
     for (const k of siblings) {
       if (k.id === undefined) continue;
-      await db.kots.put({ ...k, submissionId, numberRequestId: submissionId, kotNo, ...(k.kotNo && k.kotNo !== kotNo ? { printedKotNo: k.printedKotNo ?? k.kotNo } : {}) });
+      await db.kots.put({ ...k, submissionId, numberRequestId, kotNo, ...(k.kotNo && k.kotNo !== kotNo ? { printedKotNo: k.printedKotNo ?? k.kotNo } : {}) });
     }
     await markDirty(...siblings.map((k): [RecordKind, string] => ["kot", k.uid ?? ""]));
     return true;

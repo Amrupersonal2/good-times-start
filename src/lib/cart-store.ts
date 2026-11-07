@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
 import { computeTotals } from "./billing";
 import { getDb, markDirty } from "./db";
-import { allocateRestaurantNumber } from "./restaurant-numbering";
+import { allocateRestaurantNumber, allocatedNumberRequestId } from "./restaurant-numbering";
 import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSettledQuantities, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
@@ -344,7 +344,7 @@ export function useCart(initialTableId?: string) {
     const order: Order = withCustomerId(base
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
-          uid: newOrderUid, billNo: await newBillNumber(newOrderUid), numberRequestId: newOrderUid, orderType, tableId, tableLabel, lines: merged,
+          uid: newOrderUid, billNo: await newBillNumber(newOrderUid), numberRequestId: await allocatedNumberRequestId("POS", newOrderUid), orderType, tableId, tableLabel, lines: merged,
           ...(user?.login === "waiter" ? { source: "waiter" as const } : {}),
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
@@ -364,8 +364,10 @@ export function useCart(initialTableId?: string) {
     const submissionId = typeof existingSubmission === "string" ? existingSubmission : newUid();
     if (typeof existingSubmission !== "string") await db.meta.put({ key: submissionKey, value: submissionId });
     let kotNo: string;
+    let numberRequestId: string;
     try {
       kotNo = await allocateRestaurantNumber("KOT", submissionId);
+      numberRequestId = await allocatedNumberRequestId("KOT", submissionId);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't get a KOT number. Check the internet and try again.");
       return null;
@@ -376,7 +378,7 @@ export function useCart(initialTableId?: string) {
       saved.id = id;
       await db.orders.put(saved);
       const ticket = (kind: "order" | "cancel") => ([station, stationLines]: [string, CartLine[]]): Kot => ({
-        uid: newUid(), submissionId, numberRequestId: submissionId, kotNo, tableSection: saved.tableSection, orderId: id, orderUid, billNo: saved.billNo, station, kind, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
+        uid: newUid(), submissionId, numberRequestId, kotNo, tableSection: saved.tableSection, orderId: id, orderUid, billNo: saved.billNo, station, kind, tableId: saved.tableId, tableLabel: saved.tableLabel ?? tableLabel, orderType,
         lines: stationLines.map((line) => ({ itemId: line.itemId, name: line.name, qty: line.qty, note: line.note })),
         status: "new", createdAt: now,
       });
@@ -472,7 +474,7 @@ export function useCart(initialTableId?: string) {
       ...(latest ?? ({} as Order)),
       uid: newOrderUid,
       billNo: latest?.billNo ?? await newBillNumber(newOrderUid),
-      numberRequestId: latest?.numberRequestId ?? (latest ? undefined : newOrderUid),
+      numberRequestId: latest?.numberRequestId ?? (latest ? undefined : await allocatedNumberRequestId("POS", newOrderUid)),
       orderType, tableId: tableId ?? latest?.tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines: billLines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
       serviceChargePct, serviceCharge: t.serviceCharge, cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
       taxable: t.taxable, tax,
@@ -511,7 +513,7 @@ export function useCart(initialTableId?: string) {
     const label = latest?.tableLabel ?? await tableLabelOf(tableId);
     const partUid = newUid();
     const part: Order = withCustomerId({
-      uid: partUid, billNo: await newBillNumber(partUid), numberRequestId: partUid, orderType, tableId: tableId ?? latest.tableId, tableLabel: label, lines: split,
+      uid: partUid, billNo: await newBillNumber(partUid), numberRequestId: await allocatedNumberRequestId("POS", partUid), orderType, tableId: tableId ?? latest.tableId, tableLabel: label, lines: split,
       subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, serviceChargePct, serviceCharge: t.serviceCharge,
       cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total, payments: settledPayments(payment, t.total),
       taxable: t.taxable, tax,

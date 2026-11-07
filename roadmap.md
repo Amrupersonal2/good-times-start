@@ -1,5 +1,10 @@
 # POS expansion
 
+## Offline official numbering
+- [x] Cache 20 cloud-reserved POS and 20 KOT numbers on operational devices; consume atomically offline and retain original cloud reservation IDs without renumbering printed tickets.
+- [x] Verify retry, exhaustion and concurrent consumption in tests; signed-in preview counter created a Milk Chai KOT offline and a second Kitchen received its unchanged number through an isolated cloud mirror after reconnect. 331 tests and automatic build passed; no production records or sequences changed.
+- [ ] Publish and verify real counter-to-kitchen reconnect: awaits an explicit publish request; physical printing remains unverified. Multi-device chronological gaplessness is not promised because reserved blocks prevent collisions.
+
 ## Kitchen view and settlement dates
 - [x] Add a separate live kitchen screen with grouped station KOTs, cancellation slips and rooms settled on the selected day.
 - [x] Align POS settled history, hourly sales and report date displays/exports with settlement timestamps; retain invoice creation dates.
