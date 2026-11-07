@@ -95,7 +95,7 @@ export interface Order {
   /** Number of guests covered by this bill. */
   guestCount?: number | undefined;
   /** Exact guest arrival linked by explicit Start order. */
-  reservationId?: string;
+  reservationId?: string | undefined;
   /** Guest's phone as the last 10 digits, kept indexed so their visits load quickly. */
   customerId?: string;
   /** Who settled or voided the bill, for the staff report. */
@@ -115,7 +115,7 @@ export interface Order {
 
 export interface CartDraft {
   id: string;
-  reservationId?: string;
+  reservationId?: string | undefined;
   tableId?: string | undefined;
   /** The running bill this draft builds on; a draft for a bill that has since closed is discarded. */
   orderUid?: string | undefined;

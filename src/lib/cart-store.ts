@@ -411,7 +411,7 @@ export function useCart(initialTableId?: string) {
     setLines(merged);
     toast.success(`${kots.length} kitchen ticket${kots.length === 1 ? "" : "s"} sent`);
     return { kots, order: saved };
-  }, [activeOrder, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, serviceChargePct, tableId, taxKey, user?.login]);
+  }, [activeOrder, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, reservationId, serviceChargePct, tableId, taxKey, user?.login]);
 
   const sendKitchen = useCallback(async (): Promise<Kot[]> => (await sendKitchenWithOrder())?.kots ?? [], [sendKitchenWithOrder]);
 
@@ -497,7 +497,7 @@ export function useCart(initialTableId?: string) {
     await finishTable([["order", order.uid ?? ""]]);
     toast.success(`Bill ${order.billNo} settled`);
     return order;
-  }, [checkStillOpen, customer, guestCount, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, sendKitchenWithOrder, serviceChargePct, tableId, taxKey]);
+  }, [checkStillOpen, customer, guestCount, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, reservationId, sendKitchenWithOrder, serviceChargePct, tableId, taxKey]);
 
   /**
    * Settle part of a running bill now (guests paying separately). The chosen

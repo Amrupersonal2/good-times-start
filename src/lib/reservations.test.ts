@@ -50,4 +50,19 @@ describe("guest reservations", () => {
     const row = { arrival_at: "2026-11-07T10:00Z" } as Reservation;
     expect(reservationsForDate([row], Date.parse("2026-11-07T00:00Z"), Date.parse("2026-11-08T00:00Z"))).toEqual([row]);
   });
+  it("clears only the cancelled bill's exact booking, not a later reservation", () => {
+    const rows = [{ id: "current", table_id: "r1", status: "confirmed" }, { id: "later", table_id: "r1", status: "confirmed" }] as Reservation[];
+    const bill = { status: "void", tableId: "r1", reservationId: "current" } as import("./types").Order;
+    expect(cancelledBillBooking(bill, rows)?.id).toBe("current");
+    expect(cancelledBillBooking({ ...bill, source: "qr" }, rows)).toBeUndefined();
+    expect(cancelledBillBooking({ ...bill, status: "held" }, rows)).toBeUndefined();
+  });
+  it("does not infer a booking cancellation from table identity alone", () => {
+    const bill = { status: "void", tableId: "r1", createdAt: 100 } as import("./types").Order;
+    expect(cancelledBillBooking(bill, [{ id: "later", table_id: "r1", status: "confirmed" }] as Reservation[])).toBeUndefined();
+  });
+  it("does not start an expired allotted booking", () => {
+    const row = { id: "expired", table_id: "r1", status: "confirmed", end_at: "2026-11-07T12:00:00Z" } as Reservation;
+    expect(() => reservationDraft(row, undefined, undefined, Date.parse("2026-11-07T12:00:00Z"))).toThrow("has ended");
+  });
 });

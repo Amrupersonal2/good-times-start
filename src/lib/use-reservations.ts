@@ -26,7 +26,7 @@ export function useReservations() {
       running = true;
       try {
         const voids = await getDb().orders.where("status").equals("void").toArray();
-        for (const order of voids) await queueBillBookingCancellation(restaurant, order);
+        for (const order of voids.filter((o) => o.reservationId)) await queueBillBookingCancellation(restaurant, order);
         await flushBookingCancellations(restaurant);
         const result = await supabase.from("guest_reservations").select("id,restaurant_id,table_id,table_label,section,guest_name,guest_phone,party_size,arrival_at,end_at,status,created_at").eq("restaurant_id", restaurant).order("arrival_at").limit(1000);
         if (result.error) throw result.error;
