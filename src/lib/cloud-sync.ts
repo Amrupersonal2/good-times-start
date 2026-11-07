@@ -206,6 +206,8 @@ async function restoreRefused(restaurantId: string, refused: RefusedRow[]): Prom
     if (kind === "order" || kind === "kot") {
       const keep = ids.filter((id) => !found.some((f) => f.record_id === id) && !refused.some((r) => r.record_id === id && r.prelaunch));
       if (keep.length) await holdRecords(kind, keep);
+      // Pre-launch test bills/KOTs are not the restaurant's books: those are still removed.
+      for (const id of ids) if (!keep.includes(id) && !found.some((f) => f.record_id === id)) rows.push({ kind, record_id: id, payload: {} as Json, deleted: true, updated_at: new Date(0).toISOString() });
       continue;
     }
     for (const id of ids) if (!found.some((f) => f.record_id === id)) rows.push({ kind, record_id: id, payload: {} as Json, deleted: true, updated_at: new Date(0).toISOString() });
@@ -531,7 +533,9 @@ async function pull(restaurantId: string): Promise<void> {
   const cursor = typeof stored === "string" && stored ? stored : null;
   let newest = cursor;
   let from = pullStartFrom(cursor);
-  let firstPage = true;
+  // Rows sharing the page-boundary timestamp must not be skipped: re-read from that
+  // timestamp inclusively and ignore the rows already applied at it.
+  let seenAtFrom = new Set<string>();
 
   for (;;) {
     let query = supabase
@@ -540,19 +544,22 @@ async function pull(restaurantId: string): Promise<void> {
       .eq("restaurant_id", restaurantId)
       .order("updated_at", { ascending: true })
       .limit(PULL_PAGE);
-    if (from) query = firstPage ? query.gte("updated_at", from) : query.gt("updated_at", from);
+    if (from) query = query.gte("updated_at", from);
     const { data, error } = await query;
     if (error && error.code === "42703" && versionedServer !== false) { versionedServer = false; continue; } // column not deployed yet
     if (error) throw error;
-    const rows = (data ?? []) as unknown as RemoteRow[];
+    const page = (data ?? []) as unknown as RemoteRow[];
+    const rows = page.filter((r) => !(r.updated_at === from && seenAtFrom.has(`${r.kind}:${r.record_id}`)));
     if (rows.length) {
       await applyRemote(rows);
       const last = rows[rows.length - 1]!.updated_at;
       if (!newest || last > newest) newest = last;
+      const nextSeen = last === from ? seenAtFrom : new Set<string>();
+      for (const r of rows) if (r.updated_at === last) nextSeen.add(`${r.kind}:${r.record_id}`);
+      seenAtFrom = nextSeen;
       from = last;
     }
-    firstPage = false;
-    if (rows.length < PULL_PAGE) break;
+    if (page.length < PULL_PAGE || !rows.length) break;
   }
   if (newest) await db.meta.put({ key: "pullCursor", value: newest });
 }

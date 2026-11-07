@@ -507,6 +507,8 @@ export function useCart(initialTableId?: string) {
     const db = getDb();
     const id = order.id ? await db.orders.put(order) : Number(await db.orders.add(order));
     order.id = id;
+    // Queue the settled bill at once, so a later step failing can never leave it unsynced.
+    await markDirty(["order", order.uid ?? ""]);
     const ticketChanges = await stampKotsWithBillNo(order);
     await applyLocalStockSale(billLines, { orderUid: order.uid ?? "", billNo: order.billNo, by: closedBy });
     await rememberCustomer(order.customer);
