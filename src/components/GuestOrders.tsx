@@ -163,7 +163,7 @@ type View = "requests" | "accepted" | "history";
 
 function GuestOrdersPanel({ orders, onDone }: { orders: GuestOrder[]; onDone: () => void }) {
   const [view, setView] = useState<View>("requests");
-  const staffName = useStaff().user?.name ?? "Counter";
+  const staffName = useStaff().user?.displayName ?? "Counter";
   // A QR order whose bill was cancelled or settled is finished, whatever its stored status.
   const uids = orders.map((o) => o.order_uid).filter((u): u is string => !!u);
   const closed = useLiveQuery(async () => {
