@@ -25,6 +25,7 @@ import { can } from "@/lib/permissions";
 import { allow } from "@/lib/pin-gate";
 import { useAppMode } from "@/lib/app-mode";
 import { thermalDestination } from "@/lib/print-routing";
+import { BillPrintButton } from "./BillPrintButton";
 
 export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" | "bookings" }
 export function OrdersOverview({ onClose, guestContent, guestCount, initialView = "running" }: OrdersOverviewProps) {
@@ -71,6 +72,7 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
     <section aria-label={`Preview ${"tickets" in record ? record.first.kotNo ?? record.first.billNo : record.billNo}`} className="border-t border-border bg-secondary/40 p-3">
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="text-sm font-semibold">{"tickets" in record ? record.first.kotNo ?? record.first.billNo : record.billNo}</span>
+        {!("tickets" in record) ? <BillPrintButton order={record} className="ml-auto" /> : null}
         <Button variant="ghost" size="icon" aria-label="Close details" title="Close details" onClick={() => setDetail(null)}><X className="size-4" /></Button>
       </div>
       <div className="max-w-full overflow-x-auto [scrollbar-gutter:stable]">
@@ -92,7 +94,7 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
     <Segmented className="shrink-0" ariaLabel="Orders view" stretch value={view} onChange={(v) => { setView(v); setDetail(null); }} options={[{ value: "running", label: "Running", badge: running.length }, { value: "bookings", label: "Bookings", badge: active.length }, { value: "history", label: "History" }, { value: "guest", label: "Guest requests", badge: guestCount }]} />
     {view === "bookings" ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"><ReservationsPanel upcoming onOpenOrder={onClose} /></div> : view === "guest" ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">{guestContent}</div> : view === "running" ? <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
       {active.length ? <Button variant="outline" className="mb-3 w-full" onClick={() => setView("bookings")}>{active.length} guest booking{active.length === 1 ? "" : "s"} · View & start order</Button> : null}
-      {running.map((o) => <Button key={o.uid ?? o.billNo} variant="ghost" className="h-16 w-full justify-between gap-3 rounded-none text-left" onClick={() => open(o)}><span className="min-w-0"><span className="block truncate font-bold">{o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.orderType}</span><span className="block truncate text-xs font-normal text-muted-foreground">{o.billNo} · {o.lines.reduce((n, l) => n + l.qty, 0)} items{o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span><span>{formatINR(o.total, 0)}</span></Button>)}
+      {running.map((o) => <div key={o.uid ?? o.billNo} className="flex h-16 items-center gap-2"><Button variant="ghost" className="h-16 min-w-0 flex-1 justify-between gap-3 rounded-none text-left" onClick={() => open(o)}><span className="min-w-0"><span className="block truncate font-bold">{o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.orderType}</span><span className="block truncate text-xs font-normal text-muted-foreground">{o.billNo} · {o.lines.reduce((n, l) => n + l.qty, 0)} items{o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span><span>{formatINR(o.total, 0)}</span></Button><BillPrintButton order={o} className="shrink-0" /></div>)}
       {tables.filter((t) => t.status === "occupied" && !running.some((o) => o.tableId === t.id)).map((t) => <div key={t.id} className="flex justify-between py-3 text-sm"><strong>{t.label}</strong><span>{t.heldBy ?? "Taking order"} · {formatINR(t.runningTotal, 0)}</span></div>)}
       {!running.length && !tables.some((t) => t.status === "occupied") ? <p className="py-8 text-center text-sm text-muted-foreground">No running bills.</p> : null}
     </div> : <>
@@ -116,10 +118,11 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
           }) : datedBills(kind).map((record) => {
             const selected = detail !== null && recordKey(detail) === recordKey(record);
             return <div key={record.uid ?? record.id}>
-              <Button variant="ghost" aria-expanded={selected} className={`h-16 w-full justify-between gap-3 rounded-none text-left ${selected ? "bg-accent" : ""}`} onClick={(event) => selectRecord(record, event.currentTarget)}>
+              <div className="flex h-16 items-center gap-2"><Button variant="ghost" aria-expanded={selected} className={`h-16 min-w-0 flex-1 justify-between gap-3 rounded-none text-left ${selected ? "bg-accent" : ""}`} onClick={(event) => selectRecord(record, event.currentTarget)}>
                 <span className="min-w-0"><span className="block truncate font-semibold">{record.billNo}</span><span className="block truncate text-xs font-normal text-muted-foreground">{record.tableLabel ?? record.tableId ?? "Counter"} · {record.status === "held" ? "Running" : record.status === "void" ? "Cancelled" : "Settled"}</span></span>
                 <span className="flex shrink-0 items-center gap-2"><span className="tabular-nums">{formatINR(record.total, 0)}</span><ChevronDown className={`size-4 ${selected ? "rotate-180" : ""}`} /></span>
               </Button>
+              <BillPrintButton order={record} className="shrink-0" /></div>
               {selected ? preview(record) : null}
             </div>;
           })}

@@ -1,5 +1,8 @@
 # POS expansion
 
+## Guests and nearby printing
+- [ ] Fix guest-detail horizontal clipping and steady scrollable sizing; add authorized nearby print controls on saved bill/KOT surfaces while keeping Business Manager thermal printing blocked.
+
 ## Steady Orders browsing
 - [x] Keep Orders at a stable viewport-constrained height with stationary filters, internally scrolling lists and uniform selection rows. Bill/KOT previews expand immediately below the selected row, with only one preview open. Signed-in checks at 1280×1800, 803×695 and 390×844 verify identical window bounds across selections, 64px rows, inline previews and no overflow/runtime errors; 12 history/print tests and automatic build pass. No production writes or print jobs. Not published.
 

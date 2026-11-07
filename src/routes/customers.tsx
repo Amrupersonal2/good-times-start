@@ -20,6 +20,7 @@ import type { Customer, Order, PaymentMode } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { can } from "@/lib/permissions";
+import { BillPrintButton } from "@/components/BillPrintButton";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({
@@ -68,17 +69,17 @@ function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { custo
   };
 
   return (
-    <div className="space-y-5">
+    <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden overscroll-contain pr-1 [scrollbar-gutter:stable]">
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg border border-border p-2"><div className="text-xs text-muted-foreground">Visits</div><div className="text-lg font-bold">{stats.visits}</div></div>
-        <div className="rounded-lg border border-border p-2"><div className="text-xs text-muted-foreground">Spent</div><div className="text-lg font-bold">{formatINR(stats.spent, 0)}</div></div>
-        <div className="rounded-lg border border-border p-2"><div className="text-xs text-muted-foreground">{loyaltyOn ? "Points" : "Rating"}</div><div className="text-lg font-bold">{loyaltyOn ? stats.points : stats.averageRating ?? "None"}</div></div>
+        <div className="min-w-0 border-b border-border p-2"><div className="text-xs text-muted-foreground">Visits</div><div className="break-words text-lg font-bold">{stats.visits}</div></div>
+        <div className="min-w-0 border-b border-border p-2"><div className="text-xs text-muted-foreground">Spent</div><div className="break-words text-lg font-bold">{formatINR(stats.spent, 0)}</div></div>
+        <div className="min-w-0 border-b border-border p-2"><div className="text-xs text-muted-foreground">{loyaltyOn ? "Points" : "Rating"}</div><div className="break-words text-lg font-bold">{loyaltyOn ? stats.points : stats.averageRating ?? "None"}</div></div>
       </div>
 
       {stats.due > 0 ? (
         <section className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
           <h3 className="text-sm font-semibold">{formatINR(stats.due)} due</h3>
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             <input aria-label="Amount received" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-28 rounded-lg border border-input bg-card px-2 py-2 text-right text-sm" />
             <Dropdown<PaymentMode> ariaLabel="Paid by" className="w-28" value={mode} onChange={setMode}
               options={[{ value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "card", label: "Card" }]} />
@@ -109,10 +110,11 @@ function CustomerDetail({ customer, stats, orders, loyaltyOn, onClose }: { custo
         {visits.length ? (
           <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
             {visits.slice(0, 30).map((o) => (
-              <li key={o.uid ?? o.billNo} className="px-3 py-2 text-sm">
-                <div className="flex justify-between"><span>{new Date(o.createdAt).toLocaleDateString("en-IN")} <span className="text-muted-foreground">{o.billNo}</span></span><span className="font-semibold">{formatINR(o.total, 0)}</span></div>
-                <div className="truncate text-xs text-muted-foreground">{o.lines.map((l) => `${l.qty} ${l.name}`).join(", ")}</div>
+              <li key={o.uid ?? o.billNo} className="flex min-w-0 items-center gap-2 px-3 py-2 text-sm">
+                <div className="min-w-0 flex-1"><div className="flex flex-wrap justify-between gap-x-2"><span>{new Date(o.createdAt).toLocaleDateString("en-IN")} <span className="text-muted-foreground">{o.billNo}</span></span><span className="font-semibold">{formatINR(o.total, 0)}</span></div>
+                <div className="truncate text-xs text-muted-foreground" title={o.lines.map((l) => `${l.qty} ${l.name}`).join(", ")}>{o.lines.map((l) => `${l.qty} ${l.name}`).join(", ")}</div>
                 {o.feedback ? <div className="mt-0.5 text-xs"><span className="font-semibold text-gold-foreground">{o.feedback.rating}/5</span>{o.feedback.comment ? ` "${o.feedback.comment}"` : ""}</div> : null}
+                </div><BillPrintButton order={o} className="shrink-0" />
               </li>
             ))}
           </ul>
@@ -198,9 +200,9 @@ function CustomersPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or phone" className="w-full rounded-lg border border-input bg-card py-2.5 pl-9 pr-3 text-sm" />
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex max-w-full gap-1.5 overflow-x-auto">
             {filters.map((f) => (
-              <button key={f.v} onClick={() => setFilter(f.v)} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${filter === f.v ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{f.l}</button>
+              <Button key={f.v} size="sm" variant={filter === f.v ? "default" : "secondary"} onClick={() => setFilter(f.v)} className="shrink-0">{f.l}</Button>
             ))}
           </div>
         </div>
@@ -217,7 +219,7 @@ function CustomersPage() {
                 <button type="button" onClick={() => setOpenId(customer.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-secondary/60">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{customer.name || "Guest"} <span className="font-normal text-muted-foreground">{formatPhone(customer.id)}</span></div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="truncate text-xs text-muted-foreground">
                       {stats.visits} visit{stats.visits === 1 ? "" : "s"}, {formatINR(stats.spent, 0)} spent
                       {stats.lastVisit ? `, last ${new Date(stats.lastVisit).toLocaleDateString("en-IN")}` : ""}
                     </div>
@@ -235,9 +237,9 @@ function CustomersPage() {
       </div>
 
       <Dialog open={!!open} onOpenChange={(o) => { if (!o) setOpenId(null); }}>
-        <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto">
+        <DialogContent className="flex h-[min(48rem,92dvh)] w-[calc(100%-1rem)] max-w-lg min-w-0 flex-col overflow-hidden p-4 sm:p-6">
           {open ? <>
-            <DialogTitle>{open.customer.name || "Guest"}, {formatPhone(open.customer.id)}</DialogTitle>
+            <DialogTitle className="min-w-0 shrink-0 break-words pr-8"><span className="block">{open.customer.name || "Guest"}</span><span className="mt-1 block text-sm font-normal text-muted-foreground">{formatPhone(open.customer.id)}</span></DialogTitle>
             <CustomerDetail key={open.customer.id} customer={open.customer} stats={open.stats} orders={orders} loyaltyOn={loyaltyPct > 0} onClose={() => setOpenId(null)} />
           </> : null}
         </DialogContent>
