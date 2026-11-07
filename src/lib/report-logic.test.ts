@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categorySales, dailySales, expectedCash, gstByRate, inRange, itemSales, presetRange, salesSummary, seriesOf, staffSales, toCsv } from "./report-logic";
+import { categorySales, dailySales, expectedCash, gstByRate, hourlySales, inRange, itemSales, presetRange, salesSummary, seriesOf, staffSales, toCsv } from "./report-logic";
 import type { CartLine, Order } from "./types";
 
 const line = (name: string, price: number, qty: number, gstRate = 5, itemId = name): CartLine => ({ itemId, name, price, qty, veg: true, gstRate, station: "x" });
@@ -14,6 +14,11 @@ const b = order({ billNo: "INV/26-27/C2/0001", orderType: "takeaway", lines: [li
 const v = order({ status: "void", lines: [line("Naan", 60, 1)], total: 63, closedBy: "Arun" });
 
 describe("reports", () => {
+  it("puts yesterday's room bill into today's settlement hour", () => {
+    const room = order({ createdAt: new Date(2026, 10, 6, 20).getTime(), settledAt: new Date(2026, 10, 7, 11).getTime(), total: 1380 });
+    expect(hourlySales([room])[11]?.net).toBe(1380);
+    expect(hourlySales([room])[20]?.net).toBe(0);
+  });
   it("reports a room bill on its settlement day after a 28-day stay", () => {
     const at = new Date(2026, 10, 6, 12).getTime();
     const room = order({ createdAt: at - 28 * 86400000, settledAt: at, total: 539, payments: [{ mode: "cash", amount: 539 }] });

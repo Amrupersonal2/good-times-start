@@ -20,7 +20,7 @@ describe("internal logins", () => {
     expect(appsFor("billdesk", "cashier")).toEqual(["pos"]);
     expect(appsFor("waiter", "captain")).toEqual(["waiter"]);
     expect(appsFor(null, "owner")).toEqual(["manager", "pos", "waiter"]); // the owner's own account
-    expect(appsFor(null, "kitchen")).toEqual([]);
+    expect(appsFor(null, "kitchen")).toEqual(["pos"]);
   });
 
   it("tells each device apart", () => {

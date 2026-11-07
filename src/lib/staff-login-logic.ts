@@ -48,7 +48,7 @@ export function appsFor(login: LoginId | null, role: string | null | undefined):
   if (login === "billdesk") return ["pos"];
   if (login === "waiter") return ["waiter"];
   if (role === "owner" || role === "manager") return ["manager", "pos", "waiter"];
-  if (role === "cashier") return ["pos"];
+  if (role === "cashier" || role === "kitchen") return ["pos"];
   if (role === "captain") return ["waiter"];
   return [];
 }

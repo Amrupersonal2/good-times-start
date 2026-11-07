@@ -1,5 +1,10 @@
 # POS expansion
 
+## Kitchen view and settlement dates
+- [x] Add a separate live kitchen screen with grouped station KOTs, cancellation slips and rooms settled on the selected day.
+- [x] Align POS settled history, hourly sales and report date displays/exports with settlement timestamps; retain invoice creation dates.
+- [x] Verify signed-in Reception kitchen/history views on desktop and tablet with production writes blocked; 37 targeted tests and automatic build passed. Kitchen-role device sign-in remains unverified; publishing not requested.
+
 ## November 7 startup and deep release audit
 - [x] Repair the reproducible blank homepage without changing restaurant data; verified signed-out and signed-in entry.
 - [x] Run existing unit/sync/printing checks: 317 tests across 58 files, typecheck and automatic build passed; release gaps recorded in docs/DEEP_RELEASE_AUDIT_2026-11-07.md.

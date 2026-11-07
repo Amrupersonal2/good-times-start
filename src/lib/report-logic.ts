@@ -2,6 +2,11 @@ import type { MenuItem, Order, PaymentMode } from "./types";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
+/** Financial summaries use payment day; legacy records keep their known creation date. */
+export function summaryAt(order: Pick<Order, "status" | "settledAt" | "createdAt">): number {
+  return order.status === "settled" ? order.settledAt ?? order.createdAt : order.createdAt;
+}
+
 export interface Range { from: number; to: number }
 
 /** Start of the local day for a timestamp. */
@@ -181,7 +186,10 @@ export function dailySales(orders: Order[], range: Range): { day: string; net: n
 
 export function hourlySales(orders: Order[]): { hour: number; net: number }[] {
   const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, net: 0 }));
-  for (const o of orders.filter((x) => x.status === "settled")) hours[new Date(o.createdAt).getHours()]!.net = r2(hours[new Date(o.createdAt).getHours()]!.net + o.total);
+  for (const o of orders.filter((x) => x.status === "settled")) {
+    const bucket = hours[new Date(summaryAt(o)).getHours()];
+    if (bucket) bucket.net = r2(bucket.net + o.total);
+  }
   return hours;
 }
 

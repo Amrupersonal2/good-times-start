@@ -13,4 +13,13 @@ describe("Orders history", () => {
     expect(start).toBe(new Date(2026, 10, 6).getTime());
     expect(end).toBe(new Date(2026, 10, 7).getTime());
   });
+  it("lists a Room 7A bill opened yesterday under today's settlements only", () => {
+    const today = dayBounds("2026-11-07");
+    const yesterday = dayBounds("2026-11-06");
+    const room = { uid: "7a", total: 1380, status: "settled", createdAt: yesterday[0] + 1000, settledAt: today[0] + 1000 } as Order;
+    expect(historyBills([room], "settled", today)).toEqual([room]);
+    expect(historyBills([room], "settled", yesterday)).toEqual([]);
+    expect(historyBills([room], "bills", yesterday)).toEqual([room]);
+    expect(historyBills([room], "bills", today)).toEqual([]);
+  });
 });

@@ -7,8 +7,12 @@ export function dayBounds(date: string): [number, number] {
   end.setDate(end.getDate() + 1);
   return [start.getTime(), end.getTime()];
 }
-export function historyBills(orders: Order[], kind: HistoryKind): Order[] {
-  return orders.filter((o) => kind === "settled" ? o.status === "settled" : kind === "cancelled" ? o.status === "void" : true);
+export function historyBills(orders: Order[], kind: HistoryKind, bounds?: [number, number]): Order[] {
+  return orders.filter((o) => {
+    if (kind === "settled" ? o.status !== "settled" : kind === "cancelled" ? o.status !== "void" : false) return false;
+    const at = kind === "settled" ? o.settledAt ?? o.createdAt : o.createdAt;
+    return !bounds || at >= bounds[0] && at < bounds[1];
+  });
 }
 export function dateLabel(offset = 0): string {
   const d = new Date(); d.setDate(d.getDate() + offset);
