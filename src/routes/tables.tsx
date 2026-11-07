@@ -285,7 +285,7 @@ function TablesPage() {
         {sections.filter((sec) => visibleTables.some((t) => t.section === sec)).map((sec) => (
           <section key={sec} className="mb-7">
             <h2 className="mb-3 text-base font-bold">{sec}</h2>
-            <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
+            <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
               {groupTables(visibleTables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))).map((g) => g.length > 1 && !editing ? (
                 <TableGroup key={g[0]?.id} tables={g} onPick={(t) => (canBill ? openBill(t) : setSelected(t))} />
               ) : g.map((t) => (
@@ -293,9 +293,9 @@ function TablesPage() {
                 <button type="button" aria-label={`Table ${t.label}${t.status === "free" ? "" : `, ${STATUS[t.status].label}`}`}
                   onClick={() => (editing ? setForm(t) : canBill ? openBill(t) : setSelected(t))}
                   className={`relative flex h-full min-h-40 w-full flex-col items-center justify-center rounded-lg border-2 p-3 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
-                  <span className={`${t.label.length > 4 ? "text-base leading-tight sm:text-lg" : "text-2xl"} max-w-full break-words font-extrabold`}>{t.label}</span>
+                  <span className="max-w-full break-words text-base font-extrabold leading-snug">{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
-                  {t.settledAt !== undefined ? <span className="text-xs font-semibold text-success">Settled · {new Date(t.settledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span> : null}
+                  {t.settledAt !== undefined ? <span className="mt-1 text-xs font-semibold leading-relaxed text-success">Settled · <span className="inline-block whitespace-nowrap">{new Date(t.settledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span></span> : null}
                   {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
                     <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
                   ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Booked</span> : null}
@@ -365,8 +365,8 @@ function TableGroup<T extends RestaurantTable & { runningTotal: number; booking?
   const total = busy.reduce((n, t) => n + t.runningTotal, 0);
   return (
     <label className={`relative flex h-full min-h-40 min-w-0 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-3 text-center hover:border-primary focus-within:ring-2 focus-within:ring-ring ${STATUS[top.status].cls}`}>
-      <span className="max-w-full break-words text-base font-extrabold leading-tight sm:text-lg">{first}–{last.slice(-1)}</span>
-      <span className="text-xs text-muted-foreground">{busy.length}/{tables.length} busy{total ? ` · ${formatINR(total, 0)}` : ""}</span>
+      <span className="max-w-full break-words text-base font-extrabold leading-snug">{first}–{last.slice(-1)}</span>
+      <span className="text-xs leading-relaxed text-muted-foreground">{busy.length}/{tables.length} busy{total ? <span className="inline-block whitespace-nowrap"> · {formatINR(total, 0)}</span> : null}</span>
       {tables.some((t) => t.booking) ? <span className="text-xs font-semibold text-primary">{tables.filter((t) => t.booking).length} booked</span> : null}
       <span className="mt-1 text-[11px] font-semibold text-primary">Choose table ▾</span>
       <select aria-label={`Choose a table from ${first} to ${last}`} value=""
