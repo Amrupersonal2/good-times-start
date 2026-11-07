@@ -200,7 +200,7 @@ export function getDb(): RestroDB {
 
 /* ---------- change tracking ---------- */
 
-const listeners = new Set<() => void>();
+const listeners = new Set<(kinds: RecordKind[]) => void>();
 let tick = 0;
 
 /** Subscribe to local edits that need syncing. Returns an unsubscribe function. */
