@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/Dropdown";
 import { Receipt } from "@/components/Receipt";
-import { printBill } from "@/components/PrintHost";
+import { BillPrintButton } from "./BillPrintButton";
 import { formatINR } from "@/lib/billing";
 import { useStaff } from "@/lib/auth-context";
 import { allow } from "@/lib/pin-gate";
@@ -110,7 +110,7 @@ export function SalesSummary({ orders, range, restaurant, canExport }: { orders:
                 const off = o.status !== "settled";
                 return (
                   <tr key={o.uid ?? o.billNo} className={cn("hover:bg-secondary/40", off && "text-muted-foreground")}>
-                    <td className={td}><button type="button" onClick={() => setOpen(o)} className="font-semibold text-primary hover:underline">{o.billNo}</button></td>
+                    <td className={td}><div className="flex items-center gap-2"><Button variant="link" size="sm" onClick={() => setOpen(o)}>{o.billNo}</Button><BillPrintButton order={o} action="bill.reprintOld" /></div></td>
                     <td className={td}>{new Date(summaryAt(o)).toLocaleString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
                     <td className={td}>{ORDER_TYPE_LABELS[o.orderType]}</td>
                     <td className={td}>{o.customer?.name ?? "—"}</td>
@@ -143,7 +143,7 @@ export function SalesSummary({ orders, range, restaurant, canExport }: { orders:
             <DialogTitle>Bill {open.billNo}</DialogTitle>
             {open.status === "void" && open.voidReason ? <p className="-mt-2 text-sm text-destructive">Cancelled: {open.voidReason}{open.closedBy ? `, by ${open.closedBy}` : ""}</p> : null}
             <Receipt order={open} />
-            <Button onClick={() => void allow(user, "bill.reprintOld", `Reprint bill ${open.billNo}`).then((ok) => { if (ok) void printBill(open); })}><Printer />Reprint</Button>
+            <BillPrintButton order={open} action="bill.reprintOld" size="default">Reprint</BillPrintButton>
           </> : null}
         </DialogContent>
       </Dialog>
