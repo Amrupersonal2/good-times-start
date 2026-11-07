@@ -24,7 +24,7 @@ import { APPS, APP_LINKS, accessProblem, appsFor, type AppKind } from "@/lib/sta
 import { isTestBrowser } from "@/lib/test-browser";
 import { SyncConflictAlert } from "@/components/SyncConflictAlert";
 import { toast } from "sonner";
-import { applyAppUpdate, checkForAppUpdate } from "@/lib/app-update";
+import { applyAppUpdate, checkForAppUpdate, currentBuildId } from "@/lib/app-update";
 import { broadcastSyncAll } from "@/lib/terminal-signal";
 import { AppUpdateWatcher } from "./AppUpdateWatcher";
 
@@ -177,6 +177,8 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
     await navigate({ to: "/auth", replace: true });
   };
 
+  const [buildId, setBuildId] = useState("");
+  useEffect(() => { if (open) setBuildId(currentBuildId()); }, [open]);
   const tone = !online || snapshot.error ? "border-gold/60 bg-gold/15 text-gold-foreground" : "border-border bg-card text-foreground";
   const label = !online ? "Offline" : snapshot.error ? "Sync needs attention" : pending ? `${pending} to sync` : !staff ? "This device only" : live === "reconnecting" ? "Reconnecting…" : live === "live" ? "Live" : "Synced";
 
