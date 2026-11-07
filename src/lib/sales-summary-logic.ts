@@ -3,7 +3,7 @@
  * sheet, like a back-office sales report. Pure, tested.
  */
 import type { Order, PaymentMode } from "./types";
-import { paymentLabel, seriesOf } from "./report-logic";
+import { paymentLabel, seriesOf, summaryAt } from "./report-logic";
 import type { Column, CellValue, SheetSpec } from "./xlsx";
 
 export interface SummaryFilters {
@@ -36,7 +36,7 @@ export function filterBills(orders: Order[], f: SummaryFilters): Order[] {
       if (f.payment === "split" ? modes.size < 2 : !modes.has(f.payment)) return false;
     }
     return true;
-  }).sort((a, b) => b.createdAt - a.createdAt);
+  }).sort((a, b) => summaryAt(b) - summaryAt(a));
 }
 
 export interface SummaryTotals { sales: number; orders: number; discount: number; charges: number; tax: number; foodSale: number; cancelled: number; cancelledValue: number }
@@ -79,7 +79,7 @@ export function summarySheet(bills: Order[], opts: SummaryOptions, restaurant: s
     const counts = o.status === "settled";
     const money = (n: number) => (counts ? n : 0);
     return [
-      o.billNo, new Date(o.createdAt), ORDER_TYPE_LABELS[o.orderType], o.customer?.name ?? "", o.customer?.phone ?? "",
+      o.billNo, new Date(summaryAt(o)), ORDER_TYPE_LABELS[o.orderType], o.customer?.name ?? "", o.customer?.phone ?? "",
       o.tableLabel ?? "", STATUS_LABELS[o.status], paymentOf(o),
       money(o.subtotal), money(o.serviceCharge ?? 0), money(o.discountAmt), o.discountPct / 100,
       ...(opts.tax ? [money(o.cgst), money(o.sgst)] : []),

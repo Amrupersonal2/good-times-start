@@ -1,4 +1,4 @@
-import { categorySales, gstByRate, itemSales, paymentLabel, salesSummary, staffSales, untaxedSales, type Range } from "./report-logic";
+import { summaryAt, categorySales, gstByRate, itemSales, paymentLabel, salesSummary, staffSales, untaxedSales, type Range } from "./report-logic";
 import type { Customer, DayClose, MenuItem, Order } from "./types";
 import type { CustomerStats } from "./customer-logic";
 import type { SheetSpec } from "./xlsx";
@@ -17,7 +17,7 @@ export function reportsWorkbook(orders: Order[], menu: MenuItem[], closes: DayCl
   const when = rangeLabel(range);
   const s = salesSummary(orders);
   const untaxed = untaxedSales(orders);
-  const sorted = [...orders].sort((a, b) => a.createdAt - b.createdAt);
+  const sorted = [...orders].sort((a, b) => summaryAt(a) - summaryAt(b));
   const items = itemSales(orders, menu);
 
   return [
@@ -45,7 +45,7 @@ export function reportsWorkbook(orders: Order[], menu: MenuItem[], closes: DayCl
       rows: sorted.map((o) => {
         const counts = o.status === "settled";
         return [
-          o.billNo, o.createdAt, ORDER_TYPE[o.orderType] ?? o.orderType, o.tableLabel ?? o.tableId ?? "", STATUS[o.status],
+          o.billNo, summaryAt(o), ORDER_TYPE[o.orderType] ?? o.orderType, o.tableLabel ?? o.tableId ?? "", STATUS[o.status],
           o.customer?.name ?? "", o.customer?.phone ?? "", o.customer?.gstin ?? "",
           counts ? o.subtotal : 0, counts ? o.discountAmt : 0, counts ? o.serviceCharge ?? 0 : 0,
           counts ? o.taxable ?? r2(o.subtotal - o.discountAmt) : 0, counts ? o.cgst : 0, counts ? o.sgst : 0, counts ? o.roundOff : 0, counts ? o.total : 0,
@@ -57,7 +57,7 @@ export function reportsWorkbook(orders: Order[], menu: MenuItem[], closes: DayCl
     {
       name: "Bill items", title: "Items on every settled bill", subtitle: when, totals: true,
       columns: [{ header: "Bill", width: 16 }, { header: "Date", format: "datetime" }, { header: "Dish", width: 40 }, { header: "Qty", format: "int", total: true }, { header: "Price", format: "inr" }, { header: "Amount", format: "inr", total: true }, { header: "GST %", format: "int" }, { header: "Station" }, { header: "Note", width: 20 }],
-      rows: sorted.filter((o) => o.status === "settled").flatMap((o) => o.lines.map((l) => [o.billNo, o.createdAt, l.name, l.qty, l.price, r2(l.price * l.qty), l.gstRate, l.station, l.note ?? ""])),
+      rows: sorted.filter((o) => o.status === "settled").flatMap((o) => o.lines.map((l) => [o.billNo, summaryAt(o), l.name, l.qty, l.price, r2(l.price * l.qty), l.gstRate, l.station, l.note ?? ""])),
     },
     {
       name: "Dishes", title: "Dishes sold", subtitle: `${when}. Sales after discount, before GST.`, totals: true,
