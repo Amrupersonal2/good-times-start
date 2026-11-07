@@ -14,10 +14,15 @@ import { usePrintConfig } from "@/lib/print-config";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import { kotSubmissions, type KotSubmission } from "@/lib/kot-history";
 import type { Order, Kot } from "@/lib/types";
+import { ReservationsPanel } from "./ReservationsPanel";
+import { useReservations } from "@/lib/use-reservations";
+import { activeReservations } from "@/lib/reservations";
 
-export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" }
+export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" | "bookings" }
 export function OrdersOverview({ onClose, guestContent, guestCount, initialView = "running" }: OrdersOverviewProps) {
-  const [view, setView] = useState<"running" | "history" | "guest">(initialView);
+  const [view, setView] = useState<"running" | "history" | "guest" | "bookings">(initialView);
+  const bookings = useReservations();
+  const active = activeReservations(bookings.rows, Date.now());
   const [kind, setKind] = useState<HistoryKind>("bills");
   const [period, setPeriod] = useState("today");
   const [custom, setCustom] = useState(dateLabel());
@@ -34,8 +39,9 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
   const open = (order: Order) => { onClose(); void navigate({ to: "/", search: order.tableId && order.source !== "qr" ? { table: order.tableId } : { bill: order.uid ?? "" } }); };
   return <div className="space-y-4">
     <DialogTitle>Orders</DialogTitle>
-    <Segmented ariaLabel="Orders view" stretch value={view} onChange={(v) => { setView(v); setDetail(null); }} options={[{ value: "running", label: "Running", badge: running.length }, { value: "history", label: "History" }, { value: "guest", label: "Guest requests", badge: guestCount }]} />
-    {view === "guest" ? guestContent : view === "running" ? <div className="divide-y divide-border">
+    <Segmented ariaLabel="Orders view" stretch value={view} onChange={(v) => { setView(v); setDetail(null); }} options={[{ value: "running", label: "Running", badge: running.length }, { value: "bookings", label: "Bookings", badge: active.length }, { value: "history", label: "History" }, { value: "guest", label: "Guest requests", badge: guestCount }]} />
+    {view === "bookings" ? <ReservationsPanel upcoming onOpenOrder={onClose} /> : view === "guest" ? guestContent : view === "running" ? <div className="divide-y divide-border">
+      {active.length ? <Button variant="outline" className="mb-3 w-full" onClick={() => setView("bookings")}>{active.length} guest booking{active.length === 1 ? "" : "s"} · View & start order</Button> : null}
       {running.map((o) => <Button key={o.uid ?? o.billNo} variant="ghost" className="h-auto w-full justify-between gap-3 rounded-none py-3 text-left" onClick={() => open(o)}><span className="min-w-0"><span className="block font-bold">{o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.orderType}</span><span className="block text-xs font-normal text-muted-foreground">{o.billNo} · {o.lines.reduce((n, l) => n + l.qty, 0)} items{o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span><span>{formatINR(o.total, 0)}</span></Button>)}
       {tables.filter((t) => t.status === "occupied" && !running.some((o) => o.tableId === t.id)).map((t) => <div key={t.id} className="flex justify-between py-3 text-sm"><strong>{t.label}</strong><span>{t.heldBy ?? "Taking order"} · {formatINR(t.runningTotal, 0)}</span></div>)}
       {!running.length && !tables.some((t) => t.status === "occupied") ? <p className="py-8 text-center text-sm text-muted-foreground">No running bills.</p> : null}
