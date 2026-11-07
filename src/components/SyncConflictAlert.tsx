@@ -38,11 +38,18 @@ export function SyncConflictAlert() {
         <div key={c.key} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-background/70 p-2">
           <div className="min-w-0">
             <p className="font-medium text-foreground">{c.label}</p>
-            <p className="text-xs text-muted-foreground">{c.reasons.join(" · ")}. Your copy is kept on this device.</p>
+            {c.remote?.deleted
+              // A bill removed in the cloud can't be brought back (the cloud refuses), so only offer to clear it here.
+              ? <p className="text-xs text-muted-foreground">This bill was removed for every terminal. This device still has an old copy.</p>
+              : <p className="text-xs text-muted-foreground">{c.reasons.join(" · ")}. Your copy is kept on this device.</p>}
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" disabled={busy === c.key} onClick={() => void decide(c.key, "cloud")}>Use latest copy</Button>
-            <Button size="sm" disabled={busy === c.key} onClick={() => void decide(c.key, "mine")}>Keep my changes</Button>
+            {c.remote?.deleted
+              ? <Button size="sm" disabled={busy === c.key} onClick={() => void decide(c.key, "cloud")}>Remove from this device</Button>
+              : <>
+                <Button size="sm" variant="outline" disabled={busy === c.key} onClick={() => void decide(c.key, "cloud")}>Use latest copy</Button>
+                <Button size="sm" disabled={busy === c.key} onClick={() => void decide(c.key, "mine")}>Keep my changes</Button>
+              </>}
           </div>
         </div>
       ))}

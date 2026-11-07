@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   broadcastSyncAll, channelName, CHECK_APP_UPDATE_EVENT, handleSyncAll, REMOTE_SYNC_EVENT,
-  setSignalTransport, shouldAnnounceUpdate,
+  setSignalTransport, shouldAnnounceUpdate, shouldHandleSignal, SIGNAL_MIN_GAP_MS,
 } from "./terminal-signal";
 
 afterEach(() => setSignalTransport(null));
@@ -38,5 +38,11 @@ describe("terminal sync signal", () => {
     expect(send).toHaveBeenCalledWith(expect.objectContaining({ reason: "manual" }));
     setSignalTransport({ send: () => Promise.reject(new Error("socket down")) });
     expect(await broadcastSyncAll("update")).toBe(false);
+  });
+
+  it("ignores a flood of signals: at most one every few seconds", () => {
+    expect(shouldHandleSignal(0, 10_000)).toBe(true);
+    expect(shouldHandleSignal(10_000, 10_000 + SIGNAL_MIN_GAP_MS - 1)).toBe(false);
+    expect(shouldHandleSignal(10_000, 10_000 + SIGNAL_MIN_GAP_MS)).toBe(true);
   });
 });

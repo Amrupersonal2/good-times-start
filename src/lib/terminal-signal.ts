@@ -33,6 +33,13 @@ export function handleSyncAll(onSync: () => void, target: Pick<EventTarget, "dis
   target.dispatchEvent(new CustomEvent(REMOTE_SYNC_EVENT));
 }
 
+/** Signals closer together than this are ignored: a flood (the channel is open to anyone holding the
+ * public key and restaurant id) can't make terminals sync or re-check without pause. Real taps are seconds apart. */
+export const SIGNAL_MIN_GAP_MS = 3_000;
+export function shouldHandleSignal(lastHandledAt: number, now: number): boolean {
+  return now - lastHandledAt >= SIGNAL_MIN_GAP_MS;
+}
+
 /** Only a terminal that found the update itself tells the others, so the signal never echoes around. */
 export function shouldAnnounceUpdate(detail: unknown): boolean {
   return !(typeof detail === "object" && detail !== null && (detail as { remote?: unknown }).remote === true);
@@ -57,7 +64,13 @@ export function setSignalTransport(next: SignalTransport | null): void {
 /** Join the restaurant's terminal channel. Returns a stop function. */
 export function startTerminalSignals(restaurantId: string, onSync: () => void): () => void {
   const channel = supabase.channel(channelName(restaurantId), { config: { broadcast: { self: false } } });
-  channel.on("broadcast", { event: SYNC_ALL_EVENT }, () => handleSyncAll(onSync));
+  let lastHandled = 0;
+  channel.on("broadcast", { event: SYNC_ALL_EVENT }, () => {
+    const now = Date.now();
+    if (!shouldHandleSignal(lastHandled, now)) return;
+    lastHandled = now;
+    handleSyncAll(onSync);
+  });
   channel.subscribe();
   const mine: SignalTransport = {
     send: (payload) => channel.send({ type: "broadcast", event: SYNC_ALL_EVENT, payload }),

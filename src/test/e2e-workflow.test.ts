@@ -272,4 +272,24 @@ describe("end-to-end service across counter, waiter and Business Manager", () =>
     await syncAll();
     await expectClean();
   });
+
+  it("a terminal still editing a bill deleted in the cloud is told so and can clear it; the bill never comes back", async () => {
+    await on("counter", () => saveBill(newBill("bill-stale", { tableId: "D2", tableLabel: "D2", lines: [dish("tea", 1, 40)], customer: { name: "Z", phone: "9000000007" }, guestCount: 1 })));
+    await syncNow("counter");
+    await syncNow("waiter");
+    const row = serverRow("order", "bill-stale")!;
+    server.fakeServer.rows.set(`${R}|order|bill-stale`, { ...row, deleted: true, version: (row.version ?? 1) + 1, updated_at: new Date(server.fakeServer.now += 1000).toISOString() });
+    // The waiter, not yet synced, edits its old copy and pushes.
+    await on("waiter", async () => { const b = await localBill("waiter", "bill-stale"); await saveBill({ ...b!, guestCount: 2 }); });
+    await syncNow("waiter");
+    expect(serverRow("order", "bill-stale")!.deleted).toBe(true);
+    const [c] = await on("waiter", () => sync.listSyncConflicts());
+    expect(c?.remote?.deleted).toBe(true);
+    await on("waiter", () => sync.resolveSyncConflict(c!.key, "cloud"));
+    expect(await localBill("waiter", "bill-stale")).toBeUndefined();
+    await syncNow("waiter");
+    expect(serverRow("order", "bill-stale")!.deleted).toBe(true);
+    await syncAll();
+    await expectClean();
+  });
 });

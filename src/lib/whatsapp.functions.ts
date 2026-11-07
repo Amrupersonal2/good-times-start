@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { sendTemplate, whatsappKeys } from "./whatsapp/cloud-api.server";
+import { rejectOversizedLists } from "./input-limits";
 
 /* Automatic WhatsApp sending. Every call checks, on the server, that the
    signed-in person may do it; the browser never sees the WhatsApp keys. */
@@ -37,7 +38,7 @@ const campaignInput = z.object({
 /** Send one batch of a campaign (the screen sends 25 at a time and shows progress). */
 export const sendWhatsappCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => campaignInput.parse(input))
+  .inputValidator((input) => campaignInput.parse(rejectOversizedLists(input, { params: 5, recipients: 25 })))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
     if (!isAdminRole(await roleIn(ctx, data.restaurantId))) throw new Error("Only the owner or a manager can send campaigns.");
