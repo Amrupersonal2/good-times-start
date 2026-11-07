@@ -1,5 +1,8 @@
 # POS expansion
 
+## Steady Orders browsing
+- [x] Keep Orders at a stable viewport-constrained height with stationary filters, internally scrolling lists and uniform selection rows. Bill/KOT previews expand immediately below the selected row, with only one preview open. Signed-in checks at 1280×1800, 803×695 and 390×844 verify identical window bounds across selections, 64px rows, inline previews and no overflow/runtime errors; 12 history/print tests and automatic build pass. No production writes or print jobs. Not published.
+
 ## Financial sync and NC bills
 - [x] Repair queued legacy zero-payment settlements durably without losing bill identities or real payments; retain mismatched bills for retry and acknowledge unrelated successful atomic uploads. Explicit Close NC bill records an empty payment array. Isolated signed-in browser verifies original-bill retry, real Cash ₹60 retention, failed-bill queue preservation, itemised Orders history and NC closure after saved KOT; 39 targeted tests and automatic build pass. No production writes. Counter-local backlog repair runs on its next sync after publishing; actual device history readback remains unverified until then.
 
