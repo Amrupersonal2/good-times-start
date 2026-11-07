@@ -43,15 +43,16 @@ async function findUserId(email: string): Promise<string | null> {
  * email), and belong to the restaurant with their roles. Never changes an
  * existing account's password. Safe to call any number of times.
  */
-export async function ensureLogins(): Promise<{ created: number }> {
+export async function ensureLogins(callerId: string): Promise<{ created: number }> {
   const all = await rows();
   if (all.length !== 3) throw new Error("The database needs updating first (migration 0010).");
-  let restaurantId = all.find((r) => r.restaurant_id)?.restaurant_id ?? null;
-  if (!restaurantId) {
-    const { data } = await admin().from("restaurants").select("id").order("created_at").limit(1).maybeSingle();
-    restaurantId = (data as { id: string } | null)?.id ?? null;
-  }
-  if (!restaurantId) throw new Error("There's no restaurant yet. Create TAB Bistro first.");
+  // Only restaurants where the caller is owner or manager can receive the logins.
+  const { data: mine } = await admin().from("restaurant_members").select("restaurant_id, role").eq("user_id", callerId).in("role", ["owner", "manager"]);
+  const allowed = new Set(((mine ?? []) as { restaurant_id: string }[]).map((m) => m.restaurant_id));
+  const linked = all.find((r) => r.restaurant_id)?.restaurant_id ?? null;
+  if (linked && !allowed.has(linked)) throw new Error("Only this restaurant's admin can set up its logins.");
+  const restaurantId = linked ?? (allowed.size === 1 ? [...allowed][0]! : null);
+  if (!restaurantId) throw new Error(allowed.size ? "You manage more than one restaurant; contact XTSY support to link the logins." : "Only the admin can set up logins.");
 
   let created = 0;
   for (const r of all) {
