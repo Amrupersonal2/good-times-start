@@ -1,5 +1,12 @@
 # POS expansion
 
+## November 7 startup and deep release audit
+- [ ] Repair the reproducible blank homepage without changing restaurant data; verify signed-out and signed-in entry.
+- [ ] Run existing unit/sync/printing checks and record evidence-backed release gaps.
+- [ ] Implement the audit's Windows browser print-dialog fallback without enabling peer printing.
+- [ ] Publish the loading repair and verify the live homepage and retained bill read-only.
+- [ ] Native Android packages and physical printing validation: blocked by signing credentials, device/printer access, and native packaging outside the supported web stack.
+
 ## Wireless waiter printing
 - [x] Queue explicit waiter KOT/bill requests for a designated connected POS device; preserve offline requests and avoid peer printing.
 - [x] Remove Business Manager tables and thermal-printer access while preserving report printing.
