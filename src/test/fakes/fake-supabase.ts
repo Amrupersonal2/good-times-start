@@ -37,7 +37,14 @@ export const fakeServer = {
   payments: new Map<string, { mode: string; amount: number }>(),
   /** Called before each row of a push is applied; tests use it to inject a concurrent write. */
   beforeRow: null as null | ((row: { kind: string; record_id: string }) => void),
+  /** Like allocate_restaurant_number: one shared POS/KOT series, idempotent per request id. Off unless a test turns it on. */
+  allocator: false,
+  sequences: new Map<string, number>(),
+  allocations: new Map<string, number>(),
   reset() {
+    this.allocator = false;
+    this.sequences.clear();
+    this.allocations.clear();
     this.versioned = false;
     this.kotLedger.clear();
     this.payments.clear();
@@ -204,6 +211,19 @@ export const supabase = {
   async removeChannel() { return "ok"; },
   async rpc(name?: string, args?: { _restaurant_id: string; _units: { rows: (InRow & { base_version: number | null })[] }[] }) {
     if (name === "claim_offline_number" && fakeServer.claimFails) return { data: null, error: { code: "P0001", message: "claim service unavailable" } };
+    if (name === "allocate_restaurant_number" && fakeServer.allocator) {
+      if (fakeServer.offline) return { data: null, error: offlineError };
+      const a = args as unknown as { _restaurant_id: string; _series: string; _request_id: string };
+      const key = `${a._restaurant_id}|${a._series}|${a._request_id}`;
+      let n = fakeServer.allocations.get(key);
+      if (n === undefined) {
+        const seqKey = `${a._restaurant_id}|${a._series}`;
+        n = (fakeServer.sequences.get(seqKey) ?? 0) + 1;
+        fakeServer.sequences.set(seqKey, n);
+        fakeServer.allocations.set(key, n);
+      }
+      return { data: `${a._series}/${String(n).padStart(4, "0")}`, error: null };
+    }
     if (name !== "push_restaurant_records") return { data: null, error: null };
     fakeServer.requests.rpc = (fakeServer.requests.rpc ?? 0) + 1;
     if (fakeServer.offline) return { data: null, error: offlineError };
