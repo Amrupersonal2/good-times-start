@@ -1,6 +1,7 @@
 # POS expansion
 
 ## Booking cancellation audit
+- [ ] Show last restaurant-cancelled order instead of a stale settled label; permit token-scoped guest order cancellation only within one minute of placement.
 - [ ] Audit public QR guest requests and POS/admin controls without production writes.
 - [ ] Clear only the cancelled bill's linked booking from the floor and preserve unrelated future bookings; test offline and guest-status behavior.
 
