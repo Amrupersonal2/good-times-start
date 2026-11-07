@@ -243,8 +243,10 @@ function TablesPage() {
                 <Button key={t.v} variant="outline" asChild><Link to="/" search={{ type: t.v }}><Plus />{t.l}</Link></Button>
               ))}
               <Button variant="outline" onClick={openQrRequests}><QrCode />QR Scan & Order</Button>
+            </div>
+            <div className="mt-3 grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {counterBills.map((o) => (
-                <Button key={o.uid ?? o.billNo} variant="outline" className="h-auto min-h-12 max-w-full border-primary/40 bg-primary-tint py-2 text-left" asChild>
+                <Button key={o.uid ?? o.billNo} variant="outline" className="grid h-full min-h-16 w-full grid-cols-[auto_minmax(0,1fr)_auto] justify-start border-primary/40 bg-primary-tint py-2 text-left" asChild>
                   <Link to="/" search={{ bill: o.uid ?? "" }} title={`Running bill ${o.billNo}`}>
                     <ShoppingBag className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{o.tableId ? `${o.tableSection ?? tables.find((t) => t.id === o.tableId)?.section ?? ""} · ${o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.tableId}` : o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? "Counter"}</span><span className="block text-xs text-muted-foreground">{o.guestCodes?.[0] ?? o.billNo.split("/").pop()}{o.tableId && o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span>
                     <span className="shrink-0 font-bold">{formatINR(o.total, 0)}</span>
@@ -252,7 +254,7 @@ function TablesPage() {
                 </Button>
               ))}
               {tables.filter((t) => t.booking && !counterBills.some((o) => o.tableId === t.id)).map((t) => (
-                <Button key={`allotted-${t.id}`} variant="outline" className="h-auto min-h-12 max-w-full border-gold bg-gold/15 py-2 text-left" onClick={() => void openBill(t)}>
+                <Button key={`allotted-${t.id}`} variant="outline" className="grid h-full min-h-16 w-full grid-cols-[auto_minmax(0,1fr)] justify-start border-gold bg-gold/15 py-2 text-left" onClick={() => void openBill(t)}>
                   <Users className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{t.section} · {t.label}</span><span className="block text-xs">{t.booking?.guest_name} · Table allotted</span></span>
                 </Button>
               ))}
@@ -283,14 +285,14 @@ function TablesPage() {
         {sections.filter((sec) => visibleTables.some((t) => t.section === sec)).map((sec) => (
           <section key={sec} className="mb-7">
             <h2 className="mb-3 text-base font-bold">{sec}</h2>
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
+            <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
               {groupTables(visibleTables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))).map((g) => g.length > 1 && !editing ? (
                 <TableGroup key={g[0]?.id} tables={g} onPick={(t) => (canBill ? openBill(t) : setSelected(t))} />
               ) : g.map((t) => (
-                <div key={t.id} className="relative">
+                <div key={t.id} className="relative h-full min-w-0">
                 <button type="button" aria-label={`Table ${t.label}${t.status === "free" ? "" : `, ${STATUS[t.status].label}`}`}
                   onClick={() => (editing ? setForm(t) : canBill ? openBill(t) : setSelected(t))}
-                  className={`relative flex min-h-32 w-full flex-col items-center justify-center rounded-lg border-2 p-3 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
+                  className={`relative flex h-full min-h-40 w-full flex-col items-center justify-center rounded-lg border-2 p-3 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
                   <span className={`${t.label.length > 4 ? "text-base leading-tight sm:text-lg" : "text-2xl"} max-w-full break-words font-extrabold`}>{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
                   {t.settledAt !== undefined ? <span className="text-xs font-semibold text-success">Settled · {new Date(t.settledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span> : null}
@@ -362,8 +364,8 @@ function TableGroup<T extends RestaurantTable & { runningTotal: number; booking?
   const busy = tables.filter((t) => t.status === "occupied" || t.status === "billed");
   const total = busy.reduce((n, t) => n + t.runningTotal, 0);
   return (
-    <label className={`relative flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 p-2 text-center hover:border-primary ${STATUS[top.status].cls}`}>
-      <span className="text-lg font-extrabold leading-tight">{first}–{last.slice(-1)}</span>
+    <label className={`relative flex h-full min-h-40 min-w-0 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-3 text-center hover:border-primary focus-within:ring-2 focus-within:ring-ring ${STATUS[top.status].cls}`}>
+      <span className="max-w-full break-words text-base font-extrabold leading-tight sm:text-lg">{first}–{last.slice(-1)}</span>
       <span className="text-xs text-muted-foreground">{busy.length}/{tables.length} busy{total ? ` · ${formatINR(total, 0)}` : ""}</span>
       {tables.some((t) => t.booking) ? <span className="text-xs font-semibold text-primary">{tables.filter((t) => t.booking).length} booked</span> : null}
       <span className="mt-1 text-[11px] font-semibold text-primary">Choose table ▾</span>
