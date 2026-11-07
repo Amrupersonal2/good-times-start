@@ -58,3 +58,4 @@
 - Orders KOT reprints use the shared PrintHost dispatch and existing reprint authorization; never create new tickets or numbers when printing saved history.
 - Carry reservation identity from guest drafts into counter bills; cancellation queues exact-booking cleanup in IndexedDB and masks stale annotations until authorized Cloud status reads back, preserving later reservations and financial history.
 - Enforce guest self-cancellation deadlines in the token-scoped database RPC and mirror the deadline in guest controls; kitchen-accepted orders remain staff-managed to avoid orphaning financial/KOT records.
+- Offline numbering: only the designated counter device (counter_print_routes) continues POS/KOT from its last synced sequence; numbers are claimed in order via claim_offline_number before push, and a taken number falls back to the existing fresh-number path keeping the printed number. Why: owner chose strict series with one offline counter.
