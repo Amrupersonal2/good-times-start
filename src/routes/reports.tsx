@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect, type FormEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
-import { Download, Printer, Search } from "lucide-react";
+import { Download, Printer, Search, Wallet } from "lucide-react";
+import { LiveTotals } from "@/components/LiveTotals";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { AppShell, useRestaurantSettings } from "@/components/AppShell";
 import { gstr1Workbook } from "@/lib/gstr1";
@@ -40,8 +41,8 @@ import { reportOrders } from "@/lib/report-orders";
 export const Route = createFileRoute("/reports")({
   head: () => ({
     meta: [
-      { title: "Reports — XTSY POS" },
-      { name: "description", content: "Sales, items, GST, staff and day-end cash for any period, with CSV export." }, { property: "og:title", content: "Reports — XTSY POS" }, { property: "og:description", content: "Sales, items, GST, staff and day-end cash for any period, with CSV export." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
+      { title: "Summary — XTSY POS" },
+      { name: "description", content: "Sales, items, GST, staff and day-end cash for any period, with CSV export." }, { property: "og:title", content: "Summary — XTSY POS" }, { property: "og:description", content: "Sales, items, GST, staff and day-end cash for any period, with CSV export." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: ReportsPage,
 });
@@ -333,18 +334,18 @@ function ReportsPage() {
   usePolicy();
   // Reception sees what Settings → Roles allows: the daily summary and/or the Sales Summary.
   const staffTabs: { v: Tab; l: string }[] = [
+    ...(can(user, "reports.summary") ? [{ v: "overview" as const, l: "Overview" }, { v: "summary" as const, l: "Sales Summary" }] : []),
     ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Cash Counter" }] : []),
-    ...(can(user, "reports.summary") ? [{ v: "summary" as const, l: "Sales Summary" }] : []),
   ];
   const [preset, setPreset] = useState<Preset>("today");
   const [custom, setCustom] = useState<Range>(() => presetRange("7d"));
   const [chosenTab, setChosenTab] = useState<Tab>(full ? "overview" : staffTabs[0]?.v ?? "close");
   const tab: Tab = full ? chosenTab : staffTabs.some((t) => t.v === chosenTab) ? chosenTab : staffTabs[0]?.v ?? "close";
   const setTab = (t: Tab) => {
-    if (t === "summary" && !full) void allow(user, "reports.summary", "Open the Sales Summary").then((ok) => { if (ok) setChosenTab(t); });
+    if ((t === "summary" || t === "overview") && !full) void allow(user, "reports.summary", "Open the Sales Summary").then((ok) => { if (ok) setChosenTab(t); });
     else setChosenTab(t);
   };
-  const showDates = full || tab === "summary";
+  const showDates = full || tab === "summary" || tab === "overview";
   const range = preset === "custom" ? custom : presetRange(preset);
   const all = useLiveQuery(() => reportOrders(range), [range.from, range.to], []);
   const orders = inRange(all, range);
@@ -367,9 +368,10 @@ function ReportsPage() {
       <div className="p-4 lg:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{full ? "Reports" : tab === "summary" ? "Sales Summary" : "Cash Counter"}</h1>
-            <p className="text-sm text-muted-foreground">{full || tab === "summary" ? "Bills from every device in the restaurant that has synced." : "Count the cash drawer and close your counter."}</p>
+            <h1 className="text-2xl font-bold">{tab === "close" ? "Cash Counter" : "Summary"}</h1>
+            <p className="text-sm text-muted-foreground">{tab !== "close" ? "Bills from every device in the restaurant that has synced." : "Count the cash drawer and close your counter."}</p>
           </div>
+          {tab !== "close" && (full || staffTabs.some((t) => t.v === "close")) ? <Button size="sm" onClick={() => setTab("close")}><Wallet />Cash counter</Button> : null}
           {full && can(user, "reports.export") ? <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button> : null}
           <div className={`flex flex-wrap items-center gap-1.5 ${showDates ? "" : "hidden"}`}>
             {presets.map((p) => (
@@ -385,6 +387,7 @@ function ReportsPage() {
           </div>
         </div>
 
+        {tab !== "close" && (full || can(user, "reports.summary")) ? <LiveTotals /> : null}
         {tabs.length > 1 ? <Segmented ariaLabel="Report" className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} /> : null}
 
         {tab === "overview" ? <Overview orders={orders} range={range} /> : null}
