@@ -393,6 +393,7 @@ export function useCart(initialTableId?: string) {
         ...Array.from(kotGroups(pendingCancelLines), ticket("cancel")),
       ];
       await db.kots.bulkAdd(kots);
+      if (allCancelled && user?.restaurantId) await queueBillBookingCancellation(user.restaurantId, saved);
       await db.meta.delete(submissionKey);
       if (!base) await db.meta.delete(pendingOrderKey);
     });
@@ -411,7 +412,7 @@ export function useCart(initialTableId?: string) {
     setLines(merged);
     toast.success(`${kots.length} kitchen ticket${kots.length === 1 ? "" : "s"} sent`);
     return { kots, order: saved };
-  }, [activeOrder, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, reservationId, serviceChargePct, tableId, taxKey, user?.login]);
+  }, [activeOrder, customer, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, reservationId, serviceChargePct, tableId, taxKey, user?.login, user?.restaurantId]);
 
   const sendKitchen = useCallback(async (): Promise<Kot[]> => (await sendKitchenWithOrder())?.kots ?? [], [sendKitchenWithOrder]);
 
@@ -569,8 +570,12 @@ export function useCart(initialTableId?: string) {
     const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : null;
     const changes: [RecordKind, string][] = [];
     if (latest?.id !== undefined && latest.status === "held") {
-      if (user?.restaurantId) await queueBillBookingCancellation(user.restaurantId, { ...latest, status: "void" });
-      await getDb().orders.update(latest.id, { status: "void", voidReason: reason, synced: false, ...(closedBy ? { closedBy } : {}) });
+      const db = getDb();
+      const id = latest.id;
+      await db.transaction("rw", db.orders, db.meta, async () => {
+        await db.orders.update(id, { status: "void", voidReason: reason, synced: false, ...(closedBy ? { closedBy } : {}) });
+        if (user?.restaurantId) await queueBillBookingCancellation(user.restaurantId, { ...latest, status: "void" });
+      });
       if (latest.uid) changes.push(["order", latest.uid]);
     }
     await finishTable(changes);
