@@ -25,6 +25,7 @@ import {
   type RecordKind,
 } from "@/lib/sync-core";
 import type { InventoryItem, Kot, Order } from "@/lib/types";
+import { repairedSettlementPayments } from "./payment-logic";
 import {
   baseKey,
   buildUnits,
@@ -207,6 +208,16 @@ async function push(restaurantId: string): Promise<void> {
 
     const rows: PushRow[] = [];
     for (const entry of entries) {
+      // Older counters saved NC/empty split tenders as amount=0. Persist the safe
+      // repair locally before retrying the original bill and atomic settlement unit.
+      if (entry.kind === "order") {
+        await db.transaction("rw", db.orders, async () => {
+          const order = await db.orders.where("uid").equals(entry.recordId).first();
+          if (!order || order.id === undefined) return;
+          const payments = repairedSettlementPayments(order);
+          if (payments) await db.orders.update(order.id, { payments, synced: false });
+        });
+      }
       const local = await readLocal(entry.kind, entry.recordId);
       if (entry.kind === "settings" && local === undefined) continue;
       rows.push({
@@ -272,6 +283,7 @@ async function pushVersioned(restaurantId: string, entries: OutboxEntry[], rows:
   const refused: RefusedRow[] = [];
   const conflicts = await readConflicts();
   let progressed = false;
+  let validationError: Error | undefined;
 
   for (const result of results) {
     if (!isKind(result.kind)) continue;
@@ -293,7 +305,12 @@ async function pushVersioned(restaurantId: string, entries: OutboxEntry[], rows:
       case "rolled_back":
         break; // stays queued; retried with its unit
       case "error":
-        if (!isRefusal(result)) throw Object.assign(new Error(result.message ?? "Sync failed"), { code: result.code });
+        if (!isRefusal(result)) {
+          // The server already committed unrelated units. A bad bill must remain
+          // queued, but must not prevent acknowledging those successful uploads.
+          validationError ??= Object.assign(new Error(result.message ?? "Sync failed"), { code: result.code });
+          break;
+        }
         if (sent && await renumberStuckKot(sent, result.message)) { done.add(key); break; }
         if (sent) refused.push(/made before launch/i.test(result.message ?? "") ? { ...sent, prelaunch: true } : sent);
         done.add(key);
@@ -332,6 +349,7 @@ async function pushVersioned(restaurantId: string, entries: OutboxEntry[], rows:
     }
   });
   if (refused.length) await restoreRefused(restaurantId, refused);
+  if (validationError) throw validationError;
   return done.size || progressed ? "done" : "stalled";
 }
 

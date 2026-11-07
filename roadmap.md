@@ -1,5 +1,8 @@
 # POS expansion
 
+## Financial sync and NC bills
+- [ ] Repair queued legacy zero-payment settlements without losing financial history, preserve failed bills for retry, acknowledge successful unrelated uploads, and provide explicit NC closure; verify isolated sync-to-history and zero-payment closure without production test writes.
+
 ## Booking cancellation audit
 - [x] Show latest restaurant cancellation instead of an earlier settlement, distinguish zero-total closures without payment, and enforce a token-scoped 60-second guest cancellation deadline through an applied migration. Accepted kitchen orders remain staff-managed.
 - [x] Audit public QR guest requests and POS/admin controls without production record writes: token-scoped status, safe public occupancy, separate QR bills and admin ordering switches verified in source; restrict staff QR mutations to floor roles and add stale-status checks. Physical scans, all role sign-ins and real guest cancellation remain unverified.
