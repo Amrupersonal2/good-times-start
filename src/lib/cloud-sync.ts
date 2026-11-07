@@ -206,6 +206,8 @@ async function restoreRefused(restaurantId: string, refused: RefusedRow[]): Prom
     if (kind === "order" || kind === "kot") {
       const keep = ids.filter((id) => !found.some((f) => f.record_id === id) && !refused.some((r) => r.record_id === id && r.prelaunch));
       if (keep.length) await holdRecords(kind, keep);
+      // Pre-launch test bills/KOTs are not the restaurant's books: those are still removed.
+      for (const id of ids) if (!keep.includes(id) && !found.some((f) => f.record_id === id)) rows.push({ kind, record_id: id, payload: {} as Json, deleted: true, updated_at: new Date(0).toISOString() });
       continue;
     }
     for (const id of ids) if (!found.some((f) => f.record_id === id)) rows.push({ kind, record_id: id, payload: {} as Json, deleted: true, updated_at: new Date(0).toISOString() });
