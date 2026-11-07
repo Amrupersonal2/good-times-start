@@ -19,9 +19,11 @@ export type FloorTable = RestaurantTable & { qrTotal?: number; qrBill?: string }
  * status record missed an update (a device that went offline mid-change, an old copy);
  * a table with only a QR bill is taken too. The QR bill is shown alongside, never mixed in.
  */
-export function withOpenBills(tables: RestaurantTable[], held: Order[]): FloorTable[] {
+export function withOpenBills(tables: RestaurantTable[], held: Order[], closed: Order[] = [], draftTableIds: string[] = []): FloorTable[] {
   const staff = new Map<string, Order>();
   const qr = new Map<string, Order>();
+  const closedTables = new Set(closed.filter((o) => o.status === "settled" || o.status === "void").map((o) => o.tableId));
+  const drafts = new Set(draftTableIds);
   for (const o of held) {
     if (o.status !== "held" || !o.tableId || !o.lines.length) continue;
     const into = o.source === "qr" ? qr : staff;
@@ -33,6 +35,11 @@ export function withOpenBills(tables: RestaurantTable[], held: Order[]): FloorTa
     const qrBill = qr.get(t.id);
     let next: FloorTable = t;
     const busy = t.status === "occupied" || t.status === "billed";
+    // Old table mirrors can arrive after settlement. Correct only the displayed floor,
+    // never financial history, and preserve new unsent orders and open room bills.
+    if (busy && !bill && !qrBill && closedTables.has(t.id) && !t.heldDevice && !drafts.has(t.id)) {
+      next = { ...t, status: "free", runningTotal: 0, since: undefined };
+    }
     if (bill && !busy) next = { ...t, status: "occupied", runningTotal: bill.total, since: bill.createdAt };
     else if (qrBill && !busy) next = { ...t, status: "occupied", runningTotal: 0, since: qrBill.createdAt };
     return qrBill ? { ...next, qrTotal: qrBill.total, ...(qrBill.uid ? { qrBill: qrBill.uid } : {}) } : next;

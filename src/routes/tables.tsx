@@ -157,7 +157,17 @@ function TableActions({ table, tables, onDone }: { table: RestaurantTable; table
 
 function TablesPage() {
   const navigate = useNavigate();
-  const tables = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
+  const tables = useLiveQuery(async () => {
+    const db = getDb();
+    const [floor, held, closed, drafts] = await Promise.all([
+      db.restTables.toArray(),
+      db.orders.where("status").equals("held").toArray(),
+      db.orders.where("status").anyOf("settled", "void").toArray(),
+      db.drafts.toArray(),
+    ]);
+    const newDraftTables = drafts.filter((d) => !d.orderUid && d.lines.length && d.tableId).map((d) => d.tableId).filter((id): id is string => !!id);
+    return withOpenBills(floor, held, closed, newDraftTables);
+  }, [], []);
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
   const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
     .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
