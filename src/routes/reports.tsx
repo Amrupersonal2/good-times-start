@@ -23,7 +23,7 @@ import { isAdmin, useStaff } from "@/lib/auth-context";
 import { voidSettledBill } from "@/lib/bill-actions";
 import {
   categorySales, dailySales, untaxedSales, dayKey, expectedCash, gstByRate, hourlySales, inRange, itemSales, paymentLabel,
-  presetRange, salesSummary, seriesOf, staffSales, toCsv, type Range,
+  presetRange, salesSummary, summaryAt, seriesOf, staffSales, toCsv, type Range,
 } from "@/lib/report-logic";
 import type { DayClose, Order } from "@/lib/types";
 import { Dropdown } from "@/components/Dropdown";
@@ -164,11 +164,11 @@ function Items({ orders, file }: { orders: Order[]; file: string }) {
 function Gst({ orders, file }: { orders: Order[]; file: string }) {
   const rows = gstByRate(orders);
   const total = rows.reduce((t, r) => ({ taxable: t.taxable + r.taxable, cgst: t.cgst + r.cgst, sgst: t.sgst + r.sgst }), { taxable: 0, cgst: 0, sgst: 0 });
-  const settled = orders.filter((o) => o.status === "settled").sort((a, b) => a.createdAt - b.createdAt);
+  const settled = orders.filter((o) => o.status === "settled").sort((a, b) => summaryAt(a) - summaryAt(b));
   const exportBills = () => download(`${file}-bills.csv`, toCsv([
     ["Bill", "Date", "Time", "Type", "Table", "Guest phone", "Subtotal", "Discount", "Service charge", "Taxable", "CGST", "SGST", "Round off", "Total", "Payments", "Status", "Void reason", "By"],
-    ...[...orders].sort((a, b) => a.createdAt - b.createdAt).map((o) => [
-      o.billNo, new Date(o.createdAt).toLocaleDateString("en-IN"), new Date(o.createdAt).toLocaleTimeString("en-IN"), ORDER_TYPE_LABEL[o.orderType] ?? o.orderType,
+    ...[...orders].sort((a, b) => summaryAt(a) - summaryAt(b)).map((o) => [
+      o.billNo, new Date(summaryAt(o)).toLocaleDateString("en-IN"), new Date(summaryAt(o)).toLocaleTimeString("en-IN"), ORDER_TYPE_LABEL[o.orderType] ?? o.orderType,
       o.tableLabel ?? o.tableId ?? "", o.customer?.phone ?? "", o.subtotal, o.discountAmt, o.serviceCharge ?? 0, Math.round((o.subtotal - o.discountAmt + (o.serviceCharge ?? 0)) * 100) / 100,
       o.cgst, o.sgst, o.roundOff, o.total, o.payments.map((p) => `${paymentLabel(p.mode)} ${p.amount}`).join("; "), o.status, o.voidReason ?? "", o.closedBy ?? "",
     ]),
@@ -410,7 +410,7 @@ function BillsList({ orders }: { orders: Order[] }) {
   const [voiding, setVoiding] = useState(false);
   const term = q.trim().toLowerCase();
   const shown = [...orders]
-    .sort((a, b) => b.createdAt - a.createdAt)
+    .sort((a, b) => summaryAt(b) - summaryAt(a))
     .filter((o) => !term || o.billNo.toLowerCase().includes(term) || (o.customer?.phone ?? "").includes(term) || (o.tableLabel ?? o.tableId ?? "").toLowerCase() === term);
   const live = open ? orders.find((o) => o.uid === open.uid) ?? open : null;
 
@@ -439,7 +439,7 @@ function BillsList({ orders }: { orders: Order[] }) {
           {shown.map((o) => (
             <li key={o.uid ?? o.billNo}>
               <button type="button" onClick={() => setOpen(o)} className="flex w-full items-center gap-3 py-2.5 text-left text-sm hover:bg-secondary/60">
-                <span className="w-16 shrink-0 text-muted-foreground">{new Date(o.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                <span className="w-16 shrink-0 text-muted-foreground">{new Date(summaryAt(o)).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
                 <span className="min-w-0 flex-1 truncate font-medium">{o.billNo}<span className="ml-2 font-normal text-muted-foreground">{o.tableLabel ?? o.tableId ?? o.orderType}</span></span>
                 <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${o.status === "void" ? "bg-destructive/10 text-destructive" : o.status === "held" ? "bg-gold/25 text-gold-foreground" : "bg-secondary text-muted-foreground"}`}>{STATUS_LABEL[o.status]}</span>
                 <span className={`w-20 text-right font-semibold ${o.status === "void" ? "text-muted-foreground line-through" : ""}`}>{formatINR(o.total, 0)}</span>

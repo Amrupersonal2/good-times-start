@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
+import { ChefHat, ClipboardList, LayoutGrid, BarChart3, UtensilsCrossed, Settings, Package, Users, Tablet, Wifi, WifiOff, RefreshCw, AlertTriangle, Sparkles, LogIn, LogOut, Store, ShieldCheck, LayoutDashboard, PanelLeftClose, PanelLeftOpen, ArrowRightLeft } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const NAV = [
   { to: "/", label: "Bill", icon: ClipboardList },
   { to: "/tables", label: "Tables", icon: LayoutGrid },
   { to: "/menu", label: "Menu", icon: UtensilsCrossed },
+  { to: "/kitchen", label: "Kitchen", icon: ChefHat },
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
   { to: "/reports", label: "Cash Counter", icon: BarChart3 },
@@ -43,7 +44,7 @@ type NavPath = (typeof NAV)[number]["to"];
 const ROLE_SCREENS: Record<string, NavPath[]> = {
   owner: NAV.map((n) => n.to),
   manager: NAV.map((n) => n.to),
-  kitchen: ["/stock", "/settings"],
+  kitchen: ["/kitchen", "/stock", "/settings"],
   captain: ["/waiter", "/", "/tables", "/menu", "/settings"],
   cashier: ["/", "/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings"],
 };
@@ -61,7 +62,7 @@ function policyAllows(role: string, to: NavPath): boolean {
 /** Screens each app shows, in menu order. */
 const APP_SCREENS: Record<AppKind, NavPath[]> = {
   manager: ["/dashboard", "/menu", "/stock", "/customers", "/reports", "/marketing", "/settings"],
-  pos: ["/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/settings"],
+  pos: ["/tables", "/customers", "/menu", "/stock", "/reports", "/dashboard", "/kitchen", "/settings"],
   waiter: ["/waiter"],
 };
 
@@ -69,6 +70,7 @@ export function screensFor(role: string | undefined, app: AppKind = "manager"): 
   // Signed out, or signed in without a restaurant yet: no screens.
   if (!role || role === "unknown") return [];
   const allowed = ROLE_SCREENS[role] ?? [];
+  if (role === "kitchen") return ["/kitchen", "/stock", "/settings"];
   return APP_SCREENS[app].filter((to) => allowed.includes(to) && policyAllows(role, to));
 }
 
@@ -238,7 +240,7 @@ const FrameContext = createContext<((tone: Tone) => void) | null>(null);
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /** Staff screens that share the persistent frame (sidebar, header, orders bell). */
-const FRAMED = ["/", "/dashboard", "/marketing", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings", "/setup"];
+const FRAMED = ["/", "/dashboard", "/marketing", "/tables", "/menu", "/stock", "/customers", "/reports", "/kitchen", "/settings", "/setup"];
 export function isFramedPath(pathname: string): boolean {
   return FRAMED.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`)));
 }

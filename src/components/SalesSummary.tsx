@@ -8,7 +8,7 @@ import { printBill } from "@/components/PrintHost";
 import { formatINR } from "@/lib/billing";
 import { useStaff } from "@/lib/auth-context";
 import { allow } from "@/lib/pin-gate";
-import { paymentLabel, seriesOf, type Range } from "@/lib/report-logic";
+import { paymentLabel, seriesOf, summaryAt, type Range } from "@/lib/report-logic";
 import { rangeLabel } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import {
@@ -111,7 +111,7 @@ export function SalesSummary({ orders, range, restaurant, canExport }: { orders:
                 return (
                   <tr key={o.uid ?? o.billNo} className={cn("hover:bg-secondary/40", off && "text-muted-foreground")}>
                     <td className={td}><button type="button" onClick={() => setOpen(o)} className="font-semibold text-primary hover:underline">{o.billNo}</button></td>
-                    <td className={td}>{new Date(o.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
+                    <td className={td}>{new Date(summaryAt(o)).toLocaleString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
                     <td className={td}>{ORDER_TYPE_LABELS[o.orderType]}</td>
                     <td className={td}>{o.customer?.name ?? "—"}</td>
                     <td className={td}>{o.customer?.phone ?? "—"}</td>
