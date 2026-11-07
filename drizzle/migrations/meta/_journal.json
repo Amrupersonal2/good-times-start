@@ -183,6 +183,13 @@
       "when": 1794066116083,
       "tag": "0025_counter_offline_numbering",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794076507364,
+      "tag": "0026_guard_loyalty_point_adjustments",
+      "breakpoints": true
     }
   ]
 }
