@@ -41,5 +41,15 @@ export function reservationDraft(r: Reservation, existing: CartDraft | undefined
   if (!["confirmed", "arrived"].includes(r.status)) throw new Error("Confirm this booking before starting an order.");
   if (running) throw new Error("This table already has a running bill. Open it from Tables before starting another guest's order.");
   if (existing?.lines.length && (existing.customer?.phone !== r.guest_phone || existing.customer?.name !== r.guest_name)) throw new Error("This table has unsent items for another guest. Review its current order first.");
-  return { ...(existing ?? { id: r.table_id, tableId: r.table_id, lines: [], discountPct: 0 }), customer: { name: r.guest_name, phone: r.guest_phone }, guestCount: r.party_size, updatedAt: now };
+  if (r.end_at && Date.parse(r.end_at) <= now) throw new Error("This reservation has ended. Review the current booking before starting an order.");
+  return { ...(existing ?? { id: r.table_id, tableId: r.table_id, lines: [], discountPct: 0 }), reservationId: r.id, customer: { name: r.guest_name, phone: r.guest_phone }, guestCount: r.party_size, updatedAt: now };
+}
+
+/** Legacy bills require a unique guest/time match; table identity alone never cancels a later booking. */
+export function cancelledBillBooking(order: Order, rows: Reservation[]): Reservation | undefined {
+  if (order.status !== "void" || !order.tableId || order.source === "qr") return undefined;
+  const candidates = rows.filter((r) => r.table_id === order.tableId && ["confirmed", "arrived"].includes(r.status));
+  if (order.reservationId) return candidates.find((r) => r.id === order.reservationId);
+  const matches = candidates.filter((r) => Boolean(order.customer?.phone && order.customer?.name) && r.guest_phone === order.customer?.phone && r.guest_name === order.customer?.name && order.createdAt >= Date.parse(r.created_at) && order.createdAt < Date.parse(r.end_at));
+  return matches.length === 1 ? matches[0] : undefined;
 }

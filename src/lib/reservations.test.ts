@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookingInputError, bookingUrl, overlaps, reservationsForDate, withReservations, reservationDraft, newBookingRequests, type Reservation } from "./reservations";
+import { bookingInputError, bookingUrl, overlaps, reservationsForDate, withReservations, reservationDraft, newBookingRequests, cancelledBillBooking, type Reservation } from "./reservations";
 describe("guest reservations", () => {
   it("shows confirmed bookings before arrival without freeing running bills", () => {
     const at = Date.parse("2026-11-07T11:00Z");
@@ -20,7 +20,7 @@ describe("guest reservations", () => {
   });
   it("hands confirmed guest identity to a local order draft without numbered records", () => {
     const row = { table_id: "r1", status: "confirmed", guest_name: "Guest One", guest_phone: "9000000000", party_size: 2 } as Reservation;
-    expect(reservationDraft(row, undefined, undefined, 123)).toEqual({ id: "r1", tableId: "r1", lines: [], discountPct: 0, customer: { name: "Guest One", phone: "9000000000" }, guestCount: 2, updatedAt: 123 });
+    expect(reservationDraft(row, undefined, undefined, 123)).toEqual({ id: "r1", tableId: "r1", reservationId: row.id, lines: [], discountPct: 0, customer: { name: "Guest One", phone: "9000000000" }, guestCount: 2, updatedAt: 123 });
   });
   it("never overwrites another guest's unsent draft", () => {
     const row = { table_id: "r1", status: "confirmed", guest_name: "Guest One", guest_phone: "9000000000", party_size: 2 } as Reservation;

@@ -20,6 +20,7 @@ import type { TaxOptions } from "./billing";
 import { useStaff } from "./auth-context";
 import { getDeviceId } from "./terminal-actions";
 import { heldTable, holdByOther, withoutHold, type HeldBy } from "./table-hold";
+import { queueBillBookingCancellation } from "./booking-cancellation";
 
 function kotGroups(lines: CartLine[]) {
   const groups = new Map<string, CartLine[]>();
@@ -64,6 +65,7 @@ export function useCart(initialTableId?: string) {
   const [serviceChargePct, setServiceChargePct] = useState(0);
   const [customer, setCustomer] = useState<{ name?: string; phone?: string; gstin?: string }>({});
   const [guestCount, setGuestCount] = useState<number | undefined>();
+  const [reservationId, setReservationId] = useState<string | undefined>();
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [submittedOverride, setSubmittedOverride] = useState<{ orderUid: string; quantities: Record<string, number> } | null>(null);
   const storedKots = useLiveQuery(async () => activeOrder?.id === undefined ? [] : kotsForOrder(activeOrder.id, activeOrder.uid), [activeOrder?.id, activeOrder?.uid], [] as Kot[]);
@@ -108,6 +110,7 @@ export function useCart(initialTableId?: string) {
     setServiceChargePct(openOrder?.serviceChargePct ?? 0);
     setCustomer(draft?.customer ?? openOrder?.customer ?? {});
     setGuestCount(draft?.guestCount ?? openOrder?.guestCount);
+    setReservationId(draft?.reservationId ?? openOrder?.reservationId);
     setActiveOrder(openOrder);
     if (id) setOrderType("dine-in");
     setDraftReady(true);
@@ -118,7 +121,7 @@ export function useCart(initialTableId?: string) {
   useEffect(() => {
     if (!draftReady) return;
     const timeout = window.setTimeout(() => {
-      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, baseLines: activeOrder?.lines ?? [], lines, discountPct, customer, guestCount, updatedAt: Date.now() });
+      void getDb().drafts.put({ id: tableId ?? "walkin", tableId, reservationId, orderUid: activeOrder?.uid, sentQty: activeOrder?.kotSubmittedQty, baseLines: activeOrder?.lines ?? [], lines, discountPct, customer, guestCount, updatedAt: Date.now() });
       if (tableId && lines.length) {
         const total = computeTotals(lines, discountPct, serviceChargePct, tax).total;
         void getDb().restTables.get(tableId).then(async (table) => {
@@ -145,7 +148,7 @@ export function useCart(initialTableId?: string) {
     }, 150);
     return () => window.clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- tax is tracked by taxKey
-  }, [draftReady, tableId, lines, discountPct, customer, guestCount, serviceChargePct, activeOrder?.uid, taxKey, myDevice, staffName]);
+  }, [draftReady, tableId, lines, discountPct, customer, guestCount, reservationId, serviceChargePct, activeOrder?.uid, taxKey, myDevice, staffName]);
 
   // Who else is taking this table's first order, if anyone.
   const liveTable = useLiveQuery(async () => (tableId ? getDb().restTables.get(tableId) : undefined), [tableId]);
@@ -258,6 +261,7 @@ export function useCart(initialTableId?: string) {
     setServiceChargePct(order.serviceChargePct ?? 0);
     setCustomer(order.customer ?? {});
     setGuestCount(order.guestCount);
+    setReservationId(order.reservationId);
     setOrderType(order.orderType);
     setDraftReady(true);
   }, [setTableId]);
@@ -274,6 +278,7 @@ export function useCart(initialTableId?: string) {
     setServiceChargePct(0);
     setCustomer({});
     setGuestCount(undefined);
+    setReservationId(undefined);
     setTableIdState(undefined);
     setActiveOrder(null);
     setDraftReady(true);
@@ -300,6 +305,7 @@ export function useCart(initialTableId?: string) {
     setServiceChargePct(0);
     setCustomer({});
     setGuestCount(undefined);
+    setReservationId(undefined);
     setActiveOrder(null);
     setTableIdState(undefined);
   }, [tableId]);
@@ -334,7 +340,7 @@ export function useCart(initialTableId?: string) {
     const t = computeTotals(merged, discountPct, serviceChargePct, tax);
     const tableLabel = await tableLabelOf(tableId);
     const tableSection = tableId ? (await db.restTables.get(tableId))?.section : base?.tableSection;
-    const extras = { serviceChargePct, tableSection, tax, taxable: t.taxable, guestCount, customer };
+    const extras = { serviceChargePct, tableSection, tax, taxable: t.taxable, guestCount, customer, reservationId: base?.reservationId ?? reservationId };
     const pendingOrderKey = `pendingOrderUid:${tableId ?? "walkin"}`;
     const storedPendingOrderUid = (await db.meta.get(pendingOrderKey))?.value;
     const newOrderUid = base?.uid ?? (typeof storedPendingOrderUid === "string" ? storedPendingOrderUid : newUid());
@@ -480,7 +486,7 @@ export function useCart(initialTableId?: string) {
       taxable: t.taxable, tax,
       payments, status: "settled", settledAt: Date.now(), settledDeviceId: await getDeviceId(), createdAt: latest?.createdAt ?? Date.now(), synced: false,
       tableSection: latest?.tableSection ?? (tableId ? (await getDb().restTables.get(tableId))?.section : undefined),
-      customer, guestCount,
+      customer, guestCount, reservationId: latest?.reservationId ?? reservationId,
       ...(closedBy ? { closedBy } : {}),
     });
     const db = getDb();
@@ -563,12 +569,13 @@ export function useCart(initialTableId?: string) {
     const latest = activeOrder?.uid ? await orderByUid(activeOrder.uid) : null;
     const changes: [RecordKind, string][] = [];
     if (latest?.id !== undefined && latest.status === "held") {
+      if (user?.restaurantId) await queueBillBookingCancellation(user.restaurantId, { ...latest, status: "void" });
       await getDb().orders.update(latest.id, { status: "void", voidReason: reason, synced: false, ...(closedBy ? { closedBy } : {}) });
       if (latest.uid) changes.push(["order", latest.uid]);
     }
     await finishTable(changes);
     toast.success(latest ? `Bill ${latest.billNo} cancelled` : "Bill cleared");
-  }, [activeOrder, finishTable]);
+  }, [activeOrder, finishTable, user?.restaurantId]);
 
   return {
     lines, orderType, setOrderType: changeOrderType, tableId, setTableId, discountPct, setDiscountPct, tax,
