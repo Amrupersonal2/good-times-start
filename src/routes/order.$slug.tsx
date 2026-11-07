@@ -93,7 +93,7 @@ function GuestOrderPage() {
     return <Frame store={s}><Notice icon={UtensilsCrossed} title={search.table ? "Table ordering is off" : "Scan the QR code on your table"}
       body={search.table ? "Please order with the staff." : "This restaurant takes orders from the QR code on each table."} /></Frame>;
   }
-  return <Frame store={s}><Menu store={s} channel={channel} tableId={table?.id} tableLabel={table?.label} source={scanSource} /></Frame>;
+  return <Frame store={s}><div className="px-5 pt-4"><Button variant="outline" asChild><Link to="/book/$slug" params={{ slug }}><Clock />Reserve a room or table</Link></Button></div><Menu store={s} channel={channel} tableId={table?.id} tableLabel={table?.label} source={scanSource} /></Frame>;
 }
 
 /* ---------------- layout ---------------- */

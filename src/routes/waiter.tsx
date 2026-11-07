@@ -7,7 +7,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VegMark } from "@/components/VegMark";
 import { ItemOptions } from "@/components/ItemOptions";
 import { GuestDetailsFields } from "@/components/GuestDetailsFields";
@@ -25,6 +25,9 @@ import { useRestaurantSettings } from "@/lib/use-settings";
 import type { MenuItem, RestaurantTable } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { holdLabel } from "@/lib/table-hold";
+import { ReservationsPanel } from "@/components/ReservationsPanel";
+import { useReservations } from "@/lib/use-reservations";
+import { withReservations } from "@/lib/reservations";
 
 export const Route = createFileRoute("/waiter")({
   head: () => ({
@@ -66,10 +69,13 @@ function WaiterApp() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [tableId, setTableIdState] = useState<string | undefined>(undefined);
+  const [showBookings, setShowBookings] = useState(false);
+  const bookings = useReservations();
   const [, tick] = useState(0);
   useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30_000); return () => window.clearInterval(t); }, []);
 
-  const tables = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
+  const floor = useLiveQuery(async () => withOpenBills(await getDb().restTables.toArray(), await getDb().orders.where("status").equals("held").toArray()), [], []);
+  const tables = withReservations(floor, bookings.rows, Date.now());
   const printStatus = useLiveQuery(async () => ({ pending: await getDb().meta.where('key').startsWith('counterPrint:').count(), error: (await getDb().meta.get('counterPrintError'))?.value }), [], { pending: 0, error: undefined });
   const sections = useMemo(() => { const used = [...new Set(tables.map((t) => t.section))]; return [...["Rooms", "Dine-in"].filter((s) => used.includes(s)), ...used.filter((s) => s !== "Rooms" && s !== "Dine-in").sort()]; }, [tables]);
 
@@ -88,11 +94,13 @@ function WaiterApp() {
           <div className="text-xs text-muted-foreground">{user ? `POS Waiter · ${user.displayName}` : loading ? "" : "POS Waiter"}</div>
         </div>
         <div className="flex items-center gap-2">
+          {user ? <Button size="sm" variant="outline" onClick={() => setShowBookings(true)}><Users />Reservations</Button> : null}
           <InstallButton />
           {user ? <SyncChip statusOnly /> : null}
           {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>
+      <Dialog open={showBookings} onOpenChange={setShowBookings}><DialogContent aria-label="Guest reservations" className="max-h-screen overflow-y-auto"><DialogTitle>Guest arrivals</DialogTitle><ReservationsPanel /></DialogContent></Dialog>
       {printStatus.pending ? <p role="status" className="border-b border-border px-4 py-2 text-sm">{printStatus.pending} print request{printStatus.pending === 1 ? '' : 's'} waiting for the counter{printStatus.error ? ` · ${printStatus.error}` : ''}</p> : null}
 
       <div className="flex min-h-0 flex-1">

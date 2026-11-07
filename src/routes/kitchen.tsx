@@ -7,6 +7,7 @@ import { getDb } from "@/lib/db";
 import { dayBounds, dateLabel, historyBills } from "@/lib/orders-history";
 import { reportOrders } from "@/lib/report-orders";
 import { liveKitchenTickets } from "@/lib/kitchen-view";
+import { ReservationsPanel } from "@/components/ReservationsPanel";
 
 export const Route = createFileRoute("/kitchen")({
   validateSearch: (search: Record<string, unknown>): { view?: "live" | "settled"; station?: string; date?: string | undefined } => ({
@@ -55,6 +56,7 @@ function KitchenPage() {
       {view === "live" ? <label className="text-sm font-medium">Station <select aria-label="Kitchen station" value={station} onChange={(e) => void navigate({ search: { ...search, station: e.target.value } })} className="ml-2 rounded-md border border-input bg-card p-2"><option value="all">All stations</option>{stations.map((s) => <option key={s}>{s}</option>)}</select></label> : null}
       <label className="text-sm font-medium">Date <input aria-label="Kitchen date" type="date" value={date} onChange={(e) => void navigate({ search: { ...search, date: e.target.value } })} className="ml-2 rounded-md border border-input bg-card p-2" /></label>
     </div>
+    <ReservationsPanel date={date} readOnly />
     {view === "live" ? <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
       {groups.map((group) => <article key={group.id} className="overflow-hidden rounded-lg border border-border bg-card">
         <header className="border-b border-border bg-secondary p-4"><h2 className="text-lg font-bold">{group.first.tableSection ? `${group.first.tableSection} · ` : ""}{group.first.tableLabel ?? group.first.tableId ?? "Counter"}</h2><div className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground"><span>{group.first.printedKotNo ?? group.first.kotNo ?? group.first.billNo}</span><span className="flex items-center gap-1"><Clock className="size-3" />{new Date(group.first.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></div></header>

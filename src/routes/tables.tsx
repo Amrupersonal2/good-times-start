@@ -20,6 +20,9 @@ import type { RestaurantTable, TableStatus } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
+import { ReservationsPanel } from "@/components/ReservationsPanel";
+import { useReservations } from "@/lib/use-reservations";
+import { withReservations } from "@/lib/reservations";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({
@@ -157,7 +160,8 @@ function TableActions({ table, tables, onDone }: { table: RestaurantTable; table
 
 function TablesPage() {
   const navigate = useNavigate();
-  const tables = useLiveQuery(async () => {
+  const bookings = useReservations();
+  const floorTables = useLiveQuery(async () => {
     const db = getDb();
     const [floor, held, closed, drafts] = await Promise.all([
       db.restTables.toArray(),
@@ -168,6 +172,7 @@ function TablesPage() {
     const newDraftTables = drafts.filter((d) => !d.orderUid && d.lines.length && d.tableId).map((d) => d.tableId).filter((id): id is string => !!id);
     return withOpenBills(floor, held, closed, newDraftTables);
   }, [], []);
+  const tables = withReservations(floorTables, bookings.rows, Date.now());
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
   const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
     .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
@@ -243,6 +248,7 @@ function TablesPage() {
           </section>
         ) : null}
 
+        <ReservationsPanel />
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No tables yet</p>

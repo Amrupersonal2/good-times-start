@@ -379,6 +379,68 @@ export type Database = {
           },
         ]
       }
+      guest_reservations: {
+        Row: {
+          arrival_at: string
+          created_at: string
+          end_at: string
+          guest_name: string
+          guest_phone: string
+          id: string
+          party_size: number
+          request_id: string
+          restaurant_id: string
+          section: string
+          status: string
+          table_id: string
+          table_label: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          arrival_at: string
+          created_at?: string
+          end_at: string
+          guest_name: string
+          guest_phone: string
+          id?: string
+          party_size: number
+          request_id: string
+          restaurant_id: string
+          section?: string
+          status?: string
+          table_id: string
+          table_label: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          arrival_at?: string
+          created_at?: string
+          end_at?: string
+          guest_name?: string
+          guest_phone?: string
+          id?: string
+          party_size?: number
+          request_id?: string
+          restaurant_id?: string
+          section?: string
+          status?: string
+          table_id?: string
+          table_label?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_reservations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           id: string
@@ -1198,6 +1260,10 @@ export type Database = {
         }
         Returns: string
       }
+      guest_reservation_status: {
+        Args: { _id: string; _token: string }
+        Returns: Json
+      }
       has_restaurant_role: {
         Args: {
           _rid: string
@@ -1221,6 +1287,10 @@ export type Database = {
       }
       log_qr_scan: {
         Args: { _slug: string; _source?: string }
+        Returns: undefined
+      }
+      manage_guest_reservation: {
+        Args: { _id: string; _status: string }
         Returns: undefined
       }
       outlet_sales: {
@@ -1252,6 +1322,10 @@ export type Database = {
         }
         Returns: Json
       }
+      public_booking_availability: {
+        Args: { _arrival: string; _hours?: number; _slug: string }
+        Returns: Json
+      }
       public_storefront: { Args: { _slug: string }; Returns: Json }
       push_menu: { Args: { _from: string; _to: string[] }; Returns: number }
       push_restaurant_records: {
@@ -1261,6 +1335,19 @@ export type Database = {
       remove_member: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: undefined
+      }
+      request_guest_reservation: {
+        Args: {
+          _arrival: string
+          _hours?: number
+          _name: string
+          _party: number
+          _phone: string
+          _request: string
+          _slug: string
+          _table: string
+        }
+        Returns: Json
       }
       reset_counter_bill_numbers: {
         Args: {
