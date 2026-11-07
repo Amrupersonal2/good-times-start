@@ -125,12 +125,25 @@ export function PrintHost() {
   useEffect(() => {
     if (!docs.length) return;
     // Give QR codes and fonts a moment to render before the print dialog takes over.
+    // The browser print dialog freezes this page, so send the just-saved bill/KOT to the
+    // cloud first (bounded wait) — otherwise other terminals see the table amount only.
+    let cancelled = false;
     const timer = window.setTimeout(() => {
-      try { window.print(); } catch { /* printing unavailable; bill is already saved */ }
+      void (async () => {
+        try {
+          const rid = (await getDb().meta.get("restaurantId"))?.value;
+          if (typeof rid === "string" && rid && navigator.onLine) {
+            const { syncCloudData } = await import("@/lib/cloud-sync");
+            await Promise.race([syncCloudData(rid).catch(() => undefined), new Promise((r) => setTimeout(r, 4000))]);
+          }
+        } catch { /* printing must never wait on sync errors */ }
+        if (cancelled) return;
+        try { window.print(); } catch { /* printing unavailable; bill is already saved */ }
+      })();
     }, 450);
     const clear = () => { jobs = []; emit(); };
     window.addEventListener("afterprint", clear, { once: true });
-    return () => { window.clearTimeout(timer); window.removeEventListener("afterprint", clear); };
+    return () => { cancelled = true; window.clearTimeout(timer); window.removeEventListener("afterprint", clear); };
   }, [docs]);
 
   return (
