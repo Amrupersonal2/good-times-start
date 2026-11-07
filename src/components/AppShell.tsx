@@ -25,6 +25,7 @@ import { isTestBrowser } from "@/lib/test-browser";
 import { SyncConflictAlert } from "@/components/SyncConflictAlert";
 import { toast } from "sonner";
 import { applyAppUpdate, checkForAppUpdate } from "@/lib/app-update";
+import { AppUpdateWatcher } from "./AppUpdateWatcher";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -402,7 +403,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
               <div className="text-[11px] text-muted-foreground">{APPS[app].name}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">{app !== "manager" ? <GuestOrdersButton /> : null}<InstallButton /><SyncChip /></div>
+          <div className="flex items-center gap-2">{app !== "manager" ? <GuestOrdersButton /> : null}<InstallButton /><SyncChip /><AppUpdateWatcher /></div>
         </header>
         {needsDetails && !needsRestaurant ? (
           <Link to="/setup" className="flex items-center gap-2 border-b border-gold/40 bg-gold/15 px-4 py-2 text-sm font-medium text-gold-foreground lg:px-6">

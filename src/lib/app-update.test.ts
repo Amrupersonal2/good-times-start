@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assetsInHtml, isNewerBuild } from "./app-update";
+import { assetsInHtml, canUpdateUnattended, isNewerBuild } from "./app-update";
 
 const page = (hash: string) => `<!doctype html><link rel="modulepreload" href="/assets/index-${hash}.js"><link rel="stylesheet" href="/assets/styles-${hash}.css"><script type="module" src="/assets/client-${hash}.js"></script>`;
 
@@ -17,5 +17,11 @@ describe("app update check", () => {
   it("never reloads on an empty or unreadable page", () => {
     expect(isNewerBuild([], assetsInHtml(page("x")))).toBe(false);
     expect(isNewerBuild(assetsInHtml(page("x")), [])).toBe(false);
+  });
+  it("updates by itself only when nobody is mid-task", () => {
+    expect(canUpdateUnattended({ hidden: true, idleMs: 0, dialogOpen: false })).toBe(true);
+    expect(canUpdateUnattended({ hidden: false, idleMs: 3 * 60_000, dialogOpen: false })).toBe(true);
+    expect(canUpdateUnattended({ hidden: false, idleMs: 30_000, dialogOpen: false })).toBe(false);
+    expect(canUpdateUnattended({ hidden: true, idleMs: 10 * 60_000, dialogOpen: true })).toBe(false);
   });
 });

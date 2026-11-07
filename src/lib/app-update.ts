@@ -50,3 +50,17 @@ export async function applyAppUpdate(): Promise<void> {
   } catch { /* reload still picks up the new pages */ }
   window.location.reload();
 }
+
+/** How often an open device looks for a newer published version. */
+export const UPDATE_CHECK_EVERY_MS = 5 * 60_000;
+/** A device nobody has touched for this long can update on its own. */
+export const IDLE_BEFORE_AUTO_UPDATE_MS = 2 * 60_000;
+
+/**
+ * Whether a found update can be applied without asking: the screen is hidden, or
+ * nobody has touched it for a while and no dialog (payment, KOT, settings) is open.
+ */
+export function canUpdateUnattended(state: { hidden: boolean; idleMs: number; dialogOpen: boolean }): boolean {
+  if (state.dialogOpen) return false;
+  return state.hidden || state.idleMs >= IDLE_BEFORE_AUTO_UPDATE_MS;
+}
