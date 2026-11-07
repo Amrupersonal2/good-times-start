@@ -50,6 +50,9 @@ export async function touchTerminal(restaurantId: string, app: AppKind, kind: De
     const { data, error } = await db().rpc("touch_terminal", { _restaurant: restaurantId, _device: device, _series: series, _app: app, _kind: kind });
     if (error) return;
     if (data === "blocked" || data === "active") setStatus(data);
+    void import("./terminal-network.functions")
+      .then((m) => m.recordTerminalNetwork({ data: { restaurantId, deviceId: device } }))
+      .catch(() => { /* optional */ });
   } catch { /* offline */ }
 }
 
