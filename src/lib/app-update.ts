@@ -1,0 +1,52 @@
+/**
+ * "Sync now" also brings the device onto the latest published app. Every publish
+ * produces new content-hashed /assets files, so comparing the files the live page
+ * loads with the ones this page loaded tells us whether a newer version is out.
+ */
+
+const ASSET = /\/assets\/[A-Za-z0-9_.-]+\.(?:js|css)/g;
+/** Query flag the service worker passes straight to the network (never cached). */
+export const UPDATE_CHECK_PARAM = "app-update-check";
+
+/** Hashed script and style files referenced by a page's HTML. */
+export function assetsInHtml(html: string): string[] {
+  return [...new Set(html.match(ASSET) ?? [])].sort();
+}
+
+/** True when the live page loads files this page never loaded: a newer version is published. */
+export function isNewerBuild(liveAssets: string[], loadedAssets: string[]): boolean {
+  if (!liveAssets.length || !loadedAssets.length) return false;
+  const loaded = new Set(loadedAssets);
+  return liveAssets.some((a) => !loaded.has(a));
+}
+
+function loadedAssets(): string[] {
+  const urls = [
+    ...[...document.querySelectorAll<HTMLScriptElement>("script[src]")].map((s) => s.src),
+    ...[...document.querySelectorAll<HTMLLinkElement>("link[href]")].map((l) => l.href),
+    ...performance.getEntriesByType("resource").map((e) => e.name),
+  ];
+  return assetsInHtml(urls.join(" "));
+}
+
+/** Ask the server for the current page fresh, and say whether a newer app version is live. */
+export async function checkForAppUpdate(): Promise<boolean> {
+  if (typeof window === "undefined" || !navigator.onLine) return false;
+  const url = new URL(window.location.pathname, window.location.origin);
+  url.searchParams.set(UPDATE_CHECK_PARAM, String(Date.now()));
+  const response = await fetch(url, { cache: "no-store", credentials: "same-origin" });
+  if (!response.ok) return false;
+  const newer = isNewerBuild(assetsInHtml(await response.text()), loadedAssets());
+  // Fetch the latest offline worker too, so the next open is current even offline.
+  try { await (await navigator.serviceWorker?.getRegistration())?.update(); } catch { /* optional */ }
+  return newer;
+}
+
+/** Switch to the newer version: activate any waiting worker, then reload. Bills and drafts are saved on the device. */
+export async function applyAppUpdate(): Promise<void> {
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    registration?.waiting?.postMessage("skip-waiting");
+  } catch { /* reload still picks up the new pages */ }
+  window.location.reload();
+}

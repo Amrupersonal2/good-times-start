@@ -23,6 +23,8 @@ import { touchTerminal, useTerminalStatus } from "@/lib/terminal-actions";
 import { APPS, APP_LINKS, accessProblem, appsFor, type AppKind } from "@/lib/staff-login-logic";
 import { isTestBrowser } from "@/lib/test-browser";
 import { SyncConflictAlert } from "@/components/SyncConflictAlert";
+import { toast } from "sonner";
+import { applyAppUpdate, checkForAppUpdate } from "@/lib/app-update";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -111,6 +113,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
   }, []);
 
   const restaurantId = staff?.restaurantId ?? null;
+  const [checking, setChecking] = useState(false);
 
   const retry = async () => {
     if (!staff) { await navigate({ to: "/auth" }); return; }
@@ -119,12 +122,31 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
     setBusy(true);
     try {
       await syncCloudData(restaurantId);
-      // Guest requests live in their own Supabase table, not restaurant_records.
-      // Refresh that query explicitly so Sync now updates the Orders panel too.
-      await queryClient.invalidateQueries({ queryKey: ["guest-orders", restaurantId] });
+      // Guest requests and bookings live in their own Supabase tables, not restaurant_records.
+      // Refresh those queries explicitly so Sync now updates Bookings too.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["guest-orders", restaurantId] }),
+        queryClient.invalidateQueries({ queryKey: ["guest-order-history", restaurantId] }),
+        queryClient.invalidateQueries({ queryKey: ["account"] }),
+      ]);
     } catch (error) {
       await saveSyncError(error);
+      setBusy(false);
+      return;
+    }
+    // Data is safely uploaded and downloaded: now bring this device onto the latest published app.
+    try {
+      setChecking(true);
+      if (await checkForAppUpdate()) {
+        toast.success("Synced. Updating to the latest app version…");
+        window.setTimeout(() => { void applyAppUpdate(); }, 900);
+        return;
+      }
+      toast.success("Synced · this app is up to date");
+    } catch {
+      toast.success("Synced. Couldn't check for an app update; try again shortly.");
     } finally {
+      setChecking(false);
       setBusy(false);
     }
   };
@@ -173,7 +195,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         {/* The dialog's own ✕ closes it; a second Close button sat on top of it. */}
         <div className="pr-8">
           <DialogTitle>Sync</DialogTitle>
-          <p className="mt-1 text-sm text-muted-foreground">Bills are saved on this device first, so billing never stops when the internet does.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Bills are saved on this device first, so billing never stops when the internet does. Sync now also updates this app to the latest published version.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-border p-3"><div className="text-xs text-muted-foreground">Bills waiting to upload</div><div className="mt-1 text-2xl font-bold">{snapshot.pendingOrders}</div></div>
@@ -183,7 +205,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         {snapshot.error ? <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"><strong className="flex items-center gap-2"><AlertTriangle className="size-4" />Sync needs attention</strong><p className="mt-1 break-words">{snapshot.error}</p></div> : null}
 
         {!staff ? <p className="text-sm text-muted-foreground">Sign in to share bills, tables and kitchen tickets with your other devices.</p> : null}
-        <Button onClick={() => void retry()} disabled={busy || !online || (!!staff && !restaurantId)} className="w-full"><RefreshCw className={`size-4 ${busy ? "animate-spin" : ""}`} />{busy ? "Syncing…" : staff ? "Sync now" : "Sign in to sync"}</Button>
+        <Button onClick={() => void retry()} disabled={busy || !online || (!!staff && !restaurantId)} className="w-full"><RefreshCw className={`size-4 ${busy ? "animate-spin" : ""}`} />{checking ? "Checking for app update…" : busy ? "Syncing…" : staff ? "Sync now" : "Sign in to sync"}</Button>
         {isAdmin(staff) ? <section className="border-t border-border pt-4">
           <h3 className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="size-4 text-primary" />Ask AI about a sync problem</h3>
           <label className="mt-3 block text-sm">What happened?

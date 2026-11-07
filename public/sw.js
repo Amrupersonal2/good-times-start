@@ -6,7 +6,7 @@
  * - Icons, manifests, fonts: served from cache, refreshed in the background.
  * - Never touches API calls, server functions, Supabase or non-GET requests.
  */
-const VERSION = "xtsy-pos-v12";
+const VERSION = "xtsy-pos-v13";
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const STATIC = `${VERSION}-static`;
@@ -29,6 +29,8 @@ self.addEventListener("activate", (event) => {
 function isBypassed(url, request) {
   if (request.method !== "GET") return true;
   if (url.origin === self.location.origin) {
+    // "Sync now" checks for a newer published app: always ask the server, never a saved copy.
+    if (url.searchParams.has("app-update-check")) return true;
     return url.pathname.startsWith("/api") || url.pathname.startsWith("/_serverFn") || url.pathname.startsWith("/_server") || url.pathname === "/sw.js";
   }
   // Cache Google Fonts only; everything else cross-origin (Supabase, analytics) goes straight to the network.

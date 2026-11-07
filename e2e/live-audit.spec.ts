@@ -103,7 +103,7 @@ test.describe("Live audit · published site", () => {
       out.push(`${m.name}: ${m.start_url}, ${m.icons.length} icons`);
     }
     const sw = await (await request.get(`${SITE}/sw.js`)).text();
-    expect(sw, "offline worker is the latest").toContain('VERSION = "xtsy-pos-v12"');
+    expect(sw, "offline worker is the latest").toContain('VERSION = "xtsy-pos-v13"');
     expect((await request.get(`${SITE}/brand/xtsy-logo.png`)).status()).toBe(200);
     expect((await request.get(`${SITE}/favicon.png`)).status()).toBe(200);
     for (const path of ["/auth", "/order/tab-bistro", "/tables", "/waiter", "/manager"]) {

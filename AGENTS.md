@@ -28,6 +28,7 @@
 - Guest QR requests (Requests · Accepted · History) live in the header Bookings → QR orders tab, which chimes and pulses for new ones; the Orders dialog has only Running and History.
 - Printed QR material defaults to the XTSY Pines theme (qr-print.ts: xtsy.one sand/ink/night/pine/crimson, Staatliches headings, Manrope labels so 1 never reads as I); Classic remains available.
 - Spare-number caches use the `reservedNumbers:v3:` key so pre-reset reserves are abandoned; a bill or KOT the cloud refuses as unallocated gets a fresh cloud number (old number kept as printedBillNo/printedKotNo) instead of being dropped.
+- Sync now syncs data first, then checks for a newer published app (app-update.ts compares the live page's hashed /assets files with the loaded ones, via an `app-update-check` request the service worker never caches) and reloads onto it; bills and drafts stay in IndexedDB across the reload. Applies to POS, Waiter and Business Manager.
 - iOS standalone apps use viewport-fit=cover with a translucent status bar: top bars must pad by env(safe-area-inset-top).
 - Counter numbering resets require an owner-validated cloud RPC with collision checks; sync maps the original counter series into IndexedDB before pushing, while checkout allocates locally above existing invoice numbers to preserve offline service.
 - Put authenticated AI Gateway calls in client-importable `*.functions.ts` RPC wrappers with server-side authorization and server-only helpers, keeping gateway secrets and prompts out of browser code.
