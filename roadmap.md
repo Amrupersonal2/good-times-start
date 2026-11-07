@@ -1,5 +1,10 @@
 # POS expansion
 
+## Public guest reservations
+- [ ] Add a public QR arrival-booking screen with safe room/dine-in availability and staff confirmation.
+- [ ] Show bookings beside floor occupancy and kitchen/settled-room history without changing bills or creating KOTs.
+- [ ] Cache staff reservations offline, refresh on reconnect, and verify booking rules and screens without production test writes.
+
 ## Offline official numbering
 - [x] Cache 20 cloud-reserved POS and 20 KOT numbers on operational devices; consume atomically offline and retain original cloud reservation IDs without renumbering printed tickets.
 - [x] Verify retry, exhaustion and concurrent consumption in tests; signed-in preview counter created a Milk Chai KOT offline and a second Kitchen received its unchanged number through an isolated cloud mirror after reconnect. 331 tests and automatic build passed; no production records or sequences changed.
