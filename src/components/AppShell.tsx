@@ -70,8 +70,8 @@ export function screensFor(role: string | undefined, app: AppKind = "manager"): 
   // Signed out, or signed in without a restaurant yet: no screens.
   if (!role || role === "unknown") return [];
   const allowed = ROLE_SCREENS[role] ?? [];
-  if (role === "kitchen") return ["/kitchen", "/stock", "/settings"];
-  return APP_SCREENS[app].filter((to) => allowed.includes(to) && policyAllows(role, to));
+  if (role === "kitchen") return ["/tables", "/stock", "/settings"];
+  return APP_SCREENS[app].filter((to) => to !== "/kitchen" && allowed.includes(to) && policyAllows(role, to));
 }
 
 

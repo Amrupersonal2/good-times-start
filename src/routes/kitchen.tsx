@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChefHat, CheckCircle2, Clock, Ban } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -10,6 +10,7 @@ import { liveKitchenTickets } from "@/lib/kitchen-view";
 import { ReservationsPanel } from "@/components/ReservationsPanel";
 
 export const Route = createFileRoute("/kitchen")({
+  beforeLoad: () => { throw redirect({ to: "/tables", replace: true }); },
   validateSearch: (search: Record<string, unknown>): { view?: "live" | "settled"; station?: string; date?: string | undefined } => ({
     view: search['view'] === "settled" ? "settled" : "live",
     station: typeof search['station'] === "string" ? search['station'] : "all",
