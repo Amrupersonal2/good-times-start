@@ -78,7 +78,7 @@ function PosPage() {
   const cart = useCart(search.table);
   // Running bills with no table: pickup and online orders, and takeaway bills sent to the kitchen.
   const openBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
-    .filter((o) => !o.tableId || o.source === "qr").sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
+    .filter((o) => !o.tableId || o.source === "qr" || o.uid === search.bill).sort((a, b) => a.createdAt - b.createdAt), [search.bill], [] as Order[]);
   useEffect(() => {
     if (search.type && !search.table && !search.bill) cart.setOrderType(search.type);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- set once per counter order
