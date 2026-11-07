@@ -66,7 +66,7 @@ export const DEFAULT_POLICY: RolePolicy = {
     screens: allScreens(true),
     actions: {
       dashboard: "off", dailySummary: "on", salesSummary: "off", configuration: "on",
-      discount: "on", nc: "off", charges: "on", cancelBill: "off", splitBill: "on", moveTable: "on", settle: "on",
+      discount: "on", nc: "off", charges: "on", cancelBill: "pin", splitBill: "on", moveTable: "on", settle: "on",
       kotPrint: "on", kotEdit: "on", kotReprint: "on", billPrint: "on", billReprint: "on", oldBillReprint: "off",
     },
   },

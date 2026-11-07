@@ -1,14 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { can } from "./permissions";
+import { can, needsPin } from "./permissions";
 
 const as = (role: "owner" | "manager" | "cashier" | "captain" | "kitchen" | "unknown") => ({ role });
 
 describe("permissions", () => {
   it("keeps every set-up, money and settings control with the owner and managers", () => {
-    for (const action of ["menu.edit", "menu.import", "tables.edit", "stock.setup", "stock.purchase", "bill.void", "bill.cancel", "settings.billing", "staff.manage", "reports.view", "reports.export", "dashboard.view", "guests.points", "marketing.manage"] as const) {
+    for (const action of ["menu.edit", "menu.import", "tables.edit", "stock.setup", "stock.purchase", "bill.void", "settings.billing", "staff.manage", "reports.view", "reports.export", "dashboard.view", "guests.points", "marketing.manage"] as const) {
       expect([action, can(as("owner"), action), can(as("manager"), action)]).toEqual([action, true, true]);
       for (const staff of ["cashier", "captain", "kitchen", "unknown"] as const) expect([action, staff, can(as(staff), action)]).toEqual([action, staff, false]);
     }
+  });
+
+  it("lets a cashier cancel a running bill only with the admin PIN by default", () => {
+    expect(can(as("cashier"), "bill.cancel")).toBe(true);
+    expect(needsPin(as("cashier"), "bill.cancel")).toBe(true);
+    for (const staff of ["captain", "kitchen", "unknown"] as const) expect([staff, can(as(staff), "bill.cancel")]).toEqual([staff, false]);
   });
 
   it("lets the shift do its work", () => {

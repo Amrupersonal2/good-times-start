@@ -7,6 +7,11 @@ const as = (role: "owner" | "manager" | "cashier" | "captain" | "kitchen") => ({
 afterEach(() => setRolePolicy(undefined, undefined));
 
 describe("role policy", () => {
+  it("lets cashiers cancel a running bill with the admin PIN by default", () => {
+    expect(DEFAULT_POLICY.cashier.actions.cancelBill).toBe("pin");
+    expect(DEFAULT_POLICY.captain.actions.cancelBill).toBe("off");
+  });
+
   it("fills gaps with the defaults and ignores junk", () => {
     const p = resolvePolicy({ cashier: { actions: { cancelBill: "pin", discount: "maybe" as never, dashboard: "on" }, screens: { "/stock": false } }, captain: { actions: { settle: "on" } } });
     expect(p.cashier.actions.cancelBill).toBe("pin");
@@ -26,7 +31,7 @@ describe("role policy", () => {
   });
 
   it("drives the app's permission checks", () => {
-    expect(can(as("cashier"), "bill.cancel")).toBe(false); // default: admin only, as before
+    expect(needsPin(as("cashier"), "bill.cancel")).toBe(true); // default: admin PIN
     setRolePolicy({ cashier: { actions: { cancelBill: "pin", discount: "off", dashboard: "on" }, screens: { "/reports": false } } }, undefined);
     expect(can(as("cashier"), "bill.cancel")).toBe(true);
     expect(needsPin(as("cashier"), "bill.cancel")).toBe(true);
