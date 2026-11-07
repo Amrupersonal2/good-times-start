@@ -374,7 +374,11 @@ function PosPage() {
           </ConfirmButton>
           <Button variant="secondary" className="h-10" disabled={!cart.activeOrder || unsentCount > 0 || cancelCount > 0} onClick={() => void printRunningBill()}><Printer className="size-4" />Print bill</Button>
         </div>
-        {canSettle ? (
+        {canSettle && cart.discountPct === 100 && cart.totals.total === 0 ? (
+          <Button className="mt-2 min-h-11 w-full" disabled={blocked} onClick={() => void pay("cash")}>
+            <Check className="size-4" />Close NC bill
+          </Button>
+        ) : canSettle ? (
           <div className="mt-2 grid grid-cols-4 gap-2">
             {([["cash", "Cash", Banknote], ["upi", "UPI", Smartphone], ["card", "Card", CreditCard]] as const).filter(([m]) => !settings.paymentModes || settings.paymentModes.includes(m)).map(([m, l, Icon]) => (
               m === "upi" && settings.upiVpa ? (
