@@ -20,18 +20,17 @@ import type { RestaurantTable, TableStatus } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
-import { ReservationsPanel } from "@/components/ReservationsPanel";
 import { useReservations } from "@/lib/use-reservations";
 import { withReservations } from "@/lib/reservations";
-import { boardTables, boardKots, readBoardKots, matchesBoard, type BoardFilter } from "@/lib/table-board";
+import { startReservationOrder } from "@/lib/reservation-actions";
+import { boardTables } from "@/lib/table-board";
 import { dayBounds, dateLabel } from "@/lib/orders-history";
 import { reportOrders } from "@/lib/report-orders";
-import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({
     meta: [
-      { title: "Live table status board — TAB Bistro by XTSY" },
+      { title: "Tables — TAB Bistro by XTSY" },
       { name: "description", content: "Live floor plan: open bills, move or merge tables, and arrange sections." }, { property: "og:title", content: "Tables — XTSY POS" }, { property: "og:description", content: "Live floor plan: open bills, move or merge tables, and arrange sections." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: TablesPage,
@@ -179,22 +178,24 @@ function TablesPage() {
   const [start, end] = dayBounds(dateLabel());
   const activity = useLiveQuery(async () => {
     const db = getDb();
-    const [open, closed] = await Promise.all([db.orders.where("status").equals("held").toArray(), reportOrders({ from: start, to: end - 1 })]);
-    const linked = await readBoardKots(db.kots, open);
-    return { closed, groups: boardKots(linked, open) };
-  }, [start, end], { closed: [], groups: [] });
+    return { closed: await reportOrders({ from: start, to: end - 1 }) };
+  }, [start, end], { closed: [] });
   const tables = boardTables(withReservations(floorTables, bookings.rows, Date.now()), activity.closed, start, end);
-  const [boardFilter, setBoardFilter] = useState<BoardFilter>("all");
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
   const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
-    .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
+    .sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
   const qrBills = tables.filter((t) => t.qrBill).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
   const { user } = useStaff();
   const canEdit = can(user, "tables.edit");
   const canBill = can(user, "bill.create");
-  const openBill = (t: RestaurantTable) => void navigate({ to: "/", search: { table: t.id } });
+  const openBill = async (t: (typeof tables)[number]) => {
+    try {
+      if (t.booking && t.status === "reserved") await startReservationOrder(t.booking);
+      await navigate({ to: "/", search: { table: t.id } });
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Could not open this table."); }
+  };
   const [editing, setEditing] = useState(false);
-  const visibleTables = editing ? tables : tables.filter((t) => matchesBoard(t, boardFilter));
+  const visibleTables = tables;
   const [selected, setSelected] = useState<RestaurantTable | null>(null);
   const [form, setForm] = useState<RestaurantTable | "new" | "section" | null>(null);
   const [, setTick] = useState(0);
@@ -208,7 +209,12 @@ function TablesPage() {
     return [...DEFAULT_SECTIONS.filter((s) => used.includes(s)), ...used.filter((s) => !DEFAULT_SECTIONS.includes(s)).sort()];
   }, [tables]);
   const live = selected ? tables.find((t) => t.id === selected.id) ?? null : null;
-  const counts = (["free", "occupied", "reserved"] as TableStatus[]).map((s) => [s, tables.filter((t) => t.status === s).length] as const);
+  const counts = [
+    { label: "free", count: tables.filter((t) => t.status === "free").length, tone: "text-success" },
+    { label: "occupied", count: tables.filter((t) => t.status === "occupied" || t.status === "billed").length, tone: "text-primary" },
+    { label: "booked", count: tables.filter((t) => t.booking || t.status === "reserved").length, tone: "text-warning" },
+    { label: "settled today", count: tables.filter((t) => t.settledAt !== undefined).length, tone: "text-success" },
+  ];
 
   return (
     <AppShell>
@@ -216,9 +222,9 @@ function TablesPage() {
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Tables</h1>
-            <p className="text-sm text-muted-foreground">
-              {counts.filter(([, n]) => n > 0).map(([s, n]) => `${n} ${STATUS[s].label.toLowerCase()}`).join(", ") || "No tables yet"}
-            </p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="Table summary">
+              {counts.filter((c) => c.count > 0 || c.label === "free").map((c) => <span key={c.label} className={c.tone}><strong className="text-lg tabular-nums">{c.count}</strong> {c.label}</span>)}
+            </div>
           </div>
           {canEdit ? (
             <div className="flex gap-2">
@@ -238,10 +244,10 @@ function TablesPage() {
               ))}
               <Button variant="outline" onClick={openQrRequests}><QrCode />QR Scan & Order</Button>
               {counterBills.map((o) => (
-                <Button key={o.uid ?? o.billNo} variant="secondary" asChild>
+                <Button key={o.uid ?? o.billNo} variant="outline" className="h-auto min-h-12 max-w-full border-primary/40 bg-primary-tint py-2 text-left" asChild>
                   <Link to="/" search={{ bill: o.uid ?? "" }} title={`Running bill ${o.billNo}`}>
-                    <ShoppingBag />{o.guestCodes?.[0] ?? o.billNo.split("/").pop()} {o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? ""}
-                    <span className="font-normal text-muted-foreground">{formatINR(o.total, 0)}</span>
+                    <ShoppingBag className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{o.tableId ? `${o.tableSection ?? tables.find((t) => t.id === o.tableId)?.section ?? ""} · ${o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.tableId}` : o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? "Counter"}</span><span className="block text-xs text-muted-foreground">{o.guestCodes?.[0] ?? o.billNo.split("/").pop()}{o.tableId && o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span>
+                    <span className="shrink-0 font-bold">{formatINR(o.total, 0)}</span>
                   </Link>
                 </Button>
               ))}
@@ -261,20 +267,6 @@ function TablesPage() {
           </section>
         ) : null}
 
-        <section aria-label="Live table status board" className="mb-6 border-y border-border py-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="text-base font-bold">Live table status</h2><span className="text-xs text-muted-foreground">Settlements · Today</span></div>
-          <Segmented<BoardFilter> ariaLabel="Table status" value={boardFilter} onChange={setBoardFilter} options={(["all", "booked", "occupied", "settled", "free"] as BoardFilter[]).map((value) => ({ value, label: value === "all" ? "All" : value === "settled" ? "Settled today" : value.charAt(0).toUpperCase() + value.slice(1), badge: tables.filter((t) => matchesBoard(t, value)).length }))} />
-        </section>
-        <ReservationsPanel upcoming />
-        <section aria-label="KOTs in progress" className="mb-7 border-y border-border py-4">
-          <h2 className="mb-3 text-base font-bold">Active KOTs <span className="font-normal text-muted-foreground">· {activity.groups.length}</span></h2>
-          <div className="grid max-h-64 gap-3 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">{activity.groups.map((group) => <article key={group.id} className="rounded-lg border border-border bg-card p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">{group.first.tableSection ? `${group.first.tableSection} · ` : ""}{group.first.tableLabel ?? group.first.tableId ?? "Counter"}</h3><span className="text-xs text-muted-foreground">{new Date(group.first.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></div>
-            <p className="mt-1 text-xs font-semibold text-primary">{group.first.printedKotNo ?? group.first.kotNo ?? group.first.billNo} · {group.tickets.map((k) => k.station).join(" / ")} · Submitted</p>
-            <ul className="mt-2 space-y-1 text-sm">{group.tickets.flatMap((ticket) => ticket.lines).map((line, i) => <li key={i} className="flex gap-3"><span className="min-w-0 flex-1 break-words">{line.name}</span><span className="shrink-0 font-bold tabular-nums">{line.qty}</span></li>)}</ul>
-          </article>)}</div>
-          {!activity.groups.length ? <p className="text-sm text-muted-foreground">No active KOTs.</p> : null}
-        </section>
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No tables yet</p>
@@ -287,20 +279,20 @@ function TablesPage() {
           <section key={sec} className="mb-7">
             <h2 className="mb-3 text-base font-bold">{sec}</h2>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
-              {groupTables(visibleTables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))).map((g) => g.length > 1 && !editing && boardFilter === "all" ? (
+              {groupTables(visibleTables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))).map((g) => g.length > 1 && !editing ? (
                 <TableGroup key={g[0]?.id} tables={g} onPick={(t) => (canBill ? openBill(t) : setSelected(t))} />
               ) : g.map((t) => (
                 <div key={t.id} className="relative">
                 <button type="button" aria-label={`Table ${t.label}${t.status === "free" ? "" : `, ${STATUS[t.status].label}`}`}
                   onClick={() => (editing ? setForm(t) : canBill ? openBill(t) : setSelected(t))}
-                  className={`relative flex h-24 w-full flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
+                  className={`relative flex min-h-32 w-full flex-col items-center justify-center rounded-lg border-2 p-3 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
                   <span className={`${t.label.length > 4 ? "text-base leading-tight sm:text-lg" : "text-2xl"} max-w-full break-words font-extrabold`}>{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
                   {t.settledAt !== undefined ? <span className="text-xs font-semibold text-success">Settled · {new Date(t.settledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span> : null}
                   {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
                     <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
                   ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Booked</span> : null}
-                  {t.booking ? <span className="mt-1 max-w-full truncate text-xs font-semibold text-primary">{new Date(t.booking.arrival_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}
+                  {t.booking ? <><span className="mt-1 max-w-full break-words text-sm font-bold text-primary">{t.booking.guest_name}</span><span className="text-xs font-semibold text-success">Table allotted</span><span className="text-xs text-muted-foreground">{new Date(t.booking.arrival_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></> : null}
                   {t.qrTotal ? <span className="mt-0.5 rounded bg-primary/15 px-1.5 text-[10px] font-bold text-primary">QR {formatINR(t.qrTotal, 0)}</span> : null}
                   {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate text-[10px] font-semibold text-primary">{holdLabel(t, Date.now())}</span> : null}
                   {editing ? <Pencil className="absolute right-2 top-2 size-3.5 text-muted-foreground" /> : null}
