@@ -202,6 +202,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         <div className="pr-8">
           <DialogTitle>Sync</DialogTitle>
           <p className="mt-1 text-sm text-muted-foreground">Bills are saved on this device first, so billing never stops when the internet does. Sync now syncs every open terminal and updates them all to the latest published version.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Version <span className="font-mono">{buildId}</span> — every counter should show the same version.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-border p-3"><div className="text-xs text-muted-foreground">Bills waiting to upload</div><div className="mt-1 text-2xl font-bold">{snapshot.pendingOrders}</div></div>
