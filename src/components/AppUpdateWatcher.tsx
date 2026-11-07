@@ -23,7 +23,9 @@ export function AppUpdateWatcher() {
       let lastAuto = 0;
       try { lastAuto = Number(sessionStorage.getItem("appAutoUpdateAt") ?? 0); } catch { /* storage unavailable */ }
       if (Date.now() - lastAuto < 120_000) return;
-      if (canUpdateUnattended({ hidden: document.visibilityState === "hidden", idleMs: Date.now() - lastTouch, dialogOpen })) {
+      // Just opened on an old version: switch before staff start working.
+      const justOpened = performance.now() < 20_000;
+      if (justOpened || canUpdateUnattended({ hidden: document.visibilityState === "hidden", idleMs: Date.now() - lastTouch, dialogOpen })) {
         try { sessionStorage.setItem("appAutoUpdateAt", String(Date.now())); } catch { /* storage unavailable */ }
         void applyAppUpdate();
       }
@@ -44,7 +46,7 @@ export function AppUpdateWatcher() {
     const onVisible = () => { if (document.visibilityState === "visible") void check(); else tryApply(); };
     const timer = window.setInterval(() => { void check(); tryApply(); }, UPDATE_CHECK_EVERY_MS);
     const idleTimer = window.setInterval(tryApply, 2_000);
-    const first = window.setTimeout(() => { void check(); }, 3_000);
+    const first = window.setTimeout(() => { void check(); }, 1_000);
     const onFocus = () => { void check(); };
     const onAsked = (e: Event) => { void check((e as CustomEvent<{ remote?: boolean }>).detail?.remote === true); };
     for (const e of ["pointerdown", "keydown"] as const) window.addEventListener(e, touched, { passive: true });

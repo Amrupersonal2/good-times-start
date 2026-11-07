@@ -84,13 +84,19 @@ function PosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- set once per counter order
   }, [search.type]);
   const openedBill = useRef<string | null>(null);
+  const fetchedBill = useRef<string | null>(null);
   useEffect(() => {
     if (!search.bill) { openedBill.current = null; return; }
     if (openedBill.current === search.bill && cart.activeOrder?.uid === search.bill) return;
     const bill = openBills.find((o) => o.uid === search.bill);
     // A staff bill on a table (from an old link or bookmark) opens through its table instead.
     if (bill && bill.tableId && bill.source !== "qr") { void navigate({ to: "/", search: { table: bill.tableId }, replace: true }); return; }
-    if (bill) { openedBill.current = search.bill; cart.openOrder(bill); }
+    if (bill) { openedBill.current = search.bill; cart.openOrder(bill); return; }
+    // Not on this device yet: fetch it from the cloud once; the live query then opens it.
+    if (fetchedBill.current !== search.bill) {
+      fetchedBill.current = search.bill;
+      void import("@/lib/cloud-sync").then((m) => m.fetchBillFromCloud(search.bill!)).catch(() => false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once when the bill is available locally
   }, [search.bill, openBills, cart.activeOrder?.uid]);
   const [cat, setCat] = useState<string>("Popular");

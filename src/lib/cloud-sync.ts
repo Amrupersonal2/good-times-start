@@ -477,6 +477,16 @@ export async function applyLiveChange(change: { eventType?: string; new?: unknow
   return true;
 }
 
+/** Fetch one bill (and its KOTs) from the cloud for a link opened on a device that doesn't have it yet. RLS limits it to the member's restaurant. */
+export async function fetchBillFromCloud(billUid: string): Promise<boolean> {
+  if (!navigator.onLine || !/^[0-9a-f-]{36}$/i.test(billUid)) return false;
+  const { data, error } = await supabase.from("restaurant_records").select("kind, record_id, payload, deleted, updated_at, version")
+    .eq("kind", "order").eq("record_id", billUid).limit(1);
+  if (error || !data?.length) return false;
+  await applyRemote(data as unknown as RemoteRow[]);
+  return true;
+}
+
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
   // The outbox is read inside the same transaction, so a local edit can't slip in between the check and the write.
