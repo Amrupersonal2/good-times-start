@@ -125,10 +125,11 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
 }
 
 export async function setGuestOrderStatus(guest: GuestOrder, status: GuestStatus, staffName: string, reason = ""): Promise<void> {
-  const { error } = await supabase.from("guest_orders")
+  const { data, error } = await supabase.from("guest_orders")
     .update({ status, handled_by: staffName, ...(reason ? { reason } : {}) })
-    .eq("id", guest.id);
+    .eq("id", guest.id).eq("restaurant_id", guest.restaurant_id).eq("status", guest.status).select("id");
   if (error) throw new Error("Couldn't update the order. Check the internet and try again.");
+  if (!data?.length) throw new Error("This guest order changed on another device. Refresh before continuing.");
 }
 
 /** Owner or manager: change the outlet's guest ordering switches and web address. */
