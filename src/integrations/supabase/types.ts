@@ -290,7 +290,6 @@ export type Database = {
       guest_orders: {
         Row: {
           bill_no: string | null
-          qr_no: number | null
           channel: string
           code: string
           created_at: string
@@ -304,6 +303,7 @@ export type Database = {
           order_uid: string | null
           payment: string
           pickup_at: string | null
+          qr_no: number | null
           reason: string
           restaurant_id: string
           source: string
@@ -318,7 +318,6 @@ export type Database = {
         }
         Insert: {
           bill_no?: string | null
-          qr_no?: number | null
           channel: string
           code: string
           created_at?: string
@@ -332,6 +331,7 @@ export type Database = {
           order_uid?: string | null
           payment?: string
           pickup_at?: string | null
+          qr_no?: number | null
           reason?: string
           restaurant_id: string
           source?: string
@@ -346,7 +346,6 @@ export type Database = {
         }
         Update: {
           bill_no?: string | null
-          qr_no?: number | null
           channel?: string
           code?: string
           created_at?: string
@@ -360,6 +359,7 @@ export type Database = {
           order_uid?: string | null
           payment?: string
           pickup_at?: string | null
+          qr_no?: number | null
           reason?: string
           restaurant_id?: string
           source?: string
