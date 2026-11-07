@@ -38,4 +38,4 @@
 - Redirect empty billing entry in route beforeLoad before mounting cart hooks; preload only core operational screens after sign-in so startup never waits on unused billing or report resources.
 - Reconcile stale occupied floor tiles against closed bills for display only, preserving open bills, device holds and new unsent drafts; never rewrite financial records to repair occupancy.
 - Keep the kitchen screen read-only over indexed local KOTs and existing cloud mirroring; live hotel tickets remain visible across days, settlement summaries use payment timestamps, and invoice dates remain unchanged.
-- Derive the table board from indexed local floor, booking, payment-day and open-bill KOT reads; settled annotations never change occupancy or financial data, and submitted KOTs never imply physical preparation.
+- Derive floor counts from indexed local floor, accepted bookings and payment-day reads; pending reservations remain in header notifications, allotted guest entries stay nonfinancial until explicit order submission, and KOT presentation stays in Orders.
