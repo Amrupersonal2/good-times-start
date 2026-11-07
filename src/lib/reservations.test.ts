@@ -15,6 +15,8 @@ describe("guest reservations", () => {
     const row = { table_id: "r1", status: "pending", arrival_at: "2026-11-07T14:00Z", end_at: "2026-11-07T16:00Z" } as Reservation;
     const table = { id: "r1", label: "Room 1", section: "Rooms", seats: 2, status: "free" as const, runningTotal: 0 };
     expect(withReservations([table], [row], Date.parse("2026-11-07T12:00Z"))[0]?.status).toBe("free");
+    expect(withReservations([table], [row], Date.parse("2026-11-07T15:00Z"))[0]?.status).toBe("free");
+    expect(withReservations([table], [row], Date.parse("2026-11-07T15:00Z"))[0]?.booking).toBeUndefined();
   });
   it("hands confirmed guest identity to a local order draft without numbered records", () => {
     const row = { table_id: "r1", status: "confirmed", guest_name: "Guest One", guest_phone: "9000000000", party_size: 2 } as Reservation;

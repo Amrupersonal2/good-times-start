@@ -1,6 +1,7 @@
 # POS expansion
 
 ## Live table status board
+- [ ] Simplify Tables to prominent inline counts; include all Room/Dine-in running bills under Counter orders, remove Active KOTs and standalone booking sections, and move acceptance/decline into a top-bar notification panel before Orders. Pending requests never annotate the floor; allotted guests appear on tables without implicit financial records. Verify locally without production writes.
 - [x] Add booked, settled-today, occupied and free floor filters plus read-only active KOTs from indexed local records; preserve holds, reservations and existing offline sync. Eight board-rule tests plus existing floor/reservation/submission suites pass.
 - [x] Hide the separate Kitchen entry and redirect its old URL to Tables until confirmed. Isolated signed-in counter checks verify payment-day settlements and active KOT removal on settlement without refresh; desktop/tablet/phone show no overflow or runtime errors. Automatic build OK. No production writes; real cross-device sync and publication not performed this turn.
 

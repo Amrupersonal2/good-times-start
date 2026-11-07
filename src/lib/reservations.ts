@@ -28,7 +28,7 @@ export function activeReservations(rows: Reservation[], now: number): Reservatio
 export function withReservations<T extends RestaurantTable>(tables: T[], rows: Reservation[], now: number): (T & { booking?: Reservation })[] {
   const active = activeReservations(rows, now);
   return tables.map((t) => {
-    const booking = active.find((r) => r.table_id === t.id && (r.status !== "pending" || Date.parse(r.arrival_at) <= now));
+    const booking = active.find((r) => r.table_id === t.id && (r.status === "confirmed" || r.status === "arrived"));
     if (!booking) return t;
     return { ...t, ...(t.status === "free" ? { status: "reserved" as const } : {}), booking };
   });
