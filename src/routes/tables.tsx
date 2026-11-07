@@ -180,7 +180,7 @@ function TablesPage() {
   const activity = useLiveQuery(async () => {
     const db = getDb();
     const [open, closed] = await Promise.all([db.orders.where("status").equals("held").toArray(), reportOrders({ from: start, to: end - 1 })]);
-    const linked = (await Promise.all(open.map((o) => o.uid ? db.kots.where("orderUid").equals(o.uid).toArray() : o.id !== undefined ? db.kots.where("orderId").equals(o.id).toArray() : Promise.resolve([])))).flat();
+    const linked = (await Promise.all(open.map((o) => o.id !== undefined ? db.kots.where("orderId").equals(o.id).toArray() : Promise.resolve([])))).flat();
     return { closed, groups: boardKots(linked, open) };
   }, [start, end], { closed: [], groups: [] });
   const tables = boardTables(withReservations(floorTables, bookings.rows, Date.now()), activity.closed, start, end);
