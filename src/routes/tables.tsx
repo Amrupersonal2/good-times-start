@@ -23,7 +23,7 @@ import { can } from "@/lib/permissions";
 import { ReservationsPanel } from "@/components/ReservationsPanel";
 import { useReservations } from "@/lib/use-reservations";
 import { withReservations } from "@/lib/reservations";
-import { boardTables, boardKots, matchesBoard, type BoardFilter } from "@/lib/table-board";
+import { boardTables, boardKots, readBoardKots, matchesBoard, type BoardFilter } from "@/lib/table-board";
 import { dayBounds, dateLabel } from "@/lib/orders-history";
 import { reportOrders } from "@/lib/report-orders";
 import { Segmented } from "@/components/Segmented";
@@ -180,7 +180,7 @@ function TablesPage() {
   const activity = useLiveQuery(async () => {
     const db = getDb();
     const [open, closed] = await Promise.all([db.orders.where("status").equals("held").toArray(), reportOrders({ from: start, to: end - 1 })]);
-    const linked = (await Promise.all(open.map((o) => o.id !== undefined ? db.kots.where("orderId").equals(o.id).toArray() : Promise.resolve([])))).flat();
+    const linked = await readBoardKots(db.kots, open);
     return { closed, groups: boardKots(linked, open) };
   }, [start, end], { closed: [], groups: [] });
   const tables = boardTables(withReservations(floorTables, bookings.rows, Date.now()), activity.closed, start, end);
