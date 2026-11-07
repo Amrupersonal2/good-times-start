@@ -95,7 +95,7 @@ describe("restaurant number allocation", () => {
   it("ignores spare numbers reserved before the numbering reset", async () => {
     mocks.rows.set("reservedNumbers:restaurant-id:POS", { key: "reservedNumbers:restaurant-id:POS", value: JSON.stringify({ available: [{ requestId: "old", number: "POS/0150" }], assigned: {}, pending: [] }) });
     vi.stubGlobal("navigator", { onLine: false });
-    await expect(allocateRestaurantNumber("POS", "offline-bill")).rejects.toThrow("given online");
+    await expect(allocateRestaurantNumber("POS", "offline-bill")).rejects.toThrow("without internet");
   });
 
   it("does not duplicate reserved numbers for simultaneous local submissions", async () => {
@@ -106,7 +106,7 @@ describe("restaurant number allocation", () => {
 
   it("refuses exhaustion without inventing or consuming another number", async () => {
     vi.stubGlobal("navigator", { onLine: false });
-    await expect(allocateRestaurantNumber("POS", "new")).rejects.toThrow("given online");
+    await expect(allocateRestaurantNumber("POS", "new")).rejects.toThrow("without internet");
     expect(mocks.transport).not.toHaveBeenCalled();
   });
 
@@ -121,6 +121,6 @@ describe("restaurant number allocation", () => {
     mocks.transport.mockResolvedValue({ data: null, error: { message: "TypeError: Failed to fetch" } });
     await expect(allocateRestaurantNumber("POS", "no-net")).rejects.toThrow("Failed to fetch");
     vi.stubGlobal("navigator", { onLine: false });
-    await expect(allocateRestaurantNumber("POS", "no-net")).rejects.toThrow("given online");
+    await expect(allocateRestaurantNumber("POS", "no-net")).rejects.toThrow("without internet");
   });
 });
