@@ -52,7 +52,7 @@ async function renameOnRunningBills(customer: Customer, previousName: string | u
   const bills = (await db.orders.where("status").equals("held").toArray())
     .filter((o) => normalisePhone(o.customer?.phone) === customer.id && o.customer?.name?.trim() !== name);
   for (const o of bills) await db.orders.put({ ...o, customer: { ...o.customer, name }, synced: false });
-  return bills.map((o) => o.uid);
+  return bills.flatMap((o) => (o.uid ? [o.uid] : []));
 }
 
 /** Record money received against what a guest owes. */
