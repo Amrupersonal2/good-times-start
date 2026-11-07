@@ -38,7 +38,7 @@ function KitchenPage() {
       reportOrders({ from: start, to: end - 1 }),
       db.kots.where("createdAt").between(start, end, true, false).toArray(),
     ]);
-    const linked = (await Promise.all(open.filter((o) => o.uid).map((o) => db.kots.where("orderUid").equals(o.uid ?? "").toArray()))).flat();
+    const linked = (await Promise.all(open.filter((o) => o.id !== undefined).map((o) => db.kots.where("orderId").equals(o.id ?? 0).toArray()))).flat();
     const kots = [...new Map([...recent, ...linked].map((k) => [k.uid ?? k.id, k])).values()];
     const orders = [...new Map([...dated, ...open].map((o) => [o.uid ?? o.id, o])).values()];
     return { orders, kots };
