@@ -335,7 +335,7 @@ function ReportsPage() {
   // Reception sees what Settings → Roles allows: the daily summary and/or the Sales Summary.
   const staffTabs: { v: Tab; l: string }[] = [
     ...(can(user, "reports.summary") ? [{ v: "overview" as const, l: "Overview" }, { v: "summary" as const, l: "Sales Summary" }] : []),
-    ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Cash Counter" }] : []),
+    ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Cash counter" }] : []),
   ];
   const [preset, setPreset] = useState<Preset>("today");
   const [custom, setCustom] = useState<Range>(() => presetRange("7d"));
@@ -360,7 +360,7 @@ function ReportsPage() {
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
   ];
   const tabs: { v: Tab; l: string }[] = full ? [
-    { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Cash Counter" },
+    { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Cash counter" },
   ] : staffTabs;
 
   return (
@@ -368,8 +368,8 @@ function ReportsPage() {
       <div className="p-4 lg:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{tab === "close" ? "Cash Counter" : "Summary"}</h1>
-            <p className="text-sm text-muted-foreground">{tab !== "close" ? "Bills from every device in the restaurant that has synced." : "Count the cash drawer and close your counter."}</p>
+            <h1 className="text-2xl font-bold">Summary</h1>
+            <p className="text-sm text-muted-foreground">{full ? "Bills from every device in the restaurant that has synced." : "Day-end cash for this counter."}</p>
           </div>
           {tab !== "close" && (full || staffTabs.some((t) => t.v === "close")) ? <Button size="sm" onClick={() => setTab("close")}><Wallet />Cash counter</Button> : null}
           {full && can(user, "reports.export") ? <Button variant="outline" size="sm" disabled={!orders.length} onClick={() => void exportAll()}><Download />Excel (all reports)</Button> : null}
@@ -387,8 +387,20 @@ function ReportsPage() {
           </div>
         </div>
 
-        {tab !== "close" && (full || can(user, "reports.summary")) ? <LiveTotals /> : null}
+        {full || can(user, "reports.summary") ? <LiveTotals /> : null}
         {tabs.length > 1 ? <Segmented ariaLabel="Report" className="mb-5" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.v, label: t.l }))} /> : null}
+        {tab === "close" ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Wallet className="size-4 text-muted-foreground" />
+              <div>
+                <div className="text-sm font-semibold">Cash counter</div>
+                <div className="text-xs text-muted-foreground">Count the cash drawer and close your counter.</div>
+              </div>
+            </div>
+            {full || can(user, "reports.summary") ? <Button size="sm" variant="ghost" onClick={() => setTab("overview")}>Back to summary</Button> : null}
+          </div>
+        ) : null}
 
         {tab === "overview" ? <Overview orders={orders} range={range} /> : null}
         {tab === "summary" ? <SalesSummary orders={orders} range={range} restaurant={restaurant} canExport={full ? can(user, "reports.export") : true} /> : null}
