@@ -39,4 +39,17 @@ describe("printable QR material", () => {
     expect(buildPrintSheet("poster", [card], { ...opts, offer: "Chai + bun ₹99" })).toContain("Chai + bun ₹99");
     expect(buildPrintSheet("standee", [card], { ...opts, offer: "Chai + bun ₹99" })).toContain("offer small");
   });
+  it("prints the XTSY Pines look with the xtsy.one palette and type", () => {
+    for (const design of ["tent", "sticker", "poster", "standee"] as const) {
+      const html = buildPrintSheet(design, [{ ...card, label: "Experience by XTSY" }], { ...opts, theme: "xtsy" });
+      expect(html).toContain("Staatliches");
+      expect(html).toContain("#A12444");
+      expect(html).toContain('class="pines"');
+      if (design !== "poster") expect(html).toContain("Experience by XTSY");
+      expect(html).toContain("TAB &lt;Bistro&gt;");
+      expect(html).not.toContain("<Bistro>");
+    }
+    expect(buildPrintSheet("tent", [card, card], { ...opts, theme: "xtsy" }).match(/panel xcard flip/g)).toHaveLength(2);
+    expect(buildPrintSheet("poster", [card], { ...opts, theme: "xtsy", brand: { logo: "javascript:alert(1)" } })).not.toContain("javascript:");
+  });
 });

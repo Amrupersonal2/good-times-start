@@ -98,9 +98,8 @@ export function GuestOrdersButton() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingView, setBookingView] = useState<"qr" | "tables">("qr");
   const [open, setOpen] = useState(false);
-  const [initialView, setInitialView] = useState<"running" | "guest">("running");
   useEffect(() => {
-    const show = () => { setInitialView("guest"); setOpen(true); };
+    const show = () => { setBookingView("qr"); setBookingOpen(true); };
     const showBookings = () => { setBookingView("tables"); setBookingOpen(true); };
     window.addEventListener("pos:qr-requests", show);
     window.addEventListener("pos:bookings", showBookings);
@@ -125,7 +124,7 @@ export function GuestOrdersButton() {
       const fresh = waiting.filter((o) => !seen.current?.has(o.id));
       if (fresh.length) {
         if (audio.current) { void audio.current.resume(); chime(audio.current); }
-        toast(`New ${fresh[0]?.channel === "table" ? `table order from ${fresh[0]?.table_label ?? "a table"}` : "pickup order"}`, { action: { label: "Open", onClick: () => { setInitialView("guest"); setOpen(true); } } });
+        toast(`New ${fresh[0]?.channel === "table" ? `table order from ${fresh[0]?.table_label ?? "a table"}` : "pickup order"}`, { action: { label: "Open", onClick: () => { setBookingView("qr"); setBookingOpen(true); } } });
       }
     }
     seen.current = ids;
@@ -134,46 +133,46 @@ export function GuestOrdersButton() {
   if (!user?.restaurantId || user.role === "kitchen") return null;
   return (
     <>
-      <Button size="sm" variant={bookingRequests.length ? "default" : "outline"} aria-label="Bookings" title="QR orders and table bookings" onClick={() => { setBookingView(bookingRequests.length ? "tables" : "qr"); setBookingOpen(true); }} className={bookingRequests.length ? "border-gold bg-gold text-gold-foreground hover:bg-gold/90" : ""}>
-        <CalendarClock className="size-4" /><span className="hidden sm:inline">Bookings</span>{bookingRequests.length ? <span className="font-bold tabular-nums">{bookingRequests.length}</span> : null}
+      <Button size="sm" variant={requestCount || bookingRequests.length ? "default" : "outline"} aria-label="Bookings" title="QR orders, guest requests and table bookings"
+        onClick={() => { setBookingView(!requestCount && bookingRequests.length ? "tables" : "qr"); setBookingOpen(true); }}
+        className={requestCount ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : bookingRequests.length ? "border-gold bg-gold text-gold-foreground hover:bg-gold/90" : ""}>
+        <CalendarClock className="size-4" /><span className="hidden sm:inline">Bookings</span>{requestCount + bookingRequests.length ? <span className="rounded-full bg-gold-foreground px-1.5 text-[11px] font-bold tabular-nums text-gold">{requestCount + bookingRequests.length}</span> : null}
       </Button>
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto"><DialogTitle>Bookings</DialogTitle>
-          <Segmented ariaLabel="Bookings view" stretch value={bookingView} onChange={setBookingView} options={[{ value: "qr", label: "QR orders" }, { value: "tables", label: "Table bookings", badge: bookingRequests.length }]} />
-          {bookingView === "qr" ? <QrOrderHistory onOpenBill={() => setBookingOpen(false)} /> : <ReservationsPanel upcoming onOpenOrder={() => setBookingOpen(false)} />}
+          <Segmented ariaLabel="Bookings view" stretch value={bookingView} onChange={setBookingView} options={[{ value: "qr", label: "QR orders", badge: requestCount }, { value: "tables", label: "Table bookings", badge: bookingRequests.length }]} />
+          {bookingView === "qr" ? <GuestOrdersPanel orders={orders} onDone={() => setBookingOpen(false)} /> : <ReservationsPanel upcoming onOpenOrder={() => setBookingOpen(false)} />}
         </DialogContent>
       </Dialog>
-      <Button size="sm" variant={requestCount ? "default" : "outline"} onClick={() => { setInitialView("running"); setOpen(true); }} className={requestCount ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : ""}
-        aria-label="Orders">
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)} aria-label="Orders">
         <BellRing className="size-4" />
         <span className="hidden sm:inline">Orders</span>
-        {requestCount ? <span className="rounded-full bg-gold-foreground px-1.5 text-[11px] font-bold text-gold">{requestCount}</span> : null}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="flex h-[min(48rem,92dvh)] w-[calc(100%-1rem)] max-w-2xl flex-col overflow-hidden p-4 sm:p-6">
-          <OrdersOverview key={initialView} initialView={initialView} onClose={() => setOpen(false)} guestCount={waiting.length} guestContent={<GuestOrdersPanel orders={orders} onDone={() => setOpen(false)} />} />
+          <OrdersOverview onClose={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>
   );
 }
 
-type View = "requests" | "accepted";
+type View = "requests" | "accepted" | "history";
 
 function GuestOrdersPanel({ orders, onDone }: { orders: GuestOrder[]; onDone: () => void }) {
   const [view, setView] = useState<View>("requests");
-  const groups: Record<View, GuestOrder[]> = {
+  const groups: Record<Exclude<View, "history">, GuestOrder[]> = {
     requests: orders.filter((o) => o.status === "new"),
     accepted: orders.filter((o) => o.status === "accepted" || o.status === "ready"),
   };
-  const list = sortGuestOrders(groups[view]);
+  const list = view === "history" ? [] : sortGuestOrders(groups[view]);
   return (
     <div>
       <Segmented ariaLabel="Order status" stretch className="mt-3" value={view} onChange={setView}
-        options={([["requests", "Requests"], ["accepted", "Accepted"]] as const).map(([v, l]) => ({ value: v, label: l, badge: groups[v].length }))} />
+        options={[...([["requests", "Requests"], ["accepted", "Accepted"]] as const).map(([v, l]) => ({ value: v, label: l, badge: groups[v].length })), { value: "history" as const, label: "History" }]} />
       <div className="mt-3 space-y-3">
-        {list.length ? list.map((o) => <GuestOrderCard key={o.id} order={o} onOpenBill={onDone} />) : (
-          <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No guest requests here.</p>
+        {view === "history" ? <QrOrderHistory onOpenBill={onDone} /> : list.length ? list.map((o) => <GuestOrderCard key={o.id} order={o} onOpenBill={onDone} />) : (
+          <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{view === "requests" ? "No new QR orders. New ones chime and appear here." : "No accepted QR orders waiting."}</p>
         )}
       </div>
     </div>

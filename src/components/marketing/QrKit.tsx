@@ -10,7 +10,8 @@ import { Dropdown } from "@/components/Dropdown";
 import { getDb } from "@/lib/db";
 import { orderPageUrl } from "@/lib/guest-order-logic";
 import { SCAN_SOURCES, activeOffers, cleanSource, type Branding } from "@/lib/marketing-logic";
-import { PRINT_DESIGNS, QR_LIGHT, buildPrintSheet, qrInk, type PrintCard, type PrintDesign } from "@/lib/qr-print";
+import { PRINT_DESIGNS, PRINT_THEMES, QR_LIGHT, buildPrintSheet, qrInk, type PrintCard, type PrintDesign, type PrintTheme } from "@/lib/qr-print";
+import { isRoomSection, roomLabel } from "@/lib/room-logic";
 import type { OrderingConfig } from "@/lib/saas-logic";
 import { cn } from "@/lib/utils";
 import { GUEST_ORDER_ORIGIN } from "@/lib/qr-ordering";
@@ -31,6 +32,7 @@ export function QrKit({ slug, restaurantName, brand, ordering }: { slug: string;
   const sorted = useMemo(() => [...tables].sort((a, b) => a.section.localeCompare(b.section) || a.label.localeCompare(b.label, undefined, { numeric: true })), [tables]);
   const sections = useMemo(() => [...new Set(sorted.map((t) => t.section))], [sorted]);
   const [design, setDesign] = useState<PrintDesign>("tent");
+  const [theme, setTheme] = useState<PrintTheme>("xtsy");
   const [picked, setPicked] = useState<Set<string> | null>(null); // null = all tables
   const [source, setSource] = useState("poster");
   const [headline, setHeadline] = useState(HEADLINES.tent);
@@ -68,10 +70,10 @@ export function QrKit({ slug, restaurantName, brand, ordering }: { slug: string;
   const print = async () => {
     setBusy(true);
     try {
-      const targets = meta.perTable ? chosen.map((t) => ({ label: placeName(t.label), url: linkFor(t.id) })) : Array.from({ length: meta.perSheet }, () => ({ label: "", url: shareUrl }));
+      const targets = meta.perTable ? chosen.map((t) => ({ label: isRoomSection(t.section) ? roomLabel(t, ordering.rooms) : placeName(t.label), url: linkFor(t.id) })) : Array.from({ length: meta.perSheet }, () => ({ label: "", url: shareUrl }));
       if (!targets.length) { toast.error("Choose at least one table"); return; }
       const cards: PrintCard[] = await Promise.all(targets.map(async (t) => ({ ...t, qr: await qrImage(t.url, brand) })));
-      const html = buildPrintSheet(design, cards, { restaurant: restaurantName, brand, headline: headline.trim() || HEADLINES[design], subline: subline.trim(), ...(offer ? { offer } : {}) });
+      const html = buildPrintSheet(design, cards, { restaurant: restaurantName, brand, headline: headline.trim() || HEADLINES[design], subline: subline.trim(), theme, ...(offer ? { offer } : {}) });
       const win = window.open("", "_blank", "width=900,height=1000");
       if (!win) { toast.error("Allow pop-ups for this site to print"); return; }
       win.document.write(html);
@@ -115,6 +117,16 @@ export function QrKit({ slug, restaurantName, brand, ordering }: { slug: string;
             </button>
           );
         })}
+      </div>
+
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Look">
+        {PRINT_THEMES.map((t) => (
+          <button key={t.id} type="button" role="radio" aria-checked={theme === t.id} onClick={() => setTheme(t.id)} title={t.hint}
+            className={cn("flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors", theme === t.id ? "border-primary bg-primary-tint text-primary" : "border-border bg-card hover:border-primary/50")}>
+            {t.id === "xtsy" ? <span aria-hidden="true" className="flex h-4 w-6 overflow-hidden rounded-sm"><span className="w-1/3 bg-[#1F2438]" /><span className="w-1/3 bg-[#2F4A3F]" /><span className="w-1/3 bg-[#A12444]" /></span> : null}
+            {t.label}{theme === t.id ? <Check className="size-3.5" /> : null}
+          </button>
+        ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_16rem]">

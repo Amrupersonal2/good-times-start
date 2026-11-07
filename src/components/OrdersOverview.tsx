@@ -27,9 +27,9 @@ import { thermalDestination } from "@/lib/print-routing";
 import { BillPrintButton } from "./BillPrintButton";
 import { billLabel } from "@/lib/bill-numbering";
 
-export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" }
-export function OrdersOverview({ onClose, guestContent, guestCount, initialView = "running" }: OrdersOverviewProps) {
-  const [view, setView] = useState<"running" | "history" | "guest">(initialView);
+export interface OrdersOverviewProps { onClose: () => void }
+export function OrdersOverview({ onClose }: OrdersOverviewProps) {
+  const [view, setView] = useState<"running" | "history">("running");
   const bookings = useReservations();
   const active = activeReservations(bookings.rows, Date.now());
   const [kind, setKind] = useState<HistoryKind>("settled");
@@ -95,8 +95,8 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
   const open = (order: Order) => { onClose(); void navigate({ to: "/", search: order.tableId && order.source !== "qr" ? { table: order.tableId } : { bill: order.uid ?? "" } }); };
   return <div className="flex min-h-0 flex-1 flex-col gap-3">
     <DialogTitle className="shrink-0 pr-8">Orders</DialogTitle>
-    <Segmented className="shrink-0" ariaLabel="Orders view" stretch value={view} onChange={(v) => { setView(v); setDetail(null); }} options={[{ value: "running", label: "Running", badge: running.length }, { value: "history", label: "History" }, { value: "guest", label: "Guest requests", badge: guestCount }]} />
-    {view === "guest" ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">{guestContent}</div> : view === "running" ? <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+    <Segmented className="shrink-0" ariaLabel="Orders view" stretch value={view} onChange={(v) => { setView(v); setDetail(null); }} options={[{ value: "running", label: "Running", badge: running.length }, { value: "history", label: "History" }]} />
+    {view === "running" ? <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
       {active.length ? <Button variant="outline" className="mb-3 w-full" onClick={() => { onClose(); window.dispatchEvent(new Event("pos:bookings")); }}>{active.length} guest booking{active.length === 1 ? "" : "s"} · View & start order</Button> : null}
       {running.map((o) => <div key={o.uid ?? o.billNo} className="flex h-16 items-center gap-2"><Button variant="ghost" className="h-16 min-w-0 flex-1 justify-between gap-3 rounded-none text-left" onClick={() => open(o)}><span className="min-w-0"><span className="block truncate font-bold">{o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.orderType}</span><span className="block truncate text-xs font-normal text-muted-foreground">{billLabel(o)} · {o.lines.reduce((n, l) => n + l.qty, 0)} items{o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span><span>{formatINR(o.total, 0)}</span></Button><BillPrintButton order={o} className="shrink-0" /></div>)}
       {tables.filter((t) => t.status === "occupied" && !running.some((o) => o.tableId === t.id)).map((t) => <div key={t.id} className="flex justify-between py-3 text-sm"><strong>{t.label}</strong><span>{t.heldBy ?? "Taking order"} · {formatINR(t.runningTotal, 0)}</span></div>)}

@@ -43,6 +43,8 @@ export interface OrderingConfig {
   minOrder?: number;
   /** A line shown at the top of the ordering page. */
   message?: string;
+  /** Room service by QR: which hostel rooms take QR orders (see room-logic.ts). */
+  rooms?: import("./room-logic").RoomOrdering;
 }
 
 export const FEATURE_LABELS: Record<PlanFeature, string> = {

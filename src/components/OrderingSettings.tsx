@@ -15,6 +15,7 @@ import { getDb } from "@/lib/db";
 import { isAdmin, useStaff } from "@/lib/auth-context";
 import { useAccount } from "@/lib/use-account";
 import { saveOrderingConfig } from "@/lib/guest-order-actions";
+import { RoomServiceSettings } from "./RoomServiceSettings";
 import { orderPageUrl } from "@/lib/guest-order-logic";
 import { hasFeature, slugError, type OrderingConfig } from "@/lib/saas-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
@@ -193,6 +194,7 @@ export function OrderingSettings({ className, ref, ...props }: OrderingSettingsP
           <Row title="Let guests pay by UPI from their phone" hint={settings.upiVpa ? `Pays ${settings.upiVpa} directly. Staff check the payment before settling.` : "Add your UPI ID under Restaurant first."}>
             <Switch checked={!!form.upi && !!settings.upiVpa} disabled={!canEdit || !settings.upiVpa} onCheckedChange={(v) => set({ upi: v })} className="mt-0.5" />
           </Row>
+          {form.table ? <RoomServiceSettings tables={tables} value={form.rooms} disabled={!canEdit} onChange={(rooms) => set({ rooms })} /> : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm font-medium">Usual pickup time (minutes)
               <input type="number" min={5} max={180} disabled={!canEdit} value={form.prepMinutes ?? 20} onChange={(e) => set({ prepMinutes: Number(e.target.value) })} className={inputClass} />

@@ -80,6 +80,8 @@ export interface Storefront {
   live: boolean;
   menu: StorefrontItem[];
   tables: { id: string; label: string; section: string }[];
+  /** Room service by QR settings; absent until the outlet's storefront exposes them. */
+  rooms?: import("./room-logic").RoomOrdering;
   branding?: Branding;
 }
 

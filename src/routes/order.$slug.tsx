@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { placeName } from "@/lib/table-logic";
+import { isRoomSection, roomOpen } from "@/lib/room-logic";
+import { PlaceOptions, RoomPicker, guestPlaceName } from "@/components/GuestPlacePicker";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BadgePercent, Check, ChefHat, Clock, ExternalLink, MapPin, Minus, Phone, Plus, Search, Send, Share, ShoppingBag, Smartphone, Sparkles, Star, Store, UtensilsCrossed, X } from "lucide-react";
+import { ArrowLeft, BadgePercent, BedDouble, Check, ChefHat, Clock, ExternalLink, MapPin, Minus, Phone, Plus, Search, Send, Share, ShoppingBag, Smartphone, Sparkles, Star, Store, UtensilsCrossed, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -84,19 +86,23 @@ function GuestOrderPage() {
   const channel = guestChannel(s.qr, s.online, table?.id);
   if (!s.live || (!s.qr && !s.online)) return <Frame store={s}><Notice icon={Store} title="Ordering is off right now" body="Please order with the staff. Sorry for the trouble." /></Frame>;
   if (search.table && !table && s.qr) return <Frame store={s}><Notice icon={UtensilsCrossed} title="This QR code is out of date" body="Please ask the staff for help with your order." /></Frame>;
+  // A room that isn't switched on for room service (the server refuses its orders too).
+  if (table && s.rooms && isRoomSection(table.section) && !roomOpen(table.id, s.rooms)) return <Frame store={s}><Notice icon={BedDouble} title={`Room service by QR is off for ${guestPlaceName(s, table)}`} body="Please call reception to order. We'll bring it to your room." /></Frame>;
   if (!channel) {
     if (!search.table && s.qr) return <Frame store={s}><section className="px-5 py-6" aria-label="Choose your table">
       <h2 className="text-xl font-bold">Where are you sitting?</h2>
       <p className="mt-1 text-sm text-muted-foreground">Tap your table to see the menu. Your food comes to you there.</p>
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dining tables</h3>
+      <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {guestTableChoices(s.tables).map((t) => <Button key={t.id} variant="outline" className="h-20 flex-col gap-1 rounded-2xl text-base font-bold active:scale-[0.98]" onClick={() => void navigate({ search: { ...search, table: t.id }, replace: true })}><UtensilsCrossed className="size-5 text-primary" />{placeName(t.label)}</Button>)}
       </div>
+      <RoomPicker store={s} onPick={(id) => void navigate({ search: { ...search, table: id }, replace: true })} />
     </section></Frame>;
     return <Frame store={s}><Notice icon={UtensilsCrossed} title={search.table ? "Table ordering is off" : "Scan the QR code on your table"}
       body={search.table ? "Please order with the staff." : "This restaurant takes orders from the QR code on each table."} /></Frame>;
   }
   // A guest already at a table goes straight to the menu; reservations are offered only off-site.
-  return <Frame store={s}>{channel === "table" ? null : <div className="px-5 pt-4"><Button variant="outline" asChild><Link to="/book/$slug" params={{ slug }}><Clock />Reserve a room or table</Link></Button></div>}<Menu store={s} channel={channel} tableId={table?.id} tableLabel={table?.label} source={scanSource} /></Frame>;
+  return <Frame store={s}>{channel === "table" ? null : <div className="px-5 pt-4"><Button variant="outline" asChild><Link to="/book/$slug" params={{ slug }}><Clock />Reserve a room or table</Link></Button></div>}<Menu store={s} channel={channel} tableId={table?.id} tableLabel={table ? guestPlaceName(s, table) : undefined} source={scanSource} /></Frame>;
 }
 
 /* ---------------- layout ---------------- */
@@ -218,7 +224,7 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
               {store.qr ? <label className="mt-2 block text-xs font-medium">Table
                 <select aria-label="Select table" value={tableId ?? ""} onChange={(e) => void navigate({ search: { ...(e.target.value ? { table: e.target.value } : {}), s: source }, replace: true })} className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm">
                   {store.online ? <option value="">Pickup</option> : null}
-                  {guestTableChoices(store.tables, tableId).map((t) => <option key={t.id} value={t.id}>{placeName(t.label)}</option>)}
+                  <PlaceOptions store={store} currentId={tableId} />
                 </select>
               </label> : null}
               <p className="text-xs text-muted-foreground">{channel === "table" ? "Your food comes to your table. Pay at the end." : `Usually ready in about ${store.prepMinutes} minutes.`}</p>
@@ -414,7 +420,7 @@ function Checkout({ store, channel, tableId, tableLabel, cart, items, setCart, o
 
   return (
     <div>
-      <DialogTitle>{channel === "table" ? `Your order for table ${tableLabel ?? ""}` : "Your pickup order"}</DialogTitle>
+      <DialogTitle>{channel === "table" ? `Your order for ${placeName(tableLabel ?? "")}` : "Your pickup order"}</DialogTitle>
       <ul className="mt-3 divide-y divide-border">
         {cart.map((l) => (
           <li key={l.key} className="flex items-center gap-3 py-2.5">
