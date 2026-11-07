@@ -1,6 +1,7 @@
 # POS expansion
 
 ## Public guest reservations
+- [ ] Repair accepted booking visibility on future table tiles and Orders; add explicit guest-to-order handoff and new-request sound alerts, verifying without production writes.
 - [x] Add public QR arrival bookings, occupancy-only public data, token-scoped guest status, staff confirmation and serialized overlapping-slot protection; additive migration applied without creating bookings.
 - [x] Show dated arrivals beside floor occupancy and kitchen/settled-room history; active slots mark free tables reserved for display only. Add waiter reservation controls and admin QR download.
 - [x] Cache staff arrivals in IndexedDB and refresh on reconnect; preserve guest draft/request identity across refresh. 25 targeted tests and automatic build pass; public mobile availability/validation has no page errors or overflow. Isolated staff confirmation reads back and appears in kitchen/settled view, with saved arrivals retained offline.
