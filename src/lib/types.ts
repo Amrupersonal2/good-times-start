@@ -67,6 +67,8 @@ export interface Order {
   billNo: string;
   /** UUID receipt key returned to the server allocator for this bill. */
   numberRequestId?: string | undefined;
+  /** The number on an earlier printed copy, kept when the cloud had to give the bill a new one. */
+  printedBillNo?: string | undefined;
   orderType: OrderType;
   tableId?: string | undefined;
   /** Table name as printed, e.g. "T4"; kept with the bill in case the table is renamed later. */

@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { allocateRestaurantNumber, allocatedNumberRequestId } from "@/lib/restaurant-numbering";
+import { freshRestaurantNumber } from "@/lib/restaurant-numbering";
 import { SyncScheduler } from "./sync-scheduler";
 import type { Json } from "@/integrations/supabase/types";
 import { applyEntryToLevels, getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
@@ -134,22 +134,32 @@ export function isRefusal(error: { code?: string; message?: string } | null | un
  */
 type RefusedRow = PushRow & { prelaunch?: boolean };
 
-const UNNUMBERED = /Update the POS app before creating numbered records/i;
+const UNNUMBERED = /Update the POS app before creating numbered records|number was not allocated for this submission/i;
 
 /**
- * An older counter version numbered some kitchen tickets itself; the cloud refuses
- * those. Instead of dropping the printed ticket, give its whole submission a cloud
- * number (keeping the printed one for reference) and re-queue it so it reaches history.
+ * The cloud refuses a bill or kitchen ticket whose number it didn't hand out: one
+ * numbered by an older counter version, or a spare number used offline after the
+ * numbering was reset. Instead of dropping the record, give it a fresh cloud number
+ * (keeping the printed one for reference) and re-queue it so it reaches history.
  */
-async function renumberStuckKot(row: PushRow, message: string | undefined): Promise<boolean> {
-  if (row.kind !== "kot" || !UNNUMBERED.test(message ?? "")) return false;
+async function renumberStuckRecord(row: PushRow, message: string | undefined): Promise<boolean> {
+  if ((row.kind !== "kot" && row.kind !== "order") || !UNNUMBERED.test(message ?? "")) return false;
   try {
     const db = getDb();
+    if (row.kind === "order") {
+      const local = await db.orders.where("uid").equals(row.record_id).first();
+      if (!local || local.id === undefined) return false;
+      const { number, requestId } = await freshRestaurantNumber("POS");
+      await db.orders.put({ ...local, billNo: number, numberRequestId: requestId, ...(local.billNo !== number ? { printedBillNo: local.printedBillNo ?? local.billNo } : {}), synced: false });
+      const tickets = await db.kots.filter((k) => k.orderUid === local.uid || (local.id !== undefined && k.orderId === local.id)).toArray();
+      for (const k of tickets) if (k.id !== undefined) await db.kots.put({ ...k, billNo: number });
+      await markDirty(["order", row.record_id], ...tickets.map((k): [RecordKind, string] => ["kot", k.uid ?? ""]));
+      return true;
+    }
     const local = await db.kots.where("uid").equals(row.record_id).first();
     if (!local || local.id === undefined) return false;
     const submissionId = local.submissionId && /^[0-9a-f-]{36}$/i.test(local.submissionId) ? local.submissionId : crypto.randomUUID();
-    const kotNo = await allocateRestaurantNumber("KOT", submissionId);
-    const numberRequestId = await allocatedNumberRequestId("KOT", submissionId);
+    const { number: kotNo, requestId: numberRequestId } = await freshRestaurantNumber("KOT");
     const siblings = local.submissionId
       ? await db.kots.filter((k) => k.submissionId === local.submissionId).toArray()
       : [local];
@@ -173,7 +183,7 @@ async function upsertAllowed(rows: PushRow[]): Promise<RefusedRow[]> {
     const one = await upsert([row]);
     if (!one) continue;
     if (!isRefusal(one)) throw one;
-    if (await renumberStuckKot(row, one.message)) continue;
+    if (await renumberStuckRecord(row, one.message)) continue;
     // The launch cut-off refuses bills and tickets made before the restaurant launched.
     refused.push(/made before launch/i.test(one.message ?? "") ? { ...row, prelaunch: true } : row);
   }
@@ -311,7 +321,7 @@ async function pushVersioned(restaurantId: string, entries: OutboxEntry[], rows:
           validationError ??= Object.assign(new Error(result.message ?? "Sync failed"), { code: result.code });
           break;
         }
-        if (sent && await renumberStuckKot(sent, result.message)) { done.add(key); break; }
+        if (sent && await renumberStuckRecord(sent, result.message)) { done.add(key); break; }
         if (sent) refused.push(/made before launch/i.test(result.message ?? "") ? { ...sent, prelaunch: true } : sent);
         done.add(key);
         // A settlement unit is all-or-nothing: its stock entry and table go back to the cloud copy too.

@@ -5,7 +5,9 @@ import { consumeReservedNumber, NUMBER_RESERVE_TARGET, readNumberCache, type Res
 export type RestaurantNumberSeries = "POS" | "KOT";
 
 const online = () => typeof navigator === "undefined" || navigator.onLine;
-const cacheKey = (restaurantId: string, series: RestaurantNumberSeries) => `reservedNumbers:${restaurantId}:${series}`;
+// v2: spare numbers reserved before Nov 2026's numbering reset are abandoned, so an
+// old 20-number reserve can never collide with the restarted sequence.
+const cacheKey = (restaurantId: string, series: RestaurantNumberSeries) => `reservedNumbers:v2:${restaurantId}:${series}`;
 
 async function boundRestaurant(): Promise<string> {
   const restaurantId = (await getDb().meta.get("restaurantId"))?.value;
@@ -130,4 +132,15 @@ export async function prepareOfflineNumbers(): Promise<void> {
   } else {
     await refill();
   }
+}
+
+/**
+ * A fresh cloud number for a record the cloud refused because its number is no
+ * longer allocated (for example a spare used offline after a numbering reset).
+ * A new request identity is used, so no locally cached number can be reused.
+ */
+export async function freshRestaurantNumber(series: RestaurantNumberSeries): Promise<{ number: string; requestId: string }> {
+  const requestId = crypto.randomUUID();
+  const number = await allocateRestaurantNumber(series, requestId);
+  return { number, requestId: await allocatedNumberRequestId(series, requestId) };
 }

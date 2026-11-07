@@ -371,7 +371,7 @@ function Frame({ children, tone }: { children: ReactNode; tone: Tone }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border/70 px-4 py-2.5 lg:px-6">
+        <header className="glass sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border/70 px-4 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] lg:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <img src={logo} alt="" width={28} height={28} className="rounded-[8px] lg:hidden" />
             <div className="min-w-0">
