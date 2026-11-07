@@ -42,6 +42,24 @@ describe("floor status", () => {
     expect(withOpenBills([t("R1", "free")], [bill("R1", 100, "settled"), bill("R1", 100, "void"), empty])[0]?.status).toBe("free");
   });
 
+  it("shows Room 7A free after its ₹1380 bill is settled despite a stale table mirror", () => {
+    const settled = bill("ROOM-7A", 1380, "settled");
+    const floor = withOpenBills([t("ROOM-7A", "occupied", 1380)], [], [settled]);
+    expect(floor[0]?.status).toBe("free");
+    expect(floor[0]?.runningTotal).toBe(0);
+    expect(settled.total).toBe(1380);
+    expect(settled.status).toBe("settled");
+  });
+
+  it("does not release a room with a newer open bill, QR bill or unsent draft", () => {
+    const stale = t("ROOM-7A", "occupied", 1380);
+    const closed = [bill("ROOM-7A", 1380, "settled")];
+    expect(withOpenBills([stale], [bill("ROOM-7A", 80)], closed)[0]?.status).toBe("occupied");
+    expect(withOpenBills([stale], [{ ...bill("ROOM-7A", 80), source: "qr" }], closed)[0]?.status).toBe("occupied");
+    expect(withOpenBills([stale], [], closed, ["ROOM-7A"])[0]?.status).toBe("occupied");
+    expect(withOpenBills([{ ...stale, heldDevice: "waiter" }], [], closed)[0]?.status).toBe("occupied");
+  });
+
   it("keeps a table's QR bill apart from its staff bill", () => {
     const qr = (tableId: string, total: number, uid: string): Order => ({ ...bill(tableId, total), source: "qr", uid, createdAt: 2000 });
     const floor = withOpenBills([t("D1", "occupied", 400), t("HUT-1", "free"), t("D2", "free")], [bill("D1", 400), qr("D1", 250, "q1"), qr("HUT-1", 180, "q2")]);
