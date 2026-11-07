@@ -37,6 +37,11 @@ describe("floor status", () => {
     expect(floor[1]?.since).toBe(1000);
   });
 
+  it("shows an open bill's amount when the table mirror says ₹0", () => {
+    const floor = withOpenBills([t("BONFIRE-1", "billed", 0)], [bill("BONFIRE-1", 60)]);
+    expect(floor.map((x) => [x.status, x.runningTotal])).toEqual([["billed", 60]]);
+  });
+
   it("ignores settled, cancelled and empty bills", () => {
     const empty = { ...bill("R1", 0), lines: [] };
     expect(withOpenBills([t("R1", "free")], [bill("R1", 100, "settled"), bill("R1", 100, "void"), empty])[0]?.status).toBe("free");

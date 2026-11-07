@@ -67,6 +67,23 @@ describe("restaurant number allocation", () => {
     expect(mocks.transport).not.toHaveBeenCalled();
   });
 
+  it("takes the next cloud number while online and keeps spare numbers for outages", async () => {
+    mocks.rows.set("reservedNumbers:restaurant-id:POS", { key: "reservedNumbers:restaurant-id:POS", value: JSON.stringify({ available: [{ requestId: "spare", number: "POS/0007" }], assigned: {}, pending: [] }) });
+    mocks.transport.mockResolvedValue({ data: "POS/0012", error: null });
+    await expect(allocateRestaurantNumber("POS", "online-bill")).resolves.toBe("POS/0012");
+    const cache = JSON.parse(mocks.rows.get("reservedNumbers:restaurant-id:POS")?.value ?? "{}");
+    expect(cache.available).toEqual([{ requestId: "spare", number: "POS/0007" }]);
+  });
+
+  it("uses a spare number when the cloud can't be reached, and keeps it on retry", async () => {
+    mocks.rows.set("reservedNumbers:restaurant-id:POS", { key: "reservedNumbers:restaurant-id:POS", value: JSON.stringify({ available: [{ requestId: "spare", number: "POS/0007" }], assigned: {}, pending: [] }) });
+    mocks.transport.mockResolvedValue({ data: null, error: { message: "TypeError: Failed to fetch" } });
+    await expect(allocateRestaurantNumber("POS", "flaky-bill")).resolves.toBe("POS/0007");
+    mocks.transport.mockResolvedValue({ data: "POS/0013", error: null });
+    await expect(allocateRestaurantNumber("POS", "flaky-bill")).resolves.toBe("POS/0007");
+    await expect(allocatedNumberRequestId("POS", "flaky-bill")).resolves.toBe("spare");
+  });
+
   it("does not duplicate reserved numbers for simultaneous local submissions", async () => {
     mocks.rows.set("reservedNumbers:restaurant-id:KOT", { key: "reservedNumbers:restaurant-id:KOT", value: JSON.stringify({ available: [{ requestId: "a", number: "KOT/0019" }, { requestId: "b", number: "KOT/0020" }], assigned: {}, pending: [] }) });
     vi.stubGlobal("navigator", { onLine: false });
@@ -83,12 +100,12 @@ describe("restaurant number allocation", () => {
     let n = 18;
     mocks.transport.mockImplementation(async (_name, args) => ({ data: `${args._series}/${String(++n).padStart(4, "0")}`, error: null }));
     await prepareOfflineNumbers();
-    expect(mocks.transport).toHaveBeenCalledTimes(40);
+    expect(mocks.transport).toHaveBeenCalledTimes(6);
     await prepareOfflineNumbers();
-    expect(mocks.transport).toHaveBeenCalledTimes(40);
+    expect(mocks.transport).toHaveBeenCalledTimes(6);
     const cache = JSON.parse(mocks.rows.get("reservedNumbers:restaurant-id:KOT")?.value ?? "{}");
-    expect(cache.available).toHaveLength(20);
-    expect(new Set(cache.available.map((x: { requestId: string }) => x.requestId)).size).toBe(20);
+    expect(cache.available).toHaveLength(3);
+    expect(new Set(cache.available.map((x: { requestId: string }) => x.requestId)).size).toBe(3);
   });
 
   it("retains a refill request after a network failure for the next reconnect", async () => {

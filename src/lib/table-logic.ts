@@ -41,6 +41,9 @@ export function withOpenBills(tables: RestaurantTable[], held: Order[], closed: 
       next = { ...t, status: "free", runningTotal: 0, since: undefined };
     }
     if (bill && !busy) next = { ...t, status: "occupied", runningTotal: bill.total, since: bill.createdAt };
+    // A table mirror can be reset to ₹0 (for example by closing another bill on it)
+    // while a staff bill stays open: show that bill's amount instead of ₹0.
+    else if (bill && busy && !t.runningTotal && bill.total > 0) next = { ...t, runningTotal: bill.total, since: t.since ?? bill.createdAt };
     else if (qrBill && !busy) next = { ...t, status: "occupied", runningTotal: 0, since: qrBill.createdAt };
     return qrBill ? { ...next, qrTotal: qrBill.total, ...(qrBill.uid ? { qrBill: qrBill.uid } : {}) } : next;
   });

@@ -5,7 +5,8 @@ export interface NumberCache {
   pending: string[];
 }
 
-export const NUMBER_RESERVE_TARGET = 20;
+/** Spare numbers each device keeps for internet outages; online bills never use them. */
+export const NUMBER_RESERVE_TARGET = 3;
 
 export function readNumberCache(value: unknown): NumberCache {
   if (typeof value !== "string") return { available: [], assigned: {}, pending: [] };

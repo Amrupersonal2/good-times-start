@@ -36,11 +36,47 @@ async function cloudNumber(restaurantId: string, series: RestaurantNumberSeries,
   return data;
 }
 
-/** Official numbers are reserved by the existing authenticated allocator, never invented locally. */
+/** How long a bill waits for the cloud number before using a spare offline number. */
+const CLOUD_NUMBER_WAIT_MS = 5000;
+
+function withinWait<T>(work: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("The cloud took too long to give a number.")), CLOUD_NUMBER_WAIT_MS);
+    work.then((value) => { clearTimeout(timer); resolve(value); }, (error: unknown) => { clearTimeout(timer); reject(error); });
+  });
+}
+
+/**
+ * Official numbers are reserved by the existing authenticated allocator, never invented locally.
+ * Online bills take the next cloud number directly, so numbers run in order; the device's few
+ * spare reserved numbers are used only when the cloud can't be reached.
+ */
 export async function allocateRestaurantNumber(series: RestaurantNumberSeries, requestId: string): Promise<string> {
   const restaurantId = await boundRestaurant();
   const db = getDb();
   const key = cacheKey(restaurantId, series);
+  // A retry of the same bill or ticket always gets the number it was first given.
+  const prior = readNumberCache((await db.meta.get(key))?.value).assigned[requestId];
+  if (prior) return prior.number;
+
+  let cloudFailure: unknown;
+  if (online()) {
+    try {
+      const number = await withinWait(cloudNumber(restaurantId, series, requestId));
+      // Persist even online results: retrying after a lost response/reload must reuse the same number.
+      return await db.transaction("rw", db.meta, async () => {
+        const cache = readNumberCache((await db.meta.get(key))?.value);
+        const raced = cache.assigned[requestId];
+        if (raced) return raced.number;
+        cache.assigned[requestId] = { requestId, number };
+        await db.meta.put({ key, value: JSON.stringify(cache) });
+        return number;
+      });
+    } catch (failure) {
+      cloudFailure = failure;
+    }
+  }
+
   const reserved = await db.transaction("rw", db.meta, async () => {
     const cache = readNumberCache((await db.meta.get(key))?.value);
     const next = consumeReservedNumber(cache, requestId);
@@ -48,15 +84,8 @@ export async function allocateRestaurantNumber(series: RestaurantNumberSeries, r
     return next;
   });
   if (reserved) return reserved.number;
-  if (!online()) throw new Error("This device has used all its reserved offline numbers. Your items are saved; reconnect once to refill numbers, then send again.");
-  const number = await cloudNumber(restaurantId, series, requestId);
-  // Persist even online results: retrying after a lost response/reload must reuse the same number.
-  await db.transaction("rw", db.meta, async () => {
-    const cache = readNumberCache((await db.meta.get(key))?.value);
-    cache.assigned[requestId] = { requestId, number };
-    await db.meta.put({ key, value: JSON.stringify(cache) });
-  });
-  return number;
+  if (cloudFailure) throw cloudFailure;
+  throw new Error("This device has used all its reserved offline numbers. Your items are saved; reconnect once to refill numbers, then send again.");
 }
 
 /** The guard validates the original cloud reservation identity, not the local bill/submission UID. */
