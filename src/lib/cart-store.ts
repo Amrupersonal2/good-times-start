@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
 import { computeTotals } from "./billing";
 import { getDb, markDirty } from "./db";
-import { allocateRestaurantNumber, allocatedNumberRequestId, prepareOfflineNumbers } from "./restaurant-numbering";
+import { allocateRestaurantNumber, allocatedNumberRequestId } from "./restaurant-numbering";
 import { additionsNotInShared, accumulateSubmittedQuantities, cancelledKitchenLines, guestDetailsError, removeCancelled, reopenedLines, submittedQuantitiesFromKots, subtractSettledQuantities, subtractSubmittedQuantities, unsentKitchenLines } from "./kitchen-order";
 import { mergeSentLines, newUid, sameLines, type RecordKind } from "./sync-core";
 import { applyLocalStockSale } from "./cloud-sync";
@@ -82,14 +82,6 @@ export function useCart(initialTableId?: string) {
   const staffName = user?.displayName ?? "";
   const [myDevice, setMyDevice] = useState("");
   useEffect(() => { void getDeviceId().then(setMyDevice).catch(() => setMyDevice("")); }, []);
-  useEffect(() => {
-    if (!user?.restaurantId) return;
-    const refill = () => { void prepareOfflineNumbers().catch(() => { /* Saved reserves stay usable during an outage. */ }); };
-    refill();
-    window.addEventListener("online", refill);
-    const timer = window.setInterval(refill, 60_000);
-    return () => { window.removeEventListener("online", refill); window.clearInterval(timer); };
-  }, [user?.restaurantId]);
   // A running bill keeps the tax rules it started with; new bills follow current settings.
   const tax: TaxOptions = activeOrder?.tax ?? taxOptionsFor(settings, orderType);
   const taxKey = JSON.stringify(tax);
