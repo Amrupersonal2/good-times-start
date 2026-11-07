@@ -221,7 +221,9 @@ async function restoreRefused(restaurantId: string, refused: RefusedRow[]): Prom
 async function push(restaurantId: string): Promise<void> {
   const db = getDb();
   // Numbers the counter gave offline are claimed in order before their bills and tickets go up.
-  await flushOfflineClaims();
+  // A failed claim must never hold back every other upload: the bills still go up, and any
+  // number the cloud won't accept is replaced with a fresh one by renumberStuckRecord.
+  try { await flushOfflineClaims(); } catch (error) { console.warn("Offline number claims will retry on the next sync", error); }
   for (;;) {
     const entries: OutboxEntry[] = await db.outbox.orderBy("at").limit(PUSH_BATCH).toArray();
     if (!entries.length) return;

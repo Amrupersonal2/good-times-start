@@ -23,6 +23,7 @@ export const fakeServer = {
   now: Date.parse("2026-10-17T09:00:00.000Z"),
   stepMs: 1000,
   offline: false,
+  claimFails: false,
   /** Devices whose role can't change restaurant settings (cashier, captain, kitchen). */
   staffOnly: new Set<string>(),
   /** Like migration 0012: bills, tickets and stock made before this moment are refused. */
@@ -45,6 +46,7 @@ export const fakeServer = {
     this.now = Date.parse("2026-10-17T09:00:00.000Z");
     this.stepMs = 1000;
     this.offline = false;
+    this.claimFails = false;
     this.staffOnly.clear();
     this.launchedAt = null;
     this.requests = { upsert: 0, select: 0, rowsReturned: 0, rpc: 0 };
@@ -201,6 +203,7 @@ export const supabase = {
   channel() { const c = { on: () => c, subscribe: () => c }; return c; },
   async removeChannel() { return "ok"; },
   async rpc(name?: string, args?: { _restaurant_id: string; _units: { rows: (InRow & { base_version: number | null })[] }[] }) {
+    if (name === "claim_offline_number" && fakeServer.claimFails) return { data: null, error: { code: "P0001", message: "claim service unavailable" } };
     if (name !== "push_restaurant_records") return { data: null, error: null };
     fakeServer.requests.rpc = (fakeServer.requests.rpc ?? 0) + 1;
     if (fakeServer.offline) return { data: null, error: offlineError };

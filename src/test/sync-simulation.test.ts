@@ -88,6 +88,20 @@ describe("multi-device sync", () => {
     expect(await on("manager-phone", () => db.getDb().orders.where("status").equals("settled").count())).toBe(30);
   });
 
+  it("still uploads bills when confirming the counter's offline numbers fails", async () => {
+    server.fakeServer.claimFails = true;
+    await on("counter", async () => {
+      const d = db.getDb();
+      await d.meta.put({ key: "restaurantId", value: R });
+      await d.meta.put({ key: `offlineClaims:${R}`, value: JSON.stringify([{ series: "KOT", requestId: "00000000-0000-4000-8000-000000000001", number: 21 }]) });
+      await addOrder(order("o-claim", { status: "held" }));
+    });
+    await syncNow("counter");
+    expect(await on("counter", () => db.getDb().outbox.count())).toBe(0);
+    await syncNow("manager-phone");
+    expect(await on("manager-phone", () => db.getDb().orders.where("uid").equals("o-claim").count())).toBe(1);
+  });
+
   it("settles two edits to the same table by push order, and every device ends up agreeing", async () => {
     for (const device of ["counter", "waiter"]) {
       await on(device, async () => { await db.getDb().restTables.put(table("T1")); });

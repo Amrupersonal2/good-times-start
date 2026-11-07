@@ -67,7 +67,7 @@ describe("sync scheduler", () => {
     s.stop();
   });
 
-  it("polls every 15 s while the live connection is down and every 60 s while it's up", async () => {
+  it("polls every 15 s while the live connection is down and every 20 s while it's up", async () => {
     const c = clock();
     const runs: number[] = [];
     const s = new SyncScheduler(async () => { runs.push(c.now); }, c.timers);

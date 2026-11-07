@@ -7,7 +7,8 @@
  *   keep postponing it for as long as edits kept coming).
  * - After a failed sync, retry with growing gaps (2 s, 5 s, 15 s, 30 s, 60 s)
  *   instead of waiting for the next minute's poll.
- * - Poll every 15 s while the live connection is down, every 60 s while it's up.
+ * - Poll every 15 s while the live connection is down, every 20 s while it's up, so a
+ *   connection that silently stops delivering changes still heals within 20 s.
  */
 
 export interface Timers {
@@ -17,7 +18,7 @@ export interface Timers {
 }
 
 export const RETRY_DELAYS = [2_000, 5_000, 15_000, 30_000, 60_000] as const;
-export const POLL_LIVE = 60_000;
+export const POLL_LIVE = 20_000;
 export const POLL_DOWN = 15_000;
 
 export function retryDelay(failures: number): number {
