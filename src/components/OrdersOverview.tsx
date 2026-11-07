@@ -46,7 +46,7 @@ export function OrdersOverview({ onClose }: OrdersOverviewProps) {
   const datedBills = (type: HistoryKind) => historyBills(history.bills, type, [start, end]);
   const shownBills = kind === "settled" ? datedBills("settled").filter((o) => paidBy(o, paid)) : datedBills(kind);
   // Oldest first, matching the bills list: the day reads in the order it happened.
-  const submissions = kotSubmissions(history.kots).reverse();
+  const submissions = kotSubmissions(history.kots);
   const settings = useRestaurantSettings(); const config = usePrintConfig();
   const { user } = useStaff();
   const app = useAppMode(user);
