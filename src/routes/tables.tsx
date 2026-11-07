@@ -23,11 +23,15 @@ import { can } from "@/lib/permissions";
 import { ReservationsPanel } from "@/components/ReservationsPanel";
 import { useReservations } from "@/lib/use-reservations";
 import { withReservations } from "@/lib/reservations";
+import { boardTables, boardKots, matchesBoard, type BoardFilter } from "@/lib/table-board";
+import { dayBounds, dateLabel } from "@/lib/orders-history";
+import { reportOrders } from "@/lib/report-orders";
+import { Segmented } from "@/components/Segmented";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({
     meta: [
-      { title: "Tables — XTSY POS" },
+      { title: "Live table status board — TAB Bistro by XTSY" },
       { name: "description", content: "Live floor plan: open bills, move or merge tables, and arrange sections." }, { property: "og:title", content: "Tables — XTSY POS" }, { property: "og:description", content: "Live floor plan: open bills, move or merge tables, and arrange sections." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },],
   }),
   component: TablesPage,
@@ -172,7 +176,15 @@ function TablesPage() {
     const newDraftTables = drafts.filter((d) => !d.orderUid && d.lines.length && d.tableId).map((d) => d.tableId).filter((id): id is string => !!id);
     return withOpenBills(floor, held, closed, newDraftTables);
   }, [], []);
-  const tables = withReservations(floorTables, bookings.rows, Date.now());
+  const [start, end] = dayBounds(dateLabel());
+  const activity = useLiveQuery(async () => {
+    const db = getDb();
+    const [open, closed] = await Promise.all([db.orders.where("status").equals("held").toArray(), reportOrders({ from: start, to: end - 1 })]);
+    const linked = (await Promise.all(open.map((o) => o.id !== undefined ? db.kots.where("orderId").equals(o.id).toArray() : Promise.resolve([])))).flat();
+    return { closed, groups: boardKots(linked, open) };
+  }, [start, end], { closed: [], groups: [] });
+  const tables = boardTables(withReservations(floorTables, bookings.rows, Date.now()), activity.closed, start, end);
+  const [boardFilter, setBoardFilter] = useState<BoardFilter>("all");
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
   const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
     .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
@@ -182,6 +194,7 @@ function TablesPage() {
   const canBill = can(user, "bill.create");
   const openBill = (t: RestaurantTable) => void navigate({ to: "/", search: { table: t.id } });
   const [editing, setEditing] = useState(false);
+  const visibleTables = editing ? tables : tables.filter((t) => matchesBoard(t, boardFilter));
   const [selected, setSelected] = useState<RestaurantTable | null>(null);
   const [form, setForm] = useState<RestaurantTable | "new" | "section" | null>(null);
   const [, setTick] = useState(0);
@@ -248,19 +261,33 @@ function TablesPage() {
           </section>
         ) : null}
 
+        <section aria-label="Live table status board" className="mb-6 border-y border-border py-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="text-base font-bold">Live table status</h2><span className="text-xs text-muted-foreground">Settlements · Today</span></div>
+          <Segmented<BoardFilter> ariaLabel="Table status" value={boardFilter} onChange={setBoardFilter} options={(["all", "booked", "occupied", "settled", "free"] as BoardFilter[]).map((value) => ({ value, label: value === "all" ? "All" : value === "settled" ? "Settled today" : value.charAt(0).toUpperCase() + value.slice(1), badge: tables.filter((t) => matchesBoard(t, value)).length }))} />
+        </section>
         <ReservationsPanel upcoming />
+        <section aria-label="KOTs in progress" className="mb-7 border-y border-border py-4">
+          <h2 className="mb-3 text-base font-bold">Active KOTs <span className="font-normal text-muted-foreground">· {activity.groups.length}</span></h2>
+          <div className="grid max-h-64 gap-3 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">{activity.groups.map((group) => <article key={group.id} className="rounded-lg border border-border bg-card p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">{group.first.tableSection ? `${group.first.tableSection} · ` : ""}{group.first.tableLabel ?? group.first.tableId ?? "Counter"}</h3><span className="text-xs text-muted-foreground">{new Date(group.first.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></div>
+            <p className="mt-1 text-xs font-semibold text-primary">{group.first.printedKotNo ?? group.first.kotNo ?? group.first.billNo} · {group.tickets.map((k) => k.station).join(" / ")} · Submitted</p>
+            <ul className="mt-2 space-y-1 text-sm">{group.tickets.flatMap((ticket) => ticket.lines).map((line, i) => <li key={i} className="flex gap-3"><span className="min-w-0 flex-1 break-words">{line.name}</span><span className="shrink-0 font-bold tabular-nums">{line.qty}</span></li>)}</ul>
+          </article>)}</div>
+          {!activity.groups.length ? <p className="text-sm text-muted-foreground">No active KOTs.</p> : null}
+        </section>
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No tables yet</p>
             {!canEdit ? <p className="mt-1 text-sm text-muted-foreground">Ask the owner or a manager to set up the floor.</p> : null}
           </div>
         ) : null}
+        {tables.length > 0 && visibleTables.length === 0 ? <p className="mb-7 text-sm text-muted-foreground">No tables with this status.</p> : null}
 
-        {sections.map((sec) => (
+        {sections.filter((sec) => visibleTables.some((t) => t.section === sec)).map((sec) => (
           <section key={sec} className="mb-7">
             <h2 className="mb-3 text-base font-bold">{sec}</h2>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
-              {groupTables(tables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))).map((g) => g.length > 1 && !editing ? (
+              {groupTables(visibleTables.filter((t) => t.section === sec).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))).map((g) => g.length > 1 && !editing && boardFilter === "all" ? (
                 <TableGroup key={g[0]?.id} tables={g} onPick={(t) => (canBill ? openBill(t) : setSelected(t))} />
               ) : g.map((t) => (
                 <div key={t.id} className="relative">
@@ -269,9 +296,10 @@ function TablesPage() {
                   className={`relative flex h-24 w-full flex-col items-center justify-center rounded-xl border-2 p-2 text-center transition-colors hover:border-primary ${STATUS[t.status].cls}`}>
                   <span className={`${t.label.length > 4 ? "text-base leading-tight sm:text-lg" : "text-2xl"} max-w-full break-words font-extrabold`}>{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
+                  {t.settledAt !== undefined ? <span className="text-xs font-semibold text-success">Settled · {new Date(t.settledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span> : null}
                   {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
                     <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
-                  ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Reserved</span> : null}
+                  ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Booked</span> : null}
                   {t.booking ? <span className="mt-1 max-w-full truncate text-xs font-semibold text-primary">{new Date(t.booking.arrival_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}
                   {t.qrTotal ? <span className="mt-0.5 rounded bg-primary/15 px-1.5 text-[10px] font-bold text-primary">QR {formatINR(t.qrTotal, 0)}</span> : null}
                   {holdLabel(t, Date.now()) ? <span className="mt-0.5 max-w-full truncate text-[10px] font-semibold text-primary">{holdLabel(t, Date.now())}</span> : null}
