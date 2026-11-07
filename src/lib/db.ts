@@ -204,7 +204,7 @@ const listeners = new Set<() => void>();
 let tick = 0;
 
 /** Subscribe to local edits that need syncing. Returns an unsubscribe function. */
-export function onLocalChange(listener: () => void): () => void {
+export function onLocalChange(listener: (kinds: RecordKind[]) => void): () => void {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
 }
@@ -218,7 +218,8 @@ export async function markDirty(...changes: [RecordKind, string][]): Promise<voi
     return { key: outboxKey(kind, recordId), kind, recordId, at: base + tick };
   });
   await getDb().outbox.bulkPut(entries);
-  for (const listener of listeners) listener();
+  const kinds = changes.map(([kind]) => kind);
+  for (const listener of listeners) listener(kinds);
 }
 
 /* ---------- device bill series ---------- */

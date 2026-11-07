@@ -632,7 +632,8 @@ export function startLiveSync(restaurantId: string): () => void {
     { now: () => Date.now(), setTimeout: (fn, ms) => window.setTimeout(fn, ms), clearTimeout: (h) => window.clearTimeout(h as number) },
   );
 
-  const stopLocal = onLocalChange(() => scheduler.request(800));
+  // Kitchen tickets push at once so the kitchen screen updates instantly; offline they stay in the outbox until "online" fires.
+  const stopLocal = onLocalChange((kinds) => scheduler.request(kinds.includes("kot") ? 0 : 800));
   const wake = () => scheduler.request(0);
   const onVisible = () => { if (document.visibilityState === "visible") wake(); };
   window.addEventListener("online", wake);
@@ -649,7 +650,7 @@ export function startLiveSync(restaurantId: string): () => void {
     setLiveStatus(attempts ? "reconnecting" : "connecting");
     const current = supabase
       .channel(`restaurant-records-${restaurantId}-${Date.now()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_records", filter: `restaurant_id=eq.${restaurantId}` }, () => scheduler.request(250));
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_records", filter: `restaurant_id=eq.${restaurantId}` }, () => scheduler.request(0));
     channel = current;
     current.subscribe((status: string) => {
       if (stopped || channel !== current) return;
