@@ -189,6 +189,17 @@ export function useCart(initialTableId?: string) {
       void getDb().drafts.delete(tableId ?? "walkin");
       return;
     }
+    // Guest details renamed on another terminal: adopt them unless this terminal has its own unsaved edit.
+    if (activeOrder && liveOrder.uid === activeOrder.uid) {
+      const key = (c?: { name?: string; phone?: string }, g?: number) => JSON.stringify([c?.name?.trim() ?? "", (c?.phone ?? "").replace(/\D/g, ""), g ?? 0]);
+      const remoteChanged = key(liveOrder.customer, liveOrder.guestCount) !== key(activeOrder.customer, activeOrder.guestCount);
+      const localUntouched = key(customer, guestCount) === key(activeOrder.customer, activeOrder.guestCount);
+      if (remoteChanged && localUntouched) {
+        setCustomer(liveOrder.customer ?? {});
+        setGuestCount(liveOrder.guestCount);
+        setActiveOrder(liveOrder);
+      }
+    }
     if (activeOrder && liveOrder.uid === activeOrder.uid && sameLines(liveOrder.lines, activeOrder.lines) &&
       JSON.stringify(liveOrder.kotSubmittedQty ?? {}) === JSON.stringify(activeOrder.kotSubmittedQty ?? {})) return;
     // Items this device hasn't sent yet stay on top of whatever the shared order now holds.
@@ -198,6 +209,28 @@ export function useCart(initialTableId?: string) {
     if (!sameLines(next, lines)) setLines(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- react only to changes in the shared order
   }, [liveOrder, draftReady]);
+
+  // Renaming the guest on an open bill saves to the shared bill at once, so every terminal updates.
+  useEffect(() => {
+    if (!draftReady || !activeOrder?.id || activeOrder.status !== "held") return;
+    const name = customer.name?.trim() ?? "", phone = (customer.phone ?? "").replace(/\D/g, "");
+    if (!name || phone.length !== 10) return;
+    const same = (activeOrder.customer?.name?.trim() ?? "") === name && (activeOrder.customer?.phone ?? "").replace(/\D/g, "") === phone && (activeOrder.guestCount ?? 0) === (guestCount ?? 0);
+    if (same) return;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const db = getDb();
+        const current = activeOrder.id === undefined ? undefined : await db.orders.get(activeOrder.id);
+        if (!current || current.status !== "held") return;
+        const updated = { ...current, customer: { ...current.customer, ...customer }, guestCount, synced: false };
+        await db.orders.put(updated);
+        await markDirty(["order", current.uid ?? ""]);
+        void rememberCustomer(customer);
+        setActiveOrder(updated);
+      })();
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [customer, guestCount, activeOrder, draftReady]);
 
   /** Add one of a dish, with an optional portion and add-ons, priced for the current order type. */
   const addItem = useCallback((item: MenuItem, variantId?: string, addonIds: string[] = []) => {

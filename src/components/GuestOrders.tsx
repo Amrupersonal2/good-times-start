@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VegMark } from "@/components/VegMark";
 import { printKots } from "@/components/PrintHost";
 import { useStaff } from "@/lib/auth-context";
+import { useLiveQuery } from "dexie-react-hooks";
+import { getDb } from "@/lib/db";
 import { useAccount } from "@/lib/use-account";
 import { formatINR } from "@/lib/billing";
 import { acceptGuestOrder, isActiveGuestOrder, loadGuestOrders, setGuestOrderStatus } from "@/lib/guest-order-actions";
@@ -161,10 +163,27 @@ type View = "requests" | "accepted" | "history";
 
 function GuestOrdersPanel({ orders, onDone }: { orders: GuestOrder[]; onDone: () => void }) {
   const [view, setView] = useState<View>("requests");
+  const staffName = useStaff().user?.displayName ?? "Counter";
+  // A QR order whose bill was cancelled or settled is finished, whatever its stored status.
+  const uids = orders.map((o) => o.order_uid).filter((u): u is string => !!u);
+  const closed = useLiveQuery(async () => {
+    const bills = await getDb().orders.where("uid").anyOf(uids).toArray();
+    return new Map(bills.filter((b) => b.status === "void" || b.status === "settled").map((b) => [b.uid ?? "", b.status]));
+  }, [uids.join(",")]) ?? new Map<string, string>();
   const groups: Record<Exclude<View, "history">, GuestOrder[]> = {
     requests: orders.filter((o) => o.status === "new"),
-    accepted: orders.filter((o) => o.status === "accepted" || o.status === "ready"),
+    accepted: orders.filter((o) => (o.status === "accepted" || o.status === "ready") && !closed.has(o.order_uid ?? "")),
   };
+  const closing = useRef(new Set<string>());
+  useEffect(() => {
+    for (const o of orders) {
+      const billStatus = closed.get(o.order_uid ?? "");
+      if (!billStatus || (o.status !== "accepted" && o.status !== "ready") || closing.current.has(o.id)) continue;
+      closing.current.add(o.id);
+      void setGuestOrderStatus(o, billStatus === "void" ? "cancelled" : "completed", staffName, billStatus === "void" ? "Bill cancelled by restaurant" : "")
+        .then(onDone, () => { /* another terminal already updated it */ });
+    }
+  }, [orders, closed, staffName, onDone]);
   const list = view === "history" ? [] : sortGuestOrders(groups[view]);
   return (
     <div>
