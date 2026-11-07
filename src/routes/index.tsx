@@ -36,6 +36,7 @@ import { allow } from "@/lib/pin-gate";
 import { usePolicy } from "@/components/PinGate";
 import { COUNTER_TYPES, isCounterType } from "@/lib/bill-entry";
 import { useFirstSyncDone } from "@/lib/use-first-sync";
+import { billLabel, hasBillNumber } from "@/lib/bill-numbering";
 
 export const Route = createFileRoute("/")({
   // A bill opens only from Tables: a table, a running counter bill, or a new counter order.
@@ -267,7 +268,7 @@ function PosPage() {
           <div className="truncate text-xl font-bold tracking-tight">
             {qrBillOpen ? `QR bill · ${cart.activeOrder?.tableLabel ?? cart.activeOrder?.tableId ?? ""}` : cart.orderType === "dine-in" ? (currentTable ? `${currentTable.section} · ${currentTable.label}` : "Choose a table") : cart.customer.name && cart.activeOrder?.guestCodes ? `${cart.activeOrder.guestCodes[0]} ${cart.customer.name}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l}
           </div>
-          <div className="text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}, opened ${since(cart.activeOrder.createdAt)}${since(cart.activeOrder.createdAt) === "just now" ? "" : " ago"}` : "New bill"}</div>
+          <div className="text-xs text-muted-foreground">{cart.activeOrder ? `${billLabel(cart.activeOrder)}, opened ${since(cart.activeOrder.createdAt)}${since(cart.activeOrder.createdAt) === "just now" ? "" : " ago"}` : "New bill"}</div>
           <GuestDetailsFields customer={cart.customer} setCustomer={cart.setCustomer} guestCount={cart.guestCount}
             setGuestCount={cart.setGuestCount} orderType={cart.orderType} tableSeats={currentTable?.seats} />
           {guestDetailsIssue ? <p className="mt-1 text-[10px] text-destructive" role="status">{guestDetailsIssue}</p> : null}
@@ -420,7 +421,7 @@ function PosPage() {
           <span className="min-w-0 truncate text-sm font-semibold">
             {qrBillOpen ? `QR bill · ${cart.activeOrder?.tableLabel ?? ""}` : currentTable ? `${currentTable.section} · ${placeName(currentTable.label)}` : ORDER_TYPES.find((o) => o.v === cart.orderType)?.l ?? ""}
           </span>
-          {cart.activeOrder ? <span className="ml-auto shrink-0 text-xs text-muted-foreground">Bill {cart.activeOrder.billNo}</span> : null}
+          {cart.activeOrder ? <span className="ml-auto shrink-0 text-xs text-muted-foreground">{billLabel(cart.activeOrder)}</span> : null}
         </div>
         <div className="flex min-h-0 flex-1">
           {/* Category rail (desktop) */}
@@ -530,13 +531,13 @@ function PosPage() {
       <Dialog open={upiOpen} onOpenChange={setUpiOpen}>
         <DialogContent className="max-w-sm">
           {upiOpen && settings.upiVpa ? <UpiPay vpa={settings.upiVpa} payee={settings.name || "Restaurant"} amount={cart.totals.total}
-            billNo={cart.activeOrder?.billNo ?? "new"} onPaid={() => { void cart.settle("upi", closedBy, settleOptions).then(done); }} /> : null}
+            billNo={cart.activeOrder?.billNo || cart.activeOrder?.tableLabel || "new"} onPaid={() => { void cart.settle("upi", closedBy, settleOptions).then(done); }} /> : null}
         </DialogContent>
       </Dialog>
 
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="max-w-md">
-          {cancelOpen ? <ReasonPrompt title={`Cancel bill ${cart.activeOrder?.billNo ?? ""}`}
+          {cancelOpen ? <ReasonPrompt title={cart.activeOrder && hasBillNumber(cart.activeOrder) ? `Cancel bill ${cart.activeOrder.billNo}` : "Cancel this bill"}
             description="The kitchen already has these items. The bill is kept as cancelled with your reason."
             confirmLabel="Cancel this bill" onConfirm={(reason) => { void cart.cancelOrder(reason, closedBy).then(() => { setCancelOpen(false); toFloor(); }); }} /> : null}
         </DialogContent>

@@ -122,9 +122,9 @@ export function mergeOrder(base: Order | undefined, local: Order, remote: Order)
   if (local.status !== "held" || remote.status !== "held") {
     const samePayments = JSON.stringify(local.payments ?? []) === JSON.stringify(remote.payments ?? []);
     if (local.status === remote.status && samePayments && local.total === remote.total) return { order: local.id !== undefined ? { ...remote, id: local.id } : { ...remote }, conflicts: [] };
-    return { order: null, conflicts: [remote.status !== "held" ? `Bill ${remote.billNo} was ${remote.status === "settled" ? "settled" : "cancelled"} on another device` : `Bill ${remote.billNo} changed on another device after it was settled here`] };
+    return { order: null, conflicts: [remote.status !== "held" ? `${remote.billNo ? `Bill ${remote.billNo}` : "A running bill"} was ${remote.status === "settled" ? "settled" : "cancelled"} on another device` : `${remote.billNo ? `Bill ${remote.billNo}` : "A running bill"} changed on another device after it was settled here`] };
   }
-  if (!base) return { order: null, conflicts: [`Bill ${remote.billNo} changed on another device`] };
+  if (!base) return { order: null, conflicts: [`${remote.billNo ? `Bill ${remote.billNo}` : "A running bill"} changed on another device`] };
   const merged = mergeLines(base.lines, local.lines, remote.lines);
   if (merged.conflicts.length) return { order: null, conflicts: merged.conflicts };
 

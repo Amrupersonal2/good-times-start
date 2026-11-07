@@ -58,7 +58,7 @@ export function Receipt({ order }: { order: Order }) {
         {order.status === "void" && order.voidReason ? <div>{order.voidReason}</div> : null}
       </div>
       <Rule />
-      <div className="flex justify-between"><span>Bill {order.billNo}</span><span>{new Date(order.createdAt).toLocaleDateString("en-IN")}</span></div>
+      <div className="flex justify-between"><span>{order.billNo ? `Bill ${order.billNo}` : "Running bill"}</span><span>{new Date(order.createdAt).toLocaleDateString("en-IN")}</span></div>
       <div className="flex justify-between"><span>{ORDER_TYPE_LABEL[order.orderType]}{table ? `, table ${table}` : ""}</span><span>{time(order.createdAt)}</span></div>
       {order.customer?.name || order.customer?.phone ? <div>Guest: {[order.customer.name, order.customer.phone].filter(Boolean).join(", ")}</div> : null}
       {order.customer?.gstin ? <div>Guest GSTIN: {order.customer.gstin}</div> : null}

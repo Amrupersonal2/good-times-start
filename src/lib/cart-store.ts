@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { billLabel, hasBillNumber, stampKotsWithBillNo, withBillNumber } from "./bill-numbering";
 import { useLiveQuery } from "dexie-react-hooks";
 import { toast } from "sonner";
 import type { CartLine, Kot, MenuItem, Order, OrderType, PaymentMode } from "./types";
@@ -350,7 +351,8 @@ export function useCart(initialTableId?: string) {
     const order: Order = withCustomerId(base
       ? { ...base, lines: merged, ...t, discountPct, ...extras, status: "held" as const }
       : {
-          uid: newOrderUid, billNo: await newBillNumber(newOrderUid), numberRequestId: await allocatedNumberRequestId("POS", newOrderUid), orderType, tableId, tableLabel, lines: merged,
+          // Official POS numbers are given at settlement or first print (bill-numbering.ts).
+          uid: newOrderUid, billNo: "", orderType, tableId, tableLabel, lines: merged,
           ...(user?.login === "waiter" ? { source: "waiter" as const } : {}),
           subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt, cgst: t.cgst, sgst: t.sgst,
           roundOff: t.roundOff, total: t.total, payments: [], status: "held", createdAt: now, synced: false, ...extras,
@@ -405,7 +407,7 @@ export function useCart(initialTableId?: string) {
     setSubmittedOverride({ orderUid, quantities: persistedOverride });
     if (allCancelled) {
       await finishTable([]);
-      toast.success(`Cancellation sent to the kitchen; bill ${saved.billNo} closed with nothing to pay`);
+      toast.success(`Cancellation sent to the kitchen; ${hasBillNumber(saved) ? `bill ${saved.billNo}` : "the bill"} closed with nothing to pay`);
       return { kots, order: saved };
     }
     setActiveOrder(saved);
@@ -426,7 +428,7 @@ export function useCart(initialTableId?: string) {
       return false;
     }
     if (latest && latest.status !== "held") {
-      toast.error(`Bill ${latest.billNo} was already ${latest.status === "settled" ? "settled" : "voided"} on another device`);
+      toast.error(`${billLabel(latest)} was already ${latest.status === "settled" ? "settled" : "voided"} on another device`);
       return false;
     }
     const latestKots = latest?.id === undefined
@@ -480,8 +482,8 @@ export function useCart(initialTableId?: string) {
     const order: Order = withCustomerId({
       ...(latest ?? ({} as Order)),
       uid: newOrderUid,
-      billNo: latest?.billNo ?? await newBillNumber(newOrderUid),
-      numberRequestId: latest?.numberRequestId ?? (latest ? undefined : await allocatedNumberRequestId("POS", newOrderUid)),
+      billNo: latest?.billNo ?? "",
+      numberRequestId: latest?.numberRequestId,
       orderType, tableId: tableId ?? latest?.tableId, tableLabel: latest?.tableLabel ?? await tableLabelOf(tableId), lines: billLines, subtotal: t.subtotal, discountPct, discountAmt: t.discountAmt,
       serviceChargePct, serviceCharge: t.serviceCharge, cgst: t.cgst, sgst: t.sgst, roundOff: t.roundOff, total: t.total,
       taxable: t.taxable, tax,
@@ -490,12 +492,21 @@ export function useCart(initialTableId?: string) {
       customer, guestCount, reservationId: latest?.reservationId ?? reservationId,
       ...(closedBy ? { closedBy } : {}),
     });
+    let numbered: Order;
+    try {
+      numbered = await withBillNumber(order);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't get a bill number. Check the internet and try again.");
+      return null;
+    }
+    Object.assign(order, numbered);
     const db = getDb();
     const id = order.id ? await db.orders.put(order) : Number(await db.orders.add(order));
     order.id = id;
+    const ticketChanges = await stampKotsWithBillNo(order);
     await applyLocalStockSale(billLines, { orderUid: order.uid ?? "", billNo: order.billNo, by: closedBy });
     await rememberCustomer(order.customer);
-    await finishTable([["order", order.uid ?? ""]]);
+    await finishTable([["order", order.uid ?? ""], ...ticketChanges]);
     toast.success(`Bill ${order.billNo} settled`);
     return order;
   }, [checkStillOpen, customer, guestCount, discountPct, finishTable, lines, orderType, pendingCancelLines, pendingKitchenLines, reservationId, sendKitchenWithOrder, serviceChargePct, tableId, taxKey]);
@@ -579,7 +590,7 @@ export function useCart(initialTableId?: string) {
       if (latest.uid) changes.push(["order", latest.uid]);
     }
     await finishTable(changes);
-    toast.success(latest ? `Bill ${latest.billNo} cancelled` : "Bill cleared");
+    toast.success(latest ? `${hasBillNumber(latest) ? `Bill ${latest.billNo}` : "Running bill"} cancelled` : "Bill cleared");
   }, [activeOrder, finishTable, user?.restaurantId]);
 
   return {

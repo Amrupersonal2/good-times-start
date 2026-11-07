@@ -78,11 +78,12 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
   // Reuse the order UID as the allocator idempotency key.
   // Guest-order UUID is stable across a failed acceptance retry.
   const orderUid = base?.uid ?? guest.id;
-  const billNo = base ? base.billNo : await allocateRestaurantNumber("POS", orderUid);
+  // A new QR bill gets its official POS number at settlement or first print.
+  const billNo = base ? base.billNo : "";
   const order = withCustomerId(billWithGuestLines(base, lines, {
     uid: orderUid,
     billNo,
-    numberRequestId: base?.numberRequestId ?? (base ? undefined : orderUid),
+    numberRequestId: base?.numberRequestId,
     orderType, tableId, tableLabel: table?.label ?? guest.table_label ?? undefined, tableSection: table?.section,
     discountPct: 0, serviceChargePct: 0, tax: taxOptionsFor(settings, orderType),
     payments: [], status: "held", createdAt: now, synced: false,
@@ -120,7 +121,7 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
   // A guest who ticked "send me offers on WhatsApp" is recorded as agreeing.
   if (guest.whatsapp_opt_in && guest.customer_phone) await setWhatsappConsent(guest.customer_phone, true, guest.source || (guest.channel === "table" ? "qr" : "online"), guest.customer_name || undefined);
 
-  await supabase.from("guest_orders").update({ order_uid: order.uid ?? null, bill_no: order.billNo }).eq("id", guest.id);
+  await supabase.from("guest_orders").update({ order_uid: order.uid ?? null, bill_no: order.billNo || null }).eq("id", guest.id);
   return { order, kots, missing };
 }
 

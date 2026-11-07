@@ -29,6 +29,7 @@ import { ReservationsPanel } from "@/components/ReservationsPanel";
 import { useReservations } from "@/lib/use-reservations";
 import { BillPrintButton } from "@/components/BillPrintButton";
 import { withReservations } from "@/lib/reservations";
+import { billLabel } from "@/lib/bill-numbering";
 
 export const Route = createFileRoute("/waiter")({
   head: () => ({
@@ -258,7 +259,7 @@ function OrderPad({ tableId, onBack }: { tableId: string; onBack: () => void }) 
       <section className={`${pane === "order" ? "flex" : "hidden"} min-h-0 w-full shrink-0 flex-col border-border md:flex md:w-80 md:border-l xl:w-96`} aria-label={`Order for table ${table?.label ?? tableId}`}>
         <div className="flex items-end justify-between gap-2 px-4 pb-3 pt-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">{cart.activeOrder ? `Bill ${cart.activeOrder.billNo}` : "New order"}{cart.activeOrder ? <BillPrintButton order={cart.activeOrder} /> : null}</div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">{cart.activeOrder ? billLabel(cart.activeOrder) : "New order"}{cart.activeOrder ? <BillPrintButton order={cart.activeOrder} /> : null}</div>
             <div className="text-4xl font-extrabold leading-none">{table?.label ?? tableId}</div>
           </div>
           <div className="text-right">

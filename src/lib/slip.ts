@@ -162,7 +162,7 @@ export function kotSlip(kots: Kot[], paper: Paper, header = "", large = true, en
   if (table) for (const t of wrap(`TBL: ${table}`, cols / 2)) L.push({ text: t, bold: true, size: "big" });
   L.push(rule(cols));
   const when = dateTime(first.createdAt);
-  L.push({ text: plain(`Bill: ${first.billNo}`) });
+  if (first.billNo) L.push({ text: plain(`Bill: ${first.billNo}`) });
   if (first.kotNo) for (const text of wrap(first.kotNo, cols)) L.push({ text, bold: true });
   if (first.tableSection) for (const text of wrap(`Section: ${first.tableSection}`, cols)) L.push({ text, bold: true });
   const stamp = `Date: ${when.date}  Time: ${when.time}`;

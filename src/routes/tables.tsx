@@ -27,6 +27,7 @@ import { boardTables } from "@/lib/table-board";
 import { dayBounds, dateLabel } from "@/lib/orders-history";
 import { BillPrintButton } from "@/components/BillPrintButton";
 import { reportOrders } from "@/lib/report-orders";
+import { hasBillNumber, shortBillNo } from "@/lib/bill-numbering";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({
@@ -249,8 +250,8 @@ function TablesPage() {
             <div className="mt-3 grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {counterBills.map((o) => (
                 <div key={o.uid ?? o.billNo} className="flex min-h-16 min-w-0 items-center gap-2"><Button variant="outline" className="grid h-full min-h-16 min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] justify-start border-primary/40 bg-primary-tint py-2 text-left" asChild>
-                  <Link to="/" search={{ bill: o.uid ?? "" }} title={`Running bill ${o.billNo}`}>
-                    <ShoppingBag className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{o.tableId ? `${o.tableSection ?? tables.find((t) => t.id === o.tableId)?.section ?? ""} · ${o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.tableId}` : o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? "Counter"}</span><span className="block text-xs text-muted-foreground">{o.guestCodes?.[0] ?? o.billNo.split("/").pop()}{o.tableId && o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span>
+                  <Link to="/" search={{ bill: o.uid ?? "" }} title={hasBillNumber(o) ? `Running bill ${o.billNo}` : "Running bill"}>
+                    <ShoppingBag className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{o.tableId ? `${o.tableSection ?? tables.find((t) => t.id === o.tableId)?.section ?? ""} · ${o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.tableId}` : o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? "Counter"}</span><span className="block text-xs text-muted-foreground">{o.guestCodes?.[0] ?? (shortBillNo(o) || `${o.lines.reduce((n, l) => n + l.qty, 0)} items`)}{o.tableId && o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span>
                     <span className="shrink-0 font-bold">{formatINR(o.total, 0)}</span>
                   </Link>
                 </Button><BillPrintButton order={o} className="shrink-0" /></div>

@@ -193,7 +193,7 @@ function GuestOrderCard({ order, onOpenBill }: { order: GuestOrder; onOpenBill: 
     const result = await acceptGuestOrder(order, staff);
     if (!result) { toast.error(`Order ${order.code} was already handled on another device`); return; }
     void printKots(result.kots, "sent");
-    toast.success(`${order.code} accepted: ${result.kots.length} KOT${result.kots.length === 1 ? "" : "s"} sent, bill ${result.order.billNo}`);
+    toast.success(`${order.code} accepted: ${result.kots.length} KOT${result.kots.length === 1 ? "" : "s"} sent${result.order.billNo ? `, bill ${result.order.billNo}` : " to the running bill"}`);
     if (result.missing.length) toast.warning(`Not on this device's menu: ${result.missing.join(", ")}. Added at the guest's price; check the bill.`);
   });
   const status = (next: GuestOrder["status"], why = "") => run(() => setGuestOrderStatus(order, next, staff, why));

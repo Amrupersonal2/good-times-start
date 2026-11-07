@@ -9,6 +9,7 @@ import { thermalDestination } from "@/lib/print-routing";
 import { can, type Action } from "@/lib/permissions";
 import { allow } from "@/lib/pin-gate";
 import type { Order } from "@/lib/types";
+import { hasBillNumber } from "@/lib/bill-numbering";
 
 export interface BillPrintButtonProps extends Omit<ComponentProps<typeof Button>, "onClick"> {
   order: Order;
@@ -23,9 +24,9 @@ export const BillPrintButton = forwardRef<HTMLButtonElement, BillPrintButtonProp
   const print = async () => {
     if (busy) return;
     setBusy(true);
-    try { if (await allow(user, action, `Print bill ${order.billNo}`)) await printBill(order); }
+    try { if (await allow(user, action, (hasBillNumber(order) ? `Print bill ${order.billNo}` : "Print running bill"))) await printBill(order); }
     catch { toast.error("Could not send bill to printer. Please try again."); }
     finally { setBusy(false); }
   };
-  return <Button ref={ref} size={size} variant={variant} aria-label={`Print bill ${order.billNo}`} title={`Print bill ${order.billNo}`} {...props} disabled={disabled || busy} onClick={() => void print()}><Printer className="size-4" />{children}</Button>;
+  return <Button ref={ref} size={size} variant={variant} aria-label={(hasBillNumber(order) ? `Print bill ${order.billNo}` : "Print running bill")} title={(hasBillNumber(order) ? `Print bill ${order.billNo}` : "Print running bill")} {...props} disabled={disabled || busy} onClick={() => void print()}><Printer className="size-4" />{children}</Button>;
 });

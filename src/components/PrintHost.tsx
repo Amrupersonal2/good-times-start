@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/lib/terminal-actions';
 import { flushCounterPrints, queueCounterPrint } from '@/lib/counter-print';
 import { thermalDestination } from '@/lib/print-routing';
+import { numberBillForPrint } from '@/lib/bill-numbering';
 
 /**
  * One place every screen prints through. Bills and KOTs are thermal slips
@@ -52,7 +53,9 @@ function sendToRawbt(chunks: Uint8Array[]): void {
 }
 
 /** Print bill copies per this device's settings, in the thermal slip layout. */
-export async function printBill(order: Order): Promise<void> {
+export async function printBill(unnumbered: Order): Promise<void> {
+  // A running bill gets its official POS number the first time it is printed.
+  const order = await numberBillForPrint(unnumbered);
   if (await routeWirelessPrint('bill', order)) return;
   const [config, settings] = await Promise.all([getPrintConfig(), getSettings()]);
   const slip = billSlip(order, settings, config.paper);

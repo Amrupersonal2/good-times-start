@@ -91,7 +91,7 @@ export async function mergeTables(fromId: string, intoId: string): Promise<void>
   await db.transaction("rw", db.orders, async () => {
     await db.orders.put(combined);
     if (fromOrder.id !== undefined) {
-      await db.orders.update(fromOrder.id, { status: "void", voidReason: `Merged into ${into.label} (${intoOrder.billNo})`, synced: false });
+      await db.orders.update(fromOrder.id, { status: "void", voidReason: `Merged into ${into.label}${intoOrder.billNo ? ` (${intoOrder.billNo})` : ""}`, synced: false });
     }
   });
   if (combined.uid) changes.push(["order", combined.uid]);
