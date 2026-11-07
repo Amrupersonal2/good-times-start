@@ -1,5 +1,9 @@
 # POS expansion
 
+## Offline official numbering
+- [ ] Cache cloud-reserved POS/KOT numbers per device and consume them atomically offline without renumbering printed tickets.
+- [ ] Verify retry, exhaustion, cross-tab allocation and reconnect mirroring; live publication is a separate request.
+
 ## Kitchen view and settlement dates
 - [x] Add a separate live kitchen screen with grouped station KOTs, cancellation slips and rooms settled on the selected day.
 - [x] Align POS settled history, hourly sales and report date displays/exports with settlement timestamps; retain invoice creation dates.
