@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { freshRestaurantNumber } from "@/lib/restaurant-numbering";
+import { flushOfflineClaims, freshRestaurantNumber } from "@/lib/restaurant-numbering";
 import { SyncScheduler } from "./sync-scheduler";
 import type { Json } from "@/integrations/supabase/types";
 import { applyEntryToLevels, getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
@@ -220,6 +220,8 @@ async function restoreRefused(restaurantId: string, refused: RefusedRow[]): Prom
 
 async function push(restaurantId: string): Promise<void> {
   const db = getDb();
+  // Numbers the counter gave offline are claimed in order before their bills and tickets go up.
+  await flushOfflineClaims();
   for (;;) {
     const entries: OutboxEntry[] = await db.outbox.orderBy("at").limit(PUSH_BATCH).toArray();
     if (!entries.length) return;

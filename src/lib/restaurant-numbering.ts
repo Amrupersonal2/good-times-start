@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getDb } from "./db";
+import { getDeviceId } from "./terminal-actions";
+import { nextOfflineNumber, parseSequence, readClaims, type OfflineClaim } from "./counter-offline-numbering";
 import { consumeReservedNumber, NUMBER_RESERVE_TARGET, readNumberCache, type ReservedNumber } from "./offline-numbering";
 
 export type RestaurantNumberSeries = "POS" | "KOT";
@@ -35,6 +37,7 @@ async function cloudNumber(restaurantId: string, series: RestaurantNumberSeries,
   if (typeof data !== "string" || !new RegExp(`^${series}/\\d{4,}$`).test(data)) {
     throw new Error(`The server returned an invalid ${series} number. Nothing was submitted.`);
   }
+  await noteKnownSequence(restaurantId, series, parseSequence(data));
   return data;
 }
 
@@ -86,8 +89,11 @@ export async function allocateRestaurantNumber(series: RestaurantNumberSeries, r
     return next;
   });
   if (reserved) return reserved.number;
-  if (cloudFailure) throw cloudFailure;
-  throw new Error("Bill and KOT numbers are given online so they stay in order. Your items are saved; try again when the internet is back.");
+  // The designated counter continues the series offline; its numbers are claimed on reconnect.
+  const offline = await counterOfflineNumber(restaurantId, series, requestId);
+  if (offline) return offline;
+  if (cloudFailure && online()) throw cloudFailure;
+  throw new Error("Only the counter set as the bill printer can give bill and KOT numbers without internet. Your items are saved; send from the counter or try again when the internet is back.");
 }
 
 /** The guard validates the original cloud reservation identity, not the local bill/submission UID. */
@@ -99,6 +105,7 @@ export async function allocatedNumberRequestId(series: RestaurantNumberSeries, r
 
 /** Serialize refill across tabs; interrupted reservations retain their idempotency IDs. */
 export async function prepareOfflineNumbers(): Promise<void> {
+  await refreshNumberingState().catch(() => { /* keep the last known positions */ });
   if (!online() || NUMBER_RESERVE_TARGET <= 0) return;
   const restaurantId = await boundRestaurant();
   const refill = async () => {
@@ -143,4 +150,81 @@ export async function freshRestaurantNumber(series: RestaurantNumberSeries): Pro
   const requestId = crypto.randomUUID();
   const number = await allocateRestaurantNumber(series, requestId);
   return { number, requestId: await allocatedNumberRequestId(series, requestId) };
+}
+
+const knownKey = (rid: string, series: RestaurantNumberSeries) => `knownSequence:${rid}:${series}`;
+const counterKey = (rid: string) => `counterDevice:${rid}`;
+const claimsKey = (rid: string) => `offlineClaims:${rid}`;
+
+async function noteKnownSequence(restaurantId: string, series: RestaurantNumberSeries, value: number) {
+  if (!Number.isFinite(value) || value <= 0) return;
+  const db = getDb();
+  await db.transaction("rw", db.meta, async () => {
+    const prior = Number((await db.meta.get(knownKey(restaurantId, series)))?.value ?? 0);
+    if (value > prior) await db.meta.put({ key: knownKey(restaurantId, series), value });
+  });
+}
+
+async function counterOfflineNumber(restaurantId: string, series: RestaurantNumberSeries, requestId: string): Promise<string | null> {
+  const db = getDb();
+  const counter = (await db.meta.get(counterKey(restaurantId)))?.value;
+  if (typeof counter !== "string" || counter !== (await getDeviceId())) return null;
+  return db.transaction("rw", db.meta, async () => {
+    const key = cacheKey(restaurantId, series);
+    const cache = readNumberCache((await db.meta.get(key))?.value);
+    if (cache.assigned[requestId]) return cache.assigned[requestId].number;
+    const known = Number((await db.meta.get(knownKey(restaurantId, series)))?.value ?? 0);
+    if (!known) return null; // never synced the series: can't continue it safely
+    const claims = readClaims((await db.meta.get(claimsKey(restaurantId)))?.value);
+    const { number, value } = nextOfflineNumber(series, known);
+    cache.assigned[requestId] = { requestId, number };
+    claims.push({ series, requestId, number: value });
+    await db.meta.bulkPut([
+      { key, value: JSON.stringify(cache) },
+      { key: knownKey(restaurantId, series), value },
+      { key: claimsKey(restaurantId), value: JSON.stringify(claims) },
+    ]);
+    return number;
+  });
+}
+
+/** Latest series positions and the designated counter, kept for offline use. */
+export async function refreshNumberingState(): Promise<void> {
+  if (!online()) return;
+  const restaurantId = await boundRestaurant();
+  const [seq, route] = await Promise.all([
+    supabase.from("restaurant_number_sequences").select("series,last_sequence").eq("restaurant_id", restaurantId),
+    supabase.from("counter_print_routes").select("device_id").eq("restaurant_id", restaurantId).maybeSingle(),
+  ]);
+  // Pending offline claims mean this device is ahead of the cloud; keep its own position.
+  const pending = readClaims((await getDb().meta.get(claimsKey(restaurantId)))?.value).length;
+  if (!seq.error && !pending) {
+    for (const row of seq.data ?? []) {
+      if (row.series === "POS" || row.series === "KOT") await getDb().meta.put({ key: knownKey(restaurantId, row.series), value: Number(row.last_sequence) });
+    }
+  }
+  if (!route.error) {
+    if (route.data?.device_id) await getDb().meta.put({ key: counterKey(restaurantId), value: route.data.device_id });
+    else await getDb().meta.delete(counterKey(restaurantId));
+  }
+}
+
+/** Claim offline numbers in the order they were given; a taken number is left for sync to renumber. */
+export async function flushOfflineClaims(): Promise<void> {
+  if (!online()) return;
+  const restaurantId = await boundRestaurant();
+  const db = getDb();
+  const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  const device = await getDeviceId();
+  for (;;) {
+    const claims: OfflineClaim[] = readClaims((await db.meta.get(claimsKey(restaurantId)))?.value);
+    const next = claims[0];
+    if (!next) return;
+    const { error } = await rpc("claim_offline_number", { _restaurant_id: restaurantId, _series: next.series, _request_id: next.requestId, _number: next.number, _device: device });
+    if (error) throw new Error(`Couldn't confirm offline ${next.series} numbers: ${error.message}`);
+    await db.transaction("rw", db.meta, async () => {
+      const fresh = readClaims((await db.meta.get(claimsKey(restaurantId)))?.value).filter((c) => c.requestId !== next.requestId);
+      await db.meta.put({ key: claimsKey(restaurantId), value: JSON.stringify(fresh) });
+    });
+  }
 }
