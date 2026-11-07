@@ -190,6 +190,13 @@
       "when": 1794076507364,
       "tag": "0026_guard_loyalty_point_adjustments",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794078291195,
+      "tag": "0027_terminal_network",
+      "breakpoints": true
     }
   ]
 }
