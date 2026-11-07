@@ -22,10 +22,11 @@ function query(table: string) {
   const filters: [string, unknown][] = [];
   let patch: Row | null = null;
   let single = false;
-  const rows = () => (db[table] ??= []).filter((r) => filters.every(([c, v]) => r[c] === v));
+  const rows = () => (db[table] ??= []).filter((r) => filters.every(([c, v]) => (Array.isArray(v) ? v.includes(r[c]) : r[c] === v)));
   const q = {
     select: () => q, order: () => q, limit: () => q,
     eq: (c: string, v: unknown) => { filters.push([c, v]); return q; },
+    in: (c: string, v: unknown[]) => { filters.push([c, v]); return q; },
     maybeSingle: () => { single = true; return q; },
     update: (p: Row) => { patch = p; return q; },
     upsert: (row: Row) => {
@@ -90,7 +91,8 @@ beforeEach(() => {
   for (const k of Object.keys(db)) delete db[k];
   users.length = 0;
   sent.length = 0;
-  db["restaurants"] = [{ id: "r1" }];
+  db["restaurants"] = [{ id: "r1" }, { id: "r2" }];
+  db["restaurant_members"] = [{ restaurant_id: "r1", user_id: "caller", role: "owner" }];
   db["staff_logins"] = [
     { login: "admin", email: "admin@xtsy.pos", role: "owner", display_name: "Admin", whatsapp: "918837317070", user_id: null, restaurant_id: null, active: true },
     { login: "billdesk", email: "billdesk@xtsy.pos", role: "cashier", display_name: "Reception", whatsapp: "", user_id: null, restaurant_id: null, active: true },
@@ -104,38 +106,50 @@ beforeEach(() => {
 describe("internal logins on the server", () => {
   it("refuses provisioning without a configured initial password", async () => {
     delete process.env["XTSY_INITIAL_PASSWORD"];
-    await expect(server.ensureLogins()).rejects.toThrow(/at least 12 characters/);
+    await expect(server.ensureLogins("caller")).rejects.toThrow(/at least 12 characters/);
     expect(users).toHaveLength(0);
   });
 
   it("refuses provisioning with an initial password shorter than 12 characters", async () => {
     process.env["XTSY_INITIAL_PASSWORD"] = "Short-123";
-    await expect(server.ensureLogins()).rejects.toThrow(/at least 12 characters/);
+    await expect(server.ensureLogins("caller")).rejects.toThrow(/at least 12 characters/);
     expect(users).toHaveLength(0);
   });
 
   it("creates the three logins once, confirmed, with the first password, and links them with their roles", async () => {
-    expect(await server.ensureLogins()).toEqual({ created: 3 });
+    expect(await server.ensureLogins("caller")).toEqual({ created: 3 });
     expect(users.map((u) => [u.email, u.password, u.confirmed])).toEqual([
       ["admin@xtsy.pos", "Test-only-Initial-2026!", true], ["billdesk@xtsy.pos", "Test-only-Initial-2026!", true], ["waiter@xtsy.pos", "Test-only-Initial-2026!", true],
     ]);
-    expect(db["restaurant_members"]?.map((m) => m["role"])).toEqual(["owner", "cashier", "captain"]);
+    expect(db["restaurant_members"]?.filter((m) => m["user_id"] !== "caller").map((m) => [m["restaurant_id"], m["role"]])).toEqual([["r1", "owner"], ["r1", "cashier"], ["r1", "captain"]]);
     // Calling again changes nothing, and never resets a password.
     users[0]!.password = "Changed-by-admin1";
-    expect(await server.ensureLogins()).toEqual({ created: 0 });
+    expect(await server.ensureLogins("caller")).toEqual({ created: 0 });
     expect(users).toHaveLength(3);
     expect(users[0]!.password).toBe("Changed-by-admin1");
   });
 
+  it("refuses a manager of another restaurant, so they can't claim these logins", async () => {
+    db["restaurant_members"]!.push({ restaurant_id: "r2", user_id: "intruder", role: "manager" });
+    await server.ensureLogins("caller");
+    await expect(server.ensureLogins("intruder")).rejects.toThrow(/Only this restaurant's admin/);
+    expect(db["staff_logins"]?.every((r) => r["restaurant_id"] === "r1")).toBe(true);
+  });
+
+  it("refuses a caller who isn't an owner or manager anywhere", async () => {
+    await expect(server.ensureLogins("nobody")).rejects.toThrow(/Only the admin/);
+    expect(users).toHaveLength(0);
+  });
+
   it("links an account that already exists instead of creating a second one", async () => {
     users.push({ id: "old-admin", email: "admin@xtsy.pos", password: "Mine-1234", confirmed: true });
-    expect(await server.ensureLogins()).toEqual({ created: 2 });
+    expect(await server.ensureLogins("caller")).toEqual({ created: 2 });
     expect(db["staff_logins"]?.[0]?.["user_id"]).toBe("old-admin");
     expect(users[0]!.password).toBe("Mine-1234");
   });
 
   it("lets only the admin reset passwords, and only to a sound password", async () => {
-    await server.ensureLogins();
+    await server.ensureLogins("caller");
     const adminId = users[0]!.id;
     const waiterId = users[2]!.id;
     await server.resetPassword(adminId, "waiter", "Waiter-2026");
@@ -145,13 +159,13 @@ describe("internal logins on the server", () => {
   });
 
   it("explains when WhatsApp codes aren't available", async () => {
-    await server.ensureLogins();
+    await server.ensureLogins("caller");
     expect(await server.requestCode("waiter")).toEqual({ sent: false, reason: expect.stringMatching(/No WhatsApp number.*Ask the admin/) });
     expect(await server.requestCode("admin")).toEqual({ sent: false, reason: expect.stringMatching(/aren't switched on yet/) });
   });
 
   it("resets with a WhatsApp code: right code works once, wrong codes are limited", async () => {
-    await server.ensureLogins();
+    await server.ensureLogins("caller");
     process.env["WHATSAPP_ACCESS_TOKEN"] = "t";
     process.env["WHATSAPP_OTP_TEMPLATE"] = "login_code";
     expect(await server.requestCode("admin")).toEqual({ sent: true, to: "+91 ••••• •7070" });
@@ -168,7 +182,7 @@ describe("internal logins on the server", () => {
   });
 
   it("stops guessing after five wrong codes, and limits codes per hour", async () => {
-    await server.ensureLogins();
+    await server.ensureLogins("caller");
     process.env["WHATSAPP_ACCESS_TOKEN"] = "t";
     process.env["WHATSAPP_OTP_TEMPLATE"] = "login_code";
     await server.requestCode("admin");
