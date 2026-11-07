@@ -12,7 +12,8 @@ export function placeName(label: string): string {
 }
 
 /** A table on the floor, with its QR bill (guests' scanned orders) if one is open. */
-export type FloorTable = RestaurantTable & { qrTotal?: number; qrBill?: string };
+/** `awaitingBill`: the floor shows a running amount but this device has no copy of the bill yet. */
+export type FloorTable = RestaurantTable & { qrTotal?: number; qrBill?: string; awaitingBill?: boolean };
 
 /**
  * The floor as it really is. A table with a running staff bill is taken, even if its own
@@ -45,6 +46,7 @@ export function withOpenBills(tables: RestaurantTable[], held: Order[], closed: 
     // while a staff bill stays open: show that bill's amount instead of ₹0.
     else if (bill && busy && !t.runningTotal && bill.total > 0) next = { ...t, runningTotal: bill.total, since: t.since ?? bill.createdAt };
     else if (qrBill && !busy) next = { ...t, status: "occupied", runningTotal: 0, since: qrBill.createdAt };
+    if (next.status !== "free" && next.status !== "reserved" && !bill && next.runningTotal > 0 && !t.heldDevice && !drafts.has(t.id)) next = { ...next, awaitingBill: true };
     return qrBill ? { ...next, qrTotal: qrBill.total, ...(qrBill.uid ? { qrBill: qrBill.uid } : {}) } : next;
   });
 }
