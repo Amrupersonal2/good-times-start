@@ -1,12 +1,12 @@
 /* XTSY POS service worker: makes the installed apps open and keep working offline.
  *
- * - Pages: network first (so every deploy reaches devices on next load), the
- *   last good copy of that page when offline.
+ * - Pages: network first (so every deploy reaches devices on next load), but
+ *   the saved copy opens after 3 s on a slow connection or at once offline.
  * - Built assets (/assets/*, content-hashed): cache first.
  * - Icons, manifests, fonts: served from cache, refreshed in the background.
  * - Never touches API calls, server functions, Supabase or non-GET requests.
  */
-const VERSION = "xtsy-pos-v11";
+const VERSION = "xtsy-pos-v12";
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const STATIC = `${VERSION}-static`;
@@ -35,41 +35,63 @@ function isBypassed(url, request) {
   return !(url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com");
 }
 
-async function networkFirstPage(request) {
+// How long an opening page waits for the network when a saved copy exists.
+// On weak connections the saved copy opens instead, while the network copy
+// keeps downloading in the background and replaces it for the next open.
+const FAST_FALLBACK_MS = 3000;
+const NETWORK_TIMEOUT_MS = 15000;
+
+async function cachedPageFor(cache, key) {
+  const exact = await cache.match(key.toString());
+  if (exact) return exact;
+  const app = START_PAGES.slice().sort((a, b) => b.length - a.length).find((p) => key.pathname.startsWith(p)) || "/";
+  return cache.match(new URL(app, self.location.origin).toString());
+}
+
+async function networkFirstPage(event) {
+  const request = event.request;
   const cache = await caches.open(PAGES);
   const key = new URL(request.url);
   key.search = "";
 
   // Always revalidate navigations against the published origin. Hashed assets
   // can safely remain cache-first, but cached HTML can point at chunks from an
-  // older deployment and leave the app stuck on its server-rendered shell.
+  // older deployment and leave the app stuck on its server-rendered shell, so
+  // the network copy wins whenever it arrives in time and always refreshes the
+  // saved copy.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch(request, {
-      signal: controller.signal,
-      cache: "no-store",
-    });
+  const timer = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
+  const network = fetch(request, { signal: controller.signal, cache: "no-store" })
+    .then(async (response) => {
+      const contentType = response.headers.get("content-type") ?? "";
+      if (response.ok && response.type === "basic" && contentType.includes("text/html") && !response.redirected) {
+        await cache.put(key.toString(), response.clone());
+      }
+      return response;
+    })
+    .finally(() => clearTimeout(timer));
+  // Keep the worker alive so a slow download still refreshes the saved page.
+  event.waitUntil(network.catch(() => undefined));
 
-    const contentType = response.headers.get("content-type") ?? "";
-    if (
-      response.ok &&
-      response.type === "basic" &&
-      contentType.includes("text/html") &&
-      !response.redirected
-    ) {
-      await cache.put(key.toString(), response.clone());
+  const cached = await cachedPageFor(cache, key);
+  if (cached) {
+    let fallbackTimer;
+    const slow = new Promise((resolve) => { fallbackTimer = setTimeout(() => resolve(null), FAST_FALLBACK_MS); });
+    try {
+      const winner = await Promise.race([network, slow]);
+      if (winner) return winner;
+    } catch {
+      // Network failed outright: fall through to the saved copy.
+    } finally {
+      clearTimeout(fallbackTimer);
     }
-    return response;
+    return cached;
+  }
+
+  try {
+    return await network;
   } catch {
-    // Offline fallback is only used after the network navigation actually fails.
-    const exact = await cache.match(key.toString());
-    if (exact) return exact;
-    const app = START_PAGES.slice().sort((a, b) => b.length - a.length).find((p) => key.pathname.startsWith(p)) || "/";
-    const fallback = await cache.match(new URL(app, self.location.origin).toString());
-    return fallback || new Response("<h1>You're offline</h1><p>Open this app once while online so it can work offline.</p>", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
-  } finally {
-    clearTimeout(timer);
+    return new Response("<h1>You're offline</h1><p>Open this app once while online so it can work offline.</p>", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 }
 
@@ -93,7 +115,7 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (isBypassed(url, request)) return;
-  if (request.mode === "navigate") { event.respondWith(networkFirstPage(request)); return; }
+  if (request.mode === "navigate") { event.respondWith(networkFirstPage(event)); return; }
   if (url.origin === self.location.origin && url.pathname.startsWith("/assets/")) { event.respondWith(cacheFirst(request, ASSETS)); return; }
   event.respondWith(staleWhileRevalidate(request, STATIC));
 });
