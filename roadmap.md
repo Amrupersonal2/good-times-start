@@ -1,5 +1,8 @@
 # POS expansion
 
+## Orders KOT printing
+- [x] Add per-submission and per-station print controls using existing authorized device routing. 29 print/history tests pass; signed-in Orders shows saved KOT controls and dispatches item names/quantities to the browser print host with printing intercepted. No production record writes or physical printing; not published.
+
 ## Live table status board
 - [x] Simplify Tables to prominent inline counts; include all Room/Dine-in running bills under Counter orders and nonfinancial allotted-guest entries, remove Active KOTs and standalone booking sections, and move acceptance/decline into a top-bar notification panel before Orders. Pending requests never annotate the floor, even after arrival; accepted guests appear on tables without implicit financial records. Thirty tests and isolated desktop/tablet/phone checks pass, no overflow/runtime errors or production writes. Public guest status stays pending until allotment. Not published.
 - [x] Add booked, settled-today, occupied and free floor filters plus read-only active KOTs from indexed local records; preserve holds, reservations and existing offline sync. Eight board-rule tests plus existing floor/reservation/submission suites pass.

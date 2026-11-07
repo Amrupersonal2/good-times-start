@@ -17,6 +17,14 @@ import type { Order, Kot } from "@/lib/types";
 import { ReservationsPanel } from "./ReservationsPanel";
 import { useReservations } from "@/lib/use-reservations";
 import { activeReservations } from "@/lib/reservations";
+import { Printer } from "lucide-react";
+import { toast } from "sonner";
+import { printKots } from "./PrintHost";
+import { useStaff } from "@/lib/auth-context";
+import { can } from "@/lib/permissions";
+import { allow } from "@/lib/pin-gate";
+import { useAppMode } from "@/lib/app-mode";
+import { thermalDestination } from "@/lib/print-routing";
 
 export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" | "bookings" }
 export function OrdersOverview({ onClose, guestContent, guestCount, initialView = "running" }: OrdersOverviewProps) {
@@ -35,6 +43,18 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
   const datedBills = (type: HistoryKind) => historyBills(history.bills, type, [start, end]);
   const submissions = kotSubmissions(history.kots);
   const settings = useRestaurantSettings(); const config = usePrintConfig();
+  const { user } = useStaff();
+  const app = useAppMode(user);
+  const [printing, setPrinting] = useState<string | null>(null);
+  const canPrint = thermalDestination(app) !== "blocked" && can(user, "kot.reprint");
+  const reprint = async (tickets: Kot[], id: string) => {
+    if (printing || !canPrint) return;
+    setPrinting(id);
+    try {
+      if (await allow(user, "kot.reprint", `Print ${tickets[0]?.kotNo ?? "KOT"} again`)) await printKots(tickets, "reprint");
+    } catch { toast.error("Could not send KOT to printer. Please try again."); }
+    finally { setPrinting(null); }
+  };
   const navigate = useNavigate();
   const open = (order: Order) => { onClose(); void navigate({ to: "/", search: order.tableId && order.source !== "qr" ? { table: order.tableId } : { bill: order.uid ?? "" } }); };
   return <div className="space-y-4">
@@ -49,9 +69,9 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
       <Segmented ariaLabel="History dates" value={period} onChange={(v) => { setPeriod(v); setDetail(null); }} options={[{ value: "today", label: "Today" }, { value: "yesterday", label: "Yesterday" }, { value: "before", label: "Day before" }, { value: "custom", label: "Custom" }]} />
       {period === "custom" ? <label className="block text-sm">Date<input type="date" aria-label="History date" value={custom} onChange={(e) => { if (e.target.value) { setCustom(e.target.value); setDetail(null); } }} className="ml-3 rounded-md border border-input bg-card p-2" /></label> : null}
       <Segmented ariaLabel="History type" value={kind} onChange={(v) => { setKind(v); setDetail(null); }} options={[{ value: "bills", label: "Bills", badge: datedBills("bills").length }, { value: "kots", label: "KOTs", badge: submissions.length }, { value: "settled", label: "Settled", badge: datedBills("settled").length }, { value: "cancelled", label: "Cancelled", badge: datedBills("cancelled").length }]} />
-      <div className="divide-y divide-border">{kind === "kots" ? submissions.map((group) => <Button key={group.id} variant="ghost" className="h-auto w-full justify-between rounded-none py-3 text-left" onClick={() => setDetail(group)}><span><span className="block font-semibold">{group.first.kotNo ?? group.first.billNo}</span><span className="block text-xs font-normal text-muted-foreground">{group.first.tableLabel ?? group.first.tableId ?? "Counter"} · {new Date(group.first.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · {group.tickets.map((k) => k.station).join(", ")}</span></span><span>{group.tickets.reduce((n, k) => n + k.lines.reduce((q, l) => q + l.qty, 0), 0)} items</span></Button>) : datedBills(kind).map((record) => <Button key={record.uid ?? record.id} variant="ghost" className="h-auto w-full justify-between rounded-none py-3 text-left" onClick={() => setDetail(record)}><span><span className="block font-semibold">{record.billNo}</span><span className="block text-xs font-normal text-muted-foreground">{record.tableLabel ?? record.tableId ?? "Counter"} · {record.status === "held" ? "Running" : record.status === "void" ? "Cancelled" : "Settled"}</span></span><span>{formatINR(record.total, 0)}</span></Button>)}</div>
+      <div className="divide-y divide-border">{kind === "kots" ? submissions.map((group) => <div key={group.id} className="flex items-center gap-2"><Button variant="ghost" className="h-auto min-w-0 flex-1 justify-between gap-3 rounded-none py-3 text-left" onClick={() => setDetail(group)}><span className="min-w-0 whitespace-normal"><span className="block font-semibold">{group.first.kotNo ?? group.first.billNo}</span><span className="block text-xs font-normal text-muted-foreground">{group.first.tableLabel ?? group.first.tableId ?? "Counter"} · {new Date(group.first.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · {group.tickets.map((k) => k.station).join(", ")}</span></span><span className="shrink-0">{group.tickets.reduce((n, k) => n + k.lines.reduce((q, l) => q + l.qty, 0), 0)} items</span></Button>{canPrint ? <Button variant="outline" size="icon" aria-label={`Print ${group.first.kotNo ?? group.first.billNo}`} title="Print KOT to kitchen" disabled={printing !== null} onClick={() => void reprint(group.tickets, group.id)}><Printer className="size-4" /></Button> : null}</div>) : datedBills(kind).map((record) => <Button key={record.uid ?? record.id} variant="ghost" className="h-auto w-full justify-between rounded-none py-3 text-left" onClick={() => setDetail(record)}><span><span className="block font-semibold">{record.billNo}</span><span className="block text-xs font-normal text-muted-foreground">{record.tableLabel ?? record.tableId ?? "Counter"} · {record.status === "held" ? "Running" : record.status === "void" ? "Cancelled" : "Settled"}</span></span><span>{formatINR(record.total, 0)}</span></Button>)}</div>
       {!(kind === "kots" ? submissions : datedBills(kind)).length ? <p className="py-6 text-center text-sm text-muted-foreground">No records for this date.</p> : null}
-      {detail ? <div className="overflow-x-auto border-t border-border pt-4"><Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close details</Button><div className="mx-auto w-fit">{"tickets" in detail ? detail.tickets.map((ticket) => <SlipView key={ticket.uid ?? ticket.id} slip={kotSlip([ticket], config.paper, settings.kotHeader, config.largeKotText)} />) : <SlipView slip={billSlip(detail, settings, config.paper)} />}</div></div> : null}
+      {detail ? <div className="overflow-x-auto border-t border-border pt-4"><Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close details</Button><div className="mx-auto w-fit">{"tickets" in detail ? detail.tickets.map((ticket, index) => <div key={ticket.uid ?? ticket.id ?? index}>{canPrint ? <Button variant="outline" size="sm" className="my-2" aria-label={`Print ${ticket.kotNo ?? ticket.billNo} ${ticket.station}`} disabled={printing !== null} onClick={() => void reprint([ticket], `${detail.id}:${index}`)}><Printer className="size-4" />Print {ticket.station}</Button> : null}<SlipView slip={kotSlip([ticket], config.paper, settings.kotHeader, config.largeKotText)} /></div>) : <SlipView slip={billSlip(detail, settings, config.paper)} />}</div></div> : null}
     </>}
   </div>;
 }
