@@ -1,7 +1,7 @@
 # POS expansion
 
 ## Public guest reservations
-- [ ] Repair accepted booking visibility on future table tiles and Orders; add explicit guest-to-order handoff and new-request sound alerts, verifying without production writes.
+- [x] Accepted upcoming bookings now annotate Tables immediately, appear in Orders → Bookings and carry guest details through explicit Start order into a local draft. Guard existing running bills/other guests' drafts. One root notifier chimes and shows a new-request toast after browser sound activation; Enable sound provides a device test. 30 tests pass, automatic build OK, isolated signed-in flow verified table reservation, Orders entry, three sound tones and guest-filled cart with no page errors or production writes. Publishing not requested; physical speaker and waiter-role checks remain unverified.
 - [x] Add public QR arrival bookings, occupancy-only public data, token-scoped guest status, staff confirmation and serialized overlapping-slot protection; additive migration applied without creating bookings.
 - [x] Show dated arrivals beside floor occupancy and kitchen/settled-room history; active slots mark free tables reserved for display only. Add waiter reservation controls and admin QR download.
 - [x] Cache staff arrivals in IndexedDB and refresh on reconnect; preserve guest draft/request identity across refresh. 25 targeted tests and automatic build pass; public mobile availability/validation has no page errors or overflow. Isolated staff confirmation reads back and appears in kitchen/settled view, with saved arrivals retained offline.
