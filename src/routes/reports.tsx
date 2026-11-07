@@ -10,7 +10,7 @@ import { gstr1Pdf } from "@/lib/gstr1-pdf";
 import { reportsWorkbook } from "@/lib/report-excel";
 import { downloadXlsx } from "@/lib/xlsx";
 import { Receipt } from "@/components/Receipt";
-import { printBill } from "@/components/PrintHost";
+import { BillPrintButton } from "@/components/BillPrintButton";
 import { allow } from "@/lib/pin-gate";
 import { usePolicy } from "@/components/PinGate";
 import { SalesSummary } from "@/components/SalesSummary";
@@ -437,13 +437,13 @@ function BillsList({ orders }: { orders: Order[] }) {
       {shown.length ? (
         <ul className="divide-y divide-border">
           {shown.map((o) => (
-            <li key={o.uid ?? o.billNo}>
-              <button type="button" onClick={() => setOpen(o)} className="flex w-full items-center gap-3 py-2.5 text-left text-sm hover:bg-secondary/60">
+            <li key={o.uid ?? o.billNo} className="flex items-center gap-2">
+              <button type="button" onClick={() => setOpen(o)} className="flex min-w-0 flex-1 items-center gap-3 py-2.5 text-left text-sm hover:bg-secondary/60">
                 <span className="w-16 shrink-0 text-muted-foreground">{new Date(summaryAt(o)).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
                 <span className="min-w-0 flex-1 truncate font-medium">{o.billNo}<span className="ml-2 font-normal text-muted-foreground">{o.tableLabel ?? o.tableId ?? o.orderType}</span></span>
                 <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${o.status === "void" ? "bg-destructive/10 text-destructive" : o.status === "held" ? "bg-gold/25 text-gold-foreground" : "bg-secondary text-muted-foreground"}`}>{STATUS_LABEL[o.status]}</span>
                 <span className={`w-20 text-right font-semibold ${o.status === "void" ? "text-muted-foreground line-through" : ""}`}>{formatINR(o.total, 0)}</span>
-              </button>
+              </button><BillPrintButton order={o} action="bill.reprintOld" className="shrink-0" />
             </li>
           ))}
         </ul>
@@ -459,7 +459,7 @@ function BillsList({ orders }: { orders: Order[] }) {
             {live.status === "void" && live.voidReason ? <p className="-mt-2 text-sm text-destructive">Void: {live.voidReason}{live.closedBy ? `, by ${live.closedBy}` : ""}</p> : null}
             <Receipt order={live} />
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={() => void allow(user, "bill.reprintOld", `Reprint bill ${live.billNo}`).then((ok) => { if (ok) void printBill(live); })}><Printer />Reprint</Button>
+              <BillPrintButton order={live} action="bill.reprintOld" size="default" className="flex-1">Reprint</BillPrintButton>
               {canVoid && live.status === "settled" ? <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setVoiding(true)}>Void</Button> : null}
             </div>
           </> : null}

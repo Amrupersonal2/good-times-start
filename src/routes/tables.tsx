@@ -25,6 +25,7 @@ import { withReservations } from "@/lib/reservations";
 import { startReservationOrder } from "@/lib/reservation-actions";
 import { boardTables } from "@/lib/table-board";
 import { dayBounds, dateLabel } from "@/lib/orders-history";
+import { BillPrintButton } from "@/components/BillPrintButton";
 import { reportOrders } from "@/lib/report-orders";
 
 export const Route = createFileRoute("/tables")({
@@ -247,12 +248,12 @@ function TablesPage() {
             </div>
             <div className="mt-3 grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {counterBills.map((o) => (
-                <Button key={o.uid ?? o.billNo} variant="outline" className="grid h-full min-h-16 w-full grid-cols-[auto_minmax(0,1fr)_auto] justify-start border-primary/40 bg-primary-tint py-2 text-left" asChild>
+                <div key={o.uid ?? o.billNo} className="flex min-h-16 min-w-0 items-center gap-2"><Button variant="outline" className="grid h-full min-h-16 min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] justify-start border-primary/40 bg-primary-tint py-2 text-left" asChild>
                   <Link to="/" search={{ bill: o.uid ?? "" }} title={`Running bill ${o.billNo}`}>
                     <ShoppingBag className="shrink-0" /><span className="min-w-0 whitespace-normal"><span className="block font-bold">{o.tableId ? `${o.tableSection ?? tables.find((t) => t.id === o.tableId)?.section ?? ""} · ${o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.tableId}` : o.customer?.name ?? COUNTER_TYPES.find((c) => c.v === o.orderType)?.l ?? "Counter"}</span><span className="block text-xs text-muted-foreground">{o.guestCodes?.[0] ?? o.billNo.split("/").pop()}{o.tableId && o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span>
                     <span className="shrink-0 font-bold">{formatINR(o.total, 0)}</span>
                   </Link>
-                </Button>
+                </Button><BillPrintButton order={o} className="shrink-0" /></div>
               ))}
               {tables.filter((t) => t.booking && !counterBills.some((o) => o.tableId === t.id)).map((t) => (
                 <Button key={`allotted-${t.id}`} variant="outline" className="grid h-full min-h-16 w-full grid-cols-[auto_minmax(0,1fr)] justify-start border-gold bg-gold/15 py-2 text-left" onClick={() => void openBill(t)}>
@@ -264,11 +265,11 @@ function TablesPage() {
               <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="QR bills">
                 <span className="text-sm font-semibold text-muted-foreground">QR bills</span>
                 {qrBills.map((t) => (
-                  <Button key={t.qrBill} variant="secondary" asChild>
+                  <div key={t.qrBill} className="flex items-center gap-2"><Button variant="secondary" asChild>
                     <Link to="/" search={{ bill: t.qrBill ?? "" }} title={`QR bill for ${t.label}: guests' scanned orders, settled separately`}>
                       <QrCode />{t.label}<span className="font-normal text-muted-foreground">{formatINR(t.qrTotal ?? 0, 0)}</span>
                     </Link>
-                  </Button>
+                  </Button>{counterBills.find((o) => o.uid === t.qrBill) ? <BillPrintButton order={counterBills.find((o) => o.uid === t.qrBill) as Order} /> : null}</div>
                 ))}
               </div>
             ) : null}
