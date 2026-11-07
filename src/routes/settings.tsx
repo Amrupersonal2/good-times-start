@@ -307,7 +307,7 @@ function PrintingSettings() {
         <PrinterMethod form={form} patch={patch} appPath={appPath} station={form.stations[0] ?? stations[0] ?? "Kitchen"} />
         <div className="flex flex-wrap gap-2">
           <Button disabled={!dirty} onClick={() => { void savePrintConfig(form).then(() => toast.success("Printer settings saved on this device")); }}>Save printer settings</Button>
-          <Button variant="outline" disabled={!user?.restaurantId || (saved.method === 'browser' && !saved.silentBrowserReady)} onClick={() => {
+          <Button variant="outline" disabled={!user?.restaurantId} onClick={() => {
             if (!user?.restaurantId) return;
             void designateCounterPrinter(user.restaurantId).then(() => toast.success('Waiter printing is routed to this counter')).catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Could not connect counter'));
           }}>Receive waiter printing here</Button>
