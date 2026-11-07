@@ -58,7 +58,7 @@ const syncNow = (device: Device) => on(device, () => sync.syncCloudData(R));
 const syncAll = async () => { for (const d of DEVICES) await syncNow(d); };
 const serverRow = (kind: string, id: string) => server.fakeServer.rows.get(`${R}|${kind}|${id}`);
 /** What a realtime notice for this cloud row carries. */
-const notice = (kind: string, id: string) => ({ eventType: "UPDATE", new: { restaurant_id: R, ...serverRow(kind, id)! } });
+const notice = (kind: string, id: string) => ({ eventType: "UPDATE", new: { ...serverRow(kind, id)! } });
 /** Deliver the latest cloud change of a record to the other terminals, like the live channel. */
 async function broadcast(kind: string, id: string, except: Device) {
   for (const d of DEVICES) if (d !== except) await on(d, () => sync.applyLiveChange(notice(kind, id)));
