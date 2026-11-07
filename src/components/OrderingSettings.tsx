@@ -18,6 +18,7 @@ import { saveOrderingConfig } from "@/lib/guest-order-actions";
 import { orderPageUrl } from "@/lib/guest-order-logic";
 import { hasFeature, slugError, type OrderingConfig } from "@/lib/saas-logic";
 import { useRestaurantSettings } from "@/lib/use-settings";
+import { bookingUrl } from "@/lib/reservations";
 
 const inputClass = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm disabled:bg-secondary disabled:text-muted-foreground";
 
@@ -72,6 +73,7 @@ export function OrderingSettings({ className, ref, ...props }: OrderingSettingsP
   const [slug, setSlug] = useState("");
   const [busy, setBusy] = useState(false);
   const [qr, setQr] = useState("");
+  const [bookingQr, setBookingQr] = useState("");
   const [selectedTable, setSelectedTable] = useState("");
   const canEdit = isAdmin(user);
   const origin = GUEST_ORDER_ORIGIN;
@@ -93,6 +95,13 @@ export function OrderingSettings({ className, ref, ...props }: OrderingSettingsP
     setSlug(view.outlet.slug ?? "");
   }, [view]);
   const savedSlug = view?.outlet.slug ?? "";
+  const reservationUrl = savedSlug ? bookingUrl(savedSlug) : "";
+  useEffect(() => {
+    let alive = true;
+    if (!reservationUrl) { setBookingQr(""); return; }
+    void QRCode.toDataURL(reservationUrl, { width: 280, margin: 1 }).then((image) => { if (alive) setBookingQr(image); }).catch(() => { if (alive) setBookingQr(""); });
+    return () => { alive = false; };
+  }, [reservationUrl]);
   
   const qrUrl = savedSlug ? orderPageUrl(origin, savedSlug, selectedTable || undefined) : "";
   useEffect(() => {
@@ -136,6 +145,17 @@ export function OrderingSettings({ className, ref, ...props }: OrderingSettingsP
 
   return (
     <div ref={ref} {...props} className={cn("space-y-8 py-2", className)}>
+      {canEdit && savedSlug ? <section className="border-b border-border pb-6">
+        <h2 className="text-lg font-bold">Public reservation QR</h2>
+        <div className="mt-4 flex flex-wrap items-center gap-5">
+          {bookingQr ? <img src={bookingQr} alt="Guest reservation QR code" width={160} height={160} className="rounded-md border border-border" /> : null}
+          <div className="min-w-0 space-y-3"><p className="break-all text-sm text-muted-foreground">{reservationUrl}</p><div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => void copy(reservationUrl)}><Copy />Copy booking link</Button>
+            <Button variant="outline" size="sm" asChild><Link to="/book/$slug" params={{ slug: savedSlug }}><ExternalLink />Open reservations</Link></Button>
+            {bookingQr ? <Button variant="outline" size="sm" asChild><a href={bookingQr} download="guest-reservation-qr.png"><QrCode />Download QR</a></Button> : null}
+          </div><p className="text-sm text-muted-foreground">{view.outlet.ordering?.table ? "Reservations open · staff confirmation required" : "Enable QR ordering at tables to open reservations"}</p></div>
+        </div>
+      </section> : null}
       <section className="border-b border-border pb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><p className="text-xs font-semibold uppercase text-muted-foreground">Guest experience</p><h2 className="mt-1 text-xl font-bold">Your menu. Every table. One link.</h2></div>

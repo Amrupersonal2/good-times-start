@@ -20,6 +20,7 @@ import type { RestaurantTable, TableStatus } from "@/lib/types";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
+import { ReservationsPanel } from "@/components/ReservationsPanel";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({
@@ -243,6 +244,7 @@ function TablesPage() {
           </section>
         ) : null}
 
+        <ReservationsPanel />
         {tables.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-semibold">No tables yet</p>

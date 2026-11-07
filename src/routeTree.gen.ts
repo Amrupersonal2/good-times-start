@@ -23,6 +23,7 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as StockRouteImport } from './routes/stock'
 import { Route as TablesRouteImport } from './routes/tables'
 import { Route as WaiterRouteImport } from './routes/waiter'
+import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as OrderSlugRouteImport } from './routes/order.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -95,6 +96,11 @@ const WaiterRoute = WaiterRouteImport.update({
   path: '/waiter',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookSlugRoute = BookSlugRouteImport.update({
+  id: '/book/$slug',
+  path: '/book/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrderSlugRoute = OrderSlugRouteImport.update({
   id: '/order/$slug',
   path: '/order/$slug',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
+  '/book/$slug': typeof BookSlugRoute
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesByTo {
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
+  '/book/$slug': typeof BookSlugRoute
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRoutesById {
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/stock': typeof StockRoute
   '/tables': typeof TablesRoute
   '/waiter': typeof WaiterRoute
+  '/book/$slug': typeof BookSlugRoute
   '/order/$slug': typeof OrderSlugRoute
 }
 export interface FileRouteTypes {
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/stock'
     | '/tables'
     | '/waiter'
+    | '/book/$slug'
     | '/order/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/stock'
     | '/tables'
     | '/waiter'
+    | '/book/$slug'
     | '/order/$slug'
   id:
     | '__root__'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/stock'
     | '/tables'
     | '/waiter'
+    | '/book/$slug'
     | '/order/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   StockRoute: typeof StockRoute
   TablesRoute: typeof TablesRoute
   WaiterRoute: typeof WaiterRoute
+  BookSlugRoute: typeof BookSlugRoute
   OrderSlugRoute: typeof OrderSlugRoute
 }
 
@@ -325,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WaiterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/book/$slug': {
+      id: '/book/$slug'
+      path: '/book/$slug'
+      fullPath: '/book/$slug'
+      preLoaderRoute: typeof BookSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/order/$slug': {
       id: '/order/$slug'
       path: '/order/$slug'
@@ -350,6 +370,7 @@ const rootRouteChildren: RootRouteChildren = {
   StockRoute: StockRoute,
   TablesRoute: TablesRoute,
   WaiterRoute: WaiterRoute,
+  BookSlugRoute: BookSlugRoute,
   OrderSlugRoute: OrderSlugRoute,
 }
 export const routeTree = rootRouteImport
