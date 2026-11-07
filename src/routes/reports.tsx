@@ -335,7 +335,7 @@ function ReportsPage() {
   // Reception sees what Settings → Roles allows: the daily summary and/or the Sales Summary.
   const staffTabs: { v: Tab; l: string }[] = [
     ...(can(user, "reports.summary") ? [{ v: "overview" as const, l: "Overview" }, { v: "summary" as const, l: "Sales Summary" }] : []),
-    ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Cash Counter" }] : []),
+    ...(can(user, "counter.close") ? [{ v: "close" as const, l: "Cash counter" }] : []),
   ];
   const [preset, setPreset] = useState<Preset>("today");
   const [custom, setCustom] = useState<Range>(() => presetRange("7d"));
@@ -360,7 +360,7 @@ function ReportsPage() {
     { v: "today", l: "Today" }, { v: "yesterday", l: "Yesterday" }, { v: "7d", l: "Last 7 days" }, { v: "month", l: "This month" }, { v: "custom", l: "Pick dates" },
   ];
   const tabs: { v: Tab; l: string }[] = full ? [
-    { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Cash Counter" },
+    { v: "overview", l: "Overview" }, { v: "summary", l: "Sales Summary" }, { v: "items", l: "Items" }, { v: "gst", l: "GST" }, { v: "staff", l: "Staff" }, { v: "bills", l: "Bills" }, { v: "close", l: "Cash counter" },
   ] : staffTabs;
 
   return (
