@@ -21,7 +21,9 @@ export async function allocateRestaurantNumber(
     throw new Error("This POS device has not finished connecting to the restaurant. Wait for Live sync and try again.");
   }
 
-  const rpc = supabase.rpc as unknown as (
+  // RPC reads the client's REST transport through `this`; keep its receiver
+  // when narrowing the signature for a function absent from generated types.
+  const rpc = supabase.rpc.bind(supabase) as unknown as (
     functionName: string,
     args: Record<string, string>,
   ) => Promise<{ data: unknown; error: { message: string } | null }>;
