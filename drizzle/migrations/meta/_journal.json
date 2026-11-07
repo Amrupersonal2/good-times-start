@@ -169,6 +169,13 @@
       "when": 1794037163370,
       "tag": "0023_guest_arrival_reservations",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794041428375,
+      "tag": "0024_guest_cancellation_one_minute",
+      "breakpoints": true
     }
   ]
 }
