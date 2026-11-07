@@ -1095,8 +1095,11 @@ export type Database = {
           device_id: string
           device_kind: string
           first_seen: string
+          last_ip: string | null
+          last_location: string | null
           last_seen: string
           login_email: string
+          network_seen_at: string | null
           restaurant_id: string
           series: string
           status: string
@@ -1108,8 +1111,11 @@ export type Database = {
           device_id: string
           device_kind?: string
           first_seen?: string
+          last_ip?: string | null
+          last_location?: string | null
           last_seen?: string
           login_email?: string
+          network_seen_at?: string | null
           restaurant_id: string
           series?: string
           status?: string
@@ -1121,8 +1127,11 @@ export type Database = {
           device_id?: string
           device_kind?: string
           first_seen?: string
+          last_ip?: string | null
+          last_location?: string | null
           last_seen?: string
           login_email?: string
+          network_seen_at?: string | null
           restaurant_id?: string
           series?: string
           status?: string

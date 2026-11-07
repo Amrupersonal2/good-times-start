@@ -44,7 +44,7 @@ function Row({ t, here, restaurantId, store, onChanged }: { t: Terminal; here: b
       </td>
       <td className="px-3 py-3 text-sm">{t.app ? APPS[t.app].short : "—"}</td>
       <td className="px-3 py-3 text-xs text-muted-foreground">{t.device_kind ? DEVICE_LABELS[t.device_kind] : "—"}<br />{t.login_email || "—"}</td>
-      <td className="px-3 py-3 text-xs text-muted-foreground">{ago(t.last_seen)}</td>
+      <td className="px-3 py-3 text-xs text-muted-foreground">{ago(t.last_seen)}<br />{t.last_ip || "—"}{t.last_location ? <><br />{t.last_location}</> : null}</td>
       <td className="px-3 py-3">
         <div className="flex justify-end gap-1.5">
           <Button size="sm" variant="outline" onClick={() => setEditing(true)}><Pencil />Edit</Button>
@@ -83,7 +83,7 @@ export function TerminalsSettings() {
         <div className="overflow-x-auto rounded-2xl border border-border bg-card">
           <table className="w-full min-w-[56rem] text-left">
             <thead className="border-b border-border bg-secondary/60 text-xs font-semibold text-muted-foreground">
-              <tr>{["Store", "Key", "Status", "Description", "Terminal type", "Device and login", "Last seen", ""].map((h, i) => <th key={i} className={cn("px-3 py-2.5", i === 7 && "text-right")}>{h || "Action"}</th>)}</tr>
+              <tr>{["Store", "Key", "Status", "Description", "Terminal type", "Device and login", "Last seen · IP · location", ""].map((h, i) => <th key={i} className={cn("px-3 py-2.5", i === 7 && "text-right")}>{h || "Action"}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-border">
               {q.isLoading ? <tr><td colSpan={8} className="px-3 py-8 text-center text-sm text-muted-foreground">Loading…</td></tr>

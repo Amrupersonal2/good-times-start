@@ -12,6 +12,7 @@ import type { AppKind, DeviceKind } from "./staff-login-logic";
 export interface Terminal {
   device_id: string; series: string; description: string; app: "" | AppKind; device_kind: "" | DeviceKind;
   login_email: string; status: "active" | "blocked"; first_seen: string; last_seen: string;
+  last_ip?: string | null; last_location?: string | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,6 +51,9 @@ export async function touchTerminal(restaurantId: string, app: AppKind, kind: De
     const { data, error } = await db().rpc("touch_terminal", { _restaurant: restaurantId, _device: device, _series: series, _app: app, _kind: kind });
     if (error) return;
     if (data === "blocked" || data === "active") setStatus(data);
+    void import("./terminal-network.functions")
+      .then((m) => m.recordTerminalNetwork({ data: { restaurantId, deviceId: device } }))
+      .catch(() => { /* optional */ });
   } catch { /* offline */ }
 }
 
