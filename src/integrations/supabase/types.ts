@@ -1213,6 +1213,16 @@ export type Database = {
         Args: { _device: string; _restaurant: string }
         Returns: Json
       }
+      claim_offline_number: {
+        Args: {
+          _device: string
+          _number: number
+          _request_id: string
+          _restaurant_id: string
+          _series: string
+        }
+        Returns: string
+      }
       configure_counter_printer: {
         Args: { _device: string; _restaurant: string }
         Returns: undefined
