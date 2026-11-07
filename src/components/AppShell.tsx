@@ -34,7 +34,7 @@ const NAV = [
   { to: "/kitchen", label: "Kitchen", icon: ChefHat },
   { to: "/stock", label: "Stock", icon: Package },
   { to: "/customers", label: "Guests", icon: Users },
-  { to: "/reports", label: "Cash Counter", icon: BarChart3 },
+  { to: "/reports", label: "Summary", icon: BarChart3 },
   { to: "/marketing", label: "Marketing", icon: Sparkles },
   { to: "/waiter", label: "Waiter", icon: Tablet },
   { to: "/settings", label: "Settings", icon: Settings },
