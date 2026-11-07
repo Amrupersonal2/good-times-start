@@ -8,7 +8,7 @@ import { taxOptionsFor } from "./billing-config";
 import { withCustomerId } from "./customer-logic";
 import { rememberCustomer } from "./customer-actions";
 import { setWhatsappConsent } from "./marketing-actions";
-import { billWithGuestLines, cartLinesFromGuest, orderTypeFor, type GuestOrder, type GuestStatus } from "./guest-order-logic";
+import { billWithGuestLines, cartLinesFromGuest, orderTypeFor, qrSeriesLabel, type GuestOrder, type GuestStatus } from "./guest-order-logic";
 import { orderingSaveError } from "./qr-ordering";
 import { syncCloudData } from "./cloud-sync";
 
@@ -20,6 +20,15 @@ export async function loadGuestOrders(restaurantId: string): Promise<GuestOrder[
   const { data, error } = await supabase.from("guest_orders").select("*")
     .eq("restaurant_id", restaurantId).gte("created_at", since)
     .order("created_at", { ascending: false }).limit(200);
+  if (error) throw error;
+  return (data ?? []) as unknown as GuestOrder[];
+}
+
+/** Guest QR and pickup orders placed in a date range, oldest first, for the Bookings history. */
+export async function loadGuestOrderHistory(restaurantId: string, from: number, to: number): Promise<GuestOrder[]> {
+  const { data, error } = await supabase.from("guest_orders").select("*")
+    .eq("restaurant_id", restaurantId).gte("created_at", new Date(from).toISOString()).lt("created_at", new Date(to).toISOString())
+    .order("created_at", { ascending: true }).limit(500);
   if (error) throw error;
   return (data ?? []) as unknown as GuestOrder[];
 }
@@ -91,6 +100,8 @@ async function openBillFor(guest: GuestOrder): Promise<{ order: Order; kots: Kot
     ...(customer ? { customer } : {}),
   }, guest.code));
   if (base && customer && !base.customer) order.customer = customer;
+  const qrNo = qrSeriesLabel(guest.qr_no);
+  if (!order.qrNo && qrNo) order.qrNo = qrNo;
 
   const byStation = new Map<string, CartLine[]>();
   for (const line of lines) byStation.set(line.station, [...(byStation.get(line.station) ?? []), line]);

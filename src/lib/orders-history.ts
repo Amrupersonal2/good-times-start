@@ -1,6 +1,25 @@
 import type { Order } from "./types";
 
-export type HistoryKind = "bills" | "kots" | "settled" | "cancelled";
+export type HistoryKind = "kots" | "settled" | "nc" | "cancelled";
+/** Payment filter for settled bills. */
+export type PaymentFilter = "all" | "cash" | "upi" | "other";
+
+/** Money actually received on a bill. NC (no charge) bills close with none. */
+export function paidAmount(o: Order): number {
+  return (o.payments ?? []).reduce((sum, p) => sum + (p.amount > 0 ? p.amount : 0), 0);
+}
+
+/** A settled bill closed with no payment: complimentary / no charge. */
+export function isNcBill(o: Order): boolean {
+  return o.status === "settled" && paidAmount(o) === 0;
+}
+
+/** Whether a settled bill received money by this mode (split payments match each mode they used). */
+export function paidBy(o: Order, filter: PaymentFilter): boolean {
+  if (filter === "all") return true;
+  const modes = (o.payments ?? []).filter((p) => p.amount > 0).map((p) => p.mode);
+  return filter === "other" ? modes.some((m) => m !== "cash" && m !== "upi") : modes.includes(filter);
+}
 export function dayBounds(date: string): [number, number] {
   const start = new Date(`${date}T00:00:00`);
   const end = new Date(start);
@@ -14,11 +33,15 @@ export function closedAt(o: Order): number | undefined {
   return undefined;
 }
 
-/** Bills in the order they were closed (settled or cancelled); running bills follow, oldest first. */
+/** Closed bills of one kind, in the order they were settled or cancelled. */
 export function historyBills(orders: Order[], kind: HistoryKind, bounds?: [number, number]): Order[] {
   return orders.filter((o) => {
-    if (kind === "settled" ? o.status !== "settled" : kind === "cancelled" ? o.status !== "void" : false) return false;
-    const at = kind === "settled" ? o.settledAt ?? o.createdAt : o.createdAt;
+    if (kind === "kots") return false;
+    if (kind === "settled" && (o.status !== "settled" || isNcBill(o))) return false;
+    if (kind === "nc" && !isNcBill(o)) return false;
+    if (kind === "cancelled" && o.status !== "void") return false;
+    // Each bill is listed on the day it entered history: settled or cancelled.
+    const at = closedAt(o) ?? o.createdAt;
     return !bounds || at >= bounds[0] && at < bounds[1];
   }).sort((a, b) => {
     const ca = closedAt(a), cb = closedAt(b);

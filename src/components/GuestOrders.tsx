@@ -23,6 +23,7 @@ import { can } from "@/lib/permissions";
 import { OrdersOverview } from "./OrdersOverview";
 import { useReservations } from "@/lib/use-reservations";
 import { ReservationsPanel } from "./ReservationsPanel";
+import { QrOrderHistory } from "./QrOrderHistory";
 
 function chime(ctx: AudioContext) {
   const now = ctx.currentTime;
@@ -95,11 +96,12 @@ export function GuestOrdersButton() {
   const bookingRequests = bookings.rows.filter((r) => r.status === "pending" && Date.parse(r.end_at) > Date.now());
   const requestCount = waiting.length;
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingView, setBookingView] = useState<"qr" | "tables">("qr");
   const [open, setOpen] = useState(false);
-  const [initialView, setInitialView] = useState<"running" | "guest" | "bookings">("running");
+  const [initialView, setInitialView] = useState<"running" | "guest">("running");
   useEffect(() => {
     const show = () => { setInitialView("guest"); setOpen(true); };
-    const showBookings = () => { setBookingOpen(true); };
+    const showBookings = () => { setBookingView("tables"); setBookingOpen(true); };
     window.addEventListener("pos:qr-requests", show);
     window.addEventListener("pos:bookings", showBookings);
     return () => { window.removeEventListener("pos:qr-requests", show); window.removeEventListener("pos:bookings", showBookings); };
@@ -132,11 +134,14 @@ export function GuestOrdersButton() {
   if (!user?.restaurantId || user.role === "kitchen") return null;
   return (
     <>
-      <Button size="sm" variant={bookingRequests.length ? "default" : "outline"} aria-label="Booking notifications" title="Booking notifications" onClick={() => setBookingOpen(true)} className={bookingRequests.length ? "border-gold bg-gold text-gold-foreground hover:bg-gold/90" : ""}>
+      <Button size="sm" variant={bookingRequests.length ? "default" : "outline"} aria-label="Bookings" title="QR orders and table bookings" onClick={() => { setBookingView(bookingRequests.length ? "tables" : "qr"); setBookingOpen(true); }} className={bookingRequests.length ? "border-gold bg-gold text-gold-foreground hover:bg-gold/90" : ""}>
         <CalendarClock className="size-4" /><span className="hidden sm:inline">Bookings</span>{bookingRequests.length ? <span className="font-bold tabular-nums">{bookingRequests.length}</span> : null}
       </Button>
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto"><DialogTitle>Booking notifications</DialogTitle><ReservationsPanel upcoming onOpenOrder={() => setBookingOpen(false)} /></DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto"><DialogTitle>Bookings</DialogTitle>
+          <Segmented ariaLabel="Bookings view" stretch value={bookingView} onChange={setBookingView} options={[{ value: "qr", label: "QR orders" }, { value: "tables", label: "Table bookings", badge: bookingRequests.length }]} />
+          {bookingView === "qr" ? <QrOrderHistory onOpenBill={() => setBookingOpen(false)} /> : <ReservationsPanel upcoming onOpenOrder={() => setBookingOpen(false)} />}
+        </DialogContent>
       </Dialog>
       <Button size="sm" variant={requestCount ? "default" : "outline"} onClick={() => { setInitialView("running"); setOpen(true); }} className={requestCount ? "animate-pulse bg-gold text-gold-foreground hover:bg-gold/90" : ""}
         aria-label="Orders">

@@ -46,6 +46,13 @@ export interface GuestOrder {
   updated_at: string;
   whatsapp_opt_in?: boolean;
   source?: string;
+  /** Server-assigned QR series number (QR/0001…); null for orders placed before the series. */
+  qr_no?: number | null;
+}
+
+/** QR/0001-style label for a guest order's QR series number. */
+export function qrSeriesLabel(n: number | null | undefined): string | undefined {
+  return typeof n === "number" && n > 0 ? `QR/${String(n).padStart(4, "0")}` : undefined;
 }
 
 /** A dish on the public menu (recipes and costs removed by the database). */
@@ -217,3 +224,17 @@ export function billWithGuestLines(
     synced: false,
   };
 }
+
+/**
+ * Where a guest QR order stands for the Bookings history: waiting, rejected or cancelled
+ * by the guest, or its bill's state, showing the POS number once the bill is settled.
+ */
+export function qrOrderState(guest: Pick<GuestOrder, "status">, bill?: Pick<Order, "status" | "billNo"> | null): { label: string; tone: "pending" | "running" | "settled" | "closed" } {
+  if (guest.status === "new") return { label: "Waiting to accept", tone: "pending" };
+  if (guest.status === "rejected") return { label: "Rejected", tone: "closed" };
+  if (guest.status === "cancelled") return { label: "Cancelled by guest", tone: "closed" };
+  if (bill?.status === "settled") return { label: bill.billNo ? `Settled · ${bill.billNo}` : "Settled", tone: "settled" };
+  if (bill?.status === "void") return { label: "Bill cancelled", tone: "closed" };
+  return { label: "Running", tone: "running" };
+}
+

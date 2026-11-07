@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addToGuestCart, asMenuItem, billWithGuestLines, cartLinesFromGuest, guestLineFor, guestOrderPayload, guestSubtotal, orderPageUrl, pickupChoices, setGuestQty, sortGuestOrders, type GuestOrder } from "./guest-order-logic";
+import { addToGuestCart, asMenuItem, billWithGuestLines, cartLinesFromGuest, guestLineFor, guestOrderPayload, guestSubtotal, orderPageUrl, pickupChoices, qrOrderState, qrSeriesLabel, setGuestQty, sortGuestOrders, type GuestOrder } from "./guest-order-logic";
 import type { MenuItem, Order } from "./types";
 
 const momo: MenuItem = {
@@ -75,3 +75,20 @@ describe("links and lists", () => {
     expect(sortGuestOrders([o("a", "ready", "3"), o("b", "new", "1"), o("c", "new", "2")]).map((x) => x.id)).toEqual(["c", "b", "a"]);
   });
 });
+
+describe("QR order series", () => {
+  it("labels QR orders QR/0001 and leaves pre-series orders unlabelled", () => {
+    expect(qrSeriesLabel(1)).toBe("QR/0001");
+    expect(qrSeriesLabel(12345)).toBe("QR/12345");
+    expect(qrSeriesLabel(null)).toBeUndefined();
+  });
+
+  it("shows the POS number only once the bill is settled", () => {
+    expect(qrOrderState({ status: "new" }).label).toBe("Waiting to accept");
+    expect(qrOrderState({ status: "accepted" }, { status: "held", billNo: "" })).toEqual({ label: "Running", tone: "running" });
+    expect(qrOrderState({ status: "completed" }, { status: "settled", billNo: "POS/0005" })).toEqual({ label: "Settled · POS/0005", tone: "settled" });
+    expect(qrOrderState({ status: "rejected" }).tone).toBe("closed");
+    expect(qrOrderState({ status: "accepted" }, { status: "void", billNo: "" }).label).toBe("Bill cancelled");
+  });
+});
+

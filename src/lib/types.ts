@@ -114,6 +114,8 @@ export interface Order {
   source?: "qr" | "online" | "waiter";
   /** Guest order codes (e.g. Q-4821) that make up this bill. */
   guestCodes?: string[];
+  /** QR series number (QR/0001) of the guest order that opened this QR bill; the POS number comes at settlement. */
+  qrNo?: string;
 }
 
 export interface CartDraft {

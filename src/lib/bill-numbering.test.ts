@@ -38,6 +38,9 @@ describe("bill numbering at settlement", () => {
     expect(shortBillNo(bill())).toBe("");
     expect(billLabel(bill({ billNo: "POS/0004" }))).toBe("POS/0004");
     expect(shortBillNo(bill({ billNo: "POS/0004" }))).toBe("0004");
+    // A QR bill shows its QR series number until it is settled.
+    expect(billLabel({ ...bill(), qrNo: "QR/0001" })).toBe("QR/0001");
+    expect(billLabel({ ...bill({ billNo: "POS/0005" }), qrNo: "QR/0001" })).toBe("POS/0005");
   });
 
   it("gives a running bill its number from the allocator, keyed by the bill uid", async () => {

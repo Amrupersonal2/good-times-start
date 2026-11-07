@@ -4,7 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { reportOrders } from "@/lib/report-orders";
 import { getDb } from "@/lib/db";
 import { formatINR } from "@/lib/billing";
-import { dayBounds, dateLabel, historyBills, type HistoryKind } from "@/lib/orders-history";
+import { dayBounds, dateLabel, historyBills, paidBy, type HistoryKind, type PaymentFilter } from "@/lib/orders-history";
 import { Button } from "./ui/button";
 import { DialogTitle } from "./ui/dialog";
 import { Segmented } from "./Segmented";
@@ -14,7 +14,6 @@ import { usePrintConfig } from "@/lib/print-config";
 import { useRestaurantSettings } from "@/lib/use-settings";
 import { kotSubmissions, type KotSubmission } from "@/lib/kot-history";
 import type { Order, Kot } from "@/lib/types";
-import { ReservationsPanel } from "./ReservationsPanel";
 import { useReservations } from "@/lib/use-reservations";
 import { activeReservations } from "@/lib/reservations";
 import { ChevronDown, Printer, X } from "lucide-react";
@@ -28,12 +27,13 @@ import { thermalDestination } from "@/lib/print-routing";
 import { BillPrintButton } from "./BillPrintButton";
 import { billLabel } from "@/lib/bill-numbering";
 
-export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" | "bookings" }
+export interface OrdersOverviewProps { onClose: () => void; guestContent: React.ReactNode; guestCount: number; initialView?: "running" | "guest" }
 export function OrdersOverview({ onClose, guestContent, guestCount, initialView = "running" }: OrdersOverviewProps) {
-  const [view, setView] = useState<"running" | "history" | "guest" | "bookings">(initialView);
+  const [view, setView] = useState<"running" | "history" | "guest">(initialView);
   const bookings = useReservations();
   const active = activeReservations(bookings.rows, Date.now());
-  const [kind, setKind] = useState<HistoryKind>("bills");
+  const [kind, setKind] = useState<HistoryKind>("settled");
+  const [paid, setPaid] = useState<PaymentFilter>("all");
   const [period, setPeriod] = useState("today");
   const [custom, setCustom] = useState(dateLabel());
   const [detail, setDetail] = useState<Order | KotSubmission | null>(null);
@@ -41,8 +41,10 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
   const [start, end] = dayBounds(date);
   const running = useLiveQuery(() => getDb().orders.where("status").equals("held").sortBy("createdAt"), [], []);
   const tables = useLiveQuery(() => getDb().restTables.toArray(), [], []);
-  const history = useLiveQuery(async () => ({ bills: await reportOrders({ from: start, to: end - 1 }), kots: await getDb().kots.where("createdAt").between(start, end, true, false).reverse().toArray() }), [start, end], { bills: [], kots: [] });
+  // Bills settled that day, plus cancelled bills (few) so a bill cancelled today but opened earlier shows today.
+  const history = useLiveQuery(async () => ({ bills: [...new Map([...await reportOrders({ from: start, to: end - 1 }), ...await getDb().orders.where("status").equals("void").toArray()].map((o) => [o.uid ?? o.id ?? o.billNo, o])).values()], kots: await getDb().kots.where("createdAt").between(start, end, true, false).reverse().toArray() }), [start, end], { bills: [], kots: [] });
   const datedBills = (type: HistoryKind) => historyBills(history.bills, type, [start, end]);
+  const shownBills = kind === "settled" ? datedBills("settled").filter((o) => paidBy(o, paid)) : datedBills(kind);
   // Oldest first, matching the bills list: the day reads in the order it happened.
   const submissions = kotSubmissions(history.kots).reverse();
   const settings = useRestaurantSettings(); const config = usePrintConfig();
@@ -93,16 +95,17 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
   const open = (order: Order) => { onClose(); void navigate({ to: "/", search: order.tableId && order.source !== "qr" ? { table: order.tableId } : { bill: order.uid ?? "" } }); };
   return <div className="flex min-h-0 flex-1 flex-col gap-3">
     <DialogTitle className="shrink-0 pr-8">Orders</DialogTitle>
-    <Segmented className="shrink-0" ariaLabel="Orders view" stretch value={view} onChange={(v) => { setView(v); setDetail(null); }} options={[{ value: "running", label: "Running", badge: running.length }, { value: "bookings", label: "Bookings", badge: active.length }, { value: "history", label: "History" }, { value: "guest", label: "Guest requests", badge: guestCount }]} />
-    {view === "bookings" ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"><ReservationsPanel upcoming onOpenOrder={onClose} /></div> : view === "guest" ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">{guestContent}</div> : view === "running" ? <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-      {active.length ? <Button variant="outline" className="mb-3 w-full" onClick={() => setView("bookings")}>{active.length} guest booking{active.length === 1 ? "" : "s"} · View & start order</Button> : null}
+    <Segmented className="shrink-0" ariaLabel="Orders view" stretch value={view} onChange={(v) => { setView(v); setDetail(null); }} options={[{ value: "running", label: "Running", badge: running.length }, { value: "history", label: "History" }, { value: "guest", label: "Guest requests", badge: guestCount }]} />
+    {view === "guest" ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">{guestContent}</div> : view === "running" ? <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+      {active.length ? <Button variant="outline" className="mb-3 w-full" onClick={() => { onClose(); window.dispatchEvent(new Event("pos:bookings")); }}>{active.length} guest booking{active.length === 1 ? "" : "s"} · View & start order</Button> : null}
       {running.map((o) => <div key={o.uid ?? o.billNo} className="flex h-16 items-center gap-2"><Button variant="ghost" className="h-16 min-w-0 flex-1 justify-between gap-3 rounded-none text-left" onClick={() => open(o)}><span className="min-w-0"><span className="block truncate font-bold">{o.tableLabel ?? tables.find((t) => t.id === o.tableId)?.label ?? o.orderType}</span><span className="block truncate text-xs font-normal text-muted-foreground">{billLabel(o)} · {o.lines.reduce((n, l) => n + l.qty, 0)} items{o.customer?.name ? ` · ${o.customer.name}` : ""}</span></span><span>{formatINR(o.total, 0)}</span></Button><BillPrintButton order={o} className="shrink-0" /></div>)}
       {tables.filter((t) => t.status === "occupied" && !running.some((o) => o.tableId === t.id)).map((t) => <div key={t.id} className="flex justify-between py-3 text-sm"><strong>{t.label}</strong><span>{t.heldBy ?? "Taking order"} · {formatINR(t.runningTotal, 0)}</span></div>)}
       {!running.length && !tables.some((t) => t.status === "occupied") ? <p className="py-8 text-center text-sm text-muted-foreground">No running bills.</p> : null}
     </div> : <>
       <Segmented className="shrink-0" ariaLabel="History dates" value={period} onChange={(v) => { setPeriod(v); setDetail(null); }} options={[{ value: "today", label: "Today" }, { value: "yesterday", label: "Yesterday" }, { value: "before", label: "Day before" }, { value: "custom", label: "Custom" }]} />
       {period === "custom" ? <label className="block text-sm">Date<input type="date" aria-label="History date" value={custom} onChange={(e) => { if (e.target.value) { setCustom(e.target.value); setDetail(null); } }} className="ml-3 rounded-md border border-input bg-card p-2" /></label> : null}
-      <Segmented className="shrink-0" ariaLabel="History type" value={kind} onChange={(v) => { setKind(v); setDetail(null); }} options={[{ value: "bills", label: "Bills", badge: datedBills("bills").length }, { value: "kots", label: "KOTs", badge: submissions.length }, { value: "settled", label: "Settled", badge: datedBills("settled").length }, { value: "cancelled", label: "Cancelled", badge: datedBills("cancelled").length }]} />
+      <Segmented className="shrink-0" ariaLabel="History type" value={kind} onChange={(v) => { setKind(v); setDetail(null); }} options={[{ value: "kots", label: "KOTs", badge: submissions.length }, { value: "settled", label: "Settled", badge: datedBills("settled").length }, { value: "nc", label: "NC", badge: datedBills("nc").length }, { value: "cancelled", label: "Cancelled", badge: datedBills("cancelled").length }]} />
+      {kind === "settled" ? <Segmented className="shrink-0" ariaLabel="Paid by" value={paid} onChange={(v) => { setPaid(v); setDetail(null); }} options={[{ value: "all", label: "All" }, { value: "cash", label: "Cash", badge: datedBills("settled").filter((o) => paidBy(o, "cash")).length }, { value: "upi", label: "UPI", badge: datedBills("settled").filter((o) => paidBy(o, "upi")).length }, { value: "other", label: "Card & other", badge: datedBills("settled").filter((o) => paidBy(o, "other")).length }]} /> : null}
       <div ref={listRef} aria-label="Order history records" className="min-h-0 flex-1 overflow-y-auto overscroll-contain [overflow-anchor:none] [scrollbar-gutter:stable]">
         <div className="divide-y divide-border">
           {kind === "kots" ? submissions.map((group) => {
@@ -117,7 +120,7 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
               </div>
               {selected ? preview(group) : null}
             </div>;
-          }) : datedBills(kind).map((record) => {
+          }) : shownBills.map((record) => {
             const selected = detail !== null && recordKey(detail) === recordKey(record);
             return <div key={record.uid ?? record.id}>
               <div className="flex h-16 items-center gap-2"><Button variant="ghost" aria-expanded={selected} className={`h-16 min-w-0 flex-1 justify-between gap-3 rounded-none text-left ${selected ? "bg-accent" : ""}`} onClick={(event) => selectRecord(record, event.currentTarget)}>
@@ -129,7 +132,7 @@ export function OrdersOverview({ onClose, guestContent, guestCount, initialView 
             </div>;
           })}
         </div>
-        {!(kind === "kots" ? submissions : datedBills(kind)).length ? <p className="py-6 text-center text-sm text-muted-foreground">No records for this date.</p> : null}
+        {!(kind === "kots" ? submissions : shownBills).length ? <p className="py-6 text-center text-sm text-muted-foreground">No records for this date.</p> : null}
       </div>
     </>}
   </div>;

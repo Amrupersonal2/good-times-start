@@ -12,14 +12,14 @@ export function hasBillNumber(order: Pick<Order, "billNo">): boolean {
   return order.billNo.trim() !== "";
 }
 
-/** What to call a bill on screen: its number, or "Running bill" until it has one. */
-export function billLabel(order: Pick<Order, "billNo">): string {
-  return hasBillNumber(order) ? order.billNo : "Running bill";
+/** What to call a bill on screen: its POS number, its QR series number (QR/0001) until settled, or "Running bill". */
+export function billLabel(order: Pick<Order, "billNo"> & { qrNo?: string | undefined }): string {
+  return hasBillNumber(order) ? order.billNo : order.qrNo ?? "Running bill";
 }
 
-/** Number to show beside a running bill: the short POS number, else nothing. */
-export function shortBillNo(order: Pick<Order, "billNo">): string {
-  return hasBillNumber(order) ? order.billNo.split("/").pop() ?? order.billNo : "";
+/** Number to show beside a running bill: the short POS number, else its QR series number, else nothing. */
+export function shortBillNo(order: Pick<Order, "billNo"> & { qrNo?: string | undefined }): string {
+  return hasBillNumber(order) ? order.billNo.split("/").pop() ?? order.billNo : order.qrNo ?? "";
 }
 
 /**
