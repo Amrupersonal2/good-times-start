@@ -1,7 +1,7 @@
 # POS expansion
 
 ## Financial sync and NC bills
-- [ ] Repair queued legacy zero-payment settlements without losing financial history, preserve failed bills for retry, acknowledge successful unrelated uploads, and provide explicit NC closure; verify isolated sync-to-history and zero-payment closure without production test writes.
+- [x] Repair queued legacy zero-payment settlements durably without losing bill identities or real payments; retain mismatched bills for retry and acknowledge unrelated successful atomic uploads. Explicit Close NC bill records an empty payment array. Isolated signed-in browser verifies original-bill retry, real Cash ₹60 retention, failed-bill queue preservation, itemised Orders history and NC closure after saved KOT; 39 targeted tests and automatic build pass. No production writes. Counter-local backlog repair runs on its next sync after publishing; actual device history readback remains unverified until then.
 
 ## Booking cancellation audit
 - [x] Show latest restaurant cancellation instead of an earlier settlement, distinguish zero-total closures without payment, and enforce a token-scoped 60-second guest cancellation deadline through an applied migration. Accepted kitchen orders remain staff-managed.
