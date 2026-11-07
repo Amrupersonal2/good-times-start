@@ -34,7 +34,7 @@ function BookingPage() {
   const [receipt, setReceipt] = useState<{ id: string; token: string } | null>(null);
   const request = useRef<{ fingerprint: string; id: string } | null>(null);
   const send = useServerFn(requestBooking);
-  const store = useQuery({ ...availabilityOptions(slug, arrival, hours), initialData: arrival === initial.arrival && hours === 2 ? initial.availability ?? undefined : undefined });
+  const store = useQuery({ ...availabilityOptions(slug, arrival, hours), ...(arrival === initial.arrival && hours === 2 && initial.availability ? { initialData: initial.availability } : {}) });
   const status = useQuery({ queryKey: ["reservation-status", receipt?.id], enabled: !!receipt, queryFn: () => receipt ? bookingStatus({ data: receipt }) : null, refetchInterval: 3000 });
   useEffect(() => {
     try { const raw = sessionStorage.getItem(`booking:${slug}`); if (raw) setReceipt(JSON.parse(raw) as { id: string; token: string }); } catch { /* No saved booking. */ }

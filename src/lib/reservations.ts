@@ -1,5 +1,5 @@
-export interface GuestPlace { id: string; label: string; section: string; seats: number; occupancy: "free" | "occupied" | "reserved" }
 import type { RestaurantTable } from "./types";
+export interface GuestPlace { id: string; label: string; section: string; seats: number; occupancy: "free" | "occupied" | "reserved" }
 export interface BookingAvailability { name: string; slug: string; enabled: boolean; places: GuestPlace[] }
 export type ReservationStatus = "pending" | "confirmed" | "arrived" | "cancelled" | "rejected";
 export interface Reservation {
