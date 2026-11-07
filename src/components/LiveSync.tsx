@@ -15,6 +15,8 @@ export function LiveSync() {
   const preparesNumbers = user?.role === "owner" || user?.role === "manager" || user?.role === "cashier" || user?.role === "captain";
   useEffect(() => {
     if (!restaurantId) return;
+    // Ask the browser never to clear this device's saved bills/KOTs when storage runs low.
+    void navigator.storage?.persist?.().catch(() => false);
     return startLiveSync(restaurantId);
   }, [restaurantId]);
   useEffect(() => {
