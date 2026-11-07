@@ -185,7 +185,6 @@ function TablesPage() {
   }, [start, end], { closed: [], groups: [] });
   const tables = boardTables(withReservations(floorTables, bookings.rows, Date.now()), activity.closed, start, end);
   const [boardFilter, setBoardFilter] = useState<BoardFilter>("all");
-  const visibleTables = editing ? tables : tables.filter((t) => matchesBoard(t, boardFilter));
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
   const counterBills = useLiveQuery(async () => (await getDb().orders.where("status").equals("held").toArray())
     .filter((o) => !o.tableId).sort((a, b) => a.createdAt - b.createdAt), [], [] as Order[]);
@@ -195,6 +194,7 @@ function TablesPage() {
   const canBill = can(user, "bill.create");
   const openBill = (t: RestaurantTable) => void navigate({ to: "/", search: { table: t.id } });
   const [editing, setEditing] = useState(false);
+  const visibleTables = editing ? tables : tables.filter((t) => matchesBoard(t, boardFilter));
   const [selected, setSelected] = useState<RestaurantTable | null>(null);
   const [form, setForm] = useState<RestaurantTable | "new" | "section" | null>(null);
   const [, setTick] = useState(0);
@@ -268,7 +268,7 @@ function TablesPage() {
         <ReservationsPanel upcoming />
         <section aria-label="KOTs in progress" className="mb-7 border-y border-border py-4">
           <h2 className="mb-3 text-base font-bold">Active KOTs <span className="font-normal text-muted-foreground">· {activity.groups.length}</span></h2>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{activity.groups.map((group) => <article key={group.id} className="rounded-lg border border-border bg-card p-3">
+          <div className="grid max-h-64 gap-3 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">{activity.groups.map((group) => <article key={group.id} className="rounded-lg border border-border bg-card p-3">
             <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">{group.first.tableSection ? `${group.first.tableSection} · ` : ""}{group.first.tableLabel ?? group.first.tableId ?? "Counter"}</h3><span className="text-xs text-muted-foreground">{new Date(group.first.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></div>
             <p className="mt-1 text-xs font-semibold text-primary">{group.first.printedKotNo ?? group.first.kotNo ?? group.first.billNo} · {group.tickets.map((k) => k.station).join(" / ")} · Submitted</p>
             <ul className="mt-2 space-y-1 text-sm">{group.tickets.flatMap((ticket) => ticket.lines).map((line, i) => <li key={i} className="flex gap-3"><span className="min-w-0 flex-1 break-words">{line.name}</span><span className="shrink-0 font-bold tabular-nums">{line.qty}</span></li>)}</ul>
@@ -281,6 +281,7 @@ function TablesPage() {
             {!canEdit ? <p className="mt-1 text-sm text-muted-foreground">Ask the owner or a manager to set up the floor.</p> : null}
           </div>
         ) : null}
+        {tables.length > 0 && visibleTables.length === 0 ? <p className="mb-7 text-sm text-muted-foreground">No tables with this status.</p> : null}
 
         {sections.filter((sec) => visibleTables.some((t) => t.section === sec)).map((sec) => (
           <section key={sec} className="mb-7">
