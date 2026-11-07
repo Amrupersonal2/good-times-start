@@ -11,7 +11,7 @@ import { VegMark } from "@/components/VegMark";
 import { computeTotals, formatINR, upiLink } from "@/lib/billing";
 import { needsOptions, orderCategories, outsideHours } from "@/lib/menu-logic";
 import {
-  GUEST_STATUS_LABEL, addToGuestCart, asMenuItem, guestLineFor, guestOrderPayload, guestSubtotal, pickupChoices, setGuestQty,
+  GUEST_STATUS_LABEL, addToGuestCart, asMenuItem, guestLineFor, guestOrderPayload, guestSubtotal, guestTableChoices, pickupChoices, setGuestQty,
   type GuestCartLine, type GuestChannel, type GuestLine, type GuestStatus, type Storefront,
 } from "@/lib/guest-order-logic";
 import type { CartLine, MenuItem } from "@/lib/types";
@@ -85,16 +85,18 @@ function GuestOrderPage() {
   if (!s.live || (!s.qr && !s.online)) return <Frame store={s}><Notice icon={Store} title="Ordering is off right now" body="Please order with the staff. Sorry for the trouble." /></Frame>;
   if (search.table && !table && s.qr) return <Frame store={s}><Notice icon={UtensilsCrossed} title="This QR code is out of date" body="Please ask the staff for help with your order." /></Frame>;
   if (!channel) {
-    if (!search.table && s.qr) return <Frame store={s}><section className="px-5 py-6">
-      <h2 className="text-xl font-bold">Choose your table</h2>
+    if (!search.table && s.qr) return <Frame store={s}><section className="px-5 py-6" aria-label="Choose your table">
+      <h2 className="text-xl font-bold">Where are you sitting?</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Tap your table to see the menu. Your food comes to you there.</p>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {s.tables.map((t) => <Button key={t.id} variant="outline" className="h-16" onClick={() => void navigate({ search: { ...search, table: t.id } })}><UtensilsCrossed />{placeName(t.label)}</Button>)}
+        {guestTableChoices(s.tables).map((t) => <Button key={t.id} variant="outline" className="h-20 flex-col gap-1 rounded-2xl text-base font-bold active:scale-[0.98]" onClick={() => void navigate({ search: { ...search, table: t.id }, replace: true })}><UtensilsCrossed className="size-5 text-primary" />{placeName(t.label)}</Button>)}
       </div>
     </section></Frame>;
     return <Frame store={s}><Notice icon={UtensilsCrossed} title={search.table ? "Table ordering is off" : "Scan the QR code on your table"}
       body={search.table ? "Please order with the staff." : "This restaurant takes orders from the QR code on each table."} /></Frame>;
   }
-  return <Frame store={s}><div className="px-5 pt-4"><Button variant="outline" asChild><Link to="/book/$slug" params={{ slug }}><Clock />Reserve a room or table</Link></Button></div><Menu store={s} channel={channel} tableId={table?.id} tableLabel={table?.label} source={scanSource} /></Frame>;
+  // A guest already at a table goes straight to the menu; reservations are offered only off-site.
+  return <Frame store={s}>{channel === "table" ? null : <div className="px-5 pt-4"><Button variant="outline" asChild><Link to="/book/$slug" params={{ slug }}><Clock />Reserve a room or table</Link></Button></div>}<Menu store={s} channel={channel} tableId={table?.id} tableLabel={table?.label} source={scanSource} /></Frame>;
 }
 
 /* ---------------- layout ---------------- */
@@ -214,9 +216,9 @@ function Menu({ store, channel, tableId, tableLabel, source }: { store: Storefro
             <div className="min-w-0">
               <p className="text-sm font-bold">{channel === "table" ? `Ordering to ${placeName(tableLabel ?? "")}` : "Order for pickup"}</p>
               {store.qr ? <label className="mt-2 block text-xs font-medium">Table
-                <select aria-label="Select table" value={tableId ?? ""} onChange={(e) => void navigate({ search: { ...(e.target.value ? { table: e.target.value } : {}), s: source } })} className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm">
+                <select aria-label="Select table" value={tableId ?? ""} onChange={(e) => void navigate({ search: { ...(e.target.value ? { table: e.target.value } : {}), s: source }, replace: true })} className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm">
                   {store.online ? <option value="">Pickup</option> : null}
-                  {store.tables.map((t) => <option key={t.id} value={t.id}>{placeName(t.label)}</option>)}
+                  {guestTableChoices(store.tables, tableId).map((t) => <option key={t.id} value={t.id}>{placeName(t.label)}</option>)}
                 </select>
               </label> : null}
               <p className="text-xs text-muted-foreground">{channel === "table" ? "Your food comes to your table. Pay at the end." : `Usually ready in about ${store.prepMinutes} minutes.`}</p>

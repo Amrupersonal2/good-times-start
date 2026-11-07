@@ -290,6 +290,7 @@ export type Database = {
       guest_orders: {
         Row: {
           bill_no: string | null
+          qr_no: number | null
           channel: string
           code: string
           created_at: string
@@ -317,6 +318,7 @@ export type Database = {
         }
         Insert: {
           bill_no?: string | null
+          qr_no?: number | null
           channel: string
           code: string
           created_at?: string
@@ -344,6 +346,7 @@ export type Database = {
         }
         Update: {
           bill_no?: string | null
+          qr_no?: number | null
           channel?: string
           code?: string
           created_at?: string

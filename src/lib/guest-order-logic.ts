@@ -238,3 +238,15 @@ export function qrOrderState(guest: Pick<GuestOrder, "status">, bill?: Pick<Orde
   return { label: "Running", tone: "running" };
 }
 
+/**
+ * Tables a guest can pick on the QR ordering page: dining tables only, in floor order.
+ * Hostel rooms ("Rooms" section) are never offered, though a room's own QR code
+ * still works; the table the guest scanned is always kept in the list.
+ */
+export function guestTableChoices<T extends { id: string; label: string; section: string }>(tables: T[], currentId?: string): T[] {
+  const isRoom = (t: T) => /^rooms?$/i.test(t.section.trim());
+  return tables
+    .filter((t) => !isRoom(t) || t.id === currentId)
+    .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+}
+

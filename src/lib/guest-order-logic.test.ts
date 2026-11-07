@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addToGuestCart, asMenuItem, billWithGuestLines, cartLinesFromGuest, guestLineFor, guestOrderPayload, guestSubtotal, orderPageUrl, pickupChoices, qrOrderState, qrSeriesLabel, setGuestQty, sortGuestOrders, type GuestOrder } from "./guest-order-logic";
+import { addToGuestCart, asMenuItem, billWithGuestLines, cartLinesFromGuest, guestLineFor, guestOrderPayload, guestSubtotal, orderPageUrl, pickupChoices, guestTableChoices, qrOrderState, qrSeriesLabel, setGuestQty, sortGuestOrders, type GuestOrder } from "./guest-order-logic";
 import type { MenuItem, Order } from "./types";
 
 const momo: MenuItem = {
@@ -89,6 +89,19 @@ describe("QR order series", () => {
     expect(qrOrderState({ status: "completed" }, { status: "settled", billNo: "POS/0005" })).toEqual({ label: "Settled · POS/0005", tone: "settled" });
     expect(qrOrderState({ status: "rejected" }).tone).toBe("closed");
     expect(qrOrderState({ status: "accepted" }, { status: "void", billNo: "" }).label).toBe("Bill cancelled");
+  });
+});
+
+describe("QR table choices", () => {
+  const floor = [
+    { id: "D2", label: "D2", section: "Dine-in" }, { id: "R12", label: "Room 12", section: "Rooms" },
+    { id: "B1", label: "Bonfire 1", section: "Dine-in" }, { id: "D1", label: "D1", section: "Dine-in" },
+  ];
+  it("offers dining tables only, in floor order", () => {
+    expect(guestTableChoices(floor).map((t) => t.id)).toEqual(["B1", "D1", "D2"]);
+  });
+  it("keeps the room a guest scanned so its QR still works", () => {
+    expect(guestTableChoices(floor, "R12").map((t) => t.id)).toEqual(["B1", "D1", "D2", "R12"]);
   });
 });
 
