@@ -1,12 +1,12 @@
 /* XTSY POS service worker: makes the installed apps open and keep working offline.
  *
- * - Pages: network first (so every deploy reaches devices on next load), but
- *   the saved copy opens after 3 s on a slow connection or at once offline.
+ * - Pages: network first (so every deploy reaches devices on next load); the
+ *   saved copy opens only when the network fails (offline).
  * - Built assets (/assets/*, content-hashed): cache first.
  * - Icons, manifests, fonts: served from cache, refreshed in the background.
  * - Never touches API calls, server functions, Supabase or non-GET requests.
  */
-const VERSION = "xtsy-pos-v13";
+const VERSION = "xtsy-pos-v14";
 const PAGES = `${VERSION}-pages`;
 const ASSETS = `${VERSION}-assets`;
 const STATIC = `${VERSION}-static`;
@@ -40,7 +40,6 @@ function isBypassed(url, request) {
 // How long an opening page waits for the network when a saved copy exists.
 // On weak connections the saved copy opens instead, while the network copy
 // keeps downloading in the background and replaces it for the next open.
-const FAST_FALLBACK_MS = 3000;
 const NETWORK_TIMEOUT_MS = 15000;
 
 async function cachedPageFor(cache, key) {
@@ -77,15 +76,11 @@ async function networkFirstPage(event) {
 
   const cached = await cachedPageFor(cache, key);
   if (cached) {
-    let fallbackTimer;
-    const slow = new Promise((resolve) => { fallbackTimer = setTimeout(() => resolve(null), FAST_FALLBACK_MS); });
+    // Saved copy only when the network fails (offline): slow Wi-Fi still gets the current version.
     try {
-      const winner = await Promise.race([network, slow]);
-      if (winner) return winner;
+      return await network;
     } catch {
       // Network failed outright: fall through to the saved copy.
-    } finally {
-      clearTimeout(fallbackTimer);
     }
     return cached;
   }
