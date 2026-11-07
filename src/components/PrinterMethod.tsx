@@ -48,7 +48,7 @@ export function PrinterMethod({ form, patch, appPath, station = "Kitchen" }: {
   const shortcut = kioskShortcut(origin, appPath, mac ? "mac" : "windows");
   const [copied, setCopied] = useState(false);
   const choices: { v: PrintMethod; l: string; d: string }[] = [
-    { v: "browser", l: "Computer · USB or network printer", d: "Chrome prints straight to this computer's default printer." },
+    { v: "browser", l: "Computer · USB or network printer", d: "Chrome prints to this computer's default printer; silent when launched with the shortcut, otherwise it opens the print dialog." },
     { v: "rawbt", l: "Android · Bluetooth, Wi‑Fi or USB printer", d: "The free RawBT app prints straight away, no preview." },
   ];
   const copy = () => {
@@ -78,9 +78,9 @@ export function PrinterMethod({ form, patch, appPath, station = "Kitchen" }: {
             <code className="mt-1 block break-all rounded-lg bg-card p-2 font-mono text-[11px]">{shortcut}</code>
             <Button size="sm" variant="outline" className="mt-1.5" onClick={copy}>{copied ? <Check /> : <Copy />}{copied ? "Copied" : "Copy shortcut"}</Button>
           </li>
-          <li>Close every Chrome window, then open the POS from that shortcut. Print KOT and Print bill now print at once, with no print box.</li>
+          <li>Close every Chrome window, then open the POS from that shortcut. KOTs and bills print directly. If you open the POS normally instead, Chrome shows its print dialog as a fallback; printing is never blocked.</li>
           <li>In the printer driver, select {form.paper} mm continuous roll, 100% scale, zero margins and no headers or footers.</li>
-          <li><label className="flex items-start gap-2"><input type="checkbox" checked={form.silentBrowserReady} onChange={(e) => patch({ silentBrowserReady: e.target.checked })} />I have reopened this device using the silent-printing shortcut.</label></li>
+          <li><label className="flex items-start gap-2"><input type="checkbox" checked={form.silentBrowserReady} onChange={(e) => patch({ silentBrowserReady: e.target.checked })} />I have reopened this device using the silent-printing shortcut (status indicator only).</label></li>
         </ol>
       ) : (
         <ol className="list-decimal space-y-1.5 rounded-xl bg-secondary p-3 pl-7 text-xs leading-relaxed">
