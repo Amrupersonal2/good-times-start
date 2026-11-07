@@ -1,4 +1,5 @@
 export interface GuestPlace { id: string; label: string; section: string; seats: number; occupancy: "free" | "occupied" | "reserved" }
+import type { RestaurantTable } from "./types";
 export interface BookingAvailability { name: string; slug: string; enabled: boolean; places: GuestPlace[] }
 export type ReservationStatus = "pending" | "confirmed" | "arrived" | "cancelled" | "rejected";
 export interface Reservation {
@@ -18,4 +19,9 @@ export function bookingInputError(arrival: number, hours: number, party: number,
   if (!Number.isInteger(hours) || hours < 1 || hours > 24) return "Choose a duration between 1 and 24 hours.";
   if (!Number.isInteger(party) || party < 1 || party > seats) return `Choose between 1 and ${seats} guests.`;
   return null;
+}
+/** A reservation blocks its arrival window only; existing occupied bills always win. */
+export function withReservations<T extends RestaurantTable>(tables: T[], rows: Reservation[], now: number): T[] {
+  const reserved = new Set(rows.filter((r) => ["pending", "confirmed", "arrived"].includes(r.status) && Date.parse(r.arrival_at) <= now && Date.parse(r.end_at) > now).map((r) => r.table_id));
+  return tables.map((t) => t.status === "free" && reserved.has(t.id) ? { ...t, status: "reserved" } : t);
 }

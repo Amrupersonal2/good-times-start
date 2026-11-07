@@ -12,7 +12,7 @@ const availabilityOptions = (slug: string, arrival: string, hours: number) => qu
 export const Route = createFileRoute("/book/$slug")({
   loader: async ({ params, context }) => {
     const arrival = new Date(Date.now() + 3600_000).toISOString();
-    await context.queryClient.ensureQueryData(availabilityOptions(params.slug, arrival, 2));
+    try { await context.queryClient.ensureQueryData(availabilityOptions(params.slug, arrival, 2)); } catch { /* The page exposes a retry instead of blanking on an offline link. */ }
     return { arrival };
   },
   head: () => ({ meta: [{ title: "Reserve a table — TAB Bistro by XTSY" }, { name: "description", content: "Room and dine-in availability with guest arrival reservations." }, { property: "og:title", content: "Reserve a table — TAB Bistro by XTSY" }, { property: "og:description", content: "Room and dine-in availability with guest arrival reservations." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
@@ -23,6 +23,7 @@ function BookingPage() {
   const { slug } = Route.useParams();
   const initial = Route.useLoaderData();
   const [arrival, setArrival] = useState(initial.arrival);
+  const [ready, setReady] = useState(false);
   const [hours, setHours] = useState(2);
   const [table, setTable] = useState("");
   const [section, setSection] = useState("all");
@@ -35,7 +36,19 @@ function BookingPage() {
   const status = useQuery({ queryKey: ["reservation-status", receipt?.id], enabled: !!receipt, queryFn: () => receipt ? bookingStatus({ data: receipt }) : null, refetchInterval: 3000 });
   useEffect(() => {
     try { const raw = sessionStorage.getItem(`booking:${slug}`); if (raw) setReceipt(JSON.parse(raw) as { id: string; token: string }); } catch { /* No saved booking. */ }
+    try {
+      const raw = sessionStorage.getItem(`booking-draft:${slug}`);
+      if (raw) {
+        const draft = JSON.parse(raw) as { arrival: string; hours: number; table: string; name: string; phone: string; party: number; request: { fingerprint: string; id: string } | null };
+        setArrival(draft.arrival); setHours(draft.hours); setTable(draft.table); setName(draft.name); setPhone(draft.phone); setParty(draft.party); request.current = draft.request;
+      }
+    } catch { /* Invalid saved draft is ignored. */ }
+    setReady(true);
   }, [slug]);
+  useEffect(() => {
+    if (!ready || receipt) return;
+    try { sessionStorage.setItem(`booking-draft:${slug}`, JSON.stringify({ arrival, hours, table, name, phone, party, request: request.current })); } catch { /* Private mode keeps the draft in memory. */ }
+  }, [ready, receipt, slug, arrival, hours, table, name, phone, party]);
   const places = store.data?.places ?? [];
   const selected = places.find((p) => p.id === table);
   const sections = [...new Set(places.map((p) => p.section))];
@@ -45,6 +58,7 @@ function BookingPage() {
     const issue = bookingInputError(Date.parse(arrival), hours, party, selected.seats, Date.now()); if (issue) { setError(issue); return; }
     const fingerprint = JSON.stringify({ table, name, phone, party, arrival, hours });
     if (!request.current || request.current.fingerprint !== fingerprint) request.current = { fingerprint, id: crypto.randomUUID() };
+    try { sessionStorage.setItem(`booking-draft:${slug}`, JSON.stringify({ arrival, hours, table, name, phone, party, request: request.current })); } catch { /* Keep idempotency in memory. */ }
     setBusy(true);
     try {
       const result = await send({ data: { slug, request: request.current.id, table, name, phone, party, arrival, hours } });
