@@ -1,9 +1,10 @@
 # POS expansion
 
 ## Public guest reservations
-- [ ] Add a public QR arrival-booking screen with safe room/dine-in availability and staff confirmation.
-- [ ] Show bookings beside floor occupancy and kitchen/settled-room history without changing bills or creating KOTs.
-- [ ] Cache staff reservations offline, refresh on reconnect, and verify booking rules and screens without production test writes.
+- [x] Add public QR arrival bookings, occupancy-only public data, token-scoped guest status, staff confirmation and serialized overlapping-slot protection; additive migration applied without creating bookings.
+- [x] Show dated arrivals beside floor occupancy and kitchen/settled-room history; active slots mark free tables reserved for display only. Add waiter reservation controls and admin QR download.
+- [x] Cache staff arrivals in IndexedDB and refresh on reconnect; preserve guest draft/request identity across refresh. 25 targeted tests and automatic build pass; public mobile availability/validation has no page errors or overflow. Isolated staff confirmation reads back and appears in kitchen/settled view, with saved arrivals retained offline.
+- [ ] Publish and validate an actual guest request/confirmation across devices: publishing not requested; no production test booking created. Waiter-specific sign-in remains unverified because the injected Reception account cannot access waiter mode.
 
 ## Offline official numbering
 - [x] Cache 20 cloud-reserved POS and 20 KOT numbers on operational devices; consume atomically offline and retain original cloud reservation IDs without renumbering printed tickets.
