@@ -35,7 +35,7 @@ function AuthPage() {
     const own = appsFor(user.login, user.role === "unknown" ? null : user.role);
     const target: AppKind = chosen && own.includes(chosen) ? chosen : own[0] ?? chosen ?? "manager";
     setAppMode(target);
-    void navigate({ to: APPS[target].home, replace: true });
+    void navigate({ to: user.role === "kitchen" ? "/kitchen" : APPS[target].home, replace: true });
   }, [loading, user, submitting, chosen, navigate]);
   const app: AppKind | null = chosen;
   const [login, setLogin] = useState("");
