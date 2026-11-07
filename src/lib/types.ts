@@ -85,6 +85,7 @@ export interface Order {
   payments: { mode: PaymentMode; amount: number }[];
   status: "held" | "settled" | "void";
   voidReason?: string;
+  cancelledAt?: number;
   serviceChargePct?: number;
   serviceCharge?: number;
   /** Value before GST after discount (excludes service charge). */

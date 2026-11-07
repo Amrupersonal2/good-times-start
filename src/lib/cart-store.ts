@@ -361,7 +361,7 @@ export function useCart(initialTableId?: string) {
     const allCancelled = merged.length === 0;
     const saved: Order = {
       ...order, kotSubmittedQty: nextSubmitted, synced: false,
-      ...(allCancelled ? { status: "void" as const, voidReason: "All items cancelled before billing" } : {}),
+      ...(allCancelled ? { status: "void" as const, cancelledAt: now, voidReason: "All items cancelled before billing" } : {}),
     };
 
     let kots: Kot[] = [];
@@ -469,7 +469,7 @@ export function useCart(initialTableId?: string) {
       latest = checked;
     }
     const t = computeTotals(billLines, discountPct, serviceChargePct, tax);
-    const payments = Array.isArray(payment) ? settledPayments(payment, t.total) : [{ mode: payment, amount: t.total }];
+    const payments = settledPayments(Array.isArray(payment) ? payment : [{ mode: payment, amount: t.total }], t.total);
     const received = payments.reduce((sum, p) => sum + p.amount, 0);
     if (received + 0.01 < t.total) {
       // Another device added to this table after payment was entered: never record a short payment.
@@ -573,7 +573,7 @@ export function useCart(initialTableId?: string) {
       const db = getDb();
       const id = latest.id;
       await db.transaction("rw", db.orders, db.meta, async () => {
-        await db.orders.update(id, { status: "void", voidReason: reason, synced: false, ...(closedBy ? { closedBy } : {}) });
+        await db.orders.update(id, { status: "void", cancelledAt: Date.now(), voidReason: reason, synced: false, ...(closedBy ? { closedBy } : {}) });
         if (user?.restaurantId) await queueBillBookingCancellation(user.restaurantId, { ...latest, status: "void" });
       });
       if (latest.uid) changes.push(["order", latest.uid]);

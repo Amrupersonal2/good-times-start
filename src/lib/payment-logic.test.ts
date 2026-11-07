@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { maxDiscountFor, paymentSummary, settledPayments } from "./payment-logic";
 
 describe("payments", () => {
+  it("records no payment for a zero-total bill", () => {
+    expect(settledPayments([{ mode: "cash", amount: 0 }], 0)).toEqual([]);
+  });
   it("gives change only from cash", () => {
     expect(paymentSummary([{ mode: "cash", amount: 500 }], 430)).toMatchObject({ change: 70, remaining: 0, complete: true, error: "" });
     expect(paymentSummary([{ mode: "card", amount: 500 }], 430)).toMatchObject({ complete: false });

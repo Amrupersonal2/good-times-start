@@ -178,7 +178,8 @@ function TablesPage() {
   const [start, end] = dayBounds(dateLabel());
   const activity = useLiveQuery(async () => {
     const db = getDb();
-    return { closed: await reportOrders({ from: start, to: end - 1 }) };
+    const [records, cancelled] = await Promise.all([reportOrders({ from: start, to: end - 1 }), db.orders.where("status").equals("void").toArray()]);
+    return { closed: [...new Map([...records, ...cancelled].map((o) => [o.uid ?? o.id ?? o.billNo, o])).values()] };
   }, [start, end], { closed: [] });
   const tables = boardTables(withReservations(floorTables, bookings.rows, Date.now()), activity.closed, start, end);
   // Running bills with no table: takeaway, delivery, app and guest pickup orders.
@@ -296,6 +297,8 @@ function TablesPage() {
                   <span className="max-w-full break-words text-base font-extrabold leading-snug">{t.label}</span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3" />{t.seats}</span>
                   {t.settledAt !== undefined ? <span className="mt-1 text-xs font-semibold leading-relaxed text-success">Settled · <span className="inline-block whitespace-nowrap">{new Date(t.settledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span></span> : null}
+                  {t.cancelledAt !== undefined ? <span className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">Last order cancelled by restaurant</span> : null}
+                  {t.closedWithoutPaymentAt !== undefined ? <span className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">Last bill closed without payment</span> : null}
                   {(t.status === "occupied" || t.status === "billed") && (t.runningTotal > 0 || !t.qrTotal) ? (
                     <span className="mt-1 text-xs font-bold">{formatINR(t.runningTotal, 0)}<span className="block font-normal text-muted-foreground">{minutesSince(t.since)}</span></span>
                   ) : t.status === "reserved" ? <span className="mt-1 text-xs font-semibold text-gold-foreground">Booked</span> : null}
