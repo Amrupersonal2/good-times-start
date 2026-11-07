@@ -1,5 +1,9 @@
 # POS expansion
 
+## Live table status board
+- [ ] Add booked, settled-today, occupied and free floor filters plus read-only active KOTs from local live records; preserve holds, reservations and offline sync.
+- [ ] Hide the separate Kitchen entry until confirmed; verify floor precedence, submission grouping and desktop/mobile rendering without production writes.
+
 ## Public guest reservations
 - [x] Accepted upcoming bookings now annotate Tables immediately, appear in Orders → Bookings and carry guest details through explicit Start order into a local draft. Guard existing running bills/other guests' drafts. One root notifier chimes and shows a new-request toast after browser sound activation; Enable sound provides a device test. 30 tests pass, automatic build OK, isolated signed-in flow verified table reservation, Orders entry, three sound tones and guest-filled cart with no page errors or production writes. Publishing not requested; physical speaker and waiter-role checks remain unverified.
 - [x] Add public QR arrival bookings, occupancy-only public data, token-scoped guest status, staff confirmation and serialized overlapping-slot protection; additive migration applied without creating bookings.
