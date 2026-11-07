@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ROLE_LABELS, isAdmin, useStaff } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { clearSyncNotice, getLiveStatus, getSyncSnapshot, onLiveStatus, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
+import { requeueHeldRecords, clearSyncNotice, getLiveStatus, getSyncSnapshot, onLiveStatus, saveSyncError, syncCloudData } from "@/lib/cloud-sync";
 import { diagnoseCloudSync } from "@/lib/sync-diagnosis.functions";
 import logo from "@/assets/logo.png";
 import { getDb, getMaterialLevels } from "@/lib/db";
@@ -121,6 +121,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
     if (!online) { await saveSyncError(new Error("No internet connection. Orders remain safely stored on this device.")); return; }
     setBusy(true);
     try {
+      await requeueHeldRecords();
       await syncCloudData(restaurantId);
       // Guest requests and bookings live in their own Supabase tables, not restaurant_records.
       // Refresh those queries explicitly so Sync now updates Bookings too.

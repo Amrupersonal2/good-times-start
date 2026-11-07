@@ -203,7 +203,11 @@ async function restoreRefused(restaurantId: string, refused: RefusedRow[]): Prom
     rows.push(...found);
     // Refused new records exist only here. Bills and kitchen tickets are financial/kitchen
     // history and may already be on paper: never erase them; keep them local for recovery.
-    if (kind === "order" || kind === "kot") continue;
+    if (kind === "order" || kind === "kot") {
+      const keep = ids.filter((id) => !found.some((f) => f.record_id === id) && !refused.some((r) => r.record_id === id && r.prelaunch));
+      if (keep.length) await holdRecords(kind, keep);
+      continue;
+    }
     for (const id of ids) if (!found.some((f) => f.record_id === id)) rows.push({ kind, record_id: id, payload: {} as Json, deleted: true, updated_at: new Date(0).toISOString() });
   }
   await applyRemote(rows);
@@ -666,8 +670,10 @@ export function startLiveSync(restaurantId: string): () => void {
   // Kitchen tickets push at once so the kitchen screen updates instantly; offline they stay in the outbox until "online" fires.
   const stopLocal = onLocalChange((kinds) => scheduler.request(kinds.includes("kot") ? 0 : 800));
   const wake = () => scheduler.request(0);
+  const onOnline = () => { void requeueHeldRecords().finally(wake); };
+  void requeueHeldRecords();
   const onVisible = () => { if (document.visibilityState === "visible") wake(); };
-  window.addEventListener("online", wake);
+  window.addEventListener("online", onOnline);
   window.addEventListener("focus", wake);
   window.addEventListener("pageshow", wake);
   document.addEventListener("visibilitychange", onVisible);
@@ -710,7 +716,7 @@ export function startLiveSync(restaurantId: string): () => void {
     stopped = true;
     scheduler.stop();
     window.clearTimeout(reconnectTimer);
-    window.removeEventListener("online", wake);
+    window.removeEventListener("online", onOnline);
     window.removeEventListener("focus", wake);
     window.removeEventListener("pageshow", wake);
     document.removeEventListener("visibilitychange", onVisible);
@@ -769,6 +775,27 @@ export function describeNotice(value: unknown): string {
     }
     return parts.length ? `${parts.join(" ")} Everything else synced normally.` : "";
   } catch { return ""; }
+}
+
+/* Bills and kitchen tickets the cloud refused stay on this device and are re-sent on Retry/reconnect. */
+const HELD_KEY = "heldRecords";
+async function readHeld(): Promise<[RecordKind, string][]> {
+  const v = (await getDb().meta.get(HELD_KEY))?.value;
+  try { return typeof v === "string" ? (JSON.parse(v) as [RecordKind, string][]) : []; } catch { return []; }
+}
+async function holdRecords(kind: "order" | "kot", ids: string[]) {
+  const held = await readHeld();
+  for (const id of ids) if (!held.some(([k, r]) => k === kind && r === id)) held.push([kind, id]);
+  await getDb().meta.put({ key: HELD_KEY, value: JSON.stringify(held) });
+}
+export async function heldRecordCount(): Promise<number> { return (await readHeld()).length; }
+/** Re-queue held bills/KOTs so the next sync tries again (and renumbers them if needed). */
+export async function requeueHeldRecords(): Promise<number> {
+  const held = await readHeld();
+  if (!held.length) return 0;
+  await getDb().meta.delete(HELD_KEY);
+  await markDirty(...held);
+  return held.length;
 }
 
 export async function clearSyncNotice() { await getDb().meta.delete("syncNotice"); }
