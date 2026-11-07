@@ -145,7 +145,7 @@ export function GuestOrdersButton() {
         {requestCount ? <span className="rounded-full bg-gold-foreground px-1.5 text-[11px] font-bold text-gold">{requestCount}</span> : null}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
+        <DialogContent className="flex h-[min(48rem,92dvh)] w-[calc(100%-1rem)] max-w-2xl flex-col overflow-hidden p-4 sm:p-6">
           <OrdersOverview key={initialView} initialView={initialView} onClose={() => setOpen(false)} guestCount={waiting.length} guestContent={<GuestOrdersPanel orders={orders} onDone={() => setOpen(false)} />} />
         </DialogContent>
       </Dialog>

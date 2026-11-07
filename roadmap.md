@@ -1,5 +1,8 @@
 # POS expansion
 
+## Steady Orders browsing
+- [ ] Keep the window and row dimensions stable with a scrollable list; open bill/KOT previews immediately beneath their selection and verify desktop/tablet/mobile browsing without financial writes.
+
 ## Financial sync and NC bills
 - [x] Repair queued legacy zero-payment settlements durably without losing bill identities or real payments; retain mismatched bills for retry and acknowledge unrelated successful atomic uploads. Explicit Close NC bill records an empty payment array. Isolated signed-in browser verifies original-bill retry, real Cash ₹60 retention, failed-bill queue preservation, itemised Orders history and NC closure after saved KOT; 39 targeted tests and automatic build pass. No production writes. Counter-local backlog repair runs on its next sync after publishing; actual device history readback remains unverified until then.
 
