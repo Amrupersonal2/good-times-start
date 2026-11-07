@@ -140,7 +140,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
     const onPreload = (e: Event) => { e.preventDefault(); reloadOnceForStaleChunk(); };
-    const onRejection = (e: PromiseRejectionEvent) => { if (isStaleChunkError(e.reason)) reloadOnceForStaleChunk(); };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      // Chrome cancels the page cross-fade when the counter screen is switched away; harmless, so keep it out of error reports.
+      const r = e.reason as { name?: string; message?: string } | null;
+      if (r?.name === "InvalidStateError" && /transition/i.test(r.message ?? "")) { e.preventDefault(); return; }
+      if (isStaleChunkError(e.reason)) reloadOnceForStaleChunk();
+    };
     window.addEventListener("vite:preloadError", onPreload);
     window.addEventListener("unhandledrejection", onRejection);
     return () => {

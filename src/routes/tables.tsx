@@ -30,6 +30,8 @@ import { reportOrders } from "@/lib/report-orders";
 import { hasBillNumber, shortBillNo } from "@/lib/bill-numbering";
 
 export const Route = createFileRoute("/tables")({
+  // Staff screens read this device's saved data, so skip server rendering and open straight from the device.
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Tables — TAB Bistro by XTSY" },
