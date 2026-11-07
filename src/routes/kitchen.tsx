@@ -9,10 +9,10 @@ import { reportOrders } from "@/lib/report-orders";
 import { liveKitchenTickets } from "@/lib/kitchen-view";
 
 export const Route = createFileRoute("/kitchen")({
-  validateSearch: (search: Record<string, unknown>): { view?: "live" | "settled"; station?: string; date?: string } => ({
-    view: search.view === "settled" ? "settled" : "live",
-    station: typeof search.station === "string" ? search.station : "all",
-    date: typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date) ? search.date : undefined,
+  validateSearch: (search: Record<string, unknown>): { view?: "live" | "settled"; station?: string; date?: string | undefined } => ({
+    view: search['view'] === "settled" ? "settled" : "live",
+    station: typeof search['station'] === "string" ? search['station'] : "all",
+    date: typeof search['date'] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search['date']) ? search['date'] : undefined,
   }),
   head: () => ({ meta: [
     { title: "Kitchen — TAB Bistro by XTSY" },
