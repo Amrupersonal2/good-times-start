@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useStaff } from "@/lib/auth-context";
 import { startLiveSync } from "@/lib/cloud-sync";
 import { prepareOfflineNumbers } from "@/lib/restaurant-numbering";
+import { BookingAlerts } from "./BookingAlerts";
 
 /**
  * Runs once at the app root (not per page) so the realtime channel and sync
@@ -23,5 +24,5 @@ export function LiveSync() {
     const timer = window.setInterval(refill, 60_000);
     return () => { window.removeEventListener("online", refill); window.clearInterval(timer); };
   }, [restaurantId, preparesNumbers]);
-  return null;
+  return <BookingAlerts />;
 }
