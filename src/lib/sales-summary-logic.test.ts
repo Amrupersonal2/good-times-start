@@ -18,6 +18,12 @@ const bills = [
 ];
 
 describe("sales summary", () => {
+  it("sorts and exports room bills by settlement date", () => {
+    const earlier = bill(1, { settledAt: 4000 });
+    const later = bill(2, { settledAt: 3000 });
+    expect(filterBills([later, earlier], NO_FILTERS)[0]?.uid).toBe("o1");
+    expect(summarySheet([earlier], { items: false, tax: false, split: false }, "TAB", "Today").rows[0]?.[1]).toEqual(new Date(4000));
+  });
   it("totals completed bills only and counts cancellations apart", () => {
     expect(summaryTotals(bills)).toEqual({ sales: 627, orders: 3, discount: 20, charges: 18, tax: 29, foodSale: 580, cancelled: 1, cancelledValue: 210 });
   });

@@ -10,6 +10,13 @@ const bill = (n: number, o: Partial<Order> = {}): Order => ({
 });
 
 describe("reports workbook", () => {
+  it("exports settlement dates without changing the original invoice date", () => {
+    const room = bill(1, { settledAt: new Date(2026, 10, 7, 11).getTime() });
+    const sheets = reportsWorkbook([room], [], [], { from: 0, to: Date.now() }, "TAB");
+    expect(sheets.find((s) => s.name === "Bills")?.rows[0]?.[1]).toBe(room.settledAt);
+    expect(sheets.find((s) => s.name === "Bill items")?.rows[0]?.[1]).toBe(room.settledAt);
+    expect(room.createdAt).toBe(new Date(2026, 9, 17, 13).getTime());
+  });
   it("totals only settled bills and opens as a real workbook", async () => {
     const sheets = reportsWorkbook([bill(1), bill(2), bill(3, { status: "void", voidReason: "Guest left" })], [], [], { from: 0, to: Date.now() }, "TAB Bistro");
     expect(sheets.map((s) => s.name)).toEqual(["Summary", "Bills", "Bill items", "Dishes", "Categories", "Payments", "Order types", "GST by rate", "Staff", "Day closes"]);
