@@ -101,3 +101,11 @@ describe("table capacity and merged bill accounting", () => {
     expect(tableCanAccommodateOrder({ seats: 4 }, {})).toBe(true);
   });
 });
+
+describe("floor bills not yet on this device", () => {
+  it("flags a busy table with an amount but no local bill", async () => {
+    const { withOpenBills } = await import("./table-logic");
+    const t = { id: "D1", label: "D1", section: "Dine-in", seats: 2, status: "occupied", runningTotal: 280 } as never;
+    expect(withOpenBills([t], [])[0]?.awaitingBill).toBe(true);
+  });
+});
