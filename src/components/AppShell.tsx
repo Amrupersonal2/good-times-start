@@ -46,7 +46,7 @@ const ROLE_SCREENS: Record<string, NavPath[]> = {
   manager: NAV.map((n) => n.to),
   kitchen: ["/kitchen", "/stock", "/settings"],
   captain: ["/waiter", "/", "/tables", "/menu", "/settings"],
-  cashier: ["/", "/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/settings"],
+  cashier: ["/", "/dashboard", "/tables", "/menu", "/stock", "/customers", "/reports", "/kitchen", "/settings"],
 };
 
 /** Reception's screens also follow Settings → Roles. */
