@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { REMOTE_SYNC_EVENT } from "@/lib/terminal-signal";
 import { useStaff } from "@/lib/auth-context";
 import { startLiveSync } from "@/lib/cloud-sync";
 import { prepareOfflineNumbers } from "@/lib/restaurant-numbering";
@@ -19,6 +21,17 @@ export function LiveSync() {
     void navigator.storage?.persist?.().catch(() => false);
     return startLiveSync(restaurantId);
   }, [restaurantId]);
+  const queryClient = useQueryClient();
+  // Sync now on another terminal also refreshes Bookings and QR requests here (they live outside the record sync).
+  useEffect(() => {
+    if (!restaurantId) return;
+    const refresh = () => {
+      void queryClient.invalidateQueries({ queryKey: ["guest-orders", restaurantId] });
+      void queryClient.invalidateQueries({ queryKey: ["guest-order-history", restaurantId] });
+    };
+    window.addEventListener(REMOTE_SYNC_EVENT, refresh);
+    return () => window.removeEventListener(REMOTE_SYNC_EVENT, refresh);
+  }, [restaurantId, queryClient]);
   useEffect(() => {
     if (!restaurantId || !preparesNumbers) return;
     // The Lovable editor and preview are not counters: holding spare numbers there only leaves gaps.

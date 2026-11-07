@@ -61,3 +61,4 @@
 - Orders KOT reprints use the shared PrintHost dispatch and existing reprint authorization; never create new tickets or numbers when printing saved history.
 - Reservation identity travels from guest drafts into bills; cancelling queues exact-booking cleanup locally until Cloud confirms.
 - Enforce guest self-cancellation deadlines in the token-scoped database RPC and mirror the deadline in guest controls; kitchen-accepted orders remain staff-managed to avoid orphaning financial/KOT records.
+- Sync now is restaurant-wide: after its own push/pull it broadcasts "sync-all" on the `terminals-<restaurantId>` realtime channel (terminal-signal.ts); every open terminal then syncs, refreshes Bookings and checks for a new app version. The first terminal whose AppUpdateWatcher finds a new build broadcasts the same signal; remote-triggered checks never re-broadcast. AppUpdateWatcher is mounted in AppShell and the Waiter app.

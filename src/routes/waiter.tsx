@@ -1,3 +1,4 @@
+import { AppUpdateWatcher } from "@/components/AppUpdateWatcher";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -104,6 +105,7 @@ function WaiterApp() {
           {user ? <Button size="sm" variant="outline" onClick={() => setShowBookings(true)}><Users />Reservations</Button> : null}
           <InstallButton />
           {user ? <SyncChip statusOnly /> : null}
+          {user ? <AppUpdateWatcher /> : null}
           {user ? <Button size="icon" variant="ghost" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}><LogOut /></Button> : null}
         </div>
       </header>

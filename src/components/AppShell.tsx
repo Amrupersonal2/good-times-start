@@ -25,6 +25,7 @@ import { isTestBrowser } from "@/lib/test-browser";
 import { SyncConflictAlert } from "@/components/SyncConflictAlert";
 import { toast } from "sonner";
 import { applyAppUpdate, checkForAppUpdate } from "@/lib/app-update";
+import { broadcastSyncAll } from "@/lib/terminal-signal";
 import { AppUpdateWatcher } from "./AppUpdateWatcher";
 
 const NAV = [
@@ -136,17 +137,20 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
       setBusy(false);
       return;
     }
-    // Data is safely uploaded and downloaded: now bring this device onto the latest published app.
+    // This device's data is up and down: tell every other open terminal to sync data and app now too.
+    const others = await broadcastSyncAll("manual");
+    const all = others ? " on all terminals" : "";
+    // Then bring this device onto the latest published app.
     try {
       setChecking(true);
       if (await checkForAppUpdate()) {
-        toast.success("Synced. Updating to the latest app version…");
+        toast.success(`Synced${all}. Updating to the latest app version…`);
         window.setTimeout(() => { void applyAppUpdate(); }, 900);
         return;
       }
-      toast.success("Synced · this app is up to date");
+      toast.success(`Synced${all} · this app is up to date`);
     } catch {
-      toast.success("Synced. Couldn't check for an app update; try again shortly.");
+      toast.success(`Synced${all}. Couldn't check for an app update; try again shortly.`);
     } finally {
       setChecking(false);
       setBusy(false);
@@ -197,7 +201,7 @@ export function SyncChip({ statusOnly = false }: { statusOnly?: boolean } = {}) 
         {/* The dialog's own ✕ closes it; a second Close button sat on top of it. */}
         <div className="pr-8">
           <DialogTitle>Sync</DialogTitle>
-          <p className="mt-1 text-sm text-muted-foreground">Bills are saved on this device first, so billing never stops when the internet does. Sync now also updates this app to the latest published version.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Bills are saved on this device first, so billing never stops when the internet does. Sync now syncs every open terminal and updates them all to the latest published version.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-border p-3"><div className="text-xs text-muted-foreground">Bills waiting to upload</div><div className="mt-1 text-2xl font-bold">{snapshot.pendingOrders}</div></div>

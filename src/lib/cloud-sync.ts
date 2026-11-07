@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { flushOfflineClaims, freshRestaurantNumber } from "@/lib/restaurant-numbering";
 import { SyncScheduler } from "./sync-scheduler";
+import { startTerminalSignals } from "./terminal-signal";
 import type { Json } from "@/integrations/supabase/types";
 import { applyEntryToLevels, getDb, getSettings, markDirty, onLocalChange, type OutboxEntry } from "@/lib/db";
 import { deductInventory } from "@/lib/inventory";
@@ -734,6 +735,8 @@ export function startLiveSync(restaurantId: string): () => void {
   const stopLocal = onLocalChange((kinds) => scheduler.request(kinds.includes("kot") || kinds.includes("order") ? 0 : 250));
   const wake = () => scheduler.request(0);
   const onOnline = () => { void requeueHeldRecords().finally(wake); };
+  // Another terminal tapped Sync now (or found a new app version): sync this one at once too.
+  const stopSignals = startTerminalSignals(restaurantId, () => { void requeueHeldRecords().finally(wake); });
   void requeueHeldRecords();
   const onVisible = () => { if (document.visibilityState === "visible") wake(); };
   window.addEventListener("online", onOnline);
@@ -787,6 +790,7 @@ export function startLiveSync(restaurantId: string): () => void {
     window.removeEventListener("pageshow", wake);
     document.removeEventListener("visibilitychange", onVisible);
     stopLocal();
+    stopSignals();
     if (channel) void supabase.removeChannel(channel);
     channel = null;
     setLiveStatus("off");

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { applyAppUpdate, canUpdateUnattended, checkForAppUpdate, UPDATE_CHECK_EVERY_MS } from "@/lib/app-update";
+import { APP_UPDATE_FOUND_EVENT, CHECK_APP_UPDATE_EVENT } from "@/lib/terminal-signal";
 
 /**
  * Counters stay open all day, so a published update must reach them without anyone
@@ -27,12 +28,14 @@ export function AppUpdateWatcher() {
         void applyAppUpdate();
       }
     };
-    const check = async () => {
+    const check = async (remote = false) => {
       if (checking || found || !navigator.onLine) return;
       checking = true;
       try {
         if (await checkForAppUpdate()) {
           found = true;
+          // The first terminal to notice tells all the others (they don't repeat it).
+          window.dispatchEvent(new CustomEvent(APP_UPDATE_FOUND_EVENT, { detail: { remote } }));
           toast("A new version of the app is ready", { id: "app-update", duration: Infinity, description: "Your bills are saved. Updating takes a few seconds.", action: { label: "Update now", onClick: () => { void applyAppUpdate(); } } });
           tryApply();
         }
@@ -43,15 +46,18 @@ export function AppUpdateWatcher() {
     const idleTimer = window.setInterval(tryApply, 2_000);
     const first = window.setTimeout(() => { void check(); }, 3_000);
     const onFocus = () => { void check(); };
+    const onAsked = (e: Event) => { void check((e as CustomEvent<{ remote?: boolean }>).detail?.remote === true); };
     for (const e of ["pointerdown", "keydown"] as const) window.addEventListener(e, touched, { passive: true });
-    window.addEventListener("online", check);
+    window.addEventListener("online", onFocus);
     window.addEventListener("focus", onFocus);
+    window.addEventListener(CHECK_APP_UPDATE_EVENT, onAsked);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.clearInterval(timer); window.clearInterval(idleTimer); window.clearTimeout(first);
       for (const e of ["pointerdown", "keydown"] as const) window.removeEventListener(e, touched);
-      window.removeEventListener("online", check);
+      window.removeEventListener("online", onFocus);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener(CHECK_APP_UPDATE_EVENT, onAsked);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
