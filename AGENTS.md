@@ -29,6 +29,7 @@
 - Printed QR material defaults to the XTSY Pines theme in qr-print.ts; Classic stays available.
 - Spare-number caches use `reservedNumbers:v3:`; cloud-refused records get a fresh number and keep the old one as printedBillNo/printedKotNo.
 - Offline-number claims run before each push but never block it (a failed claim is retried next sync; unaccepted numbers are renumbered). Live sync polls every 20 s even while realtime reports connected, so a silently dead socket heals quickly.
+- A running bill pushed with no common base (a terminal's first upload of a bill the cloud has) adopts the cloud copy when the local copy adds nothing (record-versions adoptWithoutBase; local-only guest details kept); real clashes still go to staff. Each sync re-checks stored bill conflicts (healConflicts) so a terminal never stays frozen on an old copy. Counter-order cards for table bills open via ?table=, not ?bill=.
 - Sync pushes data first, then app-update.ts checks for a newer published build and reloads; IndexedDB data survives the reload.
 - Signed-in shells mount AppUpdateWatcher: every 5 min (and on focus/online) it checks for a newer published build and reloads onto it when the screen is hidden or idle 2 min with no dialog open, else shows a persistent "Update now" toast. Counters stay open all day; a stale counter kept using pre-reset spare numbers (POS/0169…) and its bills were refused.
 - iOS standalone apps use viewport-fit=cover with a translucent status bar: top bars must pad by env(safe-area-inset-top).

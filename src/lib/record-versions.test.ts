@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildUnits, mergeLines, mergeOrder } from "./record-versions";
+import { adoptWithoutBase, buildUnits, mergeLines, mergeOrder } from "./record-versions";
 import type { CartLine, Order } from "./types";
 
 const l = (itemId: string, qty: number, extra: Partial<CartLine> = {}): CartLine => ({ itemId, name: itemId, price: 100, qty, veg: true, gstRate: 5, station: "Indian", ...extra });
@@ -62,3 +62,27 @@ describe("buildUnits", () => {
     expect(units.map((u) => u.map((r) => r.record_id))).toEqual([["o1", "sale:o1", "T1"], ["m1"]]);
   });
 });
+
+describe("bills with no common copy (a terminal's first upload of a bill the cloud has)", () => {
+  const bill = (over: Partial<Order>): Order => ({ uid: "b", billNo: "", orderType: "dine-in", tableId: "ROOM-12", lines: [l("biryani", 1, { price: 280 })], subtotal: 280, discountPct: 0, discountAmt: 0, cgst: 0, sgst: 0, roundOff: 0, total: 280, payments: [], status: "held", createdAt: 1, kotSubmittedQty: { biryani: 1 }, ...over } as Order);
+
+  it("takes the cloud's guest details when this terminal's copy adds nothing", () => {
+    const cloud = bill({ customer: { name: "Amrudheen D", phone: "8837317070" }, guestCount: 1 });
+    const merged = mergeOrder(undefined, bill({ id: 7 }), cloud);
+    expect(merged.conflicts).toEqual([]);
+    expect(merged.order?.customer).toEqual({ name: "Amrudheen D", phone: "8837317070" });
+    expect(merged.order?.id).toBe(7);
+  });
+
+  it("keeps guest details only this terminal has", () => {
+    expect(adoptWithoutBase(bill({ customer: { name: "Selva", phone: "9092920303" } }), bill({}))?.customer).toEqual({ name: "Selva", phone: "9092920303" });
+  });
+
+  it("still asks staff when this terminal has more food or different guest details", () => {
+    expect(adoptWithoutBase(bill({ lines: [l("biryani", 2, { price: 280 })], kotSubmittedQty: { biryani: 2 } }), bill({}))).toBeNull();
+    expect(adoptWithoutBase(bill({ lines: [l("biryani", 1, { price: 280 }), l("naan", 1)] }), bill({}))).toBeNull();
+    expect(adoptWithoutBase(bill({ customer: { name: "Someone else" } }), bill({ customer: { name: "Amrudheen D" } }))).toBeNull();
+    expect(mergeOrder(undefined, bill({ lines: [l("biryani", 2, { price: 280 })] }), bill({})).conflicts).toHaveLength(1);
+  });
+});
+

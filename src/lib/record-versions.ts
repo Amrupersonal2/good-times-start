@@ -110,6 +110,31 @@ export function mergeLines(base: CartLine[], local: CartLine[], remote: CartLine
   return { lines: out, conflicts };
 }
 
+/**
+ * A running bill with no common base: the cloud copy, if this device's copy holds nothing
+ * more (no extra dishes or quantities, nothing more sent to the kitchen). Guest details this
+ * device has but the cloud lacks are kept; differing guest details are left to staff.
+ */
+export function adoptWithoutBase(local: Order, remote: Order): Order | null {
+  if (local.status !== "held" || remote.status !== "held") return null;
+  const l = byItem(local.lines); const r = byItem(remote.lines);
+  if (!l || !r) return null;
+  for (const [key, line] of l) {
+    const cloud = r.get(key);
+    if (!cloud || line.qty > cloud.qty || line.price !== cloud.price) return null;
+  }
+  for (const [key, qty] of Object.entries(local.kotSubmittedQty ?? {})) if (qty > (remote.kotSubmittedQty?.[key] ?? 0)) return null;
+  const clean = (v?: string) => (v ?? "").trim();
+  const digits = (v?: string) => (v ?? "").replace(/\D/g, "");
+  const ln = clean(local.customer?.name), rn = clean(remote.customer?.name);
+  const lp = digits(local.customer?.phone), rp = digits(remote.customer?.phone);
+  if ((ln && rn && ln.toLowerCase() !== rn.toLowerCase()) || (lp && rp && lp !== rp)) return null;
+  const result: Order = { ...remote };
+  if ((ln && !rn) || (lp && !rp)) result.customer = { ...remote.customer, ...(ln && !rn ? { name: ln } : {}), ...(lp && !rp ? { phone: lp } : {}) };
+  if (!remote.guestCount && local.guestCount) result.guestCount = local.guestCount;
+  return result;
+}
+
 function joinNotes(a?: string, b?: string): string | undefined {
   if (!a) return b; if (!b || a === b) return a;
   return `${a}; ${b}`;
@@ -124,7 +149,13 @@ export function mergeOrder(base: Order | undefined, local: Order, remote: Order)
     if (local.status === remote.status && samePayments && local.total === remote.total) return { order: local.id !== undefined ? { ...remote, id: local.id } : { ...remote }, conflicts: [] };
     return { order: null, conflicts: [remote.status !== "held" ? `${remote.billNo ? `Bill ${remote.billNo}` : "A running bill"} was ${remote.status === "settled" ? "settled" : "cancelled"} on another device` : `${remote.billNo ? `Bill ${remote.billNo}` : "A running bill"} changed on another device after it was settled here`] };
   }
-  if (!base) return { order: null, conflicts: [`${remote.billNo ? `Bill ${remote.billNo}` : "A running bill"} changed on another device`] };
+  if (!base) {
+    // No common copy (this device's first upload of a bill the cloud already has). Take the
+    // cloud copy only when this device's copy adds nothing to it, so nothing is lost or billed twice.
+    const adopted = adoptWithoutBase(local, remote);
+    if (adopted) return { order: local.id !== undefined ? { ...adopted, id: local.id } : adopted, conflicts: [] };
+    return { order: null, conflicts: [`${remote.billNo ? `Bill ${remote.billNo}` : "A running bill"} changed on another device`] };
+  }
   const merged = mergeLines(base.lines, local.lines, remote.lines);
   if (merged.conflicts.length) return { order: null, conflicts: merged.conflicts };
 

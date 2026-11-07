@@ -88,6 +88,8 @@ function PosPage() {
     if (!search.bill) { openedBill.current = null; return; }
     if (openedBill.current === search.bill && cart.activeOrder?.uid === search.bill) return;
     const bill = openBills.find((o) => o.uid === search.bill);
+    // A staff bill on a table (from an old link or bookmark) opens through its table instead.
+    if (bill && bill.tableId && bill.source !== "qr") { void navigate({ to: "/", search: { table: bill.tableId }, replace: true }); return; }
     if (bill) { openedBill.current = search.bill; cart.openOrder(bill); }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once when the bill is available locally
   }, [search.bill, openBills, cart.activeOrder?.uid]);

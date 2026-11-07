@@ -428,6 +428,38 @@ export async function resolveSyncConflict(key: string, choice: "mine" | "cloud")
 
 export async function listSyncConflicts(): Promise<SyncConflict[]> { return readConflicts(); }
 
+/**
+ * Bills set aside as conflicts stop following the cloud until staff choose. Each sync
+ * re-checks them against the cloud's latest copy and clears any that now merge safely
+ * (for example, this device's copy holds nothing the cloud lacks), so a terminal never
+ * stays stuck showing an old bill or old guest details.
+ */
+async function healConflicts(restaurantId: string): Promise<void> {
+  const conflicts = (await readConflicts()).filter((c) => c.kind === "order");
+  if (!conflicts.length) return;
+  const { data, error } = await supabase.from("restaurant_records").select("kind, record_id, payload, deleted, updated_at, version")
+    .eq("restaurant_id", restaurantId).eq("kind", "order").in("record_id", conflicts.map((c) => c.recordId));
+  if (error) return; // try again next sync
+  const db = getDb();
+  for (const c of conflicts) {
+    const row = (data ?? []).find((r) => r.record_id === c.recordId) as RemoteRow | undefined;
+    if (!row || row.deleted || !isOrderPayload(row.payload) || typeof row.version !== "number") continue;
+    const local = await db.orders.where("uid").equals(c.recordId).first();
+    const remote = { ...(row.payload as unknown as Order), uid: c.recordId };
+    const merged = local ? mergeOrder(parseBaseOrder(await readBaseVersion("order", c.recordId)), local, remote).order : remote;
+    if (!merged) continue; // a real clash: staff still decide
+    await writeConflicts((await readConflicts()).filter((x) => x.key !== c.key));
+    const { id: _localId, ...mergedShared } = merged;
+    if (!local || JSON.stringify(toSharedPayload("order", mergedShared)) === JSON.stringify(toSharedPayload("order", remote))) {
+      await applyRemote([row]); // the cloud copy already holds everything
+    } else {
+      await db.orders.put({ ...merged, ...(local.id !== undefined ? { id: local.id } : {}), uid: c.recordId, synced: false });
+      await writeBase("order", c.recordId, row.version, row.payload);
+      await markDirty(["order", c.recordId]);
+    }
+  }
+}
+
 async function applyRemote(rows: RemoteRow[]): Promise<void> {
   const db = getDb();
   // The outbox is read inside the same transaction, so a local edit can't slip in between the check and the write.
@@ -604,6 +636,7 @@ async function syncOnce(restaurantId: string): Promise<void> {
 
   await push(restaurantId);
   await pull(restaurantId);
+  await healConflicts(restaurantId);
   await db.meta.put({ key: "lastSyncAt", value: Date.now() });
   await db.meta.put({ key: "syncError", value: "" });
 }

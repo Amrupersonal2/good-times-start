@@ -73,6 +73,33 @@ async function shared(uid = "o-0001") {
 }
 
 describe("optimistic concurrency (record versions)", () => {
+  it("heals a terminal holding its own unconfirmed copy of a bill: guest details follow the cloud", async () => {
+    // The counter's bill reaches the cloud, then gets guest details.
+    await on("counter", () => save(order("o-room12", { tableId: "ROOM-12" })));
+    await syncNow("counter");
+    // The admin terminal holds its own never-confirmed copy of the same bill: same food, no guest.
+    await on("admin", () => save(order("o-room12", { tableId: "ROOM-12" })));
+    const named = await localOrder("counter", "o-room12");
+    await on("counter", () => save({ ...named!, customer: { name: "Amrudheen D", phone: "8837317070" }, guestCount: 1 }));
+    await syncNow("counter");
+    await syncNow("admin");
+    await syncNow("admin");
+    const seen = await localOrder("admin", "o-room12");
+    expect(seen?.customer).toEqual({ name: "Amrudheen D", phone: "8837317070" });
+    expect(seen?.guestCount).toBe(1);
+    expect(await on("admin", () => sync.listSyncConflicts())).toEqual([]);
+    expect((serverRow("order", "o-room12")?.payload as Order).customer?.name).toBe("Amrudheen D");
+  });
+
+  it("still asks staff when the terminal's own copy has extra food", async () => {
+    await on("counter", () => save(order("o-clash")));
+    await syncNow("counter");
+    await on("admin", () => save(order("o-clash", { lines: [line("d1", 4)] })));
+    await syncNow("admin");
+    expect((await on("admin", () => sync.listSyncConflicts())).map((c) => c.recordId)).toEqual(["o-clash"]);
+    expect(qtyOf(serverRow("order", "o-clash")?.payload as Order, "d1")).toBe(2);
+  });
+
   it("the server owns versions: every write bumps them by one", async () => {
     await shared();
     expect(serverRow("order", "o-0001")?.version).toBe(1);
