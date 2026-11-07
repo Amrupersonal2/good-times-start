@@ -1,5 +1,9 @@
 # POS expansion
 
+## Booking cancellation audit
+- [ ] Audit public QR guest requests and POS/admin controls without production writes.
+- [ ] Clear only the cancelled bill's linked booking from the floor and preserve unrelated future bookings; test offline and guest-status behavior.
+
 ## Orders KOT printing
 - [x] Add per-submission and per-station print controls using existing authorized device routing. 29 print/history tests pass; signed-in Orders shows saved KOT controls and dispatches item names/quantities to the browser print host with printing intercepted. No production record writes or physical printing; not published.
 
