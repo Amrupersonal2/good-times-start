@@ -36,8 +36,23 @@ export async function rememberGuestsFromBills(): Promise<number> {
 }
 
 export async function updateCustomer(customer: Customer): Promise<void> {
-  await getDb().customers.put(customer);
-  await markDirty(["customer", customer.id]);
+  const db = getDb();
+  const before = await db.customers.get(customer.id);
+  await db.customers.put(customer);
+  const renamed = await renameOnRunningBills(customer, before?.name);
+  // Bills push at once and reach every terminal live; the guest record follows in the same push.
+  await markDirty(["customer", customer.id], ...renamed.map((uid): ["order", string] => ["order", uid]));
+}
+
+/** A renamed guest's running bills take the new name, so every terminal's bill and floor show it. Settled bills keep their printed name. */
+async function renameOnRunningBills(customer: Customer, previousName: string | undefined): Promise<string[]> {
+  const name = customer.name?.trim();
+  if (!name || name === previousName?.trim()) return [];
+  const db = getDb();
+  const bills = (await db.orders.where("status").equals("held").toArray())
+    .filter((o) => normalisePhone(o.customer?.phone) === customer.id && o.customer?.name?.trim() !== name);
+  for (const o of bills) await db.orders.put({ ...o, customer: { ...o.customer, name }, synced: false });
+  return bills.map((o) => o.uid);
 }
 
 /** Record money received against what a guest owes. */
