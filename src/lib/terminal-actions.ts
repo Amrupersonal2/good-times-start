@@ -12,6 +12,7 @@ import type { AppKind, DeviceKind } from "./staff-login-logic";
 export interface Terminal {
   device_id: string; series: string; description: string; app: "" | AppKind; device_kind: "" | DeviceKind;
   login_email: string; status: "active" | "blocked"; first_seen: string; last_seen: string;
+  last_ip?: string | null; last_location?: string | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
