@@ -51,10 +51,10 @@ export async function applyAppUpdate(): Promise<void> {
   window.location.reload();
 }
 
-/** How often an open device looks for a newer published version. */
-export const UPDATE_CHECK_EVERY_MS = 5 * 60_000;
-/** A device nobody has touched for this long can update on its own. */
-export const IDLE_BEFORE_AUTO_UPDATE_MS = 2 * 60_000;
+/** How often an open device looks for a newer published version (one small page fetch), so a publish reaches every terminal within ~30 s. */
+export const UPDATE_CHECK_EVERY_MS = 30_000;
+/** A device nobody has touched for this long updates on its own (drafts save within 0.15 s, so nothing is lost). */
+export const IDLE_BEFORE_AUTO_UPDATE_MS = 10_000;
 
 /**
  * Whether a found update can be applied without asking: the screen is hidden, or

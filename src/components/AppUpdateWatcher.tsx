@@ -4,9 +4,9 @@ import { applyAppUpdate, canUpdateUnattended, checkForAppUpdate, UPDATE_CHECK_EV
 
 /**
  * Counters stay open all day, so a published update must reach them without anyone
- * closing the app. Every few minutes (and when the screen comes back or the internet
+ * closing the app. Every 30 s (and when the screen comes back, gets focus or the internet
  * returns) this checks for a newer version. When one is out it updates by itself if the
- * device is idle or hidden; otherwise it asks with an "Update now" bar. Bills and drafts
+ * device is hidden or untouched for 10 s with no dialog open; otherwise it asks with an "Update now" bar. Bills and drafts
  * are saved on the device, so updating never loses an order.
  */
 export function AppUpdateWatcher() {
@@ -18,7 +18,14 @@ export function AppUpdateWatcher() {
     const tryApply = () => {
       if (!found) return;
       const dialogOpen = !!document.querySelector('[role="dialog"], [role="alertdialog"]');
-      if (canUpdateUnattended({ hidden: document.visibilityState === "hidden", idleMs: Date.now() - lastTouch, dialogOpen })) void applyAppUpdate();
+      // A reload that came back on the old version (slow network served the saved copy) must not loop: wait 2 min before trying unattended again.
+      let lastAuto = 0;
+      try { lastAuto = Number(sessionStorage.getItem("appAutoUpdateAt") ?? 0); } catch { /* storage unavailable */ }
+      if (Date.now() - lastAuto < 120_000) return;
+      if (canUpdateUnattended({ hidden: document.visibilityState === "hidden", idleMs: Date.now() - lastTouch, dialogOpen })) {
+        try { sessionStorage.setItem("appAutoUpdateAt", String(Date.now())); } catch { /* storage unavailable */ }
+        void applyAppUpdate();
+      }
     };
     const check = async () => {
       if (checking || found || !navigator.onLine) return;
@@ -33,15 +40,18 @@ export function AppUpdateWatcher() {
     };
     const onVisible = () => { if (document.visibilityState === "visible") void check(); else tryApply(); };
     const timer = window.setInterval(() => { void check(); tryApply(); }, UPDATE_CHECK_EVERY_MS);
-    const idleTimer = window.setInterval(tryApply, 30_000);
-    const first = window.setTimeout(() => { void check(); }, 20_000);
+    const idleTimer = window.setInterval(tryApply, 2_000);
+    const first = window.setTimeout(() => { void check(); }, 3_000);
+    const onFocus = () => { void check(); };
     for (const e of ["pointerdown", "keydown"] as const) window.addEventListener(e, touched, { passive: true });
     window.addEventListener("online", check);
+    window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.clearInterval(timer); window.clearInterval(idleTimer); window.clearTimeout(first);
       for (const e of ["pointerdown", "keydown"] as const) window.removeEventListener(e, touched);
       window.removeEventListener("online", check);
+      window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);

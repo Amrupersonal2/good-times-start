@@ -21,7 +21,8 @@ describe("app update check", () => {
   it("updates by itself only when nobody is mid-task", () => {
     expect(canUpdateUnattended({ hidden: true, idleMs: 0, dialogOpen: false })).toBe(true);
     expect(canUpdateUnattended({ hidden: false, idleMs: 3 * 60_000, dialogOpen: false })).toBe(true);
-    expect(canUpdateUnattended({ hidden: false, idleMs: 30_000, dialogOpen: false })).toBe(false);
+    expect(canUpdateUnattended({ hidden: false, idleMs: 5_000, dialogOpen: false })).toBe(false);
+    expect(canUpdateUnattended({ hidden: false, idleMs: 10_000, dialogOpen: false })).toBe(true);
     expect(canUpdateUnattended({ hidden: true, idleMs: 10 * 60_000, dialogOpen: true })).toBe(false);
   });
 });
