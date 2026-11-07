@@ -29,6 +29,13 @@ function loadedAssets(): string[] {
   return assetsInHtml(urls.join(" "));
 }
 
+/** Short id of the version this page runs (hash of its main file), shown so staff can compare counters. */
+export function currentBuildId(): string {
+  if (typeof document === "undefined") return "";
+  const main = loadedAssets().find((a) => /\/assets\/index-/.test(a)) ?? loadedAssets()[0] ?? "";
+  return main.replace(/^.*\/assets\/(?:index-)?/, "").replace(/\.(js|css)$/, "").slice(0, 8) || "dev";
+}
+
 /** Ask the server for the current page fresh, and say whether a newer app version is live. */
 export async function checkForAppUpdate(): Promise<boolean> {
   if (typeof window === "undefined" || !navigator.onLine) return false;

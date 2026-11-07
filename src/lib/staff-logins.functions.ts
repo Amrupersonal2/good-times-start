@@ -15,7 +15,7 @@ export const ensureInternalLogins = createServerFn({ method: "POST" })
     const { data } = await ctx.supabase.from("restaurant_members").select("role").eq("user_id", ctx.userId).in("role", ["owner", "manager"]).limit(1);
     if (!data || data.length === 0) throw new Error("Only the admin can set up logins.");
     const { ensureLogins } = await import("./staff-logins/logins.server");
-    return ensureLogins();
+    return ensureLogins(ctx.userId);
   });
 
 /** Admin sets a new password for a login. */
