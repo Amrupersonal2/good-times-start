@@ -168,7 +168,19 @@ function GuestOrdersPanel({ orders, onDone }: { orders: GuestOrder[]; onDone: ()
   const uids = orders.map((o) => o.order_uid).filter((u): u is string => !!u);
   const closed = useLiveQuery(async () => {
     const bills = await getDb().orders.where("uid").anyOf(uids).toArray();
-    return new Map(bills.filter((b) => b.status === "void" || b.status === "settled").map((b) => [b.uid ?? "", b.status]));
+    const map = new Map(bills.filter((b) => b.status === "void" || b.status === "settled").map((b) => [b.uid ?? "", b.status as string]));
+    // Removed bills are no longer on this device; ask the cloud so their QR order still closes.
+    const found = new Set(bills.map((b) => b.uid));
+    const missing = uids.filter((u) => !found.has(u));
+    if (missing.length && navigator.onLine) {
+      const { data } = await supabase.from("restaurant_records").select("record_id, deleted, payload").eq("kind", "order").in("record_id", missing);
+      for (const r of data ?? []) {
+        const s = (r.payload as { status?: string } | null)?.status;
+        if (s === "settled") map.set(r.record_id, "settled");
+        else if (r.deleted || s === "void") map.set(r.record_id, "void");
+      }
+    }
+    return map;
   }, [uids.join(",")]) ?? new Map<string, string>();
   const groups: Record<Exclude<View, "history">, GuestOrder[]> = {
     requests: orders.filter((o) => o.status === "new"),
