@@ -201,7 +201,9 @@ async function restoreRefused(restaurantId: string, refused: RefusedRow[]): Prom
     if (error) throw error;
     const found = (data ?? []) as RemoteRow[];
     rows.push(...found);
-    // Refused new records exist only here: remove them.
+    // Refused new records exist only here. Bills and kitchen tickets are financial/kitchen
+    // history and may already be on paper: never erase them; keep them local for recovery.
+    if (kind === "order" || kind === "kot") continue;
     for (const id of ids) if (!found.some((f) => f.record_id === id)) rows.push({ kind, record_id: id, payload: {} as Json, deleted: true, updated_at: new Date(0).toISOString() });
   }
   await applyRemote(rows);
